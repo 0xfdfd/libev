@@ -34,6 +34,9 @@ typedef struct ev_once ev_once_t;
 struct ev_todo;
 typedef struct ev_todo ev_todo_t;
 
+struct ev_async;
+typedef struct ev_async ev_async_t;
+
 /**
  * @brief An application-defined callback function.
  *
@@ -43,11 +46,21 @@ typedef void(*ev_once_cb)(void);
 
 /**
  * @brief Type definition for callback passed to #ev_timer_start().
- * @param[in] handle	A pointer to timer structure
+ * @param[in] handle	A pointer to #ev_timer_t structure
  */
 typedef void(*ev_timer_cb)(ev_timer_t* handle);
 
+/**
+ * @brief Type definition for callback to run in next loop
+ * @param[in] handle	A pointer to #ev_todo_t structure
+ */
 typedef void(*ev_todo_cb)(ev_todo_t* handle);
+
+/**
+ * @brief Type definition for callback passed to #ev_async_init().
+ * @param[in] handle	A pointer to #ev_async_t structure
+ */
+typedef void (*ev_async_cb)(ev_async_t* handle);
 
 /**
  * @brief Executes the specified function one time.
@@ -84,6 +97,7 @@ struct ev_todo
 struct ev_loop
 {
 	uint64_t			hwtime;			/**< A fast clock time in milliseconds */
+	size_t				active_handles;	/**< Active handle counter */
 
 	struct
 	{
@@ -135,6 +149,17 @@ struct ev_timer
 	{
 		unsigned		b_start : 1;	/**< Running flag */
 	}mask;
+};
+
+struct ev_async
+{
+	ev_handle_t			base;			/**< Base object */
+	ev_async_cb			cb;				/**< Active callback */
+
+	ev_async_cb			close_cb;		/**< Close callback */
+	ev_todo_t			close_token;	/**< Close token */
+
+	ev_iocp_t			iocp_req;		/**< IOCP request */
 };
 
 /**
@@ -227,6 +252,31 @@ int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_
  * @param[in] handle	Timer handle
  */
 void ev_timer_stop(ev_timer_t* handle);
+
+/**
+ * @brief Initialize the handle.
+ *
+ * A NULL callback is allowed.
+ * 
+ * @param[in] loop		Event loop
+ * @param[out] handle	A pointer to the structure
+ * @param[in] cb		Active callback
+ * @return				#ev_errno_t
+ */
+int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb);
+
+/**
+ * @brief Destroy the structure.
+ * @param[in] handle	Async handle
+ * @param[in] close_cb	Close callback
+ */
+void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb);
+
+/**
+ * @brief Wake up the event loop and call the async handle's callback.
+ * @param[in] handle	Async handle
+ */
+void ev_async_weakup(ev_async_t* handle);
 
 #ifdef __cplusplus
 }

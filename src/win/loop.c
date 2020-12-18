@@ -1,6 +1,5 @@
 #include <assert.h>
-#include "ev-common.h"
-#include "ev.h"
+#include "loop.h"
 
 /* Frequency of the high-resolution clock. */
 static uint64_t hrtime_frequency_ = 0;
@@ -82,36 +81,9 @@ static int _ev_cmp_timer(const ev_map_node_t* key1, const ev_map_node_t* key2, v
 	return t1->data.active < t2->data.active ? -1 : 1;
 }
 
-int ev_loop_init(ev_loop_t* loop)
-{
-	loop->hwtime = 0;
-	_ev_update_time_win(loop);
-
-	loop->backend.iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 1);
-	if (loop->backend.iocp == NULL)
-	{
-		return _ev_translate_sys_error_win(GetLastError());
-	}
-
-	ev_map_init(&loop->timer.heap, _ev_cmp_timer, NULL);
-	ev_list_init(&loop->todo.queue);
-
-	memset(&loop->mask, 0, sizeof(loop->mask));
-
-	return EV_ESUCCESS;
-}
-
-void ev_loop_exit(ev_loop_t* loop)
-{
-	CloseHandle(loop->backend.iocp);
-	loop->backend.iocp = NULL;
-}
-
 static int _ev_loop_alive(ev_loop_t* loop)
 {
-	return
-		ev_map_size(&loop->timer.heap) != 0 ||
-		ev_list_size(&loop->todo.queue) != 0;
+	return loop->active_handles || ev_list_size(&loop->todo.queue);
 }
 
 static int _ev_loop_active_timer(ev_loop_t* loop)
@@ -139,15 +111,65 @@ static int _ev_loop_active_timer(ev_loop_t* loop)
 	return ret;
 }
 
+static void _ev_pool_win_handle_req(OVERLAPPED_ENTRY* overlappeds, ULONG count)
+{
+	ULONG i;
+	for (i = 0; i < count; i++)
+	{
+		if (overlappeds[i].lpOverlapped)
+		{
+			ev_iocp_t* req = container_of(overlappeds[i].lpOverlapped, ev_iocp_t, overlapped);
+			req->cb(req);
+		}
+	}
+}
+
 static void _ev_poll_win(ev_loop_t* loop, uint32_t timeout)
 {
+	int repeat;
 	BOOL success;
 	ULONG count;
 	OVERLAPPED_ENTRY overlappeds[128];
 
-	success = GetQueuedCompletionStatusEx(loop->backend.iocp, overlappeds,
-		ARRAY_SIZE(overlappeds), &count, timeout, FALSE);
-	(void)success;
+	uint64_t timeout_time = loop->hwtime + timeout;
+
+	for (repeat = 0;; repeat++)
+	{
+		success = GetQueuedCompletionStatusEx(loop->backend.iocp, overlappeds,
+			ARRAY_SIZE(overlappeds), &count, timeout, FALSE);
+
+		/* If success, handle all IOCP request */
+		if (success)
+		{
+			_ev_pool_win_handle_req(overlappeds, count);
+			return;
+		}
+
+		/* Cannot handle any other error */
+		if (GetLastError() != WAIT_TIMEOUT)
+		{
+			ABORT();
+		}
+
+		if (timeout == 0)
+		{
+			return;
+		}
+
+		/**
+		 * GetQueuedCompletionStatusEx() can occasionally return a little early.
+		 * Make sure that the desired timeout target time is reached.
+		 */
+		_ev_update_time_win(loop);
+
+		if (timeout_time <= loop->hwtime)
+		{
+			break;
+		}
+
+		timeout = (uint32_t)(timeout_time - loop->hwtime);
+		timeout += repeat ? (1U << (repeat - 1)) : 0;
+	}
 }
 
 static uint32_t _ev_backend_timeout_timer(ev_loop_t* loop)
@@ -190,6 +212,53 @@ static void _ev_loop_active_todo(ev_loop_t* loop)
 		ev_todo_t* todo = container_of(it, ev_todo_t, node);
 		todo->cb(todo);
 	}
+}
+
+void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle)
+{
+	handle->loop = loop;
+}
+
+void ev__handle_exit(ev_handle_t* handle)
+{
+	handle->loop = NULL;
+}
+
+void ev__todo(ev_loop_t* loop, ev_todo_t* todo, ev_todo_cb cb)
+{
+	todo->cb = cb;
+	ev_list_push_back(&loop->todo.queue, &todo->node);
+}
+
+void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb cb)
+{
+	req->cb = cb;
+}
+
+int ev_loop_init(ev_loop_t* loop)
+{
+	loop->hwtime = 0;
+	_ev_update_time_win(loop);
+
+	loop->backend.iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 1);
+	if (loop->backend.iocp == NULL)
+	{
+		return _ev_translate_sys_error_win(GetLastError());
+	}
+
+	ev_map_init(&loop->timer.heap, _ev_cmp_timer, NULL);
+	ev_list_init(&loop->todo.queue);
+	loop->active_handles = 0;
+
+	memset(&loop->mask, 0, sizeof(loop->mask));
+
+	return EV_ESUCCESS;
+}
+
+void ev_loop_exit(ev_loop_t* loop)
+{
+	CloseHandle(loop->backend.iocp);
+	loop->backend.iocp = NULL;
 }
 
 int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
