@@ -1,5 +1,5 @@
-#ifndef __TEST_TASK_H__
-#define __TEST_TASK_H__
+#ifndef __TEST_H__
+#define __TEST_H__
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -39,6 +39,8 @@ extern "C" {
 
 #define ASSERT_EQ_PTR(a, b)		ASSERT_TEMPLATE(void*, "%p", ==, a, b)
 #define ASSERT_EQ_D32(a, b)		ASSERT_TEMPLATE(int32_t, "%"PRId32, ==, a, b)
+
+#define ASSERT_NE_D32(a, b)		ASSERT_TEMPLATE(int32_t, "%"PRId32, !=, a, b)
 
 #define TEST(name)	\
 	static void run_test_##name(void);\

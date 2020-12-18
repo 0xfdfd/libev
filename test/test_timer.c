@@ -1,4 +1,4 @@
-#include "task.h"
+#include "test.h"
 #include "ev.h"
 
 static ev_loop_t s_loop;
@@ -18,7 +18,7 @@ static void _on_timer_close(ev_timer_t* timer)
 	f_on_timer_close = 1;
 }
 
-TEST(ev_timer)
+TEST(timer)
 {
 	ASSERT_EQ_D32(ev_loop_init(&s_loop), 0);
 	ASSERT_EQ_D32(ev_timer_init(&s_loop, &s_timer), 0);
