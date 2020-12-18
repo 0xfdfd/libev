@@ -10,6 +10,13 @@ else()
 endif()
 add_library(${PROJECT_NAME} ${SRC_C})
 
+# add library dependencies
+find_package(Threads REQUIRED)
+target_link_libraries(${PROJECT_NAME}
+	PRIVATE
+		Threads::Threads
+)
+
 # define target include search paths
 target_include_directories(${PROJECT_NAME}
 	PUBLIC
@@ -25,3 +32,11 @@ if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
 else ()
 	target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror)
 endif ()
+
+# build test
+if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+	include(CTest)
+endif()
+if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
+	add_subdirectory(test)
+endif()

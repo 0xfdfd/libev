@@ -4,6 +4,7 @@
 extern "C" {
 #endif
 
+#include <errno.h>
 #include <pthread.h>
 
 struct ev_once
