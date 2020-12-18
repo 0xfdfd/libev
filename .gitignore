@@ -54,3 +54,5 @@ dkms.conf
 # Temporary build files
 /build
 /build.*
+/.vs
+/out
