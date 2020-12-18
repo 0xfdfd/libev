@@ -7,5 +7,6 @@ function(EV_ADD_TEST name)
 	add_test(${name} ${name})
 endfunction()
 
+EV_ADD_TEST(test_timer_stop_loop)
 EV_ADD_TEST(test_once)
 EV_ADD_TEST(test_timer)
