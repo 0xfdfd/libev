@@ -109,7 +109,9 @@ void ev_loop_exit(ev_loop_t* loop)
 
 static int _ev_loop_alive(ev_loop_t* loop)
 {
-	return ev_map_size(&loop->timer.heap) != 0;
+	return
+		ev_map_size(&loop->timer.heap) != 0 ||
+		ev_list_size(&loop->todo.queue) != 0;
 }
 
 static int _ev_loop_active_timer(ev_loop_t* loop)
@@ -148,20 +150,36 @@ static void _ev_poll_win(ev_loop_t* loop, uint32_t timeout)
 	(void)success;
 }
 
-static uint32_t _ev_backend_timeout(ev_loop_t* loop)
+static uint32_t _ev_backend_timeout_timer(ev_loop_t* loop)
 {
 	ev_map_node_t* it = ev_map_begin(&loop->timer.heap);
 	if (it == NULL)
 	{
-		return UINT32_MAX;
+		return 0;
 	}
+
 	ev_timer_t* timer = container_of(it, ev_timer_t, node);
 	if (timer->data.active <= loop->hwtime)
 	{
 		return 0;
 	}
-	uint64_t dif = loop->hwtime - timer->data.active;
+	uint64_t dif = timer->data.active - loop->hwtime;
 	return dif > UINT32_MAX ? UINT32_MAX : (uint32_t)dif;
+}
+
+static uint32_t _ev_backend_timeout(ev_loop_t* loop)
+{
+	if (loop->mask.b_stop)
+	{
+		return 0;
+	}
+
+	if (ev_list_size(&loop->todo.queue) != 0)
+	{
+		return 0;
+	}
+
+	return _ev_backend_timeout_timer(loop);
 }
 
 static void _ev_loop_active_todo(ev_loop_t* loop)

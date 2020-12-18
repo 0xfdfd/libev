@@ -9,7 +9,7 @@ static void _once_callback(void)
 	s_count++;
 }
 
-TEST(timer)
+TEST(ev_once)
 {
 	ASSERT_EQ_D32(s_count, 0);
 	ev_once_execute(&s_once_token, _once_callback);
