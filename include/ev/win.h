@@ -4,13 +4,19 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
 #include <windows.h>
 
-typedef struct ev_once
+struct ev_once
 {
 	INIT_ONCE	guard;
-}ev_once_t;
+};
 #define EV_ONCE_INIT	{ INIT_ONCE_STATIC_INIT }
+
+typedef struct ev_loop_plt
+{
+	HANDLE		iocp;
+}ev_loop_plt_t;
 
 #ifdef __cplusplus
 }

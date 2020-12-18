@@ -8,13 +8,13 @@ extern "C" {
  * @brief Static initializer for #eaf_map_low_t
  * @see eaf_map_low_t
  */
-#define EAF_MAP_LOW_INITIALIZER			{ NULL }
+#define EV_MAP_LOW_INITIALIZER			{ NULL }
 
 /**
  * @brief Static initializer for #eaf_map_low_node_t
  * @see eaf_map_low_node_t
  */
-#define EAF_MAP_LOW_NODE_INITIALIZER	{ NULL, NULL, NULL }
+#define EV_MAP_LOW_NODE_INITIALIZER	{ NULL, NULL, NULL }
 
 /**
  * @brief find helper
@@ -24,11 +24,11 @@ extern "C" {
  * @param user			user data
  * @param user_vs_orig	compare rule
  */
-#define EAF_MAP_LOW_FIND_HELPER(ret, p_table, USER_TYPE, user, user_vs_orig)	\
+#define EV_MAP_LOW_FIND_HELPER(ret, p_table, USER_TYPE, user, user_vs_orig)	\
 	do {\
 		int flag_success = 0;\
-		eaf_map_low_t* __table = p_table;\
-		eaf_map_low_node_t* node = __table->rb_root;\
+		ev_map_low_t* __table = p_table;\
+		ev_map_low_node_t* node = __table->rb_root;\
 		ret = NULL;\
 		while (node) {\
 			USER_TYPE* orig = EAF_CONTAINER_OF(node, USER_TYPE, node);\
@@ -56,11 +56,11 @@ extern "C" {
  * @param user				address
  * @param user_vs_orig		compare rule
  */
-#define EAF_MAP_LOW_INSERT_HELPER(ret, p_table, USER_TYPE, user, user_vs_orig)	\
+#define EV_MAP_LOW_INSERT_HELPER(ret, p_table, USER_TYPE, user, user_vs_orig)	\
 	do {\
 		int flag_failed = 0;\
-		eaf_map_low_t* __table = p_table;\
-		eaf_map_low_node_t **new_node = &(__table->rb_root), *parent = NULL;\
+		ev_map_low_t* __table = p_table;\
+		ev_map_low_node_t **new_node = &(__table->rb_root), *parent = NULL;\
 		ret = eaf_errno_success;\
 		while (*new_node) {\
 			USER_TYPE* orig = EAF_CONTAINER_OF(*new_node, USER_TYPE, node);\
@@ -87,49 +87,49 @@ extern "C" {
  * @brief eaf_map_low node
  * @see EAF_MAP_LOW_NODE_INITIALIZER
  */
-typedef struct eaf_map_low_node
+typedef struct ev_map_low_node
 {
-	struct eaf_map_low_node*	__rb_parent_color;	/**< parent node | color */
-	struct eaf_map_low_node*	rb_right;			/**< right node */
-	struct eaf_map_low_node*	rb_left;			/**< left node */
-}eaf_map_low_node_t;
+	struct ev_map_low_node*	__rb_parent_color;	/**< parent node | color */
+	struct ev_map_low_node*	rb_right;			/**< right node */
+	struct ev_map_low_node*	rb_left;			/**< left node */
+}ev_map_low_node_t;
 
 /**
  * @brief red-black tree
  * @see EAF_MAP_LOW_INITIALIZER
  */
-typedef struct eaf_map_low
+typedef struct ev_map_low
 {
-	eaf_map_low_node_t*			rb_root;			/**< root node */
-}eaf_map_low_t;
+	ev_map_low_node_t*			rb_root;			/**< root node */
+}ev_map_low_t;
 
 /**
  * @brief Returns an iterator to the beginning
  * @param root		The pointer to the map
  * @return			An iterator
  */
-eaf_map_low_node_t* eaf_map_low_first(const eaf_map_low_t* root);
+ev_map_low_node_t* eaf_map_low_first(const ev_map_low_t* root);
 
 /**
  * @brief Returns an iterator to the end
  * @param root		The pointer to the map
  * @return			An iterator
  */
-eaf_map_low_node_t* eaf_map_low_last(const eaf_map_low_t* root);
+ev_map_low_node_t* eaf_map_low_last(const ev_map_low_t* root);
 
 /**
  * @brief Get an iterator next to the given one.
  * @param node		Current iterator
  * @return			Next iterator
  */
-eaf_map_low_node_t* eaf_map_low_next(const eaf_map_low_node_t* node);
+ev_map_low_node_t* eaf_map_low_next(const ev_map_low_node_t* node);
 
 /**
  * @brief Get an iterator before the given one.
  * @param node		Current iterator
  * @return			Previous iterator
  */
-eaf_map_low_node_t* eaf_map_low_prev(const eaf_map_low_node_t* node);
+ev_map_low_node_t* eaf_map_low_prev(const ev_map_low_node_t* node);
 
 /**
  * @brief Inserting data into the tree.
@@ -144,8 +144,8 @@ eaf_map_low_node_t* eaf_map_low_prev(const eaf_map_low_node_t* node);
  * @param rb_link	Will be set to `node`
  * @see eaf_map_low_insert_color
  */
-void eaf_map_low_link_node(eaf_map_low_node_t* node,
-	eaf_map_low_node_t* parent, eaf_map_low_node_t** rb_link);
+void eaf_map_low_link_node(ev_map_low_node_t* node,
+	ev_map_low_node_t* parent, ev_map_low_node_t** rb_link);
 
 /**
  * @brief re-balancing ("recoloring") the tree.
@@ -153,8 +153,8 @@ void eaf_map_low_link_node(eaf_map_low_node_t* node,
  * @param root		The map
  * @see eaf_map_low_link_node
  */
-void eaf_map_low_insert_color(eaf_map_low_node_t* node,
-	eaf_map_low_t* root);
+void eaf_map_low_insert_color(ev_map_low_node_t* node,
+	ev_map_low_t* root);
 
 /**
  * @brief Delete the node from the map.
@@ -162,8 +162,8 @@ void eaf_map_low_insert_color(eaf_map_low_node_t* node,
  * @param root		The pointer to the map
  * @param node		The node
  */
-void eaf_map_low_erase(eaf_map_low_t* root,
-	eaf_map_low_node_t* node);
+void eaf_map_low_erase(ev_map_low_t* root,
+	ev_map_low_node_t* node);
 
 /**
  * @}

@@ -1,16 +1,16 @@
 #include "ev/map.h"
 
-void eaf_map_init(eaf_map_t* handler, eaf_map_cmp_fn cmp, void* arg)
+void ev_map_init(ev_map_t* handler, ev_map_cmp_fn cmp, void* arg)
 {
-	handler->map_low = (eaf_map_low_t)EAF_MAP_LOW_INITIALIZER;
+	handler->map_low = (ev_map_low_t)EV_MAP_LOW_INITIALIZER;
 	handler->cmp.cmp = cmp;
 	handler->cmp.arg = arg;
 	handler->size = 0;
 }
 
-int eaf_map_insert(eaf_map_t* handler, eaf_map_node_t* node)
+int ev_map_insert(ev_map_t* handler, ev_map_node_t* node)
 {
-	eaf_map_low_node_t **new_node = &(handler->map_low.rb_root), *parent = NULL;
+	ev_map_low_node_t **new_node = &(handler->map_low.rb_root), *parent = NULL;
 
 	/* Figure out where to put new node */
 	while (*new_node)
@@ -39,20 +39,20 @@ int eaf_map_insert(eaf_map_t* handler, eaf_map_node_t* node)
 	return 0;
 }
 
-void eaf_map_erase(eaf_map_t* handler, eaf_map_node_t* node)
+void ev_map_erase(ev_map_t* handler, ev_map_node_t* node)
 {
 	handler->size--;
 	eaf_map_low_erase(&handler->map_low, node);
 }
 
-size_t eaf_map_size(const eaf_map_t* handler)
+size_t ev_map_size(const ev_map_t* handler)
 {
 	return handler->size;
 }
 
-eaf_map_node_t* eaf_map_find(const eaf_map_t* handler, const eaf_map_node_t* key)
+ev_map_node_t* ev_map_find(const ev_map_t* handler, const ev_map_node_t* key)
 {
-	eaf_map_low_node_t* node = handler->map_low.rb_root;
+	ev_map_low_node_t* node = handler->map_low.rb_root;
 
 	while (node)
 	{
@@ -75,10 +75,10 @@ eaf_map_node_t* eaf_map_find(const eaf_map_t* handler, const eaf_map_node_t* key
 	return NULL;
 }
 
-eaf_map_node_t* eaf_map_find_lower(const eaf_map_t* handler, const eaf_map_node_t* key)
+ev_map_node_t* ev_map_find_lower(const ev_map_t* handler, const ev_map_node_t* key)
 {
-	eaf_map_node_t* lower_node = NULL;
-	eaf_map_node_t* node = handler->map_low.rb_root;
+	ev_map_node_t* lower_node = NULL;
+	ev_map_node_t* node = handler->map_low.rb_root;
 	while (node)
 	{
 		int result = handler->cmp.cmp(key, node, handler->cmp.arg);
@@ -100,10 +100,10 @@ eaf_map_node_t* eaf_map_find_lower(const eaf_map_t* handler, const eaf_map_node_
 	return lower_node;
 }
 
-eaf_map_node_t* eaf_map_find_upper(const eaf_map_t* handler, const eaf_map_node_t* key)
+ev_map_node_t* ev_map_find_upper(const ev_map_t* handler, const ev_map_node_t* key)
 {
-	eaf_map_node_t* upper_node = NULL;
-	eaf_map_node_t* node = handler->map_low.rb_root;
+	ev_map_node_t* upper_node = NULL;
+	ev_map_node_t* node = handler->map_low.rb_root;
 
 	while (node)
 	{
@@ -131,22 +131,22 @@ eaf_map_node_t* eaf_map_find_upper(const eaf_map_t* handler, const eaf_map_node_
 	return upper_node;
 }
 
-eaf_map_node_t* eaf_map_begin(const eaf_map_t* handler)
+ev_map_node_t* ev_map_begin(const ev_map_t* handler)
 {
 	return eaf_map_low_first(&handler->map_low);
 }
 
-eaf_map_node_t* eaf_map_end(const eaf_map_t* handler)
+ev_map_node_t* ev_map_end(const ev_map_t* handler)
 {
 	return eaf_map_low_last(&handler->map_low);
 }
 
-eaf_map_node_t* eaf_map_next(const eaf_map_node_t* node)
+ev_map_node_t* ev_map_next(const ev_map_node_t* node)
 {
 	return eaf_map_low_next(node);
 }
 
-eaf_map_node_t* eaf_map_prev(const eaf_map_node_t* node)
+ev_map_node_t* ev_map_prev(const ev_map_node_t* node)
 {
 	return eaf_map_low_prev(node);
 }

@@ -6,11 +6,16 @@ extern "C" {
 
 #include <pthread.h>
 
-typedef struct ev_once
+struct ev_once
 {
 	pthread_once_t	guard;
-}ev_once_t;
+};
 #define EV_ONCE_INIT	{ PTHREAD_ONCE_INIT }
+
+typedef struct ev_loop_plt
+{
+	int				pollfd;
+}ev_loop_plt_t;
 
 #ifdef __cplusplus
 }
