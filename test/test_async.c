@@ -1,7 +1,7 @@
 #include "test.h"
 #include "ev.h"
 
-static ev_loop_t	s_loop;
+static ev_loop_t	s_loop = EV_LOOP_INIT;
 static ev_async_t	s_async;
 static int			f_called = 0;
 

@@ -70,7 +70,7 @@ typedef void (*ev_async_cb)(ev_async_t* async);
 
 enum ev_errno
 {
-	EV_ESUCCESS			= 0,			/**< success */
+	EV_SUCCESS			= 0,			/**< success */
 
 	/* Posix compatible error code */
 	EV_EBUSY			= EBUSY,		/**< resource busy or locked */
@@ -112,6 +112,7 @@ struct ev_loop
 
 	ev_loop_plt_t		backend;		/**< Platform related implementation */
 };
+#define EV_LOOP_INIT	{ 0, 0, { EV_LIST_INIT }, { EV_MAP_INIT(NULL, NULL) }, { 0 }, EV_LOOP_PLT_INIT }
 
 struct ev_handle
 {
@@ -148,7 +149,7 @@ struct ev_async
 	ev_async_cb			active_cb;		/**< Active callback */
 	ev_async_cb			close_cb;		/**< Close callback */
 
-	ev_iocp_t			iocp_req;		/**< IOCP request */
+	ev_async_backend_t	backend;		/**< Platform related implementation */
 };
 
 /**

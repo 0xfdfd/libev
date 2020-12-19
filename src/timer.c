@@ -1,4 +1,5 @@
-#include "loop.h"
+#include <string.h>
+#include "ev-common.h"
 
 static void _ev_timer_on_close(ev_handle_t* handle)
 {
@@ -14,7 +15,7 @@ int ev_timer_init(ev_loop_t* loop, ev_timer_t* handle)
 	memset(handle, 0, sizeof(*handle));
 
 	ev__handle_init(loop, &handle->base, _ev_timer_on_close);
-	return EV_ESUCCESS;
+	return EV_SUCCESS;
 }
 
 void ev_timer_exit(ev_timer_t* handle, ev_timer_cb close_cb)
@@ -44,7 +45,7 @@ int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_
 	}
 	ev__handle_active(&handle->base);
 
-	return EV_ESUCCESS;
+	return EV_SUCCESS;
 }
 
 void ev_timer_stop(ev_timer_t* handle)
