@@ -29,7 +29,6 @@ struct ev_iocp
 	OVERLAPPED		overlapped;	/**< IOCP field */
 };
 
-
 #ifdef __cplusplus
 }
 #endif

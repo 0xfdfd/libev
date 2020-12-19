@@ -38,6 +38,12 @@ struct ev_async;
 typedef struct ev_async ev_async_t;
 
 /**
+ * @brief Called when a object is closed
+ * @param[in] handle	A base handle
+ */
+typedef void (*ev_close_cb)(ev_handle_t* handle);
+
+/**
  * @brief An application-defined callback function.
  *
  * Specify a pointer to this function when calling the #ev_once_execute function.
@@ -48,19 +54,19 @@ typedef void(*ev_once_cb)(void);
  * @brief Type definition for callback passed to #ev_timer_start().
  * @param[in] handle	A pointer to #ev_timer_t structure
  */
-typedef void(*ev_timer_cb)(ev_timer_t* handle);
+typedef void(*ev_timer_cb)(ev_timer_t* timer);
 
 /**
  * @brief Type definition for callback to run in next loop
  * @param[in] handle	A pointer to #ev_todo_t structure
  */
-typedef void(*ev_todo_cb)(ev_todo_t* handle);
+typedef void(*ev_todo_cb)(ev_todo_t* todo);
 
 /**
  * @brief Type definition for callback passed to #ev_async_init().
  * @param[in] handle	A pointer to #ev_async_t structure
  */
-typedef void (*ev_async_cb)(ev_async_t* handle);
+typedef void (*ev_async_cb)(ev_async_t* async);
 
 /**
  * @brief Executes the specified function one time.
@@ -93,6 +99,7 @@ struct ev_todo
 	ev_list_node_t		node;			/**< List node */
 	ev_todo_cb			cb;				/**< Callback */
 };
+#define EV_TODO_INIT	{ EV_LIST_NODE_INIT, NULL }
 
 struct ev_loop
 {
@@ -120,6 +127,9 @@ struct ev_loop
 struct ev_handle
 {
 	ev_loop_t*			loop;			/**< The event loop belong to */
+	ev_close_cb			close_cb;		/**< Close callback */
+	ev_todo_t			close_queue;	/**< Close queue token */
+	unsigned			flags;			/**< Handle flags */
 };
 
 struct ev_timer
@@ -127,11 +137,7 @@ struct ev_timer
 	ev_handle_t			base;			/**< Base object */
 	ev_map_node_t		node;			/**< (#ev_loop_t::timer::heap) */
 
-	struct
-	{
-		ev_todo_t		token;			/**< Close token */
-		ev_timer_cb		cb;				/**< Close callback */
-	}clse;
+	ev_timer_cb			close_cb;		/**< Close callback */
 
 	struct
 	{
@@ -144,20 +150,14 @@ struct ev_timer
 		uint64_t		timeout;		/**< Timeout */
 		uint64_t		repeat;			/**< Repeat */
 	}attr;
-
-	struct
-	{
-		unsigned		b_start : 1;	/**< Running flag */
-	}mask;
 };
 
 struct ev_async
 {
 	ev_handle_t			base;			/**< Base object */
-	ev_async_cb			cb;				/**< Active callback */
 
+	ev_async_cb			active_cb;		/**< Active callback */
 	ev_async_cb			close_cb;		/**< Close callback */
-	ev_todo_t			close_token;	/**< Close token */
 
 	ev_iocp_t			iocp_req;		/**< IOCP request */
 };

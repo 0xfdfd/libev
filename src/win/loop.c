@@ -214,14 +214,71 @@ static void _ev_loop_active_todo(ev_loop_t* loop)
 	}
 }
 
-void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle)
+static void _ev_to_close(ev_todo_t* todo)
+{
+	ev_handle_t* handle = container_of(todo, ev_handle_t, close_queue);
+
+	handle->flags &= ~EV_HANDLE_CLOSING;
+	handle->flags |= EV_HANDLE_CLOSED;
+
+	handle->close_cb(handle);
+}
+
+void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_close_cb close_cb)
 {
 	handle->loop = loop;
+	handle->close_cb = close_cb;
+	handle->close_queue = (ev_todo_t)EV_TODO_INIT;
+	handle->flags = 0;
 }
 
 void ev__handle_exit(ev_handle_t* handle)
 {
+	if (ev__handle_is_closing(handle))
+	{
+		ABORT();
+		return;
+	}
+
+	/* Stop if necessary */
+	ev__handle_deactive(handle);
+
+	handle->flags |= EV_HANDLE_CLOSING;
+
+	ev__todo(handle->loop, &handle->close_queue, _ev_to_close);
 	handle->loop = NULL;
+}
+
+void ev__handle_active(ev_handle_t* handle)
+{
+	if (handle->flags & EV_HANDLE_ACTIVE)
+	{
+		return;
+	}
+
+	handle->flags |= EV_HANDLE_ACTIVE;
+	handle->loop->active_handles++;
+}
+
+void ev__handle_deactive(ev_handle_t* handle)
+{
+	if (!(handle->flags & EV_HANDLE_ACTIVE))
+	{
+		return;
+	}
+
+	handle->flags &= ~EV_HANDLE_ACTIVE;
+	handle->loop->active_handles--;
+}
+
+int ev__handle_is_active(ev_handle_t* handle)
+{
+	return handle->flags & EV_HANDLE_ACTIVE;
+}
+
+int ev__handle_is_closing(ev_handle_t* handle)
+{
+	return handle->flags & (EV_HANDLE_CLOSING | EV_HANDLE_CLOSED);
 }
 
 void ev__todo(ev_loop_t* loop, ev_todo_t* todo, ev_todo_cb cb)

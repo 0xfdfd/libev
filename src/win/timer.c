@@ -1,26 +1,25 @@
 #include "loop.h"
 
+static void _ev_timer_on_close(ev_handle_t* handle)
+{
+	ev_timer_t* timer = container_of(handle, ev_timer_t, base);
+	if (timer->close_cb != NULL)
+	{
+		timer->close_cb(timer);
+	}
+}
+
 int ev_timer_init(ev_loop_t* loop, ev_timer_t* handle)
 {
 	memset(handle, 0, sizeof(*handle));
 
-	ev__handle_init(loop, &handle->base);
+	ev__handle_init(loop, &handle->base, _ev_timer_on_close);
 	return EV_ESUCCESS;
-}
-
-static void _ev_timer_to_close(ev_todo_t* handle)
-{
-	ev_timer_t* timer = container_of(handle, ev_timer_t, clse.token);
-	if (timer->clse.cb != NULL)
-	{
-		timer->clse.cb(timer);
-	}
 }
 
 void ev_timer_exit(ev_timer_t* handle, ev_timer_cb close_cb)
 {
-	handle->clse.cb = close_cb;
-	ev__todo(handle->base.loop, &handle->clse.token, _ev_timer_to_close);
+	handle->close_cb = close_cb;
 
 	ev_timer_stop(handle);
 	ev__handle_exit(&handle->base);
@@ -29,7 +28,7 @@ void ev_timer_exit(ev_timer_t* handle, ev_timer_cb close_cb)
 int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_t repeat)
 {
 	ev_loop_t* loop = handle->base.loop;
-	if (handle->mask.b_start)
+	if (ev__handle_is_active(&handle->base))
 	{
 		ev_timer_stop(handle);
 	}
@@ -43,20 +42,18 @@ int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_
 	{
 		ABORT();
 	}
-	handle->mask.b_start = 1;
-	handle->base.loop->active_handles++;
+	ev__handle_active(&handle->base);
 
 	return EV_ESUCCESS;
 }
 
 void ev_timer_stop(ev_timer_t* handle)
 {
-	if (!handle->mask.b_start)
+	if (!ev__handle_is_active(&handle->base))
 	{
 		return;
 	}
 
-	handle->mask.b_start = 0;
+	ev__handle_deactive(&handle->base);
 	ev_map_erase(&handle->base.loop->timer.heap, &handle->node);
-	handle->base.loop->active_handles--;
 }
