@@ -68,17 +68,6 @@ typedef void(*ev_todo_cb)(ev_todo_t* todo);
  */
 typedef void (*ev_async_cb)(ev_async_t* async);
 
-/**
- * @brief Executes the specified function one time.
- *
- * No other threads that specify the same one-time initialization structure can
- * execute the specified function while it is being executed by the current thread.
- *
- * @param[in] guard		A pointer to the one-time initialization structure.
- * @param[in] cb		A pointer to an application-defined InitOnceCallback function.
- */
-void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
-
 enum ev_errno
 {
 	EV_ESUCCESS			= 0,			/**< success */
@@ -277,6 +266,17 @@ void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb);
  * @param[in] handle	Async handle
  */
 void ev_async_weakup(ev_async_t* handle);
+
+/**
+ * @brief Executes the specified function one time.
+ *
+ * No other threads that specify the same one-time initialization structure can
+ * execute the specified function while it is being executed by the current thread.
+ *
+ * @param[in] guard		A pointer to the one-time initialization structure.
+ * @param[in] cb		A pointer to an application-defined InitOnceCallback function.
+ */
+void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
 
 #ifdef __cplusplus
 }

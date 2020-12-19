@@ -7,7 +7,20 @@ extern "C" {
 #include "ev.h"
 #include "ev-common.h"
 
+/**
+ * @brief Initialize a handle
+ * @param[in] loop		The loop own the handle
+ * @param[out] handle	A pointer to the structure
+ * @param[in] close_cb	A callback when handle is closed
+ */
 void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_close_cb close_cb);
+
+/**
+ * @brief Close the handle
+ * @note The handle will not closed until close_cb was called, which was given
+ *   by #ev__handle_init()
+ * @param[in] handle	handler
+ */
 void ev__handle_exit(ev_handle_t* handle);
 
 /**
@@ -24,10 +37,16 @@ void ev__handle_deactive(ev_handle_t* handle);
 
 /**
  * @brief Check if the handle is in active state
+ * @param[in] handle	handler
  * @return				bool
  */
 int ev__handle_is_active(ev_handle_t* handle);
 
+/**
+ * @brief Check if the handle is in closing or closed state
+ * @param[in] handle	handler
+ * @return				bool
+ */
 int ev__handle_is_closing(ev_handle_t* handle);
 
 /**
