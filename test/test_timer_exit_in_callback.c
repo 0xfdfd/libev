@@ -3,10 +3,16 @@
 
 static ev_loop_t	s_loop;
 static ev_timer_t	s_timer;
+static int flag_timer_exit = 0;
+
+static void _on_timer_exit(ev_timer_t* timer)
+{
+	flag_timer_exit = 1;
+}
 
 static void _on_timer(ev_timer_t* timer)
 {
-	ev_timer_exit(timer, NULL);
+	ev_timer_exit(timer, _on_timer_exit);
 }
 
 TEST(timer_stop_loop)
@@ -17,5 +23,6 @@ TEST(timer_stop_loop)
 
 	ASSERT_EQ_D32(ev_loop_run(&s_loop, ev_loop_mode_default), 0);
 
+	ASSERT_EQ_D32(flag_timer_exit, 1);
 	ev_loop_exit(&s_loop);
 }
