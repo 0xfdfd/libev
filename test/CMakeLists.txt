@@ -8,6 +8,7 @@ function(EV_ADD_TEST name)
 endfunction()
 
 EV_ADD_TEST(test_async)
-EV_ADD_TEST(test_timer_stop_loop)
 EV_ADD_TEST(test_once)
 EV_ADD_TEST(test_timer)
+EV_ADD_TEST(test_timer_exit_in_callback)
+EV_ADD_TEST(test_timer_stop_loop_in_callback)
