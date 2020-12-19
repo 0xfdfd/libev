@@ -3,12 +3,27 @@ project(ev)
 
 # add source files
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SRC_C)
+
+set(ev_sources
+	src/ev-common.c
+	src/list.c
+	src/map.c
+	src/map_low.c
+	src/timer.c)
+
 if(WIN32)
-	aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/win SRC_C)
+	list(APPEND ev_sources
+		src/win/async.c
+		src/win/loop.c
+		src/win/once.c)
 else()
-	aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/unix SRC_C)
+	list(APPEND ev_sources
+		src/unix/async.c
+		src/unix/loop.c
+		src/unix/once.c)
 endif()
-add_library(${PROJECT_NAME} ${SRC_C})
+
+add_library(${PROJECT_NAME} ${ev_sources})
 
 # add library dependencies
 find_package(Threads REQUIRED)
