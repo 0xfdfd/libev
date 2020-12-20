@@ -11,11 +11,44 @@ extern "C" {
 #define EV_IO_IN	EPOLLIN
 #define EV_IO_OUT	EPOLLOUT
 
+/**
+ * @brief Initialize io structure
+ * @param[out] io	A pointer to the structure
+ * @param[in] fd	File descriptor
+ * @param[in] cb	IO active callback
+ */
 void ev__io_init(ev_io_t* io, int fd, ev_io_cb cb);
+
+/**
+ * @brief Add events to IO structure
+ * @param[in] loop	Event loop
+ * @param[in] io	IO structure
+ * @param[in] evts	#EV_IO_IN or #EV_IO_OUT
+ */
 void ev__io_add(ev_loop_t* loop, ev_io_t* io, unsigned evts);
+
+/**
+ * @brief Delete events from IO structure
+ * @param[in] loop	Event loop
+ * @param[in] io	IO structure
+ * @param[in] evts	#EV_IO_IN or #EV_IO_OUT
+ */
 void ev__io_del(ev_loop_t* loop, ev_io_t* io, unsigned evts);
 
+/**
+ * @brief Add or remove FD_CLOEXEC
+ * @param[in] fd	File descriptor
+ * @param[in] set	bool
+ * @return			#ev_errno_t
+ */
 int ev__cloexec(int fd, int set);
+
+/**
+ * @brief Add or remove O_NONBLOCK
+ * @param[in] fd	File descriptor
+ * @param[in] set	bool
+ * @return			#ev_errno_t
+ */
 int ev__nonblock(int fd, int set);
 
 #ifdef __cplusplus
