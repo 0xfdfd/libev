@@ -8,9 +8,19 @@ extern "C" {
 #include <pthread.h>
 #include "ev/map.h"
 
+/**
+ * @brief Buffer
+ * @internal Must share the same layout with struct iovec
+ */
+typedef struct ev_buf
+{
+	char*			data;		/**< Data address */
+	size_t			size;		/**< Data size */
+}ev_buf_t;
+
 struct ev_once
 {
-	pthread_once_t	guard;
+	pthread_once_t	guard;		/**< Once token */
 };
 #define EV_ONCE_INIT			{ PTHREAD_ONCE_INIT }
 

@@ -7,15 +7,25 @@ extern "C" {
 #include <stdint.h>
 #include <windows.h>
 
+/**
+ * @brief Buffer
+ * @internal Must share the same layout with WSABUF
+ */
+typedef struct ev_buf
+{
+	ULONG			size;		/**< Data size */
+	CHAR*			data;		/**< Data address */
+}ev_buf_t;
+
 struct ev_once
 {
-	INIT_ONCE	guard;
+	INIT_ONCE		guard;		/**< Once token */
 };
 #define EV_ONCE_INIT			{ INIT_ONCE_STATIC_INIT }
 
 typedef struct ev_loop_plt
 {
-	HANDLE		iocp;
+	HANDLE			iocp;		/**< IOCP handle */
 }ev_loop_plt_t;
 #define EV_LOOP_PLT_INIT		{ NULL }
 
