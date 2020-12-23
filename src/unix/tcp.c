@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <unistd.h>
 #include "loop.h"
 
 static void _ev_tcp_close_fd(ev_tcp_t* sock)
@@ -110,6 +111,7 @@ static int _ev_tcp_is_listening(ev_tcp_t* sock)
 
 static void _ev_tcp_on_accept(ev_io_t* io, unsigned evts)
 {
+	(void)evts;
 	ev_tcp_t* acpt = container_of(io, ev_tcp_t, u.listen.io);
 
 	ev_list_node_t* it = ev_list_pop_front(&acpt->u.listen.accept_queue);
@@ -123,7 +125,7 @@ static void _ev_tcp_on_accept(ev_io_t* io, unsigned evts)
 
 	do 
 	{
-		conn->fd = accept(acpt->fd, &conn->u.accept.peeraddr, && conn->u.accept.addrlen);
+		conn->fd = accept(acpt->fd, (struct sockaddr*)&conn->u.accept.peeraddr, &conn->u.accept.addrlen);
 	} while (conn->fd == -1 && errno == EINTR);
 
 	conn->base.flags &= ~EV_TCP_ACCEPT_PENDING;

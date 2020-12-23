@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <string.h>
 #include "ev-common.h"
 #include "ev-platform.h"
