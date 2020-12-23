@@ -115,6 +115,10 @@ enum ev_errno
 	EV_EBUSY			= EBUSY,		/**< resource busy or locked */
 	EV_EINVAL			= EINVAL,		/**< invalid argument */
 	EV_EINPROGRESS		= EINPROGRESS,	/**< Operation in progress */
+
+	/* Extend error code */
+	EV_UNKNOWN			= -1,			/**< Unknown error */
+	EV_EOF				= -2,			/**< end of file */
 };
 
 enum ev_loop_mode
@@ -222,8 +226,36 @@ struct ev_tcp
 			socklen_t			addrlen;
 			ev_list_node_t		accept_node;	/**< Accept queue node */
 		}accept;
-	}u;
 
+		struct
+		{
+			ev_io_t				io;
+			ev_list_t			w_queue;		/**< #ev_read_t Write queue */
+			ev_list_t			r_queue;		/**< #ev_write_t Read queue */
+		}stream;
+	}u;
+};
+
+struct ev_write
+{
+	ev_list_node_t				node;
+	struct
+	{
+		ev_write_cb				cb;				/**< Write complete callback */
+		ev_buf_t*				bufs;			/**< Buffer list */
+		size_t					nbuf;			/**< Buffer list count */
+	}data;
+};
+
+struct ev_read
+{
+	ev_list_node_t				node;
+	struct
+	{
+		ev_read_cb				cb;				/**< Read complete callback */
+		ev_buf_t*				bufs;			/**< Buffer list */
+		size_t					nbuf;			/**< Buffer list count */
+	}data;
 };
 
 /**
@@ -387,8 +419,26 @@ int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen);
  */
 int ev_tcp_accept(ev_tcp_t* acpt, ev_tcp_t* conn, ev_accept_cb cb);
 
+/**
+ * @brief Write data
+ * @param[in] sock	Socket handle
+ * @param[in] req	Write request
+ * @param[in] bufs	Buffer list
+ * @param[in] nbufs	Buffer list count
+ * @param[in] cb	Write complete callback
+ * @return			#ev_errno_t
+ */
 int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb);
 
+/**
+ * @brief Read data
+ * @param[in] sock	Socket handle
+ * @param[in] req	Read request
+ * @param[in] bufs	Buffer list
+ * @param[in] nbufs	Buffer list count
+ * @param[in] cb	Read complete callback
+ * @return			#ev_errno_t
+ */
 int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev_read_cb cb);
 
 #ifdef __cplusplus

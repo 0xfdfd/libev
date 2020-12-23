@@ -1,3 +1,4 @@
+#include <sys/uio.h>
 #include <assert.h>
 #include <unistd.h>
 #include "loop.h"
@@ -128,7 +129,7 @@ static void _ev_tcp_on_accept(ev_io_t* io, unsigned evts)
 		conn->fd = accept(acpt->fd, (struct sockaddr*)&conn->u.accept.peeraddr, &conn->u.accept.addrlen);
 	} while (conn->fd == -1 && errno == EINTR);
 
-	conn->base.flags &= ~EV_TCP_ACCEPT_PENDING;
+	conn->base.flags &= ~EV_TCP_ACCEPTING;
 
 	int ret = conn->fd >= 0 ? EV_SUCCESS : errno;
 	conn->u.accept.cb(acpt, conn, ret);
@@ -142,7 +143,7 @@ static void _ev_tcp_on_accept(ev_io_t* io, unsigned evts)
 int ev_tcp_accept(ev_tcp_t* acpt, ev_tcp_t* conn, ev_accept_cb cb)
 {
 	int ret;
-	if (conn->base.flags & EV_TCP_ACCEPT_PENDING)
+	if (conn->base.flags & EV_TCP_ACCEPTING)
 	{
 		return EV_EINPROGRESS;
 	}
@@ -163,7 +164,125 @@ int ev_tcp_accept(ev_tcp_t* acpt, ev_tcp_t* conn, ev_accept_cb cb)
 
 	conn->u.accept.cb = cb;
 	ev_list_push_back(&acpt->u.listen.accept_queue, &conn->u.accept.accept_node);
-	conn->base.flags |= EV_TCP_ACCEPT_PENDING;
+	conn->base.flags |= EV_TCP_ACCEPTING;
+
+	return EV_SUCCESS;
+}
+
+static void _ev_tcp_cleanup_all_read_request(ev_tcp_t* sock, int err)
+{
+	ev_list_node_t* it;
+	while ((it = ev_list_pop_front(&sock->u.stream.r_queue)) != NULL)
+	{
+		ev_read_t* req = container_of(it, ev_read_t, node);
+		req->data.cb(req, 0, err);
+	}
+}
+
+static void _ev_tcp_do_read(ev_tcp_t* sock)
+{
+	ev_list_node_t* it = ev_list_pop_front(&sock->u.stream.r_queue);
+	assert(it != NULL);
+	ev_read_t* req = container_of(it, ev_read_t, node);
+
+	ssize_t r;
+	do 
+	{
+		r = readv(sock->fd, (struct iovec*)req->data.bufs, req->data.nbuf);
+	} while (r == -1 && errno == EINTR);
+
+	/* Peer close */
+	if (r == 0)
+	{
+		req->data.cb(req, 0, EV_EOF);
+		goto fin;
+	}
+
+	/* Try again */
+	if (r < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+	{
+		ev_list_push_front(&sock->u.stream.r_queue, it);
+		return;
+	}
+
+	if (r < 0)
+	{
+		_ev_tcp_cleanup_all_read_request(sock, errno);
+		return;
+	}
+
+	req->data.cb(req, r, EV_SUCCESS);
+
+fin:
+	if (ev_list_size(&sock->u.stream.r_queue) == 0)
+	{
+		ev__io_del(sock->base.loop, &sock->u.stream.io, EV_IO_IN);
+	}
+}
+
+static void _ev_tcp_do_write(ev_tcp_t* sock)
+{
+	ev_list_node_t* it = ev_list_pop_front(&sock->u.stream.w_queue);
+	assert(it != NULL);
+	ev_write_t* req = container_of(it, ev_write_t, node);
+
+	// TODO write data
+}
+
+static void _ev_tcp_on_stream(ev_io_t* io, unsigned evts)
+{
+	ev_tcp_t* sock = container_of(io, ev_tcp_t, u.stream.io);
+	if (evts & EV_IO_IN)
+	{
+		_ev_tcp_do_read(sock);
+	}
+	if (evts & EV_IO_OUT)
+	{
+		_ev_tcp_do_write(sock);
+	}
+}
+
+static void _ev_tcp_setup_stream(ev_tcp_t* sock)
+{
+	ev__io_init(&sock->u.stream.io, sock->fd, _ev_tcp_on_stream);
+	ev_list_init(&sock->u.stream.w_queue);
+	ev_list_init(&sock->u.stream.r_queue);
+}
+
+int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb)
+{
+	assert(sizeof(ev_buf_t) == sizeof(struct iovec));
+
+	if (!(sock->base.flags & EV_TCP_STREAMING))
+	{
+		_ev_tcp_setup_stream(sock);
+		sock->base.flags |= EV_TCP_STREAMING;
+	}
+
+	req->data.cb = cb;
+	req->data.bufs = bufs;
+	req->data.nbuf = nbuf;
+	ev_list_push_back(&sock->u.stream.w_queue, &req->node);
+
+	ev__io_add(sock->base.loop, &sock->u.stream.io, EV_IO_OUT);
+
+	return EV_SUCCESS;
+}
+
+int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev_read_cb cb)
+{
+	if (!(sock->base.flags & EV_TCP_STREAMING))
+	{
+		_ev_tcp_setup_stream(sock);
+		sock->base.flags |= EV_TCP_STREAMING;
+	}
+
+	req->data.cb = cb;
+	req->data.bufs = bufs;
+	req->data.nbuf = nbuf;
+	ev_list_push_back(&sock->u.stream.r_queue, &req->node);
+
+	ev__io_add(sock->base.loop, &sock->u.stream.io, EV_IO_IN);
 
 	return EV_SUCCESS;
 }

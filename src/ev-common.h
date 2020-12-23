@@ -29,7 +29,8 @@ typedef enum ev_handle_flag
 
 	/* Used by ev_tcp_t */
 	EV_TCP_LISTING			= 0x01 << 0x08,
-	EV_TCP_ACCEPT_PENDING	= 0x01 << 0x09,
+	EV_TCP_ACCEPTING		= 0x01 << 0x09,
+	EV_TCP_STREAMING		= 0x01 << 0x0A,
 }ev_handle_flag_t;
 
 /**
