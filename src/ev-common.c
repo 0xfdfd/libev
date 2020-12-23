@@ -140,6 +140,7 @@ static void _ev_to_close(ev_todo_t* todo)
 
 void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_close_cb close_cb)
 {
+	assert(close_cb != NULL);
 	handle->loop = loop;
 	handle->close_cb = close_cb;
 	handle->close_queue = (ev_todo_t)EV_TODO_INIT;

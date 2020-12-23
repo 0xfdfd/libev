@@ -22,10 +22,14 @@ extern "C" {
 
 typedef enum ev_handle_flag
 {
-	/* Used by all handles. */
-	EV_HANDLE_CLOSING	= 0x01 << 0x00,
-	EV_HANDLE_CLOSED	= 0x01 << 0x01,
-	EV_HANDLE_ACTIVE	= 0x01 << 0x02,
+	/* Used by all handles. Bit 0-7. */
+	EV_HANDLE_CLOSING		= 0x01 << 0x00,
+	EV_HANDLE_CLOSED		= 0x01 << 0x01,
+	EV_HANDLE_ACTIVE		= 0x01 << 0x02,
+
+	/* Used by ev_tcp_t */
+	EV_TCP_LISTING			= 0x01 << 0x08,
+	EV_TCP_ACCEPT_PENDING	= 0x01 << 0x09,
 }ev_handle_flag_t;
 
 /**

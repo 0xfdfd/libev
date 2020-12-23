@@ -6,6 +6,7 @@ extern "C" {
 
 #include <errno.h>
 #include <pthread.h>
+#include <netinet/in.h>
 #include "ev/map.h"
 
 /**

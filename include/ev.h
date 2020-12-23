@@ -19,6 +19,9 @@ typedef enum ev_errno ev_errno_t;
 enum ev_loop_mode;
 typedef enum ev_loop_mode ev_loop_mode_t;
 
+enum ev_tcp_flags;
+typedef enum ev_tcp_flags ev_tcp_flags_t;
+
 struct ev_handle;
 typedef struct ev_handle ev_handle_t;
 
@@ -36,6 +39,15 @@ typedef struct ev_todo ev_todo_t;
 
 struct ev_async;
 typedef struct ev_async ev_async_t;
+
+struct ev_tcp;
+typedef struct ev_tcp ev_tcp_t;
+
+struct ev_write;
+typedef struct ev_write ev_write_t;
+
+struct ev_read;
+typedef struct ev_read ev_read_t;
 
 /**
  * @brief Called when a object is closed
@@ -68,12 +80,41 @@ typedef void(*ev_todo_cb)(ev_todo_t* todo);
  */
 typedef void (*ev_async_cb)(ev_async_t* async);
 
+typedef void (*ev_tcp_close_cb)(ev_tcp_t* sock);
+
+/**
+ * @brief Accept callback
+ * @param[in] from		Listen socket
+ * @param[in] to		Accepted socket
+ * @param[in] stat		Accept result
+ */
+typedef void (*ev_accept_cb)(ev_tcp_t* from, ev_tcp_t* to, int stat);
+
+/**
+ * @brief Write callback
+ * @param[in] req		Write request
+ * @param[in] size		Write size
+ * @param[in] stat		Write result
+ */
+typedef void (*ev_write_cb)(ev_write_t* req, size_t size, int stat);
+
+/**
+ * @brief Read callback
+ * @param[in] req		Read callback
+ * @param[in] size		Read size
+ * @param[in] stat		Read result
+ */
+typedef void (*ev_read_cb)(ev_read_t* req, size_t size, int stat);
+
 enum ev_errno
 {
 	EV_SUCCESS			= 0,			/**< success */
 
 	/* Posix compatible error code */
+	EV_EACCES			= EACCES,		/**< permission denied */
 	EV_EBUSY			= EBUSY,		/**< resource busy or locked */
+	EV_EINVAL			= EINVAL,		/**< invalid argument */
+	EV_EINPROGRESS		= EINPROGRESS,	/**< Operation in progress */
 };
 
 enum ev_loop_mode
@@ -83,73 +124,106 @@ enum ev_loop_mode
 	ev_loop_mode_nowait,
 };
 
+enum ev_tcp_flags
+{
+	EV_TCP_IPV4 = 0x01 << 0x00,
+	EV_TCP_IPV6 = 0x01 << 0x01,
+};
+
 struct ev_todo
 {
-	ev_list_node_t		node;			/**< List node */
-	ev_todo_cb			cb;				/**< Callback */
+	ev_list_node_t			node;			/**< List node */
+	ev_todo_cb				cb;				/**< Callback */
 };
-#define EV_TODO_INIT	{ EV_LIST_NODE_INIT, NULL }
+#define EV_TODO_INIT		{ EV_LIST_NODE_INIT, NULL }
 
 struct ev_loop
 {
-	uint64_t			hwtime;			/**< A fast clock time in milliseconds */
-	size_t				active_handles;	/**< Active handle counter */
+	uint64_t				hwtime;			/**< A fast clock time in milliseconds */
+	size_t					active_handles;	/**< Active handle counter */
 
 	struct
 	{
-		ev_list_t		queue;			/**< (#ev_todo_t) Pending task */
+		ev_list_t			queue;			/**< (#ev_todo_t) Pending task */
 	}todo;
 
 	struct
 	{
-		ev_map_t		heap;			/**< (#ev_timer_t) Timer heap */
+		ev_map_t			heap;			/**< (#ev_timer_t) Timer heap */
 	}timer;
 
 	struct
 	{
-		unsigned		b_stop : 1;		/**< Flag: need to stop */
+		unsigned			b_stop : 1;		/**< Flag: need to stop */
 	}mask;
 
-	ev_loop_plt_t		backend;		/**< Platform related implementation */
+	ev_loop_plt_t			backend;		/**< Platform related implementation */
 };
-#define EV_LOOP_INIT	{ 0, 0, { EV_LIST_INIT }, { EV_MAP_INIT(NULL, NULL) }, { 0 }, EV_LOOP_PLT_INIT }
+#define EV_LOOP_INIT		{ 0, 0, { EV_LIST_INIT }, { EV_MAP_INIT(NULL, NULL) }, { 0 }, EV_LOOP_PLT_INIT }
 
 struct ev_handle
 {
-	ev_loop_t*			loop;			/**< The event loop belong to */
-	ev_close_cb			close_cb;		/**< Close callback */
-	ev_todo_t			close_queue;	/**< Close queue token */
-	unsigned			flags;			/**< Handle flags */
+	ev_loop_t*				loop;			/**< The event loop belong to */
+	ev_close_cb				close_cb;		/**< Close callback */
+	ev_todo_t				close_queue;	/**< Close queue token */
+	unsigned				flags;			/**< Handle flags */
 };
 
 struct ev_timer
 {
-	ev_handle_t			base;			/**< Base object */
-	ev_map_node_t		node;			/**< (#ev_loop_t::timer::heap) */
+	ev_handle_t				base;			/**< Base object */
+	ev_map_node_t			node;			/**< (#ev_loop_t::timer::heap) */
 
-	ev_timer_cb			close_cb;		/**< Close callback */
+	ev_timer_cb				close_cb;		/**< Close callback */
 
 	struct
 	{
-		uint64_t		active;			/**< Active time */
+		uint64_t			active;			/**< Active time */
 	}data;
 
 	struct
 	{
-		ev_timer_cb		cb;				/**< User callback */
-		uint64_t		timeout;		/**< Timeout */
-		uint64_t		repeat;			/**< Repeat */
+		ev_timer_cb			cb;				/**< User callback */
+		uint64_t			timeout;		/**< Timeout */
+		uint64_t			repeat;			/**< Repeat */
 	}attr;
 };
 
 struct ev_async
 {
-	ev_handle_t			base;			/**< Base object */
+	ev_handle_t				base;			/**< Base object */
 
-	ev_async_cb			active_cb;		/**< Active callback */
-	ev_async_cb			close_cb;		/**< Close callback */
+	ev_async_cb				active_cb;		/**< Active callback */
+	ev_async_cb				close_cb;		/**< Close callback */
 
-	ev_async_backend_t	backend;		/**< Platform related implementation */
+	ev_async_backend_t		backend;		/**< Platform related implementation */
+};
+
+struct ev_tcp
+{
+	ev_handle_t				base;			/**< Base object */
+	ev_tcp_close_cb			close_cb;		/**< User close callback */
+	int						flags;			/**< User flags */
+
+	int						fd;				/**< Socket file descriptor */
+
+	union
+	{
+		struct
+		{
+			ev_io_t			io;				/**< Accept IO */
+			ev_list_t		accept_queue;	/**< Accept queue */
+		}listen;
+
+		struct
+		{
+			ev_accept_cb		cb;				/**< Accept callback */
+			struct sockaddr_in6	peeraddr;		/**< Peer address */
+			socklen_t			addrlen;
+			ev_list_node_t		accept_node;	/**< Accept queue node */
+		}accept;
+	}u;
+
 };
 
 /**
@@ -278,6 +352,37 @@ void ev_async_weakup(ev_async_t* handle);
  * @param[in] cb		A pointer to an application-defined InitOnceCallback function.
  */
 void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
+
+/**
+ * @brief Initialize a tcp socket
+ * @param[in] loop		Event loop
+ * @param[out] tcp		TCP handle
+ * @param[in] flags		#ev_tcp_flags_t. 0 equals EV_TCP_IPV4 | EV_TCP_IPV4.
+ */
+int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp, int flags);
+
+/**
+ * @brief Destroy socket
+ * @param[in] sock		Socket
+ * @param[in] cb		Destroy callback
+ */
+void ev_tcp_exit(ev_tcp_t* sock, ev_tcp_close_cb cb);
+
+/**
+ * @brief Bind the handle to an address and port.
+ * addr should point to an initialized struct sockaddr_in or struct sockaddr_in6.
+ * @param[in] tcp		Socket handler
+ * @param[in] addr		Bind address
+ * @param[in] addrlen	Address length
+ * @return				#ev_errno_t
+ */
+int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen);
+
+int ev_tcp_accept(ev_tcp_t* acpt, ev_tcp_t* conn, ev_accept_cb cb);
+
+int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb);
+
+int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev_read_cb cb);
 
 #ifdef __cplusplus
 }

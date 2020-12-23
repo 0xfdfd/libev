@@ -17,7 +17,8 @@ else()
 	list(APPEND ev_sources
 		src/unix/async.c
 		src/unix/loop.c
-		src/unix/once.c)
+		src/unix/once.c
+		src/unix/tcp.c)
 endif()
 add_library(${PROJECT_NAME} ${ev_sources})
 
