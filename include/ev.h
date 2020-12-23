@@ -378,6 +378,13 @@ void ev_tcp_exit(ev_tcp_t* sock, ev_tcp_close_cb cb);
  */
 int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen);
 
+/**
+ * @brief Accept a connection from listen socket
+ * @param[in] acpt	Listen socket
+ * @param[in] conn	The socket to store new connection
+ * @param[in] cb	Accept callback
+ * @return			#ev_errno_t
+ */
 int ev_tcp_accept(ev_tcp_t* acpt, ev_tcp_t* conn, ev_accept_cb cb);
 
 int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb);
