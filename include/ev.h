@@ -19,9 +19,6 @@ typedef enum ev_errno ev_errno_t;
 enum ev_loop_mode;
 typedef enum ev_loop_mode ev_loop_mode_t;
 
-enum ev_tcp_flags;
-typedef enum ev_tcp_flags ev_tcp_flags_t;
-
 struct ev_handle;
 typedef struct ev_handle ev_handle_t;
 
@@ -132,12 +129,6 @@ enum ev_loop_mode
 	ev_loop_mode_nowait,
 };
 
-enum ev_tcp_flags
-{
-	EV_TCP_IPV4 = 0x01 << 0x00,
-	EV_TCP_IPV6 = 0x01 << 0x01,
-};
-
 struct ev_todo
 {
 	ev_list_node_t			node;			/**< List node */
@@ -211,7 +202,6 @@ struct ev_tcp
 {
 	ev_handle_t				base;			/**< Base object */
 	ev_tcp_close_cb			close_cb;		/**< User close callback */
-	int						flags;			/**< User flags */
 
 	int						fd;				/**< Socket file descriptor */
 
@@ -398,9 +388,8 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
  * @brief Initialize a tcp socket
  * @param[in] loop		Event loop
  * @param[out] tcp		TCP handle
- * @param[in] flags		#ev_tcp_flags_t. 0 equals EV_TCP_IPV4 | EV_TCP_IPV4.
  */
-int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp, int flags);
+int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp);
 
 /**
  * @brief Destroy socket

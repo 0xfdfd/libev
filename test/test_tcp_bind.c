@@ -18,15 +18,14 @@ static void _on_close_socket(ev_tcp_t* sock)
 TEST(tcp_bind)
 {
 	ASSERT_EQ_D32(ev_loop_init(&s_loop), 0);
-	ASSERT_EQ_D32(ev_tcp_init(&s_loop, &s_sock, 0), 0);
+	ASSERT_EQ_D32(ev_tcp_init(&s_loop, &s_sock), 0);
 
 	struct sockaddr_in addr;
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-	addr.sin_port = 0;
-	size_t addrlen = sizeof(addr);
-	ASSERT_EQ_D32(ev_tcp_bind(&s_sock, (struct sockaddr*)&addr, addrlen), 0);
+	addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	addr.sin_port = htons(0);
+	ASSERT_EQ_D32(ev_tcp_bind(&s_sock, (struct sockaddr*)&addr, sizeof(addr)), 0);
 
 	ev_tcp_exit(&s_sock, _on_close_socket);
 	ASSERT_EQ_D32(ev_loop_run(&s_loop, ev_loop_mode_default), 0);

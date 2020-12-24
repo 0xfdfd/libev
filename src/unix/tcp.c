@@ -24,28 +24,14 @@ static void _ev_tcp_on_close(ev_handle_t* handle)
 	}
 }
 
-static int _ev_tcp_flags_to_domain(int flags)
-{
-	switch (flags)
-	{
-	case EV_TCP_IPV4:
-		return AF_INET;
-	case EV_TCP_IPV6:
-		return AF_INET6;
-	case 0:
-	default:
-		return AF_INET6;
-	}
-}
-
-static int _ev_tcp_setup_fd(ev_tcp_t* tcp, int* new_fd)
+static int _ev_tcp_setup_fd(ev_tcp_t* tcp, int domain, int* new_fd)
 {
 	*new_fd = 0;
 	if (tcp->fd != EV_INVALID_FD)
 	{
 		return EV_SUCCESS;
 	}
-	if ((tcp->fd = socket(_ev_tcp_flags_to_domain(tcp->flags), SOCK_STREAM, 0)) == -1)
+	if ((tcp->fd = socket(domain, SOCK_STREAM, 0)) == -1)
 	{
 		return errno;
 	}
@@ -236,11 +222,10 @@ static void _ev_tcp_setup_stream(ev_tcp_t* sock)
 	ev_list_init(&sock->u.stream.r_queue);
 }
 
-int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp, int flags)
+int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp)
 {
 	ev__handle_init(loop, &tcp->base, _ev_tcp_on_close);
 	tcp->close_cb = NULL;
-	tcp->flags = flags;
 	tcp->fd = EV_INVALID_FD;
 
 	return EV_SUCCESS;
@@ -256,7 +241,7 @@ int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen)
 {
 	int ret;
 	int flag_new_fd;
-	if ((ret = _ev_tcp_setup_fd(tcp, &flag_new_fd)) != EV_SUCCESS)
+	if ((ret = _ev_tcp_setup_fd(tcp, addr->sa_family, &flag_new_fd)) != EV_SUCCESS)
 	{
 		return ret;
 	}
