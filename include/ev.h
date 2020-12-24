@@ -80,6 +80,10 @@ typedef void(*ev_todo_cb)(ev_todo_t* todo);
  */
 typedef void (*ev_async_cb)(ev_async_t* async);
 
+/**
+ * @brief Close callback for #ev_tcp_t
+ * @param[in] sock		A closed socket
+ */
 typedef void (*ev_tcp_close_cb)(ev_tcp_t* sock);
 
 /**
@@ -245,6 +249,11 @@ struct ev_write
 		ev_buf_t*				bufs;			/**< Buffer list */
 		size_t					nbuf;			/**< Buffer list count */
 	}data;
+	struct
+	{
+		size_t					idx;			/**< Write buffer index */
+		size_t					len;			/**< Total write size */
+	}info;
 };
 
 struct ev_read
@@ -409,6 +418,14 @@ void ev_tcp_exit(ev_tcp_t* sock, ev_tcp_close_cb cb);
  * @return				#ev_errno_t
  */
 int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen);
+
+/**
+ * @brief Start listening for incoming connections.
+ * @param[in] tcp		Listen socket
+ * @param[in] backlog	The number of connections the kernel might queue
+ * @return				#ev_errno_t
+ */
+int ev_tcp_listen(ev_tcp_t* tcp, int backlog);
 
 /**
  * @brief Accept a connection from listen socket
