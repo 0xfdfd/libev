@@ -1,10 +1,9 @@
-#ifndef __EV_WIN_UNIX_H__
-#define __EV_WIN_UNIX_H__
+#ifndef __EV_LOOP_UNIX_H__
+#define __EV_LOOP_UNIX_H__
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "ev.h"
 #include "ev-common.h"
 
 #include <sys/epoll.h>

@@ -1,5 +1,5 @@
-#ifndef __EV_WIN_LOOP_H__
-#define __EV_WIN_LOOP_H__
+#ifndef __EV_LOOP_WIN_H__
+#define __EV_LOOP_WIN_H__
 #ifdef __cplusplus
 extern "C" {
 #endif
