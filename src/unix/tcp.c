@@ -263,6 +263,7 @@ int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen)
 
 	if ((ret = bind(tcp->fd, addr, addrlen)) != 0)
 	{
+		ret = errno;
 		goto err_bind;
 	}
 
