@@ -23,7 +23,7 @@ TEST(tcp_bind)
 	struct sockaddr_in addr;
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 	addr.sin_port = htons(0);
 	ASSERT_EQ_D32(ev_tcp_bind(&s_sock, (struct sockaddr*)&addr, sizeof(addr)), 0);
 
