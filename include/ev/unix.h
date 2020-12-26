@@ -7,7 +7,6 @@ extern "C" {
 #include <errno.h>
 #include <pthread.h>
 #include <netinet/in.h>
-#include "ev/map.h"
 
 /**
  * @brief Buffer
@@ -61,6 +60,35 @@ typedef struct ev_async_backend
 	int				fd_write;		/**< File descriptor for write */
 }ev_async_backend_t;
 #define EV_ASYNC_BACKEND_INIT	{ EV_IO_INIT, -1 }
+
+typedef struct ev_tcp_backend
+{
+	int						fd;				/**< Socket file descriptor */
+
+	union
+	{
+		struct
+		{
+			ev_io_t			io;				/**< Accept IO */
+			ev_list_t		accept_queue;	/**< Accept queue */
+		}listen;
+
+		struct
+		{
+			ev_accept_cb		cb;				/**< Accept callback */
+			struct sockaddr_in6	peeraddr;		/**< Peer address */
+			socklen_t			addrlen;
+			ev_list_node_t		accept_node;	/**< Accept queue node */
+		}accept;
+
+		struct
+		{
+			ev_io_t				io;
+			ev_list_t			w_queue;		/**< #ev_read_t Write queue */
+			ev_list_t			r_queue;		/**< #ev_write_t Read queue */
+		}stream;
+	}u;
+}ev_tcp_backend_t;
 
 #ifdef __cplusplus
 }

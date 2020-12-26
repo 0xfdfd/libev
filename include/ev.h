@@ -4,12 +4,6 @@
 extern "C" {
 #endif
 
-#if defined(_WIN32)
-#	include "ev/win.h"
-#else
-#	include "ev/unix.h"
-#endif
-
 #include "ev/map.h"
 #include "ev/list.h"
 
@@ -107,6 +101,12 @@ typedef void (*ev_write_cb)(ev_write_t* req, size_t size, int stat);
  */
 typedef void (*ev_read_cb)(ev_read_t* req, size_t size, int stat);
 
+#if defined(_WIN32)
+#	include "ev/win.h"
+#else
+#	include "ev/unix.h"
+#endif
+
 enum ev_errno
 {
 	EV_SUCCESS			= 0,			/**< success */
@@ -203,31 +203,7 @@ struct ev_tcp
 	ev_handle_t				base;			/**< Base object */
 	ev_tcp_close_cb			close_cb;		/**< User close callback */
 
-	int						fd;				/**< Socket file descriptor */
-
-	union
-	{
-		struct
-		{
-			ev_io_t			io;				/**< Accept IO */
-			ev_list_t		accept_queue;	/**< Accept queue */
-		}listen;
-
-		struct
-		{
-			ev_accept_cb		cb;				/**< Accept callback */
-			struct sockaddr_in6	peeraddr;		/**< Peer address */
-			socklen_t			addrlen;
-			ev_list_node_t		accept_node;	/**< Accept queue node */
-		}accept;
-
-		struct
-		{
-			ev_io_t				io;
-			ev_list_t			w_queue;		/**< #ev_read_t Write queue */
-			ev_list_t			r_queue;		/**< #ev_write_t Read queue */
-		}stream;
-	}u;
+	ev_tcp_backend_t		backend;		/**< Platform related implementation */
 };
 
 struct ev_write
