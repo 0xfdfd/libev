@@ -74,9 +74,17 @@ void ev__loop_update_time(ev_loop_t* loop)
 
 int ev__translate_sys_error_win(int err)
 {
-	if (err <= 0)
+	static int s_err_table[][2] = {
+		{ WSAEINVAL, EINVAL },
+	};
+
+	size_t i;
+	for (i = 0; i < ARRAY_SIZE(s_err_table); i++)
 	{
-		return err;
+		if (err == s_err_table[i][0])
+		{
+			return s_err_table[i][1];
+		}
 	}
 
 	ABORT();
