@@ -1,6 +1,7 @@
 #include <assert.h>
 #include "ev-platform.h"
 #include "loop.h"
+#include "tcp.h"
 
 /* Frequency of the high-resolution clock. */
 static uint64_t hrtime_frequency_ = 0;
@@ -45,25 +46,6 @@ static uint64_t _ev_hrtime_win(unsigned int scale)
 	return (uint64_t)result;
 }
 
-void ev__loop_update_time(ev_loop_t* loop)
-{
-	static ev_once_t s_guard = EV_ONCE_INIT;
-	ev_once_execute(&s_guard, _ev_time_init_win);
-
-	loop->hwtime = _ev_hrtime_win(1000);
-}
-
-static int _ev_translate_sys_error_win(int err)
-{
-	if (err <= 0)
-	{
-		return err;
-	}
-
-	assert(0);
-	return err;
-}
-
 static void _ev_pool_win_handle_req(OVERLAPPED_ENTRY* overlappeds, ULONG count)
 {
 	ULONG i;
@@ -75,6 +57,30 @@ static void _ev_pool_win_handle_req(OVERLAPPED_ENTRY* overlappeds, ULONG count)
 			req->cb(req);
 		}
 	}
+}
+
+static void _ev_init_once_win(void)
+{
+	ev__tcp_init();
+}
+
+void ev__loop_update_time(ev_loop_t* loop)
+{
+	static ev_once_t s_guard = EV_ONCE_INIT;
+	ev_once_execute(&s_guard, _ev_time_init_win);
+
+	loop->hwtime = _ev_hrtime_win(1000);
+}
+
+int ev__translate_sys_error_win(int err)
+{
+	if (err <= 0)
+	{
+		return err;
+	}
+
+	ABORT();
+	return err;
 }
 
 void ev__poll(ev_loop_t* loop, uint32_t timeout)
@@ -128,6 +134,7 @@ void ev__poll(ev_loop_t* loop, uint32_t timeout)
 void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb cb)
 {
 	req->cb = cb;
+	memset(&req->overlapped, 0, sizeof(req->overlapped));
 }
 
 void ev__loop_exit_backend(ev_loop_t* loop)
@@ -138,10 +145,13 @@ void ev__loop_exit_backend(ev_loop_t* loop)
 
 int ev__loop_init_backend(ev_loop_t* loop)
 {
+	static ev_once_t once = EV_ONCE_INIT;
+	ev_once_execute(&once, _ev_init_once_win);
+
 	loop->backend.iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 1);
 	if (loop->backend.iocp == NULL)
 	{
-		return _ev_translate_sys_error_win(GetLastError());
+		return ev__translate_sys_error_win(GetLastError());
 	}
 	return EV_SUCCESS;
 }

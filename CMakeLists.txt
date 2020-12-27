@@ -12,7 +12,8 @@ if(WIN32)
 	list(APPEND ev_sources
 		src/win/async.c
 		src/win/loop.c
-		src/win/once.c)
+		src/win/once.c
+		src/win/tcp.c)
 else()
 	list(APPEND ev_sources
 		src/unix/async.c
@@ -28,6 +29,13 @@ target_link_libraries(${PROJECT_NAME}
 	PRIVATE
 		Threads::Threads
 )
+if(WIN32)
+	target_link_libraries(${PROJECT_NAME}
+		PRIVATE
+			Ws2_32
+			Mswsock
+	)
+endif()
 
 # define target include search paths
 target_include_directories(${PROJECT_NAME}

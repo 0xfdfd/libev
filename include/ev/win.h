@@ -7,6 +7,8 @@ extern "C" {
 #include <stdint.h>
 #include <windows.h>
 
+typedef SOCKET ev_socket_t;
+
 /**
  * @brief Buffer
  * @internal Must share the same layout with WSABUF
@@ -50,6 +52,28 @@ typedef struct ev_async_backend
 	ev_iocp_t		iocp;		/**< IOCP request */
 }ev_async_backend_t;
 #define EV_ASYNC_BACKEND_INIT	{ EV_IOCP_INIT }
+
+typedef struct ev_tcp_backend
+{
+	ev_socket_t				sock;			/**< Socket handle */
+	int						af;				/**< AF_INET / AF_INET6 */
+
+	union
+	{
+		struct
+		{
+			ev_iocp_t		io;				/**< IOCP handle */
+			ev_list_t		accept_queue;	/**< Accept queue */
+		}listen;
+		struct
+		{
+			ev_iocp_t		io;				/**< IOCP handle */
+			ev_accept_cb	cb;				/**< Accept callback */
+			ev_list_node_t	node;			/**< Accept queue node */
+			ev_tcp_t*		listen;			/**< Listen socket */
+		}accept;
+	}u;
+}ev_tcp_backend_t;
 
 #ifdef __cplusplus
 }

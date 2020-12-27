@@ -8,6 +8,8 @@ extern "C" {
 #include <pthread.h>
 #include <netinet/in.h>
 
+typedef int ev_socket_t;
+
 /**
  * @brief Buffer
  * @internal Must share the same layout with struct iovec

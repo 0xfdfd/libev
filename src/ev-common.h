@@ -7,27 +7,25 @@ extern "C" {
 #include <stdlib.h>
 #include "ev.h"
 
-#if !defined(container_of)
-#	if defined(__GNUC__) || defined(__clang__)
-#		define container_of(ptr, type, member) \
-			({ \
-				const typeof(((type *)0)->member)*__mptr = (ptr); \
-				(type *)((char *)__mptr - offsetof(type, member)); \
-			})
-#	else
-#		define container_of(ptr, type, member) \
-			((type *) ((char *) (ptr) - offsetof(type, member)))
-#	endif
+#if defined(__GNUC__) || defined(__clang__)
+#	define container_of(ptr, type, member) \
+		({ \
+			const typeof(((type *)0)->member)*__mptr = (ptr); \
+			(type *)((char *)__mptr - offsetof(type, member)); \
+		})
+#else
+#	define container_of(ptr, type, member) \
+		((type *) ((char *) (ptr) - offsetof(type, member)))
 #endif
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 #if defined(_WIN32)
-#	define ABORT()		__debugbreak(); abort()
+#	define ABORT()		__debugbreak()
 #elif (defined(__clang__) || defined(__GNUC__)) && (defined(__x86_64__) || defined(__i386__))
-#	define ABORT()		asm("int3"); abort()
+#	define ABORT()		asm("int3")
 #else
-#	define ABORT()		*(volatile int*)NULL = 1; abort()
+#	define ABORT()		*(volatile int*)NULL = 1
 #endif
 
 typedef enum ev_handle_flag
