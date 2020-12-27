@@ -30,20 +30,7 @@ static int _ev_tcp_init_backend(ev_tcp_t* tcp)
 	return EV_SUCCESS;
 }
 
-int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp)
-{
-	ev__handle_init(loop, &tcp->base, _ev_tcp_on_close);
-	tcp->close_cb = NULL;
-	return _ev_tcp_init_backend(tcp);
-}
-
-void ev_tcp_exit(ev_tcp_t* sock, ev_tcp_close_cb cb)
-{
-	sock->close_cb = cb;
-	ev__handle_exit(&sock->base);
-}
-
-static int _tcp_setup_sock(ev_tcp_t* sock, int af, int with_iocp)
+static int _ev_tcp_setup_sock(ev_tcp_t* sock, int af, int with_iocp)
 {
 	int ret;
 
@@ -84,6 +71,40 @@ err:
 	return ret;
 }
 
+static void _ev_tcp_on_listen_win(ev_iocp_t* req)
+{
+	(void)req;
+	assert(0);	// Should not go into here
+}
+
+static void _ev_setup_listen(ev_tcp_t* sock)
+{
+	ev_list_init(&sock->backend.u.listen.accept_queue);
+	ev__iocp_init(&sock->backend.u.listen.io, _ev_tcp_on_listen_win);
+}
+
+static void _ev_tcp_on_accept_win(ev_iocp_t* req)
+{
+	ev_tcp_t* conn = container_of(req, ev_tcp_t, backend.u.accept.io);
+	ev_tcp_t* lisn = conn->backend.u.accept.listen;
+
+	ev_list_erase(&lisn->backend.u.listen.accept_queue, &conn->backend.u.accept.node);
+	lisn->backend.u.accept.cb(lisn, conn, EV_SUCCESS);
+}
+
+int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp)
+{
+	ev__handle_init(loop, &tcp->base, _ev_tcp_on_close);
+	tcp->close_cb = NULL;
+	return _ev_tcp_init_backend(tcp);
+}
+
+void ev_tcp_exit(ev_tcp_t* sock, ev_tcp_close_cb cb)
+{
+	sock->close_cb = cb;
+	ev__handle_exit(&sock->base);
+}
+
 int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen)
 {
 	int ret;
@@ -91,7 +112,7 @@ int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen)
 
 	if (tcp->backend.sock == INVALID_SOCKET)
 	{
-		if ((ret = _tcp_setup_sock(tcp, addr->sa_family, 1)) != EV_SUCCESS)
+		if ((ret = _ev_tcp_setup_sock(tcp, addr->sa_family, 1)) != EV_SUCCESS)
 		{
 			return ret;
 		}
@@ -114,34 +135,21 @@ err:
 	return ret;
 }
 
-static void _ev_tcp_on_listen_win(ev_iocp_t* req)
-{
-	(void)req;
-	assert(0);	// Should not go into here
-}
-
-static void _ev_setup_listen(ev_tcp_t* sock)
-{
-	ev_list_init(&sock->backend.u.listen.accept_queue);
-	ev__iocp_init(&sock->backend.u.listen.io, _ev_tcp_on_listen_win);
-}
-
 int ev_tcp_listen(ev_tcp_t* tcp, int backlog)
 {
-	if (listen(tcp->backend.sock, backlog) == SOCKET_ERROR)
+	if (tcp->base.flags & EV_TCP_LISTING)
+	{
+		return EV_EADDRINUSE;
+	}
+
+	int ret;
+	if ((ret = listen(tcp->backend.sock, backlog)) == SOCKET_ERROR)
 	{
 		return ev__translate_sys_error_win(WSAGetLastError());
 	}
+	tcp->base.flags |= EV_TCP_LISTING;
+
 	return EV_SUCCESS;
-}
-
-static void _ev_tcp_on_accept_win(ev_iocp_t* req)
-{
-	ev_tcp_t* conn = container_of(req, ev_tcp_t, backend.u.accept.io);
-	ev_tcp_t* lisn = conn->backend.u.accept.listen;
-
-	ev_list_erase(&lisn->backend.u.listen.accept_queue, &conn->backend.u.accept.node);
-	lisn->backend.u.accept.cb(lisn, conn, EV_SUCCESS);
 }
 
 int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
@@ -150,7 +158,7 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
 	int flag_new_sock = 0;
 	if (conn->backend.sock == INVALID_SOCKET)
 	{
-		if ((ret = _tcp_setup_sock(conn, lisn->backend.af, 0)) != EV_SUCCESS)
+		if ((ret = _ev_tcp_setup_sock(conn, lisn->backend.af, 0)) != EV_SUCCESS)
 		{
 			goto err;
 		}
