@@ -17,6 +17,10 @@ static void _ev_tcp_on_close(ev_handle_t* handle)
 	{
 		_ev_tcp_close_socket(sock);
 	}
+	if (sock->close_cb != NULL)
+	{
+		sock->close_cb(sock);
+	}
 }
 
 static int _ev_tcp_init_backend(ev_tcp_t* tcp)
