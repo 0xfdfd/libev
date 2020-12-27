@@ -4,16 +4,22 @@
 extern "C" {
 #endif
 
+#if defined(_WIN32)
+#	define _CRTDBG_MAP_ALLOC
+#	include <stdlib.h>
+#	include <crtdbg.h>
+#	include <windows.h>
+#	define ABORT()					DebugBreak()
+#else
+#	include <stdlib.h>
+#	define ABORT()					abort()
+#	define _CrtDumpMemoryLeaks()	0
+#	define _CrtSetReportMode(...)	(void)0
+#	define _CrtSetReportFile(...)	(void)0
+#endif
+
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-
-#if defined(_WIN32)
-#	include <windows.h>
-#	define ABORT()		DebugBreak(); abort()
-#else
-#	define ABORT()		abort()
-#endif
 
 #define ASSERT(x)	\
 	if(!(x)) {\
@@ -46,8 +52,14 @@ extern "C" {
 	static void run_test_##name(void);\
 	int main(int argc, char* argv[]) {\
 		(void)argc; (void)argv;\
+		_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);\
+		_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);\
+		_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);\
+		_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);\
+		_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);\
+		_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);\
 		run_test_##name();\
-		return 0;\
+		return _CrtDumpMemoryLeaks();\
 	}\
 	static void run_test_##name(void)
 
