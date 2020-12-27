@@ -115,7 +115,9 @@ enum ev_errno
 	EV_EACCES			= EACCES,		/**< permission denied */
 	EV_EBUSY			= EBUSY,		/**< resource busy or locked */
 	EV_EINVAL			= EINVAL,		/**< invalid argument */
-	EV_EINPROGRESS		= EINPROGRESS,	/**< Operation in progress */
+	EV_EADDRINUSE		= EADDRINUSE,	/**< address is already in use */
+	EV_EINPROGRESS		= EINPROGRESS,	/**< operation in progress */
+
 
 	/* Extend error code */
 	EV_UNKNOWN			= -1,			/**< Unknown error */

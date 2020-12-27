@@ -269,7 +269,7 @@ int ev_tcp_listen(ev_tcp_t* tcp, int backlog)
 {
 	if (_ev_tcp_is_listening(tcp))
 	{
-		return EV_EINPROGRESS;
+		return EV_EADDRINUSE;
 	}
 
 	int ret;
