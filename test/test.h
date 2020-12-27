@@ -48,6 +48,8 @@ extern "C" {
 
 #define ASSERT_NE_D32(a, b)		ASSERT_TEMPLATE(int32_t, "%"PRId32, !=, a, b)
 
+#define ASSERT_LT_D32(a, b)		ASSERT_TEMPLATE(int32_t, "%"PRId32, <, a, b)
+
 #define TEST(name)	\
 	static void run_test_##name(void);\
 	int main(int argc, char* argv[]) {\
