@@ -359,3 +359,8 @@ void ev__poll(ev_loop_t* loop, uint32_t timeout)
 		timeout = user_timeout - pass_time;
 	}
 }
+
+int ev__translate_sys_error_unix(int syserr)
+{
+	return syserr;
+}

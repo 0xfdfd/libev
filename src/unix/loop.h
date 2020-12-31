@@ -52,6 +52,13 @@ int ev__cloexec(int fd, int set);
  */
 int ev__nonblock(int fd, int set);
 
+/**
+ * @brief Translate system error into #ev_errno_t
+ * @param[in] syserr	System error
+ * @return				#ev_errno_t
+ */
+int ev__translate_sys_error_unix(int syserr);
+
 #ifdef __cplusplus
 }
 #endif

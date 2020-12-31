@@ -33,7 +33,7 @@ static int _ev_tcp_setup_fd(ev_tcp_t* tcp, int domain, int* new_fd)
 	}
 	if ((tcp->backend.fd = socket(domain, SOCK_STREAM, 0)) == -1)
 	{
-		return errno;
+		return ev__translate_sys_error_unix(errno);
 	}
 
 	int ret;
@@ -79,7 +79,7 @@ static void _ev_tcp_on_accept(ev_io_t* io, unsigned evts)
 
 	conn->base.flags &= ~EV_TCP_ACCEPTING;
 
-	int ret = conn->backend.fd >= 0 ? EV_SUCCESS : errno;
+	int ret = conn->backend.fd >= 0 ? EV_SUCCESS : ev__translate_sys_error_unix(errno);
 	conn->backend.u.accept.cb(acpt, conn, ret);
 
 	if (ev_list_size(&acpt->backend.u.listen.accept_queue) == 0)
@@ -136,7 +136,7 @@ static void _ev_tcp_do_read(ev_tcp_t* sock)
 			return;
 		}
 
-		_ev_tcp_cleanup_all_read_request(sock, errno);
+		_ev_tcp_cleanup_all_read_request(sock, ev__translate_sys_error_unix(errno));
 		goto fin;
 	}
 
@@ -171,7 +171,7 @@ static void _ev_tcp_do_write(ev_tcp_t* sock)
 			return;
 		}
 
-		_ev_tcp_cleanup_all_write_request(sock, errno);
+		_ev_tcp_cleanup_all_write_request(sock, ev__translate_sys_error_unix(errno));
 		goto fin;
 	}
 
@@ -251,7 +251,7 @@ int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen)
 
 	if ((ret = bind(tcp->backend.fd, addr, addrlen)) != 0)
 	{
-		ret = errno;
+		ret = ev__translate_sys_error_unix(errno);
 		goto err_bind;
 	}
 
@@ -275,7 +275,7 @@ int ev_tcp_listen(ev_tcp_t* tcp, int backlog)
 	int ret;
 	if ((ret = listen(tcp->backend.fd, backlog)) != 0)
 	{
-		return errno;
+		return ev__translate_sys_error_unix(errno);
 	}
 
 	ev_list_init(&tcp->backend.u.listen.accept_queue);
@@ -339,5 +339,33 @@ int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev
 
 	ev__io_add(sock->base.loop, &sock->backend.u.stream.io, EV_IO_IN);
 
+	return EV_SUCCESS;
+}
+
+int ev_tcp_getsockname(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
+{
+	int ret;
+	socklen_t socklen = *len;
+
+	if ((ret = getsockname(sock->backend.sock, name, &socklen)) != 0)
+	{
+		return ev__translate_sys_error_unix(errno);
+	}
+
+	*len = (size_t)socklen;
+	return EV_SUCCESS;
+}
+
+int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
+{
+	int ret;
+	socklen_t socklen = *len;
+
+	if ((ret = getpeername(sock->backend.sock, name, &socklen)) != 0)
+	{
+		return ev__translate_sys_error_unix(errno);
+	}
+
+	*len = socklen;
 	return EV_SUCCESS;
 }

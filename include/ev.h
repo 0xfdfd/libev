@@ -425,6 +425,24 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, 
  */
 int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev_read_cb cb);
 
+/**
+ * @brief Get the current address to which the socket is bound.
+ * @param[in] sock	Socket handle
+ * @param[out] name	A buffer to store address
+ * @param[in,out] len	buffer size
+ * @return			#ev_errno_t
+ */
+int ev_tcp_getsockname(ev_tcp_t* sock, struct sockaddr* name, size_t* len);
+
+/**
+ * @brief Get the address of the peer connected to the socket.
+ * @param[in] sock	Socket handle
+ * @param[out] name	A buffer to store address
+ * @param[in,out] len	buffer size
+ * @return			#ev_errno_t
+ */
+int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len);
+
 #ifdef __cplusplus
 }
 #endif

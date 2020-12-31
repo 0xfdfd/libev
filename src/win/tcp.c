@@ -197,3 +197,31 @@ void ev__tcp_init(void)
 		assert(ret == 0);
 	}
 }
+
+int ev_tcp_getsockname(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
+{
+	int ret;
+	int socklen = *len;
+
+	if ((ret = getsockname(sock->backend.sock, name, &socklen)) == SOCKET_ERROR)
+	{
+		return ev__translate_sys_error_win(WSAGetLastError());
+	}
+
+	*len = socklen;
+	return EV_SUCCESS;
+}
+
+int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
+{
+	int ret;
+	int socklen = *len;
+
+	if ((ret = getpeername(sock->backend.sock, name, &socklen)) == SOCKET_ERROR)
+	{
+		return ev__translate_sys_error_win(WSAGetLastError());
+	}
+
+	*len = socklen;
+	return EV_SUCCESS;
+}
