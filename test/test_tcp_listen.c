@@ -29,7 +29,11 @@ TEST(tcp_bind)
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 	addr.sin_port = htons(0);
+
+	/* 1st bind should success */
 	ASSERT_EQ_D32(ev_tcp_bind(&s_sock, (struct sockaddr*)&addr, sizeof(addr)), 0);
+	/* 1st bind should failure */
+	ASSERT_NE_D32(ev_tcp_bind(&s_sock, (struct sockaddr*)&addr, sizeof(addr)), 0);
 
 	/* 1st listen should success */
 	ASSERT_EQ_D32(ev_tcp_listen(&s_sock, 1), 0);
