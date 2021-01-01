@@ -453,6 +453,15 @@ int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len);
 int ev_ipv4_addr(const char* ip, int port, struct sockaddr_in* addr);
 
 /**
+ * @brief Convert ip and port into network address
+ * @param[in] ip	Character string contains IP
+ * @param[in] port	Port
+ * @param[out] addr	network address structure
+ * @return			#ev_errno_t
+ */
+int ev_ipv6_addr(const char* ip, int port, struct sockaddr_in6* addr);
+
+/**
  * @brief Convert network address into ip and port
  * @param[in] addr	network address structure
  * @param[out] port	Port
@@ -461,6 +470,16 @@ int ev_ipv4_addr(const char* ip, int port, struct sockaddr_in* addr);
  * @return			#ev_errno_t
  */
 int ev_ipv4_name(const struct sockaddr_in* addr, int* port, char* ip, size_t len);
+
+/**
+ * @brief Convert network address into ip and port
+ * @param[in] addr	network address structure
+ * @param[out] port	Port
+ * @param[out] ip	A buffer to store IP string
+ * @param[in] len	Buffer length
+ * @return			#ev_errno_t
+ */
+int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t len);
 
 #ifdef __cplusplus
 }

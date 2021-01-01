@@ -260,19 +260,45 @@ int ev_ipv4_addr(const char* ip, int port, struct sockaddr_in* addr)
 	addr->sin_family = AF_INET;
 	addr->sin_port = htons((uint16_t)port);
 
-	return inet_pton(AF_INET, ip, &(addr->sin_addr)) ? EV_SUCCESS : EV_EINVAL;
+	return inet_pton(AF_INET, ip, &addr->sin_addr) ? EV_SUCCESS : EV_EINVAL;
 }
 
-int ev_ipv4_name(const struct sockaddr_in* addr, int* port, char* buffer, size_t len)
+int ev_ipv6_addr(const char* ip, int port, struct sockaddr_in6* addr)
+{
+	memset(addr, 0, sizeof(*addr));
+
+	addr->sin6_family = AF_INET6;
+	addr->sin6_port = htons((uint16_t)port);
+
+	return inet_pton(AF_INET6, ip, &addr->sin6_addr) ? EV_SUCCESS : EV_EINVAL;
+}
+
+int ev_ipv4_name(const struct sockaddr_in* addr, int* port, char* ip, size_t len)
 {
 	if (port != NULL)
 	{
 		*port = ntohs(addr->sin_port);
 	}
 
-	if (buffer != NULL)
+	if (ip != NULL)
 	{
-		return inet_ntop(AF_INET, &addr->sin_addr, buffer, len) != NULL ?
+		return inet_ntop(AF_INET, &addr->sin_addr, ip, len) != NULL ?
+			EV_SUCCESS : EV_ENOSPC;
+	}
+
+	return EV_SUCCESS;
+}
+
+int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t len)
+{
+	if (port != NULL)
+	{
+		*port = ntohs(addr->sin6_port);
+	}
+
+	if (ip != NULL)
+	{
+		return inet_ntop(AF_INET6, &addr->sin6_addr, ip, len) != NULL ?
 			EV_SUCCESS : EV_ENOSPC;
 	}
 
