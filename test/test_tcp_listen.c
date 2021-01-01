@@ -6,8 +6,8 @@
 #include <string.h>
 #endif
 
-#include "test.h"
 #include "ev.h"
+#include "test.h"
 
 static ev_loop_t	s_loop;
 static ev_tcp_t		s_sock;
@@ -25,10 +25,7 @@ TEST(tcp_bind)
 	ASSERT_EQ_D32(ev_tcp_init(&s_loop, &s_sock), 0);
 
 	struct sockaddr_in addr;
-	memset(&addr, 0, sizeof(addr));
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-	addr.sin_port = htons(0);
+	ASSERT_EQ_D32(ev_ipv4_addr("127.0.0.1", 0, &addr), 0);
 
 	/* 1st bind should success */
 	ASSERT_EQ_D32(ev_tcp_bind(&s_sock, (struct sockaddr*)&addr, sizeof(addr)), 0);

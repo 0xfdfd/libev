@@ -1,5 +1,5 @@
-#include "test.h"
 #include "ev.h"
+#include "test.h"
 
 static ev_loop_t s_loop;
 static ev_timer_t s_timer;

@@ -1,5 +1,5 @@
-#include "test.h"
 #include "ev.h"
+#include "test.h"
 
 static ev_once_t s_once_token = EV_ONCE_INIT;
 static int s_count = 0;

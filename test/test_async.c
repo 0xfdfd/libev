@@ -1,5 +1,5 @@
-#include "test.h"
 #include "ev.h"
+#include "test.h"
 
 static ev_loop_t	s_loop = EV_LOOP_INIT;
 static ev_async_t	s_async;
