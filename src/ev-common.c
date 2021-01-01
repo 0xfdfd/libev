@@ -252,3 +252,29 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
 
 	return r;
 }
+
+int ev_ipv4_addr(const char* ip, int port, struct sockaddr_in* addr)
+{
+	memset(addr, 0, sizeof(*addr));
+
+	addr->sin_family = AF_INET;
+	addr->sin_port = htons((uint16_t)port);
+
+	return inet_pton(AF_INET, ip, &(addr->sin_addr)) ? EV_SUCCESS : EV_EINVAL;
+}
+
+int ev_ipv4_name(const struct sockaddr_in* addr, int* port, char* buffer, size_t len)
+{
+	if (port != NULL)
+	{
+		*port = ntohs(addr->sin_port);
+	}
+
+	if (buffer != NULL)
+	{
+		return inet_ntop(AF_INET, &addr->sin_addr, buffer, len) != NULL ?
+			EV_SUCCESS : EV_ENOSPC;
+	}
+
+	return EV_SUCCESS;
+}

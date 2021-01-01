@@ -5,10 +5,10 @@
 
 static void _ev_tcp_close_fd(ev_tcp_t* sock)
 {
-	if (sock->backend.fd != EV_INVALID_FD)
+	if (sock->backend.sock != EV_INVALID_FD)
 	{
-		close(sock->backend.fd);
-		sock->backend.fd = -1;
+		close(sock->backend.sock);
+		sock->backend.sock = -1;
 	}
 }
 
@@ -27,17 +27,17 @@ static void _ev_tcp_on_close(ev_handle_t* handle)
 static int _ev_tcp_setup_fd(ev_tcp_t* tcp, int domain, int* new_fd)
 {
 	*new_fd = 0;
-	if (tcp->backend.fd != EV_INVALID_FD)
+	if (tcp->backend.sock != EV_INVALID_FD)
 	{
 		return EV_SUCCESS;
 	}
-	if ((tcp->backend.fd = socket(domain, SOCK_STREAM, 0)) == -1)
+	if ((tcp->backend.sock = socket(domain, SOCK_STREAM, 0)) == -1)
 	{
 		return ev__translate_sys_error_unix(errno);
 	}
 
 	int ret;
-	if ((ret = ev__nonblock(tcp->backend.fd, 1)) != EV_SUCCESS)
+	if ((ret = ev__nonblock(tcp->backend.sock, 1)) != EV_SUCCESS)
 	{
 		goto err_nonblock;
 	}
@@ -46,8 +46,8 @@ static int _ev_tcp_setup_fd(ev_tcp_t* tcp, int domain, int* new_fd)
 	return EV_SUCCESS;
 
 err_nonblock:
-	close(tcp->backend.fd);
-	tcp->backend.fd = EV_INVALID_FD;
+	close(tcp->backend.sock);
+	tcp->backend.sock = EV_INVALID_FD;
 	return ret;
 }
 
@@ -72,14 +72,14 @@ static void _ev_tcp_on_accept(ev_io_t* io, unsigned evts)
 
 	do 
 	{
-		conn->backend.fd = accept(acpt->backend.fd,
+		conn->backend.sock = accept(acpt->backend.sock,
 			(struct sockaddr*)&conn->backend.u.accept.peeraddr,
 			&conn->backend.u.accept.addrlen);
-	} while (conn->backend.fd == -1 && errno == EINTR);
+	} while (conn->backend.sock == -1 && errno == EINTR);
 
 	conn->base.flags &= ~EV_TCP_ACCEPTING;
 
-	int ret = conn->backend.fd >= 0 ? EV_SUCCESS : ev__translate_sys_error_unix(errno);
+	int ret = conn->backend.sock >= 0 ? EV_SUCCESS : ev__translate_sys_error_unix(errno);
 	conn->backend.u.accept.cb(acpt, conn, ret);
 
 	if (ev_list_size(&acpt->backend.u.listen.accept_queue) == 0)
@@ -117,7 +117,7 @@ static void _ev_tcp_do_read(ev_tcp_t* sock)
 	ssize_t r;
 	do 
 	{
-		r = readv(sock->backend.fd, (struct iovec*)req->data.bufs, req->data.nbuf);
+		r = readv(sock->backend.sock, (struct iovec*)req->data.bufs, req->data.nbuf);
 	} while (r == -1 && errno == EINTR);
 
 	/* Peer close */
@@ -159,7 +159,7 @@ static void _ev_tcp_do_write(ev_tcp_t* sock)
 	ssize_t w;
 	do 
 	{
-		w = writev(sock->backend.fd,
+		w = writev(sock->backend.sock,
 			(struct iovec*)(req->data.bufs + req->info.idx), req->data.nbuf - req->info.idx);
 	} while (w == -1 && errno == EINTR);
 
@@ -220,7 +220,7 @@ static void _ev_tcp_on_stream(ev_io_t* io, unsigned evts)
 
 static void _ev_tcp_setup_stream(ev_tcp_t* sock)
 {
-	ev__io_init(&sock->backend.u.stream.io, sock->backend.fd, _ev_tcp_on_stream);
+	ev__io_init(&sock->backend.u.stream.io, sock->backend.sock, _ev_tcp_on_stream);
 	ev_list_init(&sock->backend.u.stream.w_queue);
 	ev_list_init(&sock->backend.u.stream.r_queue);
 }
@@ -229,7 +229,7 @@ int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp)
 {
 	ev__handle_init(loop, &tcp->base, _ev_tcp_on_close);
 	tcp->close_cb = NULL;
-	tcp->backend.fd = EV_INVALID_FD;
+	tcp->backend.sock = EV_INVALID_FD;
 
 	return EV_SUCCESS;
 }
@@ -249,7 +249,7 @@ int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen)
 		return ret;
 	}
 
-	if ((ret = bind(tcp->backend.fd, addr, addrlen)) != 0)
+	if ((ret = bind(tcp->backend.sock, addr, addrlen)) != 0)
 	{
 		ret = ev__translate_sys_error_unix(errno);
 		goto err_bind;
@@ -273,13 +273,13 @@ int ev_tcp_listen(ev_tcp_t* tcp, int backlog)
 	}
 
 	int ret;
-	if ((ret = listen(tcp->backend.fd, backlog)) != 0)
+	if ((ret = listen(tcp->backend.sock, backlog)) != 0)
 	{
 		return ev__translate_sys_error_unix(errno);
 	}
 
 	ev_list_init(&tcp->backend.u.listen.accept_queue);
-	ev__io_init(&tcp->backend.u.listen.io, tcp->backend.fd, _ev_tcp_on_accept);
+	ev__io_init(&tcp->backend.u.listen.io, tcp->backend.sock, _ev_tcp_on_accept);
 	ev__io_add(tcp->base.loop, &tcp->backend.u.listen.io, EV_IO_IN);
 	tcp->base.flags |= EV_TCP_LISTING;
 

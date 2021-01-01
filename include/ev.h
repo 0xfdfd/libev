@@ -4,8 +4,7 @@
 extern "C" {
 #endif
 
-#include "ev/map.h"
-#include "ev/list.h"
+#include <stddef.h>
 
 enum ev_errno;
 typedef enum ev_errno ev_errno_t;
@@ -115,6 +114,7 @@ enum ev_errno
 	EV_EACCES			= EACCES,		/**< permission denied */
 	EV_EBUSY			= EBUSY,		/**< resource busy or locked */
 	EV_EINVAL			= EINVAL,		/**< invalid argument */
+	EV_ENOSPC			= ENOSPC,		/**< no enough space */
 	EV_EADDRINUSE		= EADDRINUSE,	/**< address is already in use */
 	EV_EINPROGRESS		= EINPROGRESS,	/**< operation in progress */
 
@@ -442,6 +442,25 @@ int ev_tcp_getsockname(ev_tcp_t* sock, struct sockaddr* name, size_t* len);
  * @return			#ev_errno_t
  */
 int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len);
+
+/**
+ * @brief Convert ip and port into network address
+ * @param[in] ip	Character string contains IP
+ * @param[in] port	Port
+ * @param[out] addr	network address structure
+ * @return			#ev_errno_t
+ */
+int ev_ipv4_addr(const char* ip, int port, struct sockaddr_in* addr);
+
+/**
+ * @brief Convert network address into ip and port
+ * @param[in] addr	network address structure
+ * @param[out] port	Port
+ * @param[out] ip	A buffer to store IP string
+ * @param[in] len	Buffer length
+ * @return			#ev_errno_t
+ */
+int ev_ipv4_name(const struct sockaddr_in* addr, int* port, char* ip, size_t len);
 
 #ifdef __cplusplus
 }
