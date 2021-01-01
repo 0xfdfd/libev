@@ -28,6 +28,13 @@ extern "C" {
 		ABORT();\
 	}
 
+#define ASSERT_PRINT(FMT, str_op, str_lval, str_rval, lval, rval)	\
+	fprintf(stderr, "%s:%d failure:\n"\
+		"            expected:    `%s` %s `%s`\n"\
+		"              actual:    " FMT " vs " FMT "\n",\
+		__FILE__, __LINE__, str_lval, str_op, str_rval, lval, rval);\
+	fflush(NULL)\
+
 #define ASSERT_TEMPLATE(TYPE, FMT, OP, a, b)	\
 	do {\
 		TYPE _a = a;\
@@ -35,17 +42,27 @@ extern "C" {
 		if (_a OP _b) {\
 			break;\
 		}\
-		fprintf(stderr, "%s:%d failure:\n"\
-						"            expected:    `%s` %s `%s`\n"\
-						"              actual:    " FMT " vs " FMT "\n",\
-			__FILE__, __LINE__, #a, #OP, #b, _a, _b);\
-		fflush(NULL);\
+		ASSERT_PRINT(FMT, #OP, #a, #b, _a, _b);\
 		ABORT();\
 	} while (0)
 
+#define ASSERT_TEMPLATE_FN(TYPE, FMT, OP, CMP, a, b)	\
+	do {\
+		TYPE _a = a;\
+		TYPE _b = b;\
+		if (CMP(_a, _b)) {\
+			break;\
+		}\
+		ASSERT_PRINT(FMT, #OP, #a, #b, _a, _b);\
+		ABORT();\
+	} while (0)
+
+#define ASSERT_EQ_STR(a, b)		ASSERT_TEMPLATE_FN(const char*, "%s", ==, !strcmp, a, b)
 #define ASSERT_EQ_PTR(a, b)		ASSERT_TEMPLATE(void*, "%p", ==, a, b)
 #define ASSERT_EQ_D32(a, b)		ASSERT_TEMPLATE(int32_t, "%"PRId32, ==, a, b)
 
+#define ASSERT_NE_STR(a, b)		ASSERT_TEMPLATE_FN(const char*, "%s", !=, strcmp, a, b)
+#define ASSERT_NE_PTR(a, b)		ASSERT_TEMPLATE(const void*, "%p", !=, a, b)
 #define ASSERT_NE_D32(a, b)		ASSERT_TEMPLATE(int32_t, "%"PRId32, !=, a, b)
 
 #define ASSERT_LT_D32(a, b)		ASSERT_TEMPLATE(int32_t, "%"PRId32, <, a, b)
