@@ -201,7 +201,7 @@ void ev__tcp_init(void)
 int ev_tcp_getsockname(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
 {
 	int ret;
-	int socklen = *len;
+	int socklen = (int)*len;
 
 	if ((ret = getsockname(sock->backend.sock, name, &socklen)) == SOCKET_ERROR)
 	{
@@ -215,7 +215,7 @@ int ev_tcp_getsockname(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
 int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
 {
 	int ret;
-	int socklen = *len;
+	int socklen = (int)*len;
 
 	if ((ret = getpeername(sock->backend.sock, name, &socklen)) == SOCKET_ERROR)
 	{
