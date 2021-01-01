@@ -4,6 +4,12 @@
 extern "C" {
 #endif
 
+#if defined(_WIN32)
+#	include <WS2tcpip.h>
+#else
+#	include <arpa/inet.h>
+#endif
+
 #include "ev.h"
 
 int ev__loop_init_backend(ev_loop_t* loop);

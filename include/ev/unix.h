@@ -7,6 +7,8 @@ extern "C" {
 #include <errno.h>
 #include <pthread.h>
 #include <netinet/in.h>
+#include "ev/map.h"
+#include "ev/list.h"
 
 typedef int ev_socket_t;
 
@@ -65,14 +67,14 @@ typedef struct ev_async_backend
 
 typedef struct ev_tcp_backend
 {
-	int						fd;				/**< Socket file descriptor */
+	int							sock;				/**< Socket file descriptor */
 
 	union
 	{
 		struct
 		{
-			ev_io_t			io;				/**< Accept IO */
-			ev_list_t		accept_queue;	/**< Accept queue */
+			ev_io_t				io;				/**< Accept IO */
+			ev_list_t			accept_queue;	/**< Accept queue */
 		}listen;
 
 		struct
