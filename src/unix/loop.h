@@ -5,6 +5,7 @@ extern "C" {
 #endif
 
 #include "ev-common.h"
+#include "ev-platform.h"
 
 #include <sys/epoll.h>
 #define EV_IO_IN		EPOLLIN		/**< The associated file is available for read(2) operations. */
@@ -51,13 +52,6 @@ int ev__cloexec(int fd, int set);
  * @return			#ev_errno_t
  */
 int ev__nonblock(int fd, int set);
-
-/**
- * @brief Translate system error into #ev_errno_t
- * @param[in] syserr	System error
- * @return				#ev_errno_t
- */
-int ev__translate_sys_error_unix(int syserr);
 
 #ifdef __cplusplus
 }

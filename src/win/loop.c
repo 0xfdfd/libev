@@ -72,7 +72,7 @@ void ev__loop_update_time(ev_loop_t* loop)
 	loop->hwtime = _ev_hrtime_win(1000);
 }
 
-int ev__translate_sys_error_win(int err)
+int ev__translate_sys_error(int err)
 {
 	static int s_err_table[][2] = {
 		{ WSAEINVAL, EINVAL },
@@ -159,7 +159,7 @@ int ev__loop_init_backend(ev_loop_t* loop)
 	loop->backend.iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 1);
 	if (loop->backend.iocp == NULL)
 	{
-		return ev__translate_sys_error_win(GetLastError());
+		return ev__translate_sys_error(GetLastError());
 	}
 	return EV_SUCCESS;
 }

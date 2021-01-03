@@ -13,13 +13,6 @@ extern "C" {
  */
 void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb cb);
 
-/**
- * @brief Translate system error into #ev_errno_t
- * @param[in] syserr	System error
- * @return				#ev_errno_t
- */
-int ev__translate_sys_error_win(int syserr);
-
 #ifdef __cplusplus
 }
 #endif
