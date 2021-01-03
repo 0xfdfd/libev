@@ -63,7 +63,7 @@ static int _ev_tcp_setup_sock(ev_tcp_t* sock, int af, int with_iocp)
 	return EV_SUCCESS;
 
 err:
-	ret = ev__translate_sys_error_win(WSAGetLastError());
+	ret = ev__translate_sys_error(WSAGetLastError());
 	if (os_sock != INVALID_SOCKET)
 	{
 		closesocket(os_sock);
@@ -121,7 +121,7 @@ int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen)
 
 	if ((ret = bind(tcp->backend.sock, addr, (int)addrlen)) == SOCKET_ERROR)
 	{
-		ret = ev__translate_sys_error_win(WSAGetLastError());
+		ret = ev__translate_sys_error(WSAGetLastError());
 		goto err;
 	}
 
@@ -145,7 +145,7 @@ int ev_tcp_listen(ev_tcp_t* tcp, int backlog)
 	int ret;
 	if ((ret = listen(tcp->backend.sock, backlog)) == SOCKET_ERROR)
 	{
-		return ev__translate_sys_error_win(WSAGetLastError());
+		return ev__translate_sys_error(WSAGetLastError());
 	}
 	tcp->base.flags |= EV_TCP_LISTING;
 
@@ -171,7 +171,7 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
 		NULL, 0, 0, 0, 0, &conn->backend.u.accept.io.overlapped);
 	if (!ret)
 	{
-		ret = ev__translate_sys_error_win(WSAGetLastError());
+		ret = ev__translate_sys_error(WSAGetLastError());
 		goto err;
 	}
 
@@ -205,7 +205,7 @@ int ev_tcp_getsockname(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
 
 	if ((ret = getsockname(sock->backend.sock, name, &socklen)) == SOCKET_ERROR)
 	{
-		return ev__translate_sys_error_win(WSAGetLastError());
+		return ev__translate_sys_error(WSAGetLastError());
 	}
 
 	*len = socklen;
@@ -219,7 +219,7 @@ int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
 
 	if ((ret = getpeername(sock->backend.sock, name, &socklen)) == SOCKET_ERROR)
 	{
-		return ev__translate_sys_error_win(WSAGetLastError());
+		return ev__translate_sys_error(WSAGetLastError());
 	}
 
 	*len = socklen;

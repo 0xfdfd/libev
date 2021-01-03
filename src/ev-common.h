@@ -39,6 +39,7 @@ typedef enum ev_handle_flag
 	EV_TCP_LISTING			= 0x01 << 0x08,
 	EV_TCP_ACCEPTING		= 0x01 << 0x09,
 	EV_TCP_STREAMING		= 0x01 << 0x0A,
+	EV_TCP_CONNECTING		= 0x01 << 0x0B,
 }ev_handle_flag_t;
 
 /**

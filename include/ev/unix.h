@@ -8,7 +8,6 @@ extern "C" {
 #include <pthread.h>
 #include <netinet/in.h>
 #include "ev/map.h"
-#include "ev/list.h"
 
 typedef int ev_socket_t;
 
@@ -87,10 +86,18 @@ typedef struct ev_tcp_backend
 
 		struct
 		{
-			ev_io_t				io;
+			ev_io_t				io;				/**< IO object */
 			ev_list_t			w_queue;		/**< #ev_read_t Write queue */
 			ev_list_t			r_queue;		/**< #ev_write_t Read queue */
 		}stream;
+
+		struct
+		{
+			ev_connect_cb		cb;				/**< Connect callback */
+			ev_io_t				io;				/**< IO object */
+			ev_todo_t			token;			/**< Todo token */
+			int					stat;			/**< Connect result */
+		}client;
 	}u;
 }ev_tcp_backend_t;
 

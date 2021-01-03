@@ -5,6 +5,7 @@ extern "C" {
 #endif
 
 #include <stddef.h>
+#include "ev/list.h"
 
 enum ev_errno;
 typedef enum ev_errno ev_errno_t;
@@ -78,11 +79,18 @@ typedef void (*ev_tcp_close_cb)(ev_tcp_t* sock);
 
 /**
  * @brief Accept callback
- * @param[in] from		Listen socket
- * @param[in] to		Accepted socket
- * @param[in] stat		Accept result
+ * @param[in] lisn		Listen socket
+ * @param[in] conn		Accepted socket
+ * @param[in] stat		#ev_errno_t
  */
-typedef void (*ev_accept_cb)(ev_tcp_t* from, ev_tcp_t* to, int stat);
+typedef void (*ev_accept_cb)(ev_tcp_t* lisn, ev_tcp_t* conn, int stat);
+
+/**
+ * @brief Connect callback
+ * @param[in] sock		Connect socket
+ * @param[in] stat		#ev_errno_t
+ */
+typedef void (*ev_connect_cb)(ev_tcp_t* sock, int stat);
 
 /**
  * @brief Write callback
@@ -99,6 +107,13 @@ typedef void (*ev_write_cb)(ev_write_t* req, size_t size, int stat);
  * @param[in] stat		Read result
  */
 typedef void (*ev_read_cb)(ev_read_t* req, size_t size, int stat);
+
+struct ev_todo
+{
+	ev_list_node_t			node;			/**< List node */
+	ev_todo_cb				cb;				/**< Callback */
+};
+#define EV_TODO_INIT		{ EV_LIST_NODE_INIT, NULL }
 
 #if defined(_WIN32)
 #	include "ev/win.h"
@@ -130,13 +145,6 @@ enum ev_loop_mode
 	ev_loop_mode_once,
 	ev_loop_mode_nowait,
 };
-
-struct ev_todo
-{
-	ev_list_node_t			node;			/**< List node */
-	ev_todo_cb				cb;				/**< Callback */
-};
-#define EV_TODO_INIT		{ EV_LIST_NODE_INIT, NULL }
 
 struct ev_loop
 {
@@ -402,6 +410,15 @@ int ev_tcp_listen(ev_tcp_t* tcp, int backlog);
  * @return			#ev_errno_t
  */
 int ev_tcp_accept(ev_tcp_t* acpt, ev_tcp_t* conn, ev_accept_cb cb);
+
+/**
+ * @brief Connect to address
+ * @param[in] addr	Address
+ * @param[in] size	Address size
+ * @param[in] cb	Connect callback
+ * @return			#ev_errno_t
+ */
+int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connect_cb cb);
 
 /**
  * @brief Write data

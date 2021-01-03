@@ -12,7 +12,6 @@ extern "C" {
 #include <ws2tcpip.h>
 #include <windows.h>
 #include "ev/map.h"
-#include "ev/list.h"
 
 typedef SOCKET ev_socket_t;
 
