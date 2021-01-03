@@ -7,10 +7,10 @@ static void _ev_tcp_on_event(ev_io_t* io, unsigned evts);
 
 static void _ev_tcp_close_fd(ev_tcp_t* sock)
 {
-	if (sock->backend.sock != INVALID_SOCKET)
+	if (sock->sock != INVALID_SOCKET)
 	{
-		close(sock->backend.sock);
-		sock->backend.sock = -1;
+		close(sock->sock);
+		sock->sock = -1;
 	}
 }
 
@@ -37,7 +37,7 @@ static void _ev_tcp_on_connect(ev_tcp_t* sock)
 	sock->base.flags &= ~EV_TCP_CONNECTING;
 
 	/* Get connect result */
-	if (getsockopt(sock->backend.sock, SOL_SOCKET, SO_ERROR, &ret, &result_len) < 0)
+	if (getsockopt(sock->sock, SOL_SOCKET, SO_ERROR, &ret, &result_len) < 0)
 	{
 		sock->backend.u.client.stat = ev__translate_sys_error(errno);
 		goto fin;
@@ -75,14 +75,14 @@ static void _ev_tcp_on_accept(ev_tcp_t* acpt)
 
 	do
 	{
-		conn->backend.sock = accept(acpt->backend.sock, NULL, NULL);
-	} while (conn->backend.sock == -1 && errno == EINTR);
+		conn->sock = accept(acpt->sock, NULL, NULL);
+	} while (conn->sock == -1 && errno == EINTR);
 
 	conn->base.flags &= ~EV_TCP_ACCEPTING;
 	_ev_tcp_deactive(conn);
 
-	int ret = conn->backend.sock >= 0 ? EV_SUCCESS : ev__translate_sys_error(errno);
-	ev__io_init(&conn->backend.io, conn->backend.sock, _ev_tcp_on_event);
+	int ret = conn->sock >= 0 ? EV_SUCCESS : ev__translate_sys_error(errno);
+	ev__io_init(&conn->backend.io, conn->sock, _ev_tcp_on_event);
 	conn->backend.u.accept.cb(acpt, conn, ret);
 
 	if (ev_list_size(&acpt->backend.u.listen.accept_queue) == 0)
@@ -110,7 +110,7 @@ static void _ev_tcp_do_read(ev_tcp_t* sock)
 	ssize_t r;
 	do
 	{
-		r = readv(sock->backend.sock, (struct iovec*)req->data.bufs, req->data.nbuf);
+		r = readv(sock->sock, (struct iovec*)req->data.bufs, req->data.nbuf);
 	} while (r == -1 && errno == EINTR);
 
 	/* Peer close */
@@ -162,7 +162,7 @@ static void _ev_tcp_do_write(ev_tcp_t* sock)
 	ssize_t w;
 	do
 	{
-		w = writev(sock->backend.sock,
+		w = writev(sock->sock,
 			(struct iovec*)(req->data.bufs + req->info.idx), req->data.nbuf - req->info.idx);
 	} while (w == -1 && errno == EINTR);
 
@@ -249,30 +249,30 @@ static int _ev_tcp_setup_fd(ev_tcp_t* sock, int domain, int* new_fd)
 {
 	int ret;
 	int tmp_new_fd = 0;
-	if (sock->backend.sock != INVALID_SOCKET)
+	if (sock->sock != INVALID_SOCKET)
 	{
 		goto fin;
 	}
 
-	if ((sock->backend.sock = socket(domain, SOCK_STREAM, 0)) == INVALID_SOCKET)
+	if ((sock->sock = socket(domain, SOCK_STREAM, 0)) == INVALID_SOCKET)
 	{
 		ret = ev__translate_sys_error(errno);
 		goto fin;
 	}
 
-	if ((ret = ev__nonblock(sock->backend.sock, 1)) != EV_SUCCESS)
+	if ((ret = ev__nonblock(sock->sock, 1)) != EV_SUCCESS)
 	{
 		goto err_nonblock;
 	}
 
 	tmp_new_fd = 1;
-	ev__io_init(&sock->backend.io, sock->backend.sock, _ev_tcp_on_event);
+	ev__io_init(&sock->backend.io, sock->sock, _ev_tcp_on_event);
 
 	goto fin;
 
 err_nonblock:
-	close(sock->backend.sock);
-	sock->backend.sock = INVALID_SOCKET;
+	close(sock->sock);
+	sock->sock = INVALID_SOCKET;
 fin:
 	if (new_fd != NULL)
 	{
@@ -310,7 +310,7 @@ int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* sock)
 {
 	ev__handle_init(loop, &sock->base, _ev_tcp_on_close);
 	sock->close_cb = NULL;
-	sock->backend.sock = INVALID_SOCKET;
+	sock->sock = INVALID_SOCKET;
 
 	return EV_SUCCESS;
 }
@@ -330,7 +330,7 @@ int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen)
 		return ret;
 	}
 
-	if ((ret = bind(tcp->backend.sock, addr, addrlen)) != 0)
+	if ((ret = bind(tcp->sock, addr, addrlen)) != 0)
 	{
 		ret = ev__translate_sys_error(errno);
 		goto err_bind;
@@ -354,7 +354,7 @@ int ev_tcp_listen(ev_tcp_t* tcp, int backlog)
 	}
 
 	int ret;
-	if ((ret = listen(tcp->backend.sock, backlog)) != 0)
+	if ((ret = listen(tcp->sock, backlog)) != 0)
 	{
 		return ev__translate_sys_error(errno);
 	}
@@ -434,10 +434,8 @@ int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev
 
 int ev_tcp_getsockname(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
 {
-	int ret;
 	socklen_t socklen = *len;
-
-	if ((ret = getsockname(sock->backend.sock, name, &socklen)) != 0)
+	if (getsockname(sock->sock, name, &socklen) != 0)
 	{
 		return ev__translate_sys_error(errno);
 	}
@@ -451,7 +449,7 @@ int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
 	int ret;
 	socklen_t socklen = *len;
 
-	if ((ret = getpeername(sock->backend.sock, name, &socklen)) != 0)
+	if ((ret = getpeername(sock->sock, name, &socklen)) != 0)
 	{
 		return ev__translate_sys_error(errno);
 	}
@@ -483,7 +481,7 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
 	sock->base.flags |= EV_TCP_CONNECTING;
 	_ev_tcp_active(sock);
 
-	if ((ret = connect(sock->backend.sock, addr, size)) == 0)
+	if ((ret = connect(sock->sock, addr, size)) == 0)
 	{/* Connect success immediately */
 		sock->backend.u.client.stat = EV_SUCCESS;
 		ev__todo(loop, &sock->backend.u.client.token, _ev_tcp_to_connect);

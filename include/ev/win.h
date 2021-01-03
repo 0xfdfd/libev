@@ -13,7 +13,7 @@ extern "C" {
 #include <windows.h>
 #include "ev/map.h"
 
-typedef SOCKET ev_socket_t;
+typedef SOCKET ev_os_socket_t;
 
 /**
  * @brief Buffer
@@ -61,7 +61,7 @@ typedef struct ev_async_backend
 
 typedef struct ev_tcp_backend
 {
-	ev_socket_t				sock;			/**< Socket handle */
+	ev_os_socket_t			sock;			/**< Socket handle */
 	int						af;				/**< AF_INET / AF_INET6 */
 
 	union

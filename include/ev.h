@@ -212,33 +212,34 @@ struct ev_tcp
 	ev_handle_t				base;			/**< Base object */
 	ev_tcp_close_cb			close_cb;		/**< User close callback */
 
+	ev_os_socket_t			sock;			/**< Socket handle */
 	ev_tcp_backend_t		backend;		/**< Platform related implementation */
 };
 
 struct ev_write
 {
-	ev_list_node_t				node;
+	ev_list_node_t			node;
 	struct
 	{
-		ev_write_cb				cb;				/**< Write complete callback */
-		ev_buf_t*				bufs;			/**< Buffer list */
-		size_t					nbuf;			/**< Buffer list count */
+		ev_write_cb			cb;				/**< Write complete callback */
+		ev_buf_t*			bufs;			/**< Buffer list */
+		size_t				nbuf;			/**< Buffer list count */
 	}data;
 	struct
 	{
-		size_t					idx;			/**< Write buffer index */
-		size_t					len;			/**< Total write size */
+		size_t				idx;			/**< Write buffer index */
+		size_t				len;			/**< Total write size */
 	}info;
 };
 
 struct ev_read
 {
-	ev_list_node_t				node;
+	ev_list_node_t			node;
 	struct
 	{
-		ev_read_cb				cb;				/**< Read complete callback */
-		ev_buf_t*				bufs;			/**< Buffer list */
-		size_t					nbuf;			/**< Buffer list count */
+		ev_read_cb			cb;				/**< Read complete callback */
+		ev_buf_t*			bufs;			/**< Buffer list */
+		size_t				nbuf;			/**< Buffer list count */
 	}data;
 };
 

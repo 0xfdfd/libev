@@ -9,7 +9,7 @@ extern "C" {
 #include <netinet/in.h>
 #include "ev/map.h"
 
-typedef int ev_socket_t;
+typedef int ev_os_socket_t;
 
 /**
  * @brief Buffer
@@ -66,7 +66,6 @@ typedef struct ev_async_backend
 
 typedef struct ev_tcp_backend
 {
-	int							sock;			/**< Socket file descriptor */
 	ev_io_t						io;				/**< IO object */
 
 	union
