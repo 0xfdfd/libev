@@ -21,6 +21,21 @@ extern "C" {
 #include <stdint.h>
 #include <stdio.h>
 
+#define TEST_EXPAND(x)				x
+#define TEST_JOIN(a, b)				TEST_JOIN2(a, b)
+#define TEST_JOIN2(a, b)			a##b
+
+#ifdef _MSC_VER // Microsoft compilers
+#	define TEST_ARG_COUNT(...)  INTERNAL_EXPAND_ARGS_PRIVATE(INTERNAL_ARGS_AUGMENTER(__VA_ARGS__))
+#	define INTERNAL_ARGS_AUGMENTER(...) unused, __VA_ARGS__
+#	define INTERNAL_EXPAND(x) x
+#	define INTERNAL_EXPAND_ARGS_PRIVATE(...) INTERNAL_EXPAND(INTERNAL_GET_ARG_COUNT_PRIVATE(__VA_ARGS__, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0))
+#	define INTERNAL_GET_ARG_COUNT_PRIVATE(_1_, _2_, _3_, _4_, _5_, _6_, _7_, _8_, _9_, _10_, _11_, _12_, _13_, _14_, _15_, _16_, count, ...) count
+#else // Non-Microsoft compilers
+#	define TEST_ARG_COUNT(...) INTERNAL_GET_ARG_COUNT_PRIVATE(0, ## __VA_ARGS__, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
+#	define INTERNAL_GET_ARG_COUNT_PRIVATE(_0, _1_, _2_, _3_, _4_, _5_, _6_, _7_, _8_, _9_, _10_, _11_, _12_, _13_, _14_, _15_, _16_, count, ...) count
+#endif
+
 #define ASSERT(x)	\
 	if(!(x)) {\
 		fprintf(stderr, "Assertion failed in %s on line %d: %s\n", \
@@ -28,44 +43,48 @@ extern "C" {
 		ABORT();\
 	}
 
-#define ASSERT_PRINT(FMT, str_op, str_lval, str_rval, lval, rval)	\
-	fprintf(stderr, "%s:%d failure:\n"\
-		"            expected:    `%s` %s `%s`\n"\
-		"              actual:    " FMT " vs " FMT "\n",\
-		__FILE__, __LINE__, str_lval, str_op, str_rval, lval, rval);\
-	fflush(NULL)\
-
-#define ASSERT_TEMPLATE(TYPE, FMT, OP, a, b)	\
+#define ASSERT_TEMPLATE(TYPE, FMT, OP, CMP, a, b, u_fmt, ...)	\
 	do {\
-		TYPE _a = a;\
-		TYPE _b = b;\
-		if (_a OP _b) {\
+		TYPE _l = (TYPE)(a); TYPE _r = (TYPE)(b);\
+		if (CMP(_l, _r)) {\
 			break;\
 		}\
-		ASSERT_PRINT(FMT, #OP, #a, #b, _a, _b);\
+		printf("%s:%d:failure:" u_fmt "\n"\
+			"            expected:    `%s' %s `%s'\n"\
+			"              actual:    " FMT " vs " FMT "\n",\
+			__FILE__, __LINE__, ##__VA_ARGS__, #a, #OP, #b, _l, _r);\
+		fflush(NULL);\
 		ABORT();\
-	} while (0)
+	} while(0)
 
-#define ASSERT_TEMPLATE_FN(TYPE, FMT, OP, CMP, a, b)	\
-	do {\
-		TYPE _a = a;\
-		TYPE _b = b;\
-		if (CMP(_a, _b)) {\
-			break;\
-		}\
-		ASSERT_PRINT(FMT, #OP, #a, #b, _a, _b);\
-		ABORT();\
-	} while (0)
+#define ASSERT_EQ_STR(a, b, ...)	ASSERT_TEMPLATE_VA(__VA_ARGS__)(const char*, "%s", ==, !strcmp, a, b, ##__VA_ARGS__)
+#define ASSERT_NE_STR(a, b, ...)	ASSERT_TEMPLATE_VA(__VA_ARGS__)(const char*, "%s", !=,  strcmp, a, b, ##__VA_ARGS__)
 
-#define ASSERT_EQ_STR(a, b)		ASSERT_TEMPLATE_FN(const char*, "%s", ==, !strcmp, a, b)
-#define ASSERT_EQ_PTR(a, b)		ASSERT_TEMPLATE(void*, "%p", ==, a, b)
-#define ASSERT_EQ_D32(a, b)		ASSERT_TEMPLATE(int32_t, "%"PRId32, ==, a, b)
+#define ASSERT_EQ_PTR(a, b, ...)	ASSERT_TEMPLATE_VA(__VA_ARGS__)(const void*, "%p", ==, _ASSERT_INTERNAL_HELPER_EQ, a, b, ##__VA_ARGS__)
+#define ASSERT_NE_PTR(a, b, ...)	ASSERT_TEMPLATE_VA(__VA_ARGS__)(const void*, "%p", !=, _ASSERT_INTERNAL_HELPER_NE, a, b, ##__VA_ARGS__)
 
-#define ASSERT_NE_STR(a, b)		ASSERT_TEMPLATE_FN(const char*, "%s", !=, strcmp, a, b)
-#define ASSERT_NE_PTR(a, b)		ASSERT_TEMPLATE(const void*, "%p", !=, a, b)
-#define ASSERT_NE_D32(a, b)		ASSERT_TEMPLATE(int32_t, "%"PRId32, !=, a, b)
+#define ASSERT_EQ_D32(a, b, ...)	ASSERT_TEMPLATE_VA(__VA_ARGS__)(int32_t, "%"PRId32, ==, _ASSERT_INTERNAL_HELPER_EQ, a, b, ##__VA_ARGS__)
+#define ASSERT_NE_D32(a, b, ...)	ASSERT_TEMPLATE_VA(__VA_ARGS__)(int32_t, "%"PRId32, !=, _ASSERT_INTERNAL_HELPER_NE, a, b, ##__VA_ARGS__)
+#define ASSERT_LT_D32(a, b, ...)	ASSERT_TEMPLATE_VA(__VA_ARGS__)(int32_t, "%"PRId32,  <, _ASSERT_INTERNAL_HELPER_LT, a, b, ##__VA_ARGS__)
 
-#define ASSERT_LT_D32(a, b)		ASSERT_TEMPLATE(int32_t, "%"PRId32, <, a, b)
+#define ASSERT_TEMPLATE_VA(...)									TEST_JOIN(ASSERT_TEMPLATE_VA_, TEST_ARG_COUNT(__VA_ARGS__))
+#define ASSERT_TEMPLATE_VA_0(TYPE, FMT, OP, CMP, a, b, ...)		TEST_EXPAND(ASSERT_TEMPLATE(TYPE, FMT, OP, CMP, a, b, __VA_ARGS__))
+#define ASSERT_TEMPLATE_VA_1(TYPE, FMT, OP, CMP, a, b, ...)		TEST_EXPAND(ASSERT_TEMPLATE(TYPE, FMT, OP, CMP, a, b, __VA_ARGS__))
+#define ASSERT_TEMPLATE_VA_2(TYPE, FMT, OP, CMP, a, b, ...)		TEST_EXPAND(ASSERT_TEMPLATE(TYPE, FMT, OP, CMP, a, b, __VA_ARGS__))
+#define ASSERT_TEMPLATE_VA_3(TYPE, FMT, OP, CMP, a, b, ...)		TEST_EXPAND(ASSERT_TEMPLATE(TYPE, FMT, OP, CMP, a, b, __VA_ARGS__))
+#define ASSERT_TEMPLATE_VA_4(TYPE, FMT, OP, CMP, a, b, ...)		TEST_EXPAND(ASSERT_TEMPLATE(TYPE, FMT, OP, CMP, a, b, __VA_ARGS__))
+#define ASSERT_TEMPLATE_VA_5(TYPE, FMT, OP, CMP, a, b, ...)		TEST_EXPAND(ASSERT_TEMPLATE(TYPE, FMT, OP, CMP, a, b, __VA_ARGS__))
+#define ASSERT_TEMPLATE_VA_6(TYPE, FMT, OP, CMP, a, b, ...)		TEST_EXPAND(ASSERT_TEMPLATE(TYPE, FMT, OP, CMP, a, b, __VA_ARGS__))
+#define ASSERT_TEMPLATE_VA_7(TYPE, FMT, OP, CMP, a, b, ...)		TEST_EXPAND(ASSERT_TEMPLATE(TYPE, FMT, OP, CMP, a, b, __VA_ARGS__))
+#define ASSERT_TEMPLATE_VA_8(TYPE, FMT, OP, CMP, a, b, ...)		TEST_EXPAND(ASSERT_TEMPLATE(TYPE, FMT, OP, CMP, a, b, __VA_ARGS__))
+#define ASSERT_TEMPLATE_VA_9(TYPE, FMT, OP, CMP, a, b, ...)		TEST_EXPAND(ASSERT_TEMPLATE(TYPE, FMT, OP, CMP, a, b, __VA_ARGS__))
+
+#define _ASSERT_INTERNAL_HELPER_EQ(a, b)						((a) == (b))
+#define _ASSERT_INTERNAL_HELPER_NE(a, b)						((a) != (b))
+#define _ASSERT_INTERNAL_HELPER_LT(a, b)						((a) < (b))
+#define _ASSERT_INTERNAL_HELPER_LE(a, b)						((a) <= (b))
+#define _ASSERT_INTERNAL_HELPER_GT(a, b)						((a) > (b))
+#define _ASSERT_INTERNAL_HELPER_GE(a, b)						((a) >= (b))
 
 #define TEST(name)	\
 	static void run_test_##name(void);\

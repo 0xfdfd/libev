@@ -128,7 +128,7 @@ TEST(tcp_accept)
 	/* Connect to listen socket */
 	ASSERT_EQ_D32(ev_ipv4_addr("127.0.0.1", s_listen_port, &addr), 0);
 	ASSERT_EQ_D32(ev_tcp_init(&s_loop, &s_client), 0);
-	ASSERT_EQ_D32(ev_tcp_connect(&s_client, (struct sockaddr*)&addr, sizeof(addr), _on_connect), 0);
+	ASSERT_EQ_D32(ev_tcp_connect(&s_client, (struct sockaddr*)&addr, sizeof(addr), _on_connect), 0, "%s", ev_strerror(_l));
 
 	ASSERT_EQ_D32(ev_loop_run(&s_loop, ev_loop_mode_default), 0);
 
