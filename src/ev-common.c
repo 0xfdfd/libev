@@ -322,19 +322,22 @@ int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t le
 
 const char* ev_strerror(int err)
 {
-	static ev_strerror_pair_t error_table[] = {
-		{ EV_UNKNOWN,	"unknown error" },
-		{ EV_EOF,		"end of file" },
-	};
-
-	size_t i;
-	for (i = 0; i < ARRAY_SIZE(error_table); i++)
+	switch (err)
 	{
-		if (error_table[i].errn == err)
-		{
-			return error_table[i].info;
-		}
+		/* Success */
+	case EV_SUCCESS:	return "Success";
+		/* Posix compatible error code */
+	case EV_EACCES:		return "Permission denied";
+	case EV_EBUSY:		return "Device or resource busy";
+	case EV_EINVAL:		return "Invalid argument";
+	case EV_ENOSPC:		return "No space left on device";
+	case EV_EADDRINUSE:	return "Address already in use";
+	case EV_EINPROGRESS:	return "Operation in progress";
+		/* Extend error code */
+	case EV_EOF:		return "End of file";
+	case EV_UNKNOWN:
+	default:
+		break;
 	}
-
-	return strerror(err);
+	return "Unknown";
 }

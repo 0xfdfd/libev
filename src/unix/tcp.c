@@ -467,7 +467,7 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
 
 	if (sock->base.flags & EV_TCP_CONNECTING)
 	{
-		return EV_EALREADY;
+		return EV_EINPROGRESS;
 	}
 	if (sock->base.flags & (EV_TCP_LISTING | EV_TCP_ACCEPTING | EV_TCP_STREAMING))
 	{

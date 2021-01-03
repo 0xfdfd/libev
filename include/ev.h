@@ -131,7 +131,6 @@ enum ev_errno
 	EV_EINVAL			= EINVAL,		/**< invalid argument */
 	EV_ENOSPC			= ENOSPC,		/**< no enough space */
 	EV_EADDRINUSE		= EADDRINUSE,	/**< address is already in use */
-	EV_EALREADY			= EALREADY,		/**< Connection already in progress */
 	EV_EINPROGRESS		= EINPROGRESS,	/**< operation in progress */
 
 	/* Extend error code */

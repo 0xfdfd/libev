@@ -5,6 +5,7 @@ extern "C" {
 #endif
 
 #include "ev-common.h"
+#include "ev-platform.h"
 
 /**
  * @brief Initialize IOCP request

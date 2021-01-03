@@ -362,5 +362,13 @@ void ev__poll(ev_loop_t* loop, uint32_t timeout)
 
 int ev__translate_sys_error(int syserr)
 {
+	switch (syserr)
+	{
+	case EBADF:		return EV_EINVAL;
+	case EALREADY:	return EV_EINPROGRESS;
+	default:
+		break;
+	}
+
 	return syserr;
 }
