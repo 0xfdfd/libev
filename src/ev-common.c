@@ -4,6 +4,12 @@
 #include "ev-platform.h"
 #include "ev.h"
 
+typedef struct ev_strerror_pair
+{
+	int				errn;	/**< Error number */
+	const char*		info;	/**< Error string */
+}ev_strerror_pair_t;
+
 static int _ev_cmp_timer(const ev_map_node_t* key1, const ev_map_node_t* key2, void* arg)
 {
 	(void)arg;
@@ -306,4 +312,23 @@ int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t le
 	}
 
 	return EV_SUCCESS;
+}
+
+const char* ev_strerror(int err)
+{
+	static ev_strerror_pair_t error_table[] = {
+		{ EV_UNKNOWN,	"unknown error" },
+		{ EV_EOF,		"end of file" },
+	};
+
+	size_t i;
+	for (i = 0; i < ARRAY_SIZE(error_table); i++)
+	{
+		if (error_table[i].errn == err)
+		{
+			return error_table[i].info;
+		}
+	}
+
+	return strerror(err);
 }

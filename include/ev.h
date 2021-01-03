@@ -133,7 +133,6 @@ enum ev_errno
 	EV_EADDRINUSE		= EADDRINUSE,	/**< address is already in use */
 	EV_EINPROGRESS		= EINPROGRESS,	/**< operation in progress */
 
-
 	/* Extend error code */
 	EV_UNKNOWN			= -1,			/**< Unknown error */
 	EV_EOF				= -2,			/**< end of file */
@@ -497,6 +496,13 @@ int ev_ipv4_name(const struct sockaddr_in* addr, int* port, char* ip, size_t len
  * @return			#ev_errno_t
  */
 int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t len);
+
+/**
+ * @brief Describe the error code
+ * @param[in] err	Error code
+ * @return			Describe string
+ */
+const char* ev_strerror(int err);
 
 #ifdef __cplusplus
 }
