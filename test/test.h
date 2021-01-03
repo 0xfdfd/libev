@@ -12,7 +12,12 @@ extern "C" {
 #	define ABORT()					DebugBreak()
 #else
 #	include <stdlib.h>
-#	define ABORT()					abort()
+#	if !defined(__native_client__) \
+		&& (defined(__clang__) || defined(__GNUC__)) && (defined(__x86_64__) || defined(__i386__))
+#		define ABORT()				asm("int3")
+#	else
+#		define ABORT()				*(volatile int*)NULL = 1
+#	endif
 #	define _CrtDumpMemoryLeaks()	0
 #	define _CrtSetReportMode(...)	(void)0
 #	define _CrtSetReportFile(...)	(void)0
