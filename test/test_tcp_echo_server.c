@@ -64,8 +64,7 @@ static void _on_accept(ev_tcp_t* from, ev_tcp_t* to, int stat)
 	ASSERT_EQ_PTR(&s_conn, to);
 	ASSERT_EQ_D32(stat, EV_SUCCESS);
 
-
-
+	ev_tcp_exit(&s_server, _on_close_server_socket);
 	ASSERT_EQ_D32(ev_tcp_write(to, &s_write_pack.w_req, &s_write_pack.buf, 1, _on_send_finish), 0);
 }
 
@@ -134,7 +133,6 @@ TEST(tcp_accept)
 	ASSERT_EQ_D32(ev_loop_run(&s_loop, ev_loop_mode_default), 0);
 
 	/* Close all socket */
-	ev_tcp_exit(&s_server, _on_close_server_socket);
 	ev_tcp_exit(&s_client, _on_close_client_socket);
 	ASSERT_EQ_D32(ev_loop_run(&s_loop, ev_loop_mode_default), 0);
 

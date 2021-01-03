@@ -20,6 +20,41 @@ static void _ev_init_hwtime(void)
 	g_hwtime_clock_id = CLOCK_MONOTONIC_COARSE;
 }
 
+static int _ev_cmp_io_unix(const ev_map_node_t* key1, const ev_map_node_t* key2, void* arg)
+{
+	(void)arg;
+	ev_io_t* io1 = container_of(key1, ev_io_t, node);
+	ev_io_t* io2 = container_of(key2, ev_io_t, node);
+	return io1->data.fd - io2->data.fd;
+}
+
+static ev_io_t* _ev_find_io(ev_loop_t* loop, int fd)
+{
+	ev_io_t tmp;
+	tmp.data.fd = fd;
+
+	ev_map_node_t* it = ev_map_find(&loop->backend.io, &tmp.node);
+	return it != NULL ? container_of(it, ev_io_t, node) : NULL;
+}
+
+static int _ev_poll_once(ev_loop_t* loop, struct epoll_event* events, int maxevents, int timeout)
+{
+	int nfds = epoll_wait(loop->backend.pollfd, events, maxevents, timeout);
+	if (nfds < 0)
+	{
+		return nfds;
+	}
+
+	int i;
+	for (i = 0; i < nfds; i++)
+	{
+		ev_io_t* io = _ev_find_io(loop, events[i].data.fd);
+		io->data.cb(io, events[i].events);
+	}
+
+	return nfds;
+}
+
 void ev__loop_update_time(ev_loop_t* loop)
 {
 	static ev_once_t token = EV_ONCE_INIT;
@@ -166,14 +201,6 @@ int ev__nonblock(int fd, int set)
 #endif
 }
 
-static int _ev_cmp_io_unix(const ev_map_node_t* key1, const ev_map_node_t* key2, void* arg)
-{
-	(void)arg;
-	ev_io_t* io1 = container_of(key1, ev_io_t, node);
-	ev_io_t* io2 = container_of(key2, ev_io_t, node);
-	return io1->data.fd - io2->data.fd;
-}
-
 int ev__loop_init_backend(ev_loop_t* loop)
 {
 	ev_map_init(&loop->backend.io, _ev_cmp_io_unix, NULL);
@@ -271,33 +298,6 @@ void ev__io_del(ev_loop_t* loop, ev_io_t* io, unsigned evts)
 	{
 		ev_map_erase(&loop->backend.io, &io->node);
 	}
-}
-
-static ev_io_t* _ev_find_io(ev_loop_t* loop, int fd)
-{
-	ev_io_t tmp;
-	tmp.data.fd = fd;
-
-	ev_map_node_t* it = ev_map_find(&loop->backend.io, &tmp.node);
-	return it != NULL ? container_of(it, ev_io_t, node) : NULL;
-}
-
-static int _ev_poll_once(ev_loop_t* loop, struct epoll_event* events, int maxevents, int timeout)
-{
-	int nfds = epoll_wait(loop->backend.pollfd, events, maxevents, timeout);
-	if (nfds < 0)
-	{
-		return nfds;
-	}
-
-	int i;
-	for (i = 0; i < nfds; i++)
-	{
-		ev_io_t* io = _ev_find_io(loop, events[i].data.fd);
-		io->data.cb(io, events[i].events);
-	}
-
-	return nfds;
 }
 
 void ev__poll(ev_loop_t* loop, uint32_t timeout)

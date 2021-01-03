@@ -66,27 +66,24 @@ typedef struct ev_async_backend
 
 typedef struct ev_tcp_backend
 {
-	int							sock;				/**< Socket file descriptor */
+	int							sock;			/**< Socket file descriptor */
+	ev_io_t						io;				/**< IO object */
 
 	union
 	{
 		struct
 		{
-			ev_io_t				io;				/**< Accept IO */
 			ev_list_t			accept_queue;	/**< Accept queue */
 		}listen;
 
 		struct
 		{
 			ev_accept_cb		cb;				/**< Accept callback */
-			struct sockaddr_in6	peeraddr;		/**< Peer address */
-			socklen_t			addrlen;
 			ev_list_node_t		accept_node;	/**< Accept queue node */
 		}accept;
 
 		struct
 		{
-			ev_io_t				io;				/**< IO object */
 			ev_list_t			w_queue;		/**< #ev_read_t Write queue */
 			ev_list_t			r_queue;		/**< #ev_write_t Read queue */
 		}stream;
@@ -94,7 +91,6 @@ typedef struct ev_tcp_backend
 		struct
 		{
 			ev_connect_cb		cb;				/**< Connect callback */
-			ev_io_t				io;				/**< IO object */
 			ev_todo_t			token;			/**< Todo token */
 			int					stat;			/**< Connect result */
 		}client;

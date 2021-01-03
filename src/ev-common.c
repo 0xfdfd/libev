@@ -122,6 +122,7 @@ static uint32_t _ev_backend_timeout_timer(ev_loop_t* loop)
 
 static uint32_t _ev_backend_timeout(ev_loop_t* loop)
 {
+	uint32_t ret;
 	if (loop->mask.b_stop)
 	{
 		return 0;
@@ -132,7 +133,13 @@ static uint32_t _ev_backend_timeout(ev_loop_t* loop)
 		return 0;
 	}
 
-	return _ev_backend_timeout_timer(loop);
+	if ((ret = _ev_backend_timeout_timer(loop)) != 0)
+	{
+		return ret;
+	}
+
+	/* If no active handle, set timeout to max value */
+	return loop->active_handles ? (uint32_t)-1 : 0;
 }
 
 static void _ev_to_close(ev_todo_t* todo)
@@ -168,7 +175,6 @@ void ev__handle_exit(ev_handle_t* handle)
 	handle->flags |= EV_HANDLE_CLOSING;
 
 	ev__todo(handle->loop, &handle->close_queue, _ev_to_close);
-	handle->loop = NULL;
 }
 
 void ev__handle_active(ev_handle_t* handle)

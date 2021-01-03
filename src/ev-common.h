@@ -31,15 +31,15 @@ extern "C" {
 typedef enum ev_handle_flag
 {
 	/* Used by all handles. Bit 0-7. */
-	EV_HANDLE_CLOSING		= 0x01 << 0x00,
-	EV_HANDLE_CLOSED		= 0x01 << 0x01,
-	EV_HANDLE_ACTIVE		= 0x01 << 0x02,
+	EV_HANDLE_CLOSING		= 0x01 << 0x00,		/**< 1 */
+	EV_HANDLE_CLOSED		= 0x01 << 0x01,		/**< 2 */
+	EV_HANDLE_ACTIVE		= 0x01 << 0x02,		/**< 4 */
 
 	/* Used by ev_tcp_t */
-	EV_TCP_LISTING			= 0x01 << 0x08,
-	EV_TCP_ACCEPTING		= 0x01 << 0x09,
-	EV_TCP_STREAMING		= 0x01 << 0x0A,
-	EV_TCP_CONNECTING		= 0x01 << 0x0B,
+	EV_TCP_LISTING			= 0x01 << 0x08,		/**< 256 */
+	EV_TCP_ACCEPTING		= 0x01 << 0x09,		/**< 512 */
+	EV_TCP_STREAMING		= 0x01 << 0x0A,		/**< 1024 */
+	EV_TCP_CONNECTING		= 0x01 << 0x0B,		/**< 2048 */
 }ev_handle_flag_t;
 
 /**
