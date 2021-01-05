@@ -85,7 +85,7 @@ static void _on_read(ev_read_t* req, size_t size, int stat)
 	ASSERT_EQ_D32(stat, EV_SUCCESS);
 
 	s_read_pack.buf.data = (char*)s_read_pack.buf.data + size;
-	s_read_pack.buf.size -= size;
+	s_read_pack.buf.size -= (unsigned)size;
 	ASSERT_EQ_D32(ev_tcp_read(&s_client, &s_read_pack.r_req, &s_read_pack.buf, 1, _on_read), 0);
 }
 

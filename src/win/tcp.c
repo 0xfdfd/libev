@@ -158,7 +158,7 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
 	int flag_new_sock = 0;
 	if (conn->backend.sock == INVALID_SOCKET)
 	{
-		if ((ret = _ev_tcp_setup_sock(conn, lisn->backend.af, 0)) != EV_SUCCESS)
+		if ((ret = _ev_tcp_setup_sock(conn, lisn->backend.af, 1)) != EV_SUCCESS)
 		{
 			goto err;
 		}
@@ -167,8 +167,9 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
 	}
 	conn->backend.u.accept.listen = lisn;
 
+	DWORD bytes;
 	ret = AcceptEx(lisn->backend.sock, conn->backend.sock,
-		NULL, 0, 0, 0, 0, &conn->backend.u.accept.io.overlapped);
+		NULL, 0, 0, 0, &bytes, &conn->backend.u.accept.io.overlapped);
 	if (!ret)
 	{
 		ret = ev__translate_sys_error(WSAGetLastError());

@@ -14,7 +14,7 @@ extern "C" {
 void test_random(void* buffer, size_t size)
 {
 #if defined(_WIN32)
-	BOOLEAN ret = RtlGenRandom(buffer, size);
+	BOOLEAN ret = RtlGenRandom(buffer, (ULONG)size);
 	assert(ret);
 #else
 	size_t w_size = 0;
