@@ -4,6 +4,28 @@
 #include "loop.h"
 #include "tcp.h"
 
+tcp_ctx_t g_tcp_ctx;
+
+static void _ev_tcp_on_init(void)
+{
+	int ret;
+	WSADATA wsa_data;
+	if ((ret = WSAStartup(MAKEWORD(2, 2), &wsa_data)) != 0)
+	{
+		assert(ret == 0);
+	}
+
+	if ((ret = ev_ipv4_addr("0.0.0.0", 0, &g_tcp_ctx.addr_any_ip4)) != EV_SUCCESS)
+	{
+		assert(ret == EV_SUCCESS);
+	}
+
+	if ((ret = ev_ipv6_addr("::", 0, &g_tcp_ctx.addr_any_ip6)) != EV_SUCCESS)
+	{
+		assert(ret == EV_SUCCESS);
+	}
+}
+
 static void _ev_tcp_close_socket(ev_tcp_t* sock)
 {
 	closesocket(sock->backend.sock);
@@ -123,6 +145,30 @@ static void _ev_tcp_on_connect_win(ev_iocp_t* req)
 	sock->backend.u.conn.cb(sock, ret);
 }
 
+static int _ev_tcp_bind_any_addr(ev_tcp_t* sock, int af)
+{
+	size_t name_len;
+	const struct sockaddr* bind_addr;
+
+	switch (af)
+	{
+	case AF_INET:
+		bind_addr = (struct sockaddr*)&g_tcp_ctx.addr_any_ip4;
+		name_len = sizeof(g_tcp_ctx.addr_any_ip4);
+		break;
+
+	case AF_INET6:
+		bind_addr = (struct sockaddr*)&g_tcp_ctx.addr_any_ip6;
+		name_len = sizeof(g_tcp_ctx.addr_any_ip6);
+		break;
+
+	default:
+		return EV_EINVAL;
+	}
+
+	return ev_tcp_bind(sock, bind_addr, name_len);
+}
+
 int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp)
 {
 	ev__handle_init(loop, &tcp->base, _ev_tcp_on_close);
@@ -141,6 +187,11 @@ int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen)
 	int ret;
 	int flag_new_socket = 0;
 
+	if (tcp->base.flags & EV_TCP_BOUND)
+	{
+		return EV_EALREADY;
+	}
+
 	if (tcp->backend.sock == INVALID_SOCKET)
 	{
 		if ((ret = _ev_tcp_setup_sock(tcp, addr->sa_family, 1)) != EV_SUCCESS)
@@ -155,6 +206,7 @@ int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen)
 		ret = ev__translate_sys_error(WSAGetLastError());
 		goto err;
 	}
+	tcp->base.flags |= EV_TCP_BOUND;
 
 	return EV_SUCCESS;
 
@@ -221,13 +273,8 @@ err:
 
 void ev__tcp_init(void)
 {
-	int ret;
-	WSADATA wsa_data;
-
-	if ((ret = WSAStartup(MAKEWORD(2, 2), &wsa_data)) != 0)
-	{
-		assert(ret == 0);
-	}
+	static ev_once_t token = EV_ONCE_INIT;
+	ev_once_execute(&token, _ev_tcp_on_init);
 }
 
 int ev_tcp_getsockname(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
@@ -275,6 +322,14 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
 			goto err;
 		}
 		flag_new_sock = 1;
+	}
+
+	if (!(sock->base.flags & EV_TCP_BOUND))
+	{
+		if ((ret = _ev_tcp_bind_any_addr(sock, addr->sa_family)) != EV_SUCCESS)
+		{
+			goto err;
+		}
 	}
 
 	ev__iocp_init(&sock->backend.io, _ev_tcp_on_connect_win);

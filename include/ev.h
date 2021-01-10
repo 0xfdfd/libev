@@ -132,6 +132,7 @@ enum ev_errno
 	EV_ENOSPC			= ENOSPC,		/**< no enough space */
 	EV_EADDRINUSE		= EADDRINUSE,	/**< address is already in use */
 	EV_EINPROGRESS		= EINPROGRESS,	/**< operation in progress */
+	EV_EALREADY			= EALREADY,		/**< already done */
 
 	/* Extend error code */
 	EV_UNKNOWN			= -1,			/**< Unknown error */

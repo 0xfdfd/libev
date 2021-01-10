@@ -35,11 +35,12 @@ typedef enum ev_handle_flag
 	EV_HANDLE_CLOSED		= 0x01 << 0x01,		/**< 2 */
 	EV_HANDLE_ACTIVE		= 0x01 << 0x02,		/**< 4 */
 
-	/* Used by ev_tcp_t */
+	/* Used by socket */
 	EV_TCP_LISTING			= 0x01 << 0x08,		/**< 256 */
 	EV_TCP_ACCEPTING		= 0x01 << 0x09,		/**< 512 */
 	EV_TCP_STREAMING		= 0x01 << 0x0A,		/**< 1024 */
 	EV_TCP_CONNECTING		= 0x01 << 0x0B,		/**< 2048 */
+	EV_TCP_BOUND			= 0x01 << 0x0C,		/**< 4096 */
 }ev_handle_flag_t;
 
 /**
