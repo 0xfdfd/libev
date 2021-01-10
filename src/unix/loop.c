@@ -303,7 +303,6 @@ void ev__io_del(ev_loop_t* loop, ev_io_t* io, unsigned evts)
 void ev__poll(ev_loop_t* loop, uint32_t timeout)
 {
 	int nevts;
-	struct epoll_event events[64];
 
 	/**
 	 * A bug in kernels < 2.6.37 makes timeouts larger than ~30 minutes
@@ -330,9 +329,9 @@ void ev__poll(ev_loop_t* loop, uint32_t timeout)
 			timeout = max_safe_timeout;
 		}
 
-		nevts = _ev_poll_once(loop, events, ARRAY_SIZE(events), timeout);
+		nevts = _ev_poll_once(loop, loop->backend.events, ARRAY_SIZE(loop->backend.events), timeout);
 
-		if (nevts == ARRAY_SIZE(events))
+		if (nevts == ARRAY_SIZE(loop->backend.events))
 		{/* Poll for more events but don't block this time. */
 			timeout = 0;
 			continue;
