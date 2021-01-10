@@ -92,6 +92,37 @@ static void _ev_tcp_on_accept_win(ev_iocp_t* req)
 	lisn->backend.u.accept.cb(lisn, conn, EV_SUCCESS);
 }
 
+static int _ev_tcp_get_connectex(ev_tcp_t* sock, LPFN_CONNECTEX* fn)
+{
+	int ret;
+	DWORD bytes;
+	GUID wsaid = WSAID_CONNECTEX;
+
+	ret = WSAIoctl(sock->sock, SIO_GET_EXTENSION_FUNCTION_POINTER, &wsaid, sizeof(wsaid), fn, sizeof(*fn), &bytes, NULL, NULL);
+	return ret == SOCKET_ERROR ? EV_UNKNOWN : EV_SUCCESS;
+}
+
+static void _ev_tcp_on_connect_win(ev_iocp_t* req)
+{
+	int ret = EV_SUCCESS;
+	ev_tcp_t* sock = container_of(req, ev_tcp_t, backend.io);
+
+	if (NT_SUCCESS(req->overlapped.Internal))
+	{
+		if (setsockopt(sock->sock, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT, NULL, 0) != 0)
+		{
+			ret = WSAGetLastError();
+		}
+	}
+	else
+	{
+		ret = ev__ntstatus_to_winsock_error((NTSTATUS)req->overlapped.Internal);
+	}
+
+	ret = ev__translate_sys_error(ret);
+	sock->backend.u.conn.cb(sock, ret);
+}
+
 int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp)
 {
 	ev__handle_init(loop, &tcp->base, _ev_tcp_on_close);
@@ -167,7 +198,7 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
 	}
 	conn->backend.u.accept.listen = lisn;
 
-	DWORD bytes;
+	DWORD bytes = 0;
 	ret = AcceptEx(lisn->backend.sock, conn->backend.sock,
 		NULL, 0, 0, 0, &bytes, &conn->backend.u.accept.io.overlapped);
 	if (!ret)
@@ -225,4 +256,51 @@ int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
 
 	*len = socklen;
 	return EV_SUCCESS;
+}
+
+int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connect_cb cb)
+{
+	int ret;
+	int flag_new_sock = 0;
+
+	if (sock->base.flags & EV_TCP_CONNECTING)
+	{
+		return EV_EINPROGRESS;
+	}
+
+	if (sock->sock == INVALID_SOCKET)
+	{
+		if ((ret = _ev_tcp_setup_sock(sock, addr->sa_family, 1)) != EV_SUCCESS)
+		{
+			goto err;
+		}
+		flag_new_sock = 1;
+	}
+
+	ev__iocp_init(&sock->backend.io, _ev_tcp_on_connect_win);
+
+	sock->backend.u.conn.cb = cb;
+	if ((ret = _ev_tcp_get_connectex(sock, &sock->backend.u.conn.fn_connectex)) != EV_SUCCESS)
+	{
+		goto err;
+	}
+
+	DWORD bytes;
+	if (!sock->backend.u.conn.fn_connectex(sock->sock, addr, (int)size,
+		NULL, 0, &bytes, &sock->backend.io.overlapped))
+	{
+		ret = ev__translate_sys_error(WSAGetLastError());
+		goto err;
+	}
+
+	sock->base.flags |= EV_TCP_CONNECTING;
+
+	return EV_SUCCESS;
+
+err:
+	if (flag_new_sock)
+	{
+		_ev_tcp_close_socket(sock);
+	}
+	return ret;
 }

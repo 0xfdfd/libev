@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include <winsock2.h>
+#include <mswsock.h>
 #include <ws2tcpip.h>
 #include <windows.h>
 #include "ev/map.h"
@@ -51,7 +52,7 @@ struct ev_iocp
 	ev_iocp_cb		cb;			/**< Callback */
 	OVERLAPPED		overlapped;	/**< IOCP field */
 };
-#define EV_IOCP_INIT			{ NULL, { NULL, NULL, { { 0, 0 } } } }
+#define EV_IOCP_INIT			{ NULL, { NULL, NULL, { { 0, 0 } }, NULL } }
 
 typedef struct ev_async_backend
 {
@@ -63,6 +64,7 @@ typedef struct ev_tcp_backend
 {
 	ev_os_socket_t			sock;			/**< Socket handle */
 	int						af;				/**< AF_INET / AF_INET6 */
+	ev_iocp_t				io;
 
 	union
 	{
@@ -78,6 +80,11 @@ typedef struct ev_tcp_backend
 			ev_list_node_t	node;			/**< Accept queue node */
 			ev_tcp_t*		listen;			/**< Listen socket */
 		}accept;
+		struct
+		{
+			ev_connect_cb	cb;				/**< Callback */
+			LPFN_CONNECTEX	fn_connectex;	/**< ConnectEx */
+		}conn;
 	}u;
 }ev_tcp_backend_t;
 

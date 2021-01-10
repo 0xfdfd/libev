@@ -6,6 +6,7 @@ extern "C" {
 
 #include "ev-common.h"
 #include "ev-platform.h"
+#include "winapi.h"
 
 /**
  * @brief Initialize IOCP request
@@ -13,6 +14,8 @@ extern "C" {
  * @param[in] cb		A callback when the request is finish
  */
 void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb cb);
+
+int ev__ntstatus_to_winsock_error(NTSTATUS status);
 
 #ifdef __cplusplus
 }
