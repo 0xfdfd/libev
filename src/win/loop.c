@@ -54,7 +54,7 @@ static void _ev_pool_win_handle_req(OVERLAPPED_ENTRY* overlappeds, ULONG count)
 		if (overlappeds[i].lpOverlapped)
 		{
 			ev_iocp_t* req = container_of(overlappeds[i].lpOverlapped, ev_iocp_t, overlapped);
-			req->cb(req);
+			req->cb(req, overlappeds[i].dwNumberOfBytesTransferred);
 		}
 	}
 }

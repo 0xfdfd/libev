@@ -148,7 +148,7 @@ static void _ev_tcp_cleanup_all_write_request(ev_tcp_t* sock, int err)
 	while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue)) != NULL)
 	{
 		ev_write_t* req = container_of(it, ev_write_t, node);
-		req->data.cb(req, req->info.len, err);
+		req->data.cb(req, req->backend.len, err);
 	}
 }
 
@@ -163,7 +163,7 @@ static void _ev_tcp_do_write(ev_tcp_t* sock)
 	do
 	{
 		w = writev(sock->sock,
-			(struct iovec*)(req->data.bufs + req->info.idx), req->data.nbuf - req->info.idx);
+			(struct iovec*)(req->data.bufs + req->backend.idx), req->data.nbuf - req->backend.idx);
 	} while (w == -1 && errno == EINTR);
 
 	/* Handle error */
@@ -178,27 +178,27 @@ static void _ev_tcp_do_write(ev_tcp_t* sock)
 		goto fin;
 	}
 
-	req->info.len += w;
+	req->backend.len += w;
 	while (w > 0)
 	{
-		if ((size_t)w < req->data.bufs[req->info.idx].size)
+		if ((size_t)w < req->data.bufs[req->backend.idx].size)
 		{
-			req->data.bufs[req->info.idx].data =
-				(void*)((uint8_t*)(req->data.bufs[req->info.idx].data) + w);
-			req->data.bufs[req->info.idx].size -= w;
+			req->data.bufs[req->backend.idx].data =
+				(void*)((uint8_t*)(req->data.bufs[req->backend.idx].data) + w);
+			req->data.bufs[req->backend.idx].size -= w;
 			break;
 		}
 
-		w -= req->data.bufs[req->info.idx].size;
-		req->info.idx++;
+		w -= req->data.bufs[req->backend.idx].size;
+		req->backend.idx++;
 		continue;
 	}
 
 	/* Write complete */
-	if (req->info.idx == req->data.nbuf)
+	if (req->backend.idx == req->data.nbuf)
 	{
 		ev_list_erase(&sock->backend.u.stream.w_queue, it);
-		req->data.cb(req, req->info.len, EV_SUCCESS);
+		req->data.cb(req, req->backend.len, EV_SUCCESS);
 	}
 
 fin:
@@ -386,7 +386,7 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
 
 int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb)
 {
-	assert(sizeof(ev_buf_t) == sizeof(struct iovec));
+	ENSURE_LAYOUT(ev_buf_t, struct iovec, data, iov_base, size, iov_len);
 
 	if (sock->base.flags & (EV_TCP_LISTING | EV_TCP_ACCEPTING | EV_TCP_CONNECTING))
 	{
@@ -401,8 +401,8 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, 
 	req->data.cb = cb;
 	req->data.bufs = bufs;
 	req->data.nbuf = nbuf;
-	req->info.idx = 0;
-	req->info.len = 0;
+	req->backend.idx = 0;
+	req->backend.len = 0;
 	ev_list_push_back(&sock->backend.u.stream.w_queue, &req->node);
 
 	ev__io_add(sock->base.loop, &sock->backend.io, EV_IO_OUT);

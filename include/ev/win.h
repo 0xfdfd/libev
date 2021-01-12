@@ -22,19 +22,19 @@ typedef SOCKET ev_os_socket_t;
  */
 typedef struct ev_buf
 {
-	ULONG			size;		/**< Data size */
-	CHAR*			data;		/**< Data address */
+	ULONG						size;				/**< Data size */
+	CHAR*						data;				/**< Data address */
 }ev_buf_t;
 
 struct ev_once
 {
-	INIT_ONCE		guard;		/**< Once token */
+	INIT_ONCE					guard;				/**< Once token */
 };
 #define EV_ONCE_INIT			{ INIT_ONCE_STATIC_INIT }
 
 typedef struct ev_loop_plt
 {
-	HANDLE			iocp;		/**< IOCP handle */
+	HANDLE						iocp;				/**< IOCP handle */
 }ev_loop_plt_t;
 #define EV_LOOP_PLT_INIT		{ NULL }
 
@@ -45,46 +45,67 @@ typedef struct ev_iocp ev_iocp_t;
  * @brief IOCP complete callback
  * @param[in] req	IOCP request
  */
-typedef void(*ev_iocp_cb)(ev_iocp_t* req);
+typedef void(*ev_iocp_cb)(ev_iocp_t* req, size_t transferred);
 
 struct ev_iocp
 {
-	ev_iocp_cb		cb;			/**< Callback */
-	OVERLAPPED		overlapped;	/**< IOCP field */
+	ev_iocp_cb					cb;					/**< Callback */
+	OVERLAPPED					overlapped;			/**< IOCP field */
 };
 #define EV_IOCP_INIT			{ NULL, { NULL, NULL, { { 0, 0 } }, NULL } }
 
 typedef struct ev_async_backend
 {
-	ev_iocp_t		iocp;		/**< IOCP request */
+	ev_iocp_t					iocp;				/**< IOCP request */
 }ev_async_backend_t;
 #define EV_ASYNC_BACKEND_INIT	{ EV_IOCP_INIT }
 
+typedef struct ev_write_backend
+{
+	void*						owner;				/**< Owner */
+	ev_iocp_t					io;					/**< IOCP backend */
+	size_t						size;				/**< Written size */
+	int							stat;				/**< Write result */
+}ev_write_backend_t;
+
 typedef struct ev_tcp_backend
 {
-	ev_os_socket_t			sock;			/**< Socket handle */
-	int						af;				/**< AF_INET / AF_INET6 */
-	ev_iocp_t				io;
+	ev_os_socket_t				sock;				/**< Socket handle */
+	int							af;					/**< AF_INET / AF_INET6 */
+	ev_iocp_t					io;
 
 	union
 	{
 		struct
 		{
-			ev_iocp_t		io;				/**< IOCP handle */
-			ev_list_t		accept_queue;	/**< Accept queue */
+			ev_iocp_t			io;					/**< IOCP handle */
+			ev_list_t			accept_queue;		/**< Accept queue */
 		}listen;
 		struct
 		{
-			ev_iocp_t		io;				/**< IOCP handle */
-			ev_accept_cb	cb;				/**< Accept callback */
-			ev_list_node_t	node;			/**< Accept queue node */
-			ev_tcp_t*		listen;			/**< Listen socket */
+			ev_iocp_t			io;					/**< IOCP handle */
+			ev_accept_cb		cb;					/**< Accept callback */
+			ev_list_node_t		node;				/**< Accept queue node */
+			ev_tcp_t*			listen;				/**< Listen socket */
 		}accept;
 		struct
 		{
-			ev_connect_cb	cb;				/**< Callback */
-			LPFN_CONNECTEX	fn_connectex;	/**< ConnectEx */
+			ev_connect_cb		cb;					/**< Callback */
+			LPFN_CONNECTEX		fn_connectex;		/**< ConnectEx */
 		}conn;
+		struct
+		{
+			ev_todo_t			token;				/**< Todo token */
+			ev_list_t			w_queue;			/**< Write queue */
+			ev_list_t			w_queue_done;		/**< Write done queue */
+			ev_list_t			r_queue;			/**< Read queue */
+			ev_list_t			r_queue_done;		/**< Read done queue */
+
+			struct
+			{
+				unsigned		todo_pending : 1;	/**< Already submit todo request */
+			}mask;
+		}stream;
 	}u;
 }ev_tcp_backend_t;
 

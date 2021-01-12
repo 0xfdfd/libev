@@ -36,6 +36,12 @@ typedef struct ev_loop_plt
 }ev_loop_plt_t;
 #define EV_LOOP_PLT_INIT		{ -1, EV_MAP_INIT(NULL, NULL) }
 
+typedef struct ev_write_backend
+{
+	size_t						idx;			/**< Write buffer index */
+	size_t						len;			/**< Total write size */
+}ev_write_backend_t;
+
 struct ev_io;
 typedef struct ev_io ev_io_t;
 
@@ -46,7 +52,7 @@ typedef struct ev_io ev_io_t;
  */
 typedef void (*ev_io_cb)(ev_io_t* io, unsigned evts);
 
-typedef struct ev_io
+struct ev_io
 {
 	ev_map_node_t				node;			/**< #ev_loop_plt_t::io */
 	struct
@@ -56,7 +62,7 @@ typedef struct ev_io
 		unsigned				n_events;		/**< Next events */
 		ev_io_cb				cb;				/**< IO active callback */
 	}data;
-}ev_io_t;
+};
 #define EV_IO_INIT				{ EV_MAP_NODE_INIT, { 0, 0, 0, NULL } }
 
 typedef struct ev_async_backend

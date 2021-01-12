@@ -28,6 +28,13 @@ extern "C" {
 #	define ABORT()		*(volatile int*)NULL = 1
 #endif
 
+#define ENSURE_LAYOUT(TYPE_A, TYPE_B, FIELD_A_1, FIELD_B_1, FIELD_A_2, FIELD_B_2)	\
+	assert(sizeof(TYPE_A) == sizeof(TYPE_B));\
+	assert(offsetof(TYPE_A, FIELD_A_1) == offsetof(TYPE_B, FIELD_B_1));\
+	assert(sizeof(((TYPE_A*)0)->FIELD_A_1) == sizeof(((TYPE_B*)0)->FIELD_B_1));\
+	assert(offsetof(TYPE_A, FIELD_A_2) == offsetof(TYPE_B, FIELD_B_2));\
+	assert(sizeof(((TYPE_A*)0)->FIELD_A_2) == sizeof(((TYPE_B*)0)->FIELD_B_2))
+
 typedef enum ev_handle_flag
 {
 	/* Used by all handles. Bit 0-7. */

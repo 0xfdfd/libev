@@ -226,11 +226,7 @@ struct ev_write
 		ev_buf_t*			bufs;			/**< Buffer list */
 		size_t				nbuf;			/**< Buffer list count */
 	}data;
-	struct
-	{
-		size_t				idx;			/**< Write buffer index */
-		size_t				len;			/**< Total write size */
-	}info;
+	ev_write_backend_t		backend;		/**< Backend */
 };
 
 struct ev_read

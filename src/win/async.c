@@ -1,8 +1,9 @@
 #include <assert.h>
 #include "loop.h"
 
-static void _ev_async_on_active(ev_iocp_t* req)
+static void _ev_async_on_active(ev_iocp_t* req, size_t transferred)
 {
+	(void)transferred;
 	ev_async_t* async = container_of(req, ev_async_t, backend.iocp);
 
 	/**
