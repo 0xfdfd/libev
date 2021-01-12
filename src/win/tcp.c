@@ -361,7 +361,8 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
 		NULL, 0, 0, 0, &bytes, &conn->backend.u.accept.io.overlapped);
 	if (!ret)
 	{
-		ret = ev__translate_sys_error(WSAGetLastError());
+		ret = WSAGetLastError();
+		ret = ev__translate_sys_error(ret);
 		goto err;
 	}
 
