@@ -68,6 +68,14 @@ typedef struct ev_write_backend
 	int							stat;				/**< Write result */
 }ev_write_backend_t;
 
+typedef struct ev_read_backend
+{
+	void*						owner;				/**< Owner */
+	ev_iocp_t					io;					/**< IOCP backend */
+	size_t						size;				/**< Written size */
+	int							stat;				/**< Write result */
+}ev_read_backend_t;
+
 typedef struct ev_tcp_backend
 {
 	ev_os_socket_t				sock;				/**< Socket handle */

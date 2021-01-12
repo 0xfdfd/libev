@@ -42,6 +42,11 @@ typedef struct ev_write_backend
 	size_t						len;			/**< Total write size */
 }ev_write_backend_t;
 
+typedef struct ev_read_backend
+{
+	int							useless[0];		/**< Useless field */
+}ev_read_backend_t;
+
 struct ev_io;
 typedef struct ev_io ev_io_t;
 

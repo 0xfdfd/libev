@@ -238,6 +238,7 @@ struct ev_read
 		ev_buf_t*			bufs;			/**< Buffer list */
 		size_t				nbuf;			/**< Buffer list count */
 	}data;
+	ev_read_backend_t		backend;		/**< Backend */
 };
 
 /**
