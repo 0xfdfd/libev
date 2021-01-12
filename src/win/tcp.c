@@ -237,6 +237,12 @@ static void _ev_tcp_process_direct_write_success(ev_tcp_t* sock, ev_write_t* req
 	_ev_tcp_submit_stream_todo(sock);
 }
 
+void ev__tcp_init(void)
+{
+	static ev_once_t token = EV_ONCE_INIT;
+	ev_once_execute(&token, _ev_tcp_on_init);
+}
+
 int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp)
 {
 	ev__handle_init(loop, &tcp->base, _ev_tcp_on_close);
@@ -337,12 +343,6 @@ err:
 		_ev_tcp_close_socket(conn);
 	}
 	return ret;
-}
-
-void ev__tcp_init(void)
-{
-	static ev_once_t token = EV_ONCE_INIT;
-	ev_once_execute(&token, _ev_tcp_on_init);
 }
 
 int ev_tcp_getsockname(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
