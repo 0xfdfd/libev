@@ -21,6 +21,7 @@ struct ev_buf
 	char*						data;		/**< Data address */
 	size_t						size;		/**< Data size */
 };
+#define EV_BUF_INIT(buf, len)	{ (char*)buf, (size_t)len }
 
 struct ev_once
 {
