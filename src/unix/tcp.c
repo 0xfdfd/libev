@@ -50,18 +50,6 @@ fin:
 	sock->backend.u.client.cb(sock, sock->backend.u.client.stat);
 }
 
-static void _ev_tcp_deactive(ev_tcp_t* sock)
-{
-	unsigned flags = sock->base.flags;
-
-	if (flags & (EV_TCP_LISTING | EV_TCP_ACCEPTING | EV_TCP_STREAMING | EV_TCP_CONNECTING))
-	{
-		return;
-	}
-
-	ev__handle_deactive(&sock->base);
-}
-
 static void _ev_tcp_on_accept(ev_tcp_t* acpt)
 {
 	ev_list_node_t* it = ev_list_pop_front(&acpt->backend.u.listen.accept_queue);
@@ -79,7 +67,7 @@ static void _ev_tcp_on_accept(ev_tcp_t* acpt)
 	} while (conn->sock == -1 && errno == EINTR);
 
 	conn->base.flags &= ~EV_TCP_ACCEPTING;
-	_ev_tcp_deactive(conn);
+	ev__tcp_deactive(conn);
 
 	int ret = conn->sock >= 0 ? EV_SUCCESS : ev__translate_sys_error(errno);
 	if (ret == EV_SUCCESS)
@@ -250,7 +238,7 @@ static void _ev_tcp_on_event(ev_io_t* io, unsigned evts)
 	}
 
 fin:
-	_ev_tcp_deactive(sock);
+	ev__tcp_deactive(sock);
 }
 
 static int _ev_tcp_setup_fd(ev_tcp_t* sock, int domain, int* new_fd)
@@ -299,11 +287,6 @@ static void _ev_tcp_setup_stream(ev_tcp_t* sock)
 	sock->base.flags |= EV_TCP_STREAMING;
 	ev_list_init(&sock->backend.u.stream.w_queue);
 	ev_list_init(&sock->backend.u.stream.r_queue);
-}
-
-static void _ev_tcp_active(ev_tcp_t* sock)
-{
-	ev__handle_active(&sock->base);
 }
 
 static void _ev_tcp_to_connect(ev_todo_t* todo)
@@ -386,8 +369,8 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
 	ev_list_push_back(&lisn->backend.u.listen.accept_queue, &conn->backend.u.accept.accept_node);
 	ev__io_add(lisn->base.loop, &lisn->backend.io, EV_IO_IN);
 
-	_ev_tcp_active(lisn);
-	_ev_tcp_active(conn);
+	ev__tcp_active(lisn);
+	ev__tcp_active(conn);
 
 	return EV_SUCCESS;
 }
@@ -487,7 +470,7 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
 
 	sock->backend.u.client.cb = cb;
 	sock->base.flags |= EV_TCP_CONNECTING;
-	_ev_tcp_active(sock);
+	ev__tcp_active(sock);
 
 	if ((ret = connect(sock->sock, addr, size)) == 0)
 	{/* Connect success immediately */
@@ -499,7 +482,7 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
 	if (errno != EINPROGRESS)
 	{
 		sock->base.flags &= ~EV_TCP_CONNECTING;
-		_ev_tcp_deactive(sock);
+		ev__tcp_deactive(sock);
 		return ev__translate_sys_error(errno);
 	}
 

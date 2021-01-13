@@ -215,6 +215,26 @@ void ev__todo(ev_loop_t* loop, ev_todo_t* todo, ev_todo_cb cb)
 	ev_list_push_back(&loop->todo.queue, &todo->node);
 }
 
+void ev__tcp_active(ev_tcp_t* sock)
+{
+	unsigned flags = sock->base.flags;
+	if (flags & (EV_TCP_ACCEPTING | EV_TCP_STREAMING | EV_TCP_CONNECTING))
+	{
+		ev__handle_active(&sock->base);
+	}
+}
+
+void ev__tcp_deactive(ev_tcp_t* sock)
+{
+	unsigned flags = sock->base.flags;
+	if (flags & (EV_TCP_ACCEPTING | EV_TCP_STREAMING | EV_TCP_CONNECTING))
+	{
+		return;
+	}
+
+	ev__handle_deactive(&sock->base);
+}
+
 int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
 {
 	uint32_t timeout;

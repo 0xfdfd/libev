@@ -38,16 +38,17 @@ extern "C" {
 typedef enum ev_handle_flag
 {
 	/* Used by all handles. Bit 0-7. */
-	EV_HANDLE_CLOSING		= 0x01 << 0x00,		/**< 1 */
-	EV_HANDLE_CLOSED		= 0x01 << 0x01,		/**< 2 */
-	EV_HANDLE_ACTIVE		= 0x01 << 0x02,		/**< 4 */
+	EV_HANDLE_CLOSING		= 0x01 << 0x00,		/**< 1. Handle is going to close */
+	EV_HANDLE_CLOSED		= 0x01 << 0x01,		/**< 2. Handle is closed */
+	EV_HANDLE_ACTIVE		= 0x01 << 0x02,		/**< 4. Handle is busy */
 
 	/* Used by socket */
-	EV_TCP_LISTING			= 0x01 << 0x08,		/**< 256 */
-	EV_TCP_ACCEPTING		= 0x01 << 0x09,		/**< 512 */
-	EV_TCP_STREAMING		= 0x01 << 0x0A,		/**< 1024 */
-	EV_TCP_CONNECTING		= 0x01 << 0x0B,		/**< 2048 */
-	EV_TCP_BOUND			= 0x01 << 0x0C,		/**< 4096 */
+	EV_TCP_LISTING			= 0x01 << 0x08,		/**< 256. This is a listen socket and is listening */
+	EV_TCP_ACCEPTING		= 0x01 << 0x09,		/**< 512. This is a socket waiting for accept */
+	EV_TCP_STREAMING		= 0x01 << 0x0A,		/**< 1024. This is a socket waiting for read or write */
+	EV_TCP_CONNECTING		= 0x01 << 0x0B,		/**< 2048. This is a connect and waiting for connect complete */
+	EV_TCP_BOUND			= 0x01 << 0x0C,		/**< 4096. Socket is bond to address */
+	EV_TCP_STREAM_INIT		= 0x01 << 0x0D,		/**< 8192. Stream structure is initialized */
 }ev_handle_flag_t;
 
 /**
@@ -99,6 +100,18 @@ int ev__handle_is_closing(ev_handle_t* handle);
  * @param[in] cb		A callback when the pending task is active
  */
 void ev__todo(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb);
+
+/**
+ * @brief Active TCP socket
+ * @param[in] sock		Socket handle
+ */
+void ev__tcp_active(ev_tcp_t* sock);
+
+/**
+ * @brief De-active TCP socket
+ * @param[in] sock		Socket handle
+ */
+void ev__tcp_deactive(ev_tcp_t* sock);
 
 #ifdef __cplusplus
 }
