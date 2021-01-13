@@ -21,7 +21,7 @@ typedef struct test_read_pack
 {
 	ev_read_t		r_req;
 	ev_buf_t		buf;
-	char			recv_buf[4 * 1024 * 1024];
+	char			recv_buf[6 * 1024 * 1024];
 }test_read_pack_t;
 
 static ev_loop_t	s_loop;
@@ -37,16 +37,19 @@ static test_read_pack_t		s_read_pack;
 
 static void _on_close_server_socket(ev_tcp_t* sock)
 {
+	ASSERT_EQ_PTR(sock, &s_server);
 	s_cnt_server_close++;
 }
 
 static void _on_close_conn_socket(ev_tcp_t* sock)
 {
+	ASSERT_EQ_PTR(sock, &s_conn);
 	s_cnt_conn_close++;
 }
 
 static void _on_close_client_socket(ev_tcp_t* sock)
 {
+	ASSERT_EQ_PTR(sock, &s_client);
 	s_cnt_client_close++;
 }
 
