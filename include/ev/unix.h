@@ -16,11 +16,11 @@ typedef int ev_os_socket_t;
  * @brief Buffer
  * @internal Must share the same layout with struct iovec
  */
-typedef struct ev_buf
+struct ev_buf
 {
 	char*						data;		/**< Data address */
 	size_t						size;		/**< Data size */
-}ev_buf_t;
+};
 
 struct ev_once
 {

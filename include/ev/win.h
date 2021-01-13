@@ -20,11 +20,11 @@ typedef SOCKET ev_os_socket_t;
  * @brief Buffer
  * @internal Must share the same layout with WSABUF
  */
-typedef struct ev_buf
+struct ev_buf
 {
 	ULONG						size;				/**< Data size */
 	CHAR*						data;				/**< Data address */
-}ev_buf_t;
+};
 
 struct ev_once
 {
