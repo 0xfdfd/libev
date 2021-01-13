@@ -79,39 +79,41 @@ typedef struct ev_read_backend
 typedef struct ev_tcp_backend
 {
 	int							af;					/**< AF_INET / AF_INET6 */
-	ev_iocp_t					io;
+	ev_iocp_t					io;					/**< IOCP */
+	ev_todo_t					token;				/**< Todo token */
+
+	struct
+	{
+		unsigned				todo_pending : 1;	/**< Already submit todo request */
+	}mask;
 
 	union
 	{
 		struct
 		{
-			ev_iocp_t			io;					/**< IOCP handle */
-			ev_list_t			accept_queue;		/**< Accept queue */
+			ev_list_t			a_queue;			/**< Accept queue */
+			ev_list_t			a_queue_done;		/**< Accept done queue */
 		}listen;
 		struct
 		{
-			ev_iocp_t			io;					/**< IOCP handle */
 			ev_accept_cb		cb;					/**< Accept callback */
 			ev_list_node_t		node;				/**< Accept queue node */
 			ev_tcp_t*			listen;				/**< Listen socket */
+			int					stat;				/**< Accept result */
+			char				buffer[sizeof(struct sockaddr_storage) * 2 + 32];
 		}accept;
 		struct
 		{
 			ev_connect_cb		cb;					/**< Callback */
 			LPFN_CONNECTEX		fn_connectex;		/**< ConnectEx */
+			int					stat;				/**< Connect result */
 		}conn;
 		struct
 		{
-			ev_todo_t			token;				/**< Todo token */
 			ev_list_t			w_queue;			/**< Write queue */
 			ev_list_t			w_queue_done;		/**< Write done queue */
 			ev_list_t			r_queue;			/**< Read queue */
 			ev_list_t			r_queue_done;		/**< Read done queue */
-
-			struct
-			{
-				unsigned		todo_pending : 1;	/**< Already submit todo request */
-			}mask;
 		}stream;
 	}u;
 }ev_tcp_backend_t;

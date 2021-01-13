@@ -45,13 +45,6 @@ static void _ev_tcp_on_close(ev_handle_t* handle)
 	}
 }
 
-static int _ev_tcp_init_backend(ev_tcp_t* tcp)
-{
-	tcp->sock	= INVALID_SOCKET;
-	tcp->backend.af		= AF_INET6;
-	return EV_SUCCESS;
-}
-
 static int _ev_tcp_setup_sock(ev_tcp_t* sock, int af, int with_iocp)
 {
 	int ret;
@@ -102,18 +95,117 @@ static void _ev_tcp_on_listen_win(ev_iocp_t* req, size_t transferred)
 
 static void _ev_setup_listen(ev_tcp_t* sock)
 {
-	ev_list_init(&sock->backend.u.listen.accept_queue);
-	ev__iocp_init(&sock->backend.u.listen.io, _ev_tcp_on_listen_win);
+	ev_list_init(&sock->backend.u.listen.a_queue);
+	ev_list_init(&sock->backend.u.listen.a_queue_done);
+	ev__iocp_init(&sock->backend.io, _ev_tcp_on_listen_win);
 }
 
-static void _ev_tcp_on_accept_win(ev_iocp_t* req, size_t transferred)
+static void _ev_tcp_deactive_stream(ev_tcp_t* sock)
+{
+	if (ev_list_size(&sock->backend.u.stream.r_queue) == 0
+		&& ev_list_size(&sock->backend.u.stream.r_queue_done) == 0
+		&& ev_list_size(&sock->backend.u.stream.w_queue) == 0
+		&& ev_list_size(&sock->backend.u.stream.w_queue_done) == 0)
+	{
+		sock->base.flags &= ~EV_TCP_STREAMING;
+		ev__tcp_deactive(sock);
+	}
+}
+
+static void _ev_tcp_process_stream(ev_tcp_t* sock)
+{
+	ev_list_node_t* it;
+
+	while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue_done)) != NULL)
+	{
+		ev_write_t* req = container_of(it, ev_write_t, node);
+		req->data.cb(req, req->backend.size, req->backend.stat);
+	}
+
+	while ((it = ev_list_pop_front(&sock->backend.u.stream.r_queue_done)) != NULL)
+	{
+		ev_read_t* req = container_of(it, ev_read_t, node);
+		req->data.cb(req, req->backend.size, req->backend.stat);
+	}
+
+	_ev_tcp_deactive_stream(sock);
+}
+
+static void _ev_tcp_process_accept(ev_tcp_t* conn)
+{
+	ev_tcp_t* lisn = conn->backend.u.accept.listen;
+	ev_list_erase(&lisn->backend.u.listen.a_queue_done, &conn->backend.u.accept.node);
+
+	conn->base.flags &= ~EV_TCP_ACCEPTING;
+	ev__tcp_deactive(conn);
+
+	conn->backend.u.accept.cb(lisn, conn, conn->backend.u.accept.stat);
+}
+
+static void _ev_tcp_process_connect(ev_tcp_t* sock)
+{
+	int ret;
+	sock->base.flags &= ~EV_TCP_CONNECTING;
+	ev__tcp_deactive(sock);
+
+	if (sock->backend.u.conn.stat == EV_SUCCESS)
+	{
+		if ((ret = setsockopt(sock->sock, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT, NULL, 0)) == SOCKET_ERROR)
+		{
+			ret = WSAGetLastError();
+			sock->backend.u.conn.stat = ev__translate_sys_error(ret);
+		}
+	}
+
+	sock->backend.u.conn.cb(sock, sock->backend.u.conn.stat);
+}
+
+static void _ev_tcp_on_task_done(ev_todo_t* todo)
+{
+	ev_tcp_t* sock = container_of(todo, ev_tcp_t, backend.token);
+	sock->backend.mask.todo_pending = 0;
+
+	if (sock->base.flags & EV_TCP_STREAMING)
+	{
+		_ev_tcp_process_stream(sock);
+		return;
+	}
+
+	if (sock->base.flags & EV_TCP_ACCEPTING)
+	{
+		_ev_tcp_process_accept(sock);
+		return;
+	}
+
+	if (sock->base.flags & EV_TCP_CONNECTING)
+	{
+		_ev_tcp_process_connect(sock);
+		return;
+	}
+}
+
+static void _ev_tcp_submit_stream_todo(ev_tcp_t* sock)
+{
+	if (sock->backend.mask.todo_pending)
+	{
+		return;
+	}
+
+	ev__todo(sock->base.loop, &sock->backend.token, _ev_tcp_on_task_done);
+	sock->backend.mask.todo_pending = 1;
+}
+
+static void _ev_tcp_on_accept_win(ev_tcp_t* conn, size_t transferred)
 {
 	(void)transferred;
-	ev_tcp_t* conn = container_of(req, ev_tcp_t, backend.u.accept.io);
 	ev_tcp_t* lisn = conn->backend.u.accept.listen;
 
-	ev_list_erase(&lisn->backend.u.listen.accept_queue, &conn->backend.u.accept.node);
-	lisn->backend.u.accept.cb(lisn, conn, EV_SUCCESS);
+	ev_list_erase(&lisn->backend.u.listen.a_queue, &conn->backend.u.accept.node);
+	ev_list_push_back(&lisn->backend.u.listen.a_queue_done, &conn->backend.u.accept.node);
+
+	conn->backend.u.accept.stat = NT_SUCCESS(conn->backend.io.overlapped.Internal) ?
+		EV_SUCCESS : ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)conn->backend.io.overlapped.Internal));
+	_ev_tcp_submit_stream_todo(conn);
 }
 
 static int _ev_tcp_get_connectex(ev_tcp_t* sock, LPFN_CONNECTEX* fn)
@@ -126,27 +218,12 @@ static int _ev_tcp_get_connectex(ev_tcp_t* sock, LPFN_CONNECTEX* fn)
 	return ret == SOCKET_ERROR ? EV_UNKNOWN : EV_SUCCESS;
 }
 
-static void _ev_tcp_on_connect_win(ev_iocp_t* req, size_t transferred)
+static void _ev_tcp_on_connect_win(ev_tcp_t* sock, size_t transferred)
 {
 	(void)transferred;
-
-	int ret = EV_SUCCESS;
-	ev_tcp_t* sock = container_of(req, ev_tcp_t, backend.io);
-
-	if (NT_SUCCESS(req->overlapped.Internal))
-	{
-		if (setsockopt(sock->sock, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT, NULL, 0) != 0)
-		{
-			ret = WSAGetLastError();
-		}
-	}
-	else
-	{
-		ret = ev__ntstatus_to_winsock_error((NTSTATUS)req->overlapped.Internal);
-	}
-
-	ret = ev__translate_sys_error(ret);
-	sock->backend.u.conn.cb(sock, ret);
+	sock->backend.u.conn.stat = NT_SUCCESS(sock->backend.io.overlapped.Internal) ?
+		EV_SUCCESS : ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)sock->backend.io.overlapped.Internal));
+	_ev_tcp_submit_stream_todo(sock);
 }
 
 static int _ev_tcp_bind_any_addr(ev_tcp_t* sock, int af)
@@ -171,36 +248,6 @@ static int _ev_tcp_bind_any_addr(ev_tcp_t* sock, int af)
 	}
 
 	return ev_tcp_bind(sock, bind_addr, name_len);
-}
-
-static void _ev_tcp_on_stream_done(ev_todo_t* todo)
-{
-	ev_list_node_t* it;
-	ev_tcp_t* sock = container_of(todo, ev_tcp_t, backend.u.stream.token);
-	sock->backend.u.stream.mask.todo_pending = 0;
-
-	while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue_done)) != NULL)
-	{
-		ev_write_t* req = container_of(it, ev_write_t, node);
-		req->data.cb(req, req->backend.size, req->backend.stat);
-	}
-
-	while ((it = ev_list_pop_front(&sock->backend.u.stream.r_queue_done)) != NULL)
-	{
-		ev_read_t* req = container_of(it, ev_read_t, node);
-		req->data.cb(req, req->backend.size, req->backend.stat);
-	}
-}
-
-static void _ev_tcp_submit_stream_todo(ev_tcp_t* sock)
-{
-	if (sock->backend.u.stream.mask.todo_pending)
-	{
-		return;
-	}
-
-	ev__todo(sock->base.loop, &sock->backend.u.stream.token, _ev_tcp_on_stream_done);
-	sock->backend.u.stream.mask.todo_pending = 1;
 }
 
 static void _ev_tcp_on_stream_write_done(ev_iocp_t* iocp, size_t transferred)
@@ -239,8 +286,7 @@ static void _ev_tcp_setup_stream_win(ev_tcp_t* sock)
 	ev_list_init(&sock->backend.u.stream.r_queue_done);
 	ev_list_init(&sock->backend.u.stream.w_queue);
 	ev_list_init(&sock->backend.u.stream.w_queue_done);
-	memset(&sock->backend.u.stream.mask, 0, sizeof(sock->backend.u.stream.mask));
-	sock->base.flags |= EV_TCP_STREAMING;
+	sock->base.flags |= EV_TCP_STREAM_INIT;
 }
 
 static void _ev_tcp_process_direct_write_success(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf)
@@ -269,6 +315,20 @@ static void _ev_tcp_process_direct_read_success(ev_tcp_t* sock, ev_read_t* req, 
 	_ev_tcp_submit_stream_todo(sock);
 }
 
+static void _ev_tcp_on_iocp(ev_iocp_t* req, size_t transferred)
+{
+	ev_tcp_t* sock = container_of(req, ev_tcp_t, backend.io);
+
+	if (sock->base.flags & EV_TCP_ACCEPTING)
+	{
+		_ev_tcp_on_accept_win(sock, transferred);
+	}
+	if (sock->base.flags & EV_TCP_CONNECTING)
+	{
+		_ev_tcp_on_connect_win(sock, transferred);
+	}
+}
+
 void ev__tcp_init(void)
 {
 	static ev_once_t token = EV_ONCE_INIT;
@@ -279,7 +339,13 @@ int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp)
 {
 	ev__handle_init(loop, &tcp->base, _ev_tcp_on_close);
 	tcp->close_cb = NULL;
-	return _ev_tcp_init_backend(tcp);
+	tcp->sock = INVALID_SOCKET;
+
+	tcp->backend.af = AF_INET6;
+	ev__iocp_init(&tcp->backend.io, _ev_tcp_on_iocp);
+	memset(&tcp->backend.mask, 0, sizeof(tcp->backend.mask));
+
+	return EV_SUCCESS;
 }
 
 void ev_tcp_exit(ev_tcp_t* sock, ev_tcp_close_cb cb)
@@ -345,29 +411,48 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
 {
 	int ret;
 	int flag_new_sock = 0;
+
+	if (conn->base.flags & EV_TCP_ACCEPTING)
+	{
+		return EV_EINPROGRESS;
+	}
+
 	if (conn->sock == INVALID_SOCKET)
 	{
 		if ((ret = _ev_tcp_setup_sock(conn, lisn->backend.af, 1)) != EV_SUCCESS)
 		{
 			goto err;
 		}
-		ev__iocp_init(&conn->backend.u.accept.io, _ev_tcp_on_accept_win);
 		flag_new_sock = 1;
 	}
+	conn->base.flags |= EV_TCP_CONNECTING;
+	conn->backend.u.accept.cb = cb;
 	conn->backend.u.accept.listen = lisn;
+	ev__tcp_active(conn);
 
 	DWORD bytes = 0;
 	ret = AcceptEx(lisn->sock, conn->sock,
-		NULL, 0, 0, 0, &bytes, &conn->backend.u.accept.io.overlapped);
-	if (!ret)
+		conn->backend.u.accept.buffer, 0, sizeof(struct sockaddr_storage), sizeof(struct sockaddr_storage),
+		&bytes, &conn->backend.io.overlapped);
+
+	/* Accept success */
+	if (ret)
 	{
-		ret = WSAGetLastError();
-		ret = ev__translate_sys_error(ret);
-		goto err;
+		conn->backend.u.accept.stat = EV_SUCCESS;
+		ev_list_push_back(&lisn->backend.u.listen.a_queue_done, &conn->backend.u.accept.node);
+		_ev_tcp_submit_stream_todo(lisn);
+		return EV_SUCCESS;
 	}
 
-	conn->backend.u.accept.cb = cb;
-	ev_list_push_back(&lisn->backend.u.listen.accept_queue, &conn->backend.u.accept.node);
+	if ((ret = WSAGetLastError()) != WSA_IO_PENDING)
+	{
+		conn->base.flags &= ~EV_TCP_CONNECTING;
+		ev__tcp_deactive(conn);
+		return ev__translate_sys_error(ret);
+	}
+	conn->base.flags |= EV_TCP_ACCEPTING;
+	ev_list_push_back(&lisn->backend.u.listen.a_queue, &conn->backend.u.accept.node);
+
 	return EV_SUCCESS;
 
 err:
@@ -433,23 +518,32 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
 		}
 	}
 
-	ev__iocp_init(&sock->backend.io, _ev_tcp_on_connect_win);
-
-	sock->backend.u.conn.cb = cb;
 	if ((ret = _ev_tcp_get_connectex(sock, &sock->backend.u.conn.fn_connectex)) != EV_SUCCESS)
 	{
 		goto err;
 	}
+	sock->backend.u.conn.cb = cb;
+	sock->base.flags |= EV_TCP_CONNECTING;
+	ev__tcp_active(sock);
 
 	DWORD bytes;
-	if (!sock->backend.u.conn.fn_connectex(sock->sock, addr, (int)size,
-		NULL, 0, &bytes, &sock->backend.io.overlapped))
+	ret = sock->backend.u.conn.fn_connectex(sock->sock, addr, (int)size,
+		NULL, 0, &bytes, &sock->backend.io.overlapped);
+	if (ret)
 	{
-		ret = ev__translate_sys_error(WSAGetLastError());
-		goto err;
+		sock->backend.u.conn.stat = EV_SUCCESS;
+		_ev_tcp_submit_stream_todo(sock);
+		return EV_SUCCESS;
 	}
 
-	sock->base.flags |= EV_TCP_CONNECTING;
+	ret = WSAGetLastError();
+	if (ret != WSA_IO_PENDING)
+	{
+		sock->base.flags &= ~EV_TCP_CONNECTING;
+		ev__tcp_deactive(sock);
+		ret = ev__translate_sys_error(ret);
+		goto err;
+	}
 
 	return EV_SUCCESS;
 
@@ -466,7 +560,7 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, 
 	int ret;
 	ENSURE_LAYOUT(ev_buf_t, WSABUF, size, len, data, buf);
 
-	if (!(sock->base.flags & EV_TCP_STREAMING))
+	if (!(sock->base.flags & EV_TCP_STREAM_INIT))
 	{
 		_ev_tcp_setup_stream_win(sock);
 	}
@@ -477,6 +571,9 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, 
 	req->backend.owner = sock;
 	req->backend.size = 0;
 	ev__iocp_init(&req->backend.io, _ev_tcp_on_stream_write_done);
+
+	sock->base.flags |= EV_TCP_STREAMING;
+	ev__tcp_active(sock);
 
 	ret = WSASend(sock->sock, (WSABUF*)bufs, (DWORD)nbuf,
 		NULL, 0, &req->backend.io.overlapped, NULL);
@@ -489,6 +586,7 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, 
 	ret = WSAGetLastError();
 	if (ret != WSA_IO_PENDING)
 	{
+		_ev_tcp_deactive_stream(sock);
 		return ev__translate_sys_error(ret);
 	}
 	ev_list_push_back(&sock->backend.u.stream.w_queue, &req->node);
@@ -501,7 +599,7 @@ int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev
 	int ret;
 	ENSURE_LAYOUT(ev_buf_t, WSABUF, size, len, data, buf);
 
-	if (!(sock->base.flags & EV_TCP_STREAMING))
+	if (!(sock->base.flags & EV_TCP_STREAM_INIT))
 	{
 		_ev_tcp_setup_stream_win(sock);
 	}
@@ -512,6 +610,9 @@ int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev
 	req->backend.owner = sock;
 	req->backend.size = 0;
 	ev__iocp_init(&req->backend.io, _ev_tcp_on_stream_read_done);
+
+	sock->base.flags |= EV_TCP_STREAMING;
+	ev__tcp_active(sock);
 
 	DWORD flags = 0;
 	ret = WSARecv(sock->sock, (WSABUF*)bufs, (DWORD)nbuf,
@@ -525,6 +626,7 @@ int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev
 	ret = WSAGetLastError();
 	if (ret != WSA_IO_PENDING)
 	{
+		_ev_tcp_deactive_stream(sock);
 		return ev__translate_sys_error(ret);
 	}
 	ev_list_push_back(&sock->backend.u.stream.r_queue, &req->node);
