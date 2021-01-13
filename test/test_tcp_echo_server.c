@@ -80,7 +80,7 @@ static void _on_read(ev_read_t* req, size_t size, int stat)
 
 	if (stat == EV_EOF)
 	{
-		int ret = memcmp(s_write_pack.send_buf, s_read_pack.recv_buf, sizeof(s_read_pack.recv_buf));
+		int ret = memcmp(s_write_pack.send_buf, s_read_pack.recv_buf, sizeof(s_write_pack.send_buf));
 		ASSERT_EQ_D32(ret, 0);
 		return;
 	}
