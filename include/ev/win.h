@@ -78,7 +78,6 @@ typedef struct ev_read_backend
 
 typedef struct ev_tcp_backend
 {
-	ev_os_socket_t				sock;				/**< Socket handle */
 	int							af;					/**< AF_INET / AF_INET6 */
 	ev_iocp_t					io;
 
