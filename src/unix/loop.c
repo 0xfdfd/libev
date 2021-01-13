@@ -154,7 +154,7 @@ int ev__nonblock(int fd, int set)
 
 	if (r)
 	{
-		return errno;
+		return ev__translate_sys_error(errno);
 	}
 
 	return EV_SUCCESS;
@@ -169,7 +169,7 @@ int ev__nonblock(int fd, int set)
 
 	if (r == -1)
 	{
-		return errno;
+		return ev__translate_sys_error(errno);
 	}
 
 	/* Bail out now if already set/clear. */
@@ -194,7 +194,7 @@ int ev__nonblock(int fd, int set)
 
 	if (r)
 	{
-		return errno;
+		return ev__translate_sys_error(errno);
 	}
 
 	return EV_SUCCESS;

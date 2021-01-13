@@ -82,6 +82,14 @@ static void _ev_tcp_on_accept(ev_tcp_t* acpt)
 	_ev_tcp_deactive(conn);
 
 	int ret = conn->sock >= 0 ? EV_SUCCESS : ev__translate_sys_error(errno);
+	if (ret == EV_SUCCESS)
+	{/* Set non-block mode */
+		if ((ret = ev__nonblock(conn->sock, 1)) != EV_SUCCESS)
+		{
+			_ev_tcp_close_fd(conn);
+		}
+	}
+
 	ev__io_init(&conn->backend.io, conn->sock, _ev_tcp_on_event);
 	conn->backend.u.accept.cb(acpt, conn, ret);
 
