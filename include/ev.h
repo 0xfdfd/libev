@@ -147,7 +147,7 @@ enum ev_errno
 	EV_ENAMETOOLONG		= 38,			/**< Filename too long (POSIX.1-2001) */
 	EV_ENOTEMPTY		= 41,			/**< Directory not empty (POSIX.1-2001) */
 	EV_EADDRINUSE		= 100,			/**< Address already in use (POSIX.1-2001) */
-	EV_EADDRNOTAVAIL	= 101,			/**<  Address not available (POSIX.1-2001) */
+	EV_EADDRNOTAVAIL	= 101,			/**< Address not available (POSIX.1-2001) */
 	EV_EAFNOSUPPORT		= 102,			/**< Address family not supported (POSIX.1-2001) */
 	EV_EALREADY			= 103,			/**< Connection already in progress (POSIX.1-2001) */
 	EV_ECANCELED		= 105,			/**< Operation canceled (POSIX.1-2001) */
@@ -157,7 +157,7 @@ enum ev_errno
 	EV_EHOSTUNREACH		= 110,			/**< Host is unreachable (POSIX.1-2001) */
 	EV_EINPROGRESS		= 112,			/**< Operation in progress (POSIX.1-2001) */
 	EV_EISCONN			= 113,			/**< Socket is connected (POSIX.1-2001) */
-	EV_ELOOP			= 114,			/**<  Too many levels of symbolic links (POSIX.1-2001) */
+	EV_ELOOP			= 114,			/**< Too many levels of symbolic links (POSIX.1-2001) */
 	EV_EMSGSIZE			= 115,			/**< Message too long (POSIX.1-2001) */
 	EV_ENETUNREACH		= 118,			/**< Network unreachable (POSIX.1-2001) */
 	EV_ENOBUFS			= 119,			/**< No buffer space available (POSIX.1 (XSI STREAMS option)) */
