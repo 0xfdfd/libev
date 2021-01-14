@@ -18,10 +18,10 @@ typedef int ev_os_socket_t;
  */
 struct ev_buf
 {
-	char*						data;		/**< Data address */
+	void*						data;		/**< Data address */
 	size_t						size;		/**< Data size */
 };
-#define EV_BUF_INIT(buf, len)	{ (char*)buf, (size_t)len }
+#define EV_BUF_INIT(buf, len)	{ (void*)buf, (size_t)len }
 
 struct ev_once
 {

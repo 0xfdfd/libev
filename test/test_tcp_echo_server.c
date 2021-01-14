@@ -87,8 +87,7 @@ static void _on_read(ev_read_t* req, size_t size, int stat)
 
 	ASSERT_EQ_D32(stat, EV_SUCCESS);
 
-	s_read_pack.buf.data = (char*)s_read_pack.buf.data + size;
-	s_read_pack.buf.size -= (unsigned)size;
+	s_read_pack.buf = ev_buf_make((char*)s_read_pack.buf.data + size, s_read_pack.buf.size - size);
 	ASSERT_EQ_D32(ev_tcp_read(&s_client, &s_read_pack.r_req, &s_read_pack.buf, 1, _on_read), 0);
 }
 
@@ -103,12 +102,10 @@ static void _on_connect(ev_tcp_t* sock, int stat)
 TEST(tcp_accept)
 {
 	memset(&s_read_pack, 0, sizeof(s_read_pack));
-	s_read_pack.buf.data = s_read_pack.recv_buf;
-	s_read_pack.buf.size = sizeof(s_read_pack.recv_buf);
+	s_read_pack.buf = ev_buf_make(s_read_pack.recv_buf, sizeof(s_read_pack.recv_buf));
 
 	test_random(s_write_pack.send_buf, sizeof(s_write_pack.send_buf));
-	s_write_pack.buf.data = s_write_pack.send_buf;
-	s_write_pack.buf.size = sizeof(s_write_pack.send_buf);
+	s_write_pack.buf = ev_buf_make(s_write_pack.send_buf, sizeof(s_write_pack.send_buf));
 
 	ASSERT_EQ_D32(ev_loop_init(&s_loop), 0);
 	ASSERT_EQ_D32(ev_tcp_init(&s_loop, &s_server), 0);

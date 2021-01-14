@@ -340,6 +340,21 @@ int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t le
 	return EV_SUCCESS;
 }
 
+ev_buf_t ev_buf_make(void* buf, size_t len)
+{
+	ev_buf_t tmp;
+	
+#if defined(_WIN32)
+	tmp.data = (CHAR*)buf;
+	tmp.size = (ULONG)len;
+#else
+	tmp.data = buf;
+	tmp.size = len;
+#endif
+	
+	return tmp;
+}
+
 const char* ev_strerror(int err)
 {
 	switch (err)

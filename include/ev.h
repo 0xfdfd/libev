@@ -533,6 +533,14 @@ int ev_ipv4_name(const struct sockaddr_in* addr, int* port, char* ip, size_t len
 int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t len);
 
 /**
+ * @brief Constructor for #ev_buf_t
+ * @param[in] buf	Buffer
+ * @param[in] len	Buffer length
+ * @return			A buffer
+ */
+ev_buf_t ev_buf_make(void* buf, size_t len);
+
+/**
  * @brief Describe the error code
  * @param[in] err	Error code
  * @return			Describe string
