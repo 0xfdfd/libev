@@ -99,7 +99,7 @@ static void _on_connect(ev_tcp_t* sock, int stat)
 	ASSERT_EQ_D32(ev_tcp_read(&s_client, &s_read_pack.r_req, &s_read_pack.buf, 1, _on_read), 0);
 }
 
-TEST(tcp_accept)
+TEST(tcp_push_server)
 {
 	memset(&s_read_pack, 0, sizeof(s_read_pack));
 	s_read_pack.buf = ev_buf_make(s_read_pack.recv_buf, sizeof(s_read_pack.recv_buf));
