@@ -243,7 +243,7 @@ fin:
 
 static int _ev_tcp_setup_fd(ev_tcp_t* sock, int domain, int* new_fd)
 {
-	int ret;
+	int ret = EV_SUCCESS;
 	int tmp_new_fd = 0;
 	if (sock->sock != INVALID_SOCKET)
 	{
