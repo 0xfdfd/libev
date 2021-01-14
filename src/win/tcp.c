@@ -519,7 +519,7 @@ int ev_tcp_listen(ev_tcp_t* sock, int backlog)
 {
 	if (sock->base.flags & EV_TCP_LISTING)
 	{
-		return EV_EALREADY;
+		return EV_EADDRINUSE;
 	}
 
 	int ret;
