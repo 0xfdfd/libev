@@ -5,8 +5,7 @@ extern "C" {
 #endif
 
 /**
- * @ingroup EAF-Utils
- * @defgroup EAF-Map Map
+ * @defgroup EV-Map Map
  * @{
  */
 
@@ -16,23 +15,23 @@ extern "C" {
 #include "map_low.h"
 
 /**
- * @brief Static initializer for #eaf_map_t
- * @see eaf_map_t
+ * @brief Static initializer for #ev_map_t
+ * @see ev_map_t
  * @param[in] cmp	Compare function
  * @param[in] arg	Argument for compare function
  */
-#define EV_MAP_INIT(cmp, arg)	{ EV_MAP_LOW_INITIALIZER, { cmp, arg }, 0 }
+#define EV_MAP_INIT(cmp, arg)	{ EV_MAP_LOW_INIT, { cmp, arg }, 0 }
 
 /**
- * @brief Static initializer for #eaf_map_node_t
- * @see eaf_map_node_t
+ * @brief Static initializer for #ev_map_node_t
+ * @see ev_map_node_t
  */
-#define EV_MAP_NODE_INIT		EV_MAP_LOW_NODE_INITIALIZER
+#define EV_MAP_NODE_INIT		EV_MAP_LOW_NODE_INIT
 
 /**
  * @brief The node for map
  * @see eaf_map_t
- * @see EAF_MAP_NODE_INITIALIZER
+ * @see EV_MAP_NODE_INIT
  */
 typedef ev_map_low_node_t ev_map_node_t;
 
@@ -47,7 +46,7 @@ typedef int(*ev_map_cmp_fn)(const ev_map_node_t* key1, const ev_map_node_t* key2
 
 /**
  * @brief Map implemented as red-black tree
- * @see EAF_MAP_INITIALIZER
+ * @see EV_MAP_INIT
  */
 typedef struct ev_map
 {

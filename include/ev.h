@@ -1,3 +1,6 @@
+/**
+ * @file
+ */
 #ifndef __EV_H__
 #define __EV_H__
 #ifdef __cplusplus
@@ -189,12 +192,12 @@ struct ev_loop
 
 	struct
 	{
-		ev_list_t			queue;			/**< (#ev_todo_t) Pending task */
+		ev_list_t			queue;			/**< (#ev_todo_t::node) Pending task */
 	}todo;
 
 	struct
 	{
-		ev_map_t			heap;			/**< (#ev_timer_t) Timer heap */
+		ev_map_t			heap;			/**< (#ev_timer_t::node) Timer heap */
 	}timer;
 
 	struct
@@ -253,28 +256,34 @@ struct ev_tcp
 	ev_tcp_backend_t		backend;		/**< Platform related implementation */
 };
 
+/**
+ * @brief Write request
+ */
 struct ev_write
 {
-	ev_list_node_t			node;
+	ev_list_node_t			node;			/**< Intrusive node */
 	struct
 	{
 		ev_write_cb			cb;				/**< Write complete callback */
 		ev_buf_t*			bufs;			/**< Buffer list */
 		size_t				nbuf;			/**< Buffer list count */
 	}data;
-	ev_write_backend_t		backend;		/**< Backend */
+	ev_write_backend_t		backend;		/**< Back-end */
 };
 
+/**
+ * @brief Read request
+ */
 struct ev_read
 {
-	ev_list_node_t			node;
+	ev_list_node_t			node;			/**< Intrusive node */
 	struct
 	{
 		ev_read_cb			cb;				/**< Read complete callback */
 		ev_buf_t*			bufs;			/**< Buffer list */
 		size_t				nbuf;			/**< Buffer list count */
 	}data;
-	ev_read_backend_t		backend;		/**< Backend */
+	ev_read_backend_t		backend;		/**< Back-end */
 };
 
 /**
@@ -430,11 +439,11 @@ int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen);
 
 /**
  * @brief Start listening for incoming connections.
- * @param[in] tcp		Listen socket
+ * @param[in] sock		Listen socket
  * @param[in] backlog	The number of connections the kernel might queue
  * @return				#ev_errno_t
  */
-int ev_tcp_listen(ev_tcp_t* tcp, int backlog);
+int ev_tcp_listen(ev_tcp_t* sock, int backlog);
 
 /**
  * @brief Accept a connection from listen socket
@@ -447,6 +456,7 @@ int ev_tcp_accept(ev_tcp_t* acpt, ev_tcp_t* conn, ev_accept_cb cb);
 
 /**
  * @brief Connect to address
+ * @param[in] sock	Socket handle
  * @param[in] addr	Address
  * @param[in] size	Address size
  * @param[in] cb	Connect callback
@@ -459,7 +469,7 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
  * @param[in] sock	Socket handle
  * @param[in] req	Write request
  * @param[in] bufs	Buffer list
- * @param[in] nbufs	Buffer list count
+ * @param[in] nbuf	Buffer list count
  * @param[in] cb	Write complete callback
  * @return			#ev_errno_t
  */
@@ -470,7 +480,7 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, 
  * @param[in] sock	Socket handle
  * @param[in] req	Read request
  * @param[in] bufs	Buffer list
- * @param[in] nbufs	Buffer list count
+ * @param[in] nbuf	Buffer list count
  * @param[in] cb	Read complete callback
  * @return			#ev_errno_t
  */

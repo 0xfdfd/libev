@@ -5,16 +5,16 @@ extern "C" {
 #endif	/* __cplusplus */
 
 /**
- * @brief Static initializer for #eaf_map_low_t
+ * @brief Static initializer for #ev_map_low_t
  * @see eaf_map_low_t
  */
-#define EV_MAP_LOW_INITIALIZER			{ NULL }
+#define EV_MAP_LOW_INIT				{ NULL }
 
 /**
- * @brief Static initializer for #eaf_map_low_node_t
+ * @brief Static initializer for #ev_map_low_node_t
  * @see eaf_map_low_node_t
  */
-#define EV_MAP_LOW_NODE_INITIALIZER	{ NULL, NULL, NULL }
+#define EV_MAP_LOW_NODE_INIT		{ NULL, NULL, NULL }
 
 /**
  * @brief find helper
@@ -79,13 +79,13 @@ extern "C" {
 		if (flag_failed) {\
 			break;\
 		}\
-		eaf_map_low_link_node(&(user)->node, parent, new_node);\
-		eaf_map_low_insert_color(&(user)->node, __table);\
+		ev_map_low_link_node(&(user)->node, parent, new_node);\
+		ev_map_low_insert_color(&(user)->node, __table);\
 	} while (0)
 
 /**
- * @brief eaf_map_low node
- * @see EAF_MAP_LOW_NODE_INITIALIZER
+ * @brief ev_map_low node
+ * @see EV_MAP_LOW_NODE_INIT
  */
 typedef struct ev_map_low_node
 {
@@ -96,7 +96,7 @@ typedef struct ev_map_low_node
 
 /**
  * @brief red-black tree
- * @see EAF_MAP_LOW_INITIALIZER
+ * @see EV_MAP_LOW_INIT
  */
 typedef struct ev_map_low
 {
@@ -108,43 +108,43 @@ typedef struct ev_map_low
  * @param root		The pointer to the map
  * @return			An iterator
  */
-ev_map_low_node_t* eaf_map_low_first(const ev_map_low_t* root);
+ev_map_low_node_t* ev_map_low_first(const ev_map_low_t* root);
 
 /**
  * @brief Returns an iterator to the end
  * @param root		The pointer to the map
  * @return			An iterator
  */
-ev_map_low_node_t* eaf_map_low_last(const ev_map_low_t* root);
+ev_map_low_node_t* ev_map_low_last(const ev_map_low_t* root);
 
 /**
  * @brief Get an iterator next to the given one.
  * @param node		Current iterator
  * @return			Next iterator
  */
-ev_map_low_node_t* eaf_map_low_next(const ev_map_low_node_t* node);
+ev_map_low_node_t* ev_map_low_next(const ev_map_low_node_t* node);
 
 /**
  * @brief Get an iterator before the given one.
  * @param node		Current iterator
  * @return			Previous iterator
  */
-ev_map_low_node_t* eaf_map_low_prev(const ev_map_low_node_t* node);
+ev_map_low_node_t* ev_map_low_prev(const ev_map_low_node_t* node);
 
 /**
  * @brief Inserting data into the tree.
  *
  * The insert instead must be implemented
  * in two steps: First, the code must insert the element in order as a red leaf
- * in the tree, and then the support library function #eaf_map_low_insert_color
+ * in the tree, and then the support library function #ev_map_low_insert_color
  * must be called.
  *
  * @param node		The node you want to insert
  * @param parent	The position you want to insert
  * @param rb_link	Will be set to `node`
- * @see eaf_map_low_insert_color
+ * @see ev_map_low_insert_color
  */
-void eaf_map_low_link_node(ev_map_low_node_t* node,
+void ev_map_low_link_node(ev_map_low_node_t* node,
 	ev_map_low_node_t* parent, ev_map_low_node_t** rb_link);
 
 /**
@@ -153,7 +153,7 @@ void eaf_map_low_link_node(ev_map_low_node_t* node,
  * @param root		The map
  * @see eaf_map_low_link_node
  */
-void eaf_map_low_insert_color(ev_map_low_node_t* node,
+void ev_map_low_insert_color(ev_map_low_node_t* node,
 	ev_map_low_t* root);
 
 /**
@@ -162,12 +162,8 @@ void eaf_map_low_insert_color(ev_map_low_node_t* node,
  * @param root		The pointer to the map
  * @param node		The node
  */
-void eaf_map_low_erase(ev_map_low_t* root,
+void ev_map_low_erase(ev_map_low_t* root,
 	ev_map_low_node_t* node);
-
-/**
- * @}
- */
 
 #ifdef __cplusplus
 };

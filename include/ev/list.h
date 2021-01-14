@@ -8,34 +8,33 @@
  *       before -------------------------------------> after
  * ```
  */
-#ifndef __EAF_UTILS_LIST_H__
-#define __EAF_UTILS_LIST_H__
+#ifndef __EV_LIST_H__
+#define __EV_LIST_H__
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @ingroup EAF-Utils
- * @defgroup EAF-List List
+ * @defgroup EV-List List
  * @{
  */
 
 /**
- * @brief Static initializer for #eaf_list_t
- * @see eaf_list_t
+ * @brief Static initializer for #ev_list_t
+ * @see ev_list_t
  */
 #define EV_LIST_INIT		{ NULL, NULL, 0 }
 
 /**
- * @brief Static initializer for #eaf_list_node_t
- * @see eaf_list_node_t
+ * @brief Static initializer for #ev_list_node_t
+ * @see ev_list_node_t
  */
 #define EV_LIST_NODE_INIT	{ NULL, NULL }
 
 /**
  * @brief The list node.
  * This node must put in your struct.
- * @see EAF_LIST_NODE_INITIALIZER
+ * @see EV_LIST_NODE_INIT
  */
 typedef struct ev_list_node
 {
@@ -45,7 +44,7 @@ typedef struct ev_list_node
 
 /**
  * @brief Double Linked List
- * @see EAF_LIST_INITIALIZER
+ * @see EV_LIST_INIT
  */
 typedef struct ev_list
 {
@@ -158,4 +157,4 @@ ev_list_node_t* ev_list_prev(const ev_list_node_t* node);
 #ifdef __cplusplus
 }
 #endif
-#endif	/* __EAF_UTILS_LIST_INTERNAL_H__ */
+#endif	/* __EV_LIST_H__ */

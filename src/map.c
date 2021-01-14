@@ -2,7 +2,7 @@
 
 void ev_map_init(ev_map_t* handler, ev_map_cmp_fn cmp, void* arg)
 {
-	handler->map_low = (ev_map_low_t)EV_MAP_LOW_INITIALIZER;
+	handler->map_low = (ev_map_low_t)EV_MAP_LOW_INIT;
 	handler->cmp.cmp = cmp;
 	handler->cmp.arg = arg;
 	handler->size = 0;
@@ -33,8 +33,8 @@ int ev_map_insert(ev_map_t* handler, ev_map_node_t* node)
 	}
 
 	handler->size++;
-	eaf_map_low_link_node(node, parent, new_node);
-	eaf_map_low_insert_color(node, &handler->map_low);
+	ev_map_low_link_node(node, parent, new_node);
+	ev_map_low_insert_color(node, &handler->map_low);
 
 	return 0;
 }
@@ -42,7 +42,7 @@ int ev_map_insert(ev_map_t* handler, ev_map_node_t* node)
 void ev_map_erase(ev_map_t* handler, ev_map_node_t* node)
 {
 	handler->size--;
-	eaf_map_low_erase(&handler->map_low, node);
+	ev_map_low_erase(&handler->map_low, node);
 }
 
 size_t ev_map_size(const ev_map_t* handler)
@@ -133,20 +133,20 @@ ev_map_node_t* ev_map_find_upper(const ev_map_t* handler, const ev_map_node_t* k
 
 ev_map_node_t* ev_map_begin(const ev_map_t* handler)
 {
-	return eaf_map_low_first(&handler->map_low);
+	return ev_map_low_first(&handler->map_low);
 }
 
 ev_map_node_t* ev_map_end(const ev_map_t* handler)
 {
-	return eaf_map_low_last(&handler->map_low);
+	return ev_map_low_last(&handler->map_low);
 }
 
 ev_map_node_t* ev_map_next(const ev_map_node_t* node)
 {
-	return eaf_map_low_next(node);
+	return ev_map_low_next(node);
 }
 
 ev_map_node_t* ev_map_prev(const ev_map_node_t* node)
 {
-	return eaf_map_low_prev(node);
+	return ev_map_low_prev(node);
 }

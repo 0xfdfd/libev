@@ -92,16 +92,21 @@ typedef struct ev_tcp_backend
 	{
 		struct
 		{
-			ev_list_t			a_queue;			/**< Accept queue */
-			ev_list_t			a_queue_done;		/**< Accept done queue */
+			ev_list_t			a_queue;			/**< (#ev_tcp_t::backend::u::accept::node) Accept queue */
+			ev_list_t			a_queue_done;		/**< (#ev_tcp_t::backend::u::accept::node) Accept done queue */
 		}listen;
 		struct
 		{
 			ev_accept_cb		cb;					/**< Accept callback */
-			ev_list_node_t		node;				/**< Accept queue node */
+			ev_list_node_t		node;				/**< (#ev_tcp_t::backend::u::listen) Accept queue node */
 			ev_tcp_t*			listen;				/**< Listen socket */
 			int					stat;				/**< Accept result */
-			char				buffer[sizeof(struct sockaddr_storage) * 2 + 32];
+			/**
+			 * lpOutputBuffer for AcceptEx.
+			 * dwLocalAddressLength and dwRemoteAddressLength require 16 bytes
+			 * more than the maximum address length for the transport protocol.
+			 */
+			char				buffer[(sizeof(struct sockaddr_storage) + 16) * 2];
 		}accept;
 		struct
 		{
@@ -111,10 +116,10 @@ typedef struct ev_tcp_backend
 		}conn;
 		struct
 		{
-			ev_list_t			w_queue;			/**< Write queue */
-			ev_list_t			w_queue_done;		/**< Write done queue */
-			ev_list_t			r_queue;			/**< Read queue */
-			ev_list_t			r_queue_done;		/**< Read done queue */
+			ev_list_t			w_queue;			/**< (#ev_write_t::node) Write queue */
+			ev_list_t			w_queue_done;		/**< (#ev_write_t::node) Write done queue */
+			ev_list_t			r_queue;			/**< (#ev_read_t::node) Read queue */
+			ev_list_t			r_queue_done;		/**< (#ev_read_t::node) Read done queue */
 		}stream;
 	}u;
 }ev_tcp_backend_t;
