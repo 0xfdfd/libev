@@ -113,7 +113,7 @@ typedef struct ev_tcp_backend
 			ev_connect_cb		cb;					/**< Callback */
 			LPFN_CONNECTEX		fn_connectex;		/**< ConnectEx */
 			int					stat;				/**< Connect result */
-		}conn;
+		}client;
 		struct
 		{
 			ev_list_t			w_queue;			/**< (#ev_write_t::node) Write queue */
