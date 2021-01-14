@@ -216,6 +216,7 @@ struct ev_handle
 	ev_todo_t				close_queue;	/**< Close queue token */
 	unsigned				flags;			/**< Handle flags */
 };
+#define EV_HANDLE_INIT		{ NULL, NULL, EV_TODO_INIT, 0 }
 
 struct ev_timer
 {
@@ -236,6 +237,7 @@ struct ev_timer
 		uint64_t			repeat;			/**< Repeat */
 	}attr;
 };
+#define EV_TIMER_INIT		{ EV_HANDLE_INIT, EV_MAP_NODE_INIT, NULL, { 0 }, { NULL, 0, 0 } }
 
 struct ev_async
 {
@@ -246,6 +248,7 @@ struct ev_async
 
 	ev_async_backend_t		backend;		/**< Platform related implementation */
 };
+#define EV_ASYNC_INIT		{ EV_HANDLE_INIT, NULL, NULL, EV_ASYNC_BACKEND_INIT }
 
 struct ev_tcp
 {
@@ -255,6 +258,7 @@ struct ev_tcp
 	ev_os_socket_t			sock;			/**< Socket handle */
 	ev_tcp_backend_t		backend;		/**< Platform related implementation */
 };
+#define EV_TCP_INIT			{ EV_HANDLE_INIT, NULL, EV_OS_SOCKET_INIT, EV_TCP_BACKEND_INIT }
 
 /**
  * @brief Write request
@@ -270,6 +274,7 @@ struct ev_write
 	}data;
 	ev_write_backend_t		backend;		/**< Back-end */
 };
+#define EV_WRITE_INIT		{ EV_LIST_NODE_INIT, { NULL, NULL, 0 }, EV_WRITE_BACKEND_INIT }
 
 /**
  * @brief Read request
@@ -285,6 +290,7 @@ struct ev_read
 	}data;
 	ev_read_backend_t		backend;		/**< Back-end */
 };
+#define EV_READ_INIT		{ EV_LIST_NODE_INIT, { NULL, NULL, 0 }, EV_READ_BACKEND_INIT }
 
 /**
  * @brief Initializes the given structure.

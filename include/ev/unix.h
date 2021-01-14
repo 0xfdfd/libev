@@ -11,6 +11,7 @@ extern "C" {
 #include "ev/map.h"
 
 typedef int ev_os_socket_t;
+#define EV_OS_SOCKET_INIT		(-1)
 
 /**
  * @brief Buffer
@@ -42,11 +43,13 @@ typedef struct ev_write_backend
 	size_t						idx;			/**< Write buffer index */
 	size_t						len;			/**< Total write size */
 }ev_write_backend_t;
+#define EV_WRITE_BACKEND_INIT	{ 0, 0 }
 
 typedef struct ev_read_backend
 {
 	int							useless[0];		/**< Useless field */
 }ev_read_backend_t;
+#define EV_READ_BACKEND_INIT	{ }
 
 struct ev_io;
 typedef struct ev_io ev_io_t;
@@ -109,6 +112,7 @@ typedef struct ev_tcp_backend
 		}client;
 	}u;
 }ev_tcp_backend_t;
+#define EV_TCP_BACKEND_INIT		{ EV_IO_INIT, { { EV_LIST_INIT } } }
 
 #ifdef __cplusplus
 }
