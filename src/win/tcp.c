@@ -413,13 +413,9 @@ static void _ev_tcp_process_direct_write_success(ev_tcp_t* sock, ev_write_t* req
 	_ev_tcp_submit_stream_todo(sock);
 }
 
-static void _ev_tcp_process_direct_read_success(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf)
+static void _ev_tcp_process_direct_read_success(ev_tcp_t* sock, ev_read_t* req, size_t num_recv)
 {
-	size_t i;
-	for (i = 0; i < nbuf; i++)
-	{
-		req->backend.size += bufs[i].size;
-	}
+	req->backend.size = num_recv;
 	req->backend.stat = EV_SUCCESS;
 
 	ev_list_erase(&sock->backend.u.stream.r_queue, &req->node);
@@ -739,11 +735,12 @@ int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev
 	ev__tcp_active(sock);
 
 	DWORD flags = 0;
+	DWORD num_recv;
 	ret = WSARecv(sock->sock, (WSABUF*)bufs, (DWORD)nbuf,
-		NULL, &flags, &req->backend.io.overlapped, NULL);
+		&num_recv, &flags, &req->backend.io.overlapped, NULL);
 	if (ret == 0)
 	{
-		_ev_tcp_process_direct_read_success(sock, req, bufs, nbuf);
+		_ev_tcp_process_direct_read_success(sock, req, num_recv);
 		return EV_SUCCESS;
 	}
 
