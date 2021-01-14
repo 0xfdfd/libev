@@ -50,7 +50,7 @@ typedef struct ev_buf ev_buf_t;
  * @brief Called when a object is closed
  * @param[in] handle	A base handle
  */
-typedef void (*ev_close_cb)(ev_handle_t* handle);
+typedef void(*ev_close_cb)(ev_handle_t* handle);
 
 /**
  * @brief An application-defined callback function.
@@ -75,13 +75,13 @@ typedef void(*ev_todo_cb)(ev_todo_t* todo);
  * @brief Type definition for callback passed to #ev_async_init().
  * @param[in] handle	A pointer to #ev_async_t structure
  */
-typedef void (*ev_async_cb)(ev_async_t* async);
+typedef void(*ev_async_cb)(ev_async_t* async);
 
 /**
  * @brief Close callback for #ev_tcp_t
  * @param[in] sock		A closed socket
  */
-typedef void (*ev_tcp_close_cb)(ev_tcp_t* sock);
+typedef void(*ev_tcp_close_cb)(ev_tcp_t* sock);
 
 /**
  * @brief Accept callback
@@ -89,14 +89,14 @@ typedef void (*ev_tcp_close_cb)(ev_tcp_t* sock);
  * @param[in] conn		Accepted socket
  * @param[in] stat		#ev_errno_t
  */
-typedef void (*ev_accept_cb)(ev_tcp_t* lisn, ev_tcp_t* conn, int stat);
+typedef void(*ev_accept_cb)(ev_tcp_t* lisn, ev_tcp_t* conn, int stat);
 
 /**
  * @brief Connect callback
  * @param[in] sock		Connect socket
  * @param[in] stat		#ev_errno_t
  */
-typedef void (*ev_connect_cb)(ev_tcp_t* sock, int stat);
+typedef void(*ev_connect_cb)(ev_tcp_t* sock, int stat);
 
 /**
  * @brief Write callback
@@ -104,7 +104,7 @@ typedef void (*ev_connect_cb)(ev_tcp_t* sock, int stat);
  * @param[in] size		Write size
  * @param[in] stat		Write result
  */
-typedef void (*ev_write_cb)(ev_write_t* req, size_t size, int stat);
+typedef void(*ev_write_cb)(ev_write_t* req, size_t size, int stat);
 
 /**
  * @brief Read callback
@@ -112,7 +112,7 @@ typedef void (*ev_write_cb)(ev_write_t* req, size_t size, int stat);
  * @param[in] size		Read size
  * @param[in] stat		Read result
  */
-typedef void (*ev_read_cb)(ev_read_t* req, size_t size, int stat);
+typedef void(*ev_read_cb)(ev_read_t* req, size_t size, int stat);
 
 struct ev_todo
 {
@@ -293,6 +293,11 @@ struct ev_read
 #define EV_READ_INIT		{ EV_LIST_NODE_INIT, { NULL, NULL, 0 }, EV_READ_BACKEND_INIT }
 
 /**
+ * @defgroup EV_LOOP Event loop
+ * @{
+ */
+
+/**
  * @brief Initializes the given structure.
  * @param[out] loop		Event loop handler
  * @return				#ev_errno_t
@@ -344,6 +349,15 @@ void ev_loop_stop(ev_loop_t* loop);
 int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode);
 
 /**
+ * @} EV_LOOP
+ */
+
+/**
+ * @defgroup EV_TIMER Timer
+ * @{
+ */
+
+/**
  * @brief Initialize the handle.
  * @param[in] loop		A pointer to the event loop
  * @param[out] handle	The structure to initialize
@@ -384,6 +398,15 @@ int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_
 void ev_timer_stop(ev_timer_t* handle);
 
 /**
+ * @} EV_TIMER
+ */
+
+/**
+ * @defgroup EV_ASYNC Async
+ * @{
+ */
+
+/**
  * @brief Initialize the handle.
  *
  * A NULL callback is allowed.
@@ -409,15 +432,13 @@ void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb);
 void ev_async_weakup(ev_async_t* handle);
 
 /**
- * @brief Executes the specified function one time.
- *
- * No other threads that specify the same one-time initialization structure can
- * execute the specified function while it is being executed by the current thread.
- *
- * @param[in] guard		A pointer to the one-time initialization structure.
- * @param[in] cb		A pointer to an application-defined InitOnceCallback function.
+ * @} EV_ASYNC
  */
-void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
+
+/**
+ * @defgroup EV_TCP TCP
+ * @{
+ */
 
 /**
  * @brief Initialize a tcp socket
@@ -511,6 +532,20 @@ int ev_tcp_getsockname(ev_tcp_t* sock, struct sockaddr* name, size_t* len);
 int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len);
 
 /**
+ * @} EV_TCP
+ */
+
+/**
+ * @defgroup EV_UTILS Miscellaneous utilities
+ * @{
+ */
+
+/**
+ * @defgroup EV_UTILS_NET Network
+ * @{
+ */
+
+/**
  * @brief Convert ip and port into network address
  * @param[in] ip	Character string contains IP
  * @param[in] port	Port
@@ -549,6 +584,21 @@ int ev_ipv4_name(const struct sockaddr_in* addr, int* port, char* ip, size_t len
 int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t len);
 
 /**
+ * @} EV_UTILS/EV_UTILS_NET
+ */
+
+/**
+ * @brief Executes the specified function one time.
+ *
+ * No other threads that specify the same one-time initialization structure can
+ * execute the specified function while it is being executed by the current thread.
+ *
+ * @param[in] guard		A pointer to the one-time initialization structure.
+ * @param[in] cb		A pointer to an application-defined InitOnceCallback function.
+ */
+void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
+
+/**
  * @brief Constructor for #ev_buf_t
  * @param[in] buf	Buffer
  * @param[in] len	Buffer length
@@ -562,6 +612,10 @@ ev_buf_t ev_buf_make(void* buf, size_t len);
  * @return			Describe string
  */
 const char* ev_strerror(int err);
+
+/**
+ * @} EV_UTILS
+ */
 
 #ifdef __cplusplus
 }

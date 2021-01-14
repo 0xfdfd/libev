@@ -5,7 +5,8 @@ extern "C" {
 #endif
 
 /**
- * @defgroup EV-Map Map
+ * @defgroup EV_UTILS_MAP Map
+ * @ingroup EV_UTILS
  * @{
  */
 
@@ -149,7 +150,7 @@ ev_map_node_t* ev_map_next(const ev_map_node_t* node);
 ev_map_node_t* ev_map_prev(const ev_map_node_t* node);
 
 /**
- * @}
+ * @} EV_UTILS/EV_UTILS_MAP
  */
 
 #ifdef __cplusplus

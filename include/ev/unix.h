@@ -59,7 +59,7 @@ typedef struct ev_io ev_io_t;
  * @param[in] io	IO object
  * @param[in] evts	IO events
  */
-typedef void (*ev_io_cb)(ev_io_t* io, unsigned evts);
+typedef void(*ev_io_cb)(ev_io_t* io, unsigned evts);
 
 struct ev_io
 {

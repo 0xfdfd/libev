@@ -15,7 +15,8 @@ extern "C" {
 #endif
 
 /**
- * @defgroup EV-List List
+ * @defgroup EV_UTILS_LIST List
+ * @ingroup EV_UTILS
  * @{
  */
 
@@ -151,7 +152,7 @@ ev_list_node_t* ev_list_next(const ev_list_node_t* node);
 ev_list_node_t* ev_list_prev(const ev_list_node_t* node);
 
 /**
- * @}
+ * @} EV_UTILS/EV_UTILS_LIST
  */
 
 #ifdef __cplusplus
