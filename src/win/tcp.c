@@ -390,36 +390,19 @@ static void _ev_tcp_on_stream_read_done(ev_iocp_t* iocp, size_t transferred)
 	ev_tcp_t* sock = req->backend.owner;
 
 	req->backend.size = transferred;
-	req->backend.stat = NT_SUCCESS(iocp->overlapped.Internal) ?
-		EV_SUCCESS : ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal));
-
-	ev_list_erase(&sock->backend.u.stream.r_queue, &req->node);
-	ev_list_push_back(&sock->backend.u.stream.r_queue_done, &req->node);
-
-	_ev_tcp_submit_stream_todo(sock);
-}
-
-static void _ev_tcp_process_direct_write_success(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf)
-{
-	size_t i;
-	for (i = 0; i < nbuf; i++)
-	{
-		req->backend.size += bufs[i].size;
+	if (transferred == 0)
+	{/* Zero recv means peer close */
+		req->backend.stat = EV_EOF;
 	}
-	req->backend.stat = EV_SUCCESS;
-
-	ev_list_erase(&sock->backend.u.stream.w_queue, &req->node);
-	ev_list_push_back(&sock->backend.u.stream.w_queue_done, &req->node);
-	_ev_tcp_submit_stream_todo(sock);
-}
-
-static void _ev_tcp_process_direct_read_success(ev_tcp_t* sock, ev_read_t* req, size_t num_recv)
-{
-	req->backend.size = num_recv;
-	req->backend.stat = EV_SUCCESS;
+	else
+	{
+		req->backend.stat = NT_SUCCESS(iocp->overlapped.Internal) ?
+			EV_SUCCESS : ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal));
+	}
 
 	ev_list_erase(&sock->backend.u.stream.r_queue, &req->node);
 	ev_list_push_back(&sock->backend.u.stream.r_queue_done, &req->node);
+
 	_ev_tcp_submit_stream_todo(sock);
 }
 
@@ -698,12 +681,14 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, 
 		NULL, 0, &req->backend.io.overlapped, NULL);
 	if (ret == 0)
 	{
-		_ev_tcp_process_direct_write_success(sock, req, bufs, nbuf);
+		/*
+		 * A result of zero means send successful, but the result will still go
+		 * through IOCP callback, so it is necessary to return directly.
+		 */
 		return EV_SUCCESS;
 	}
 
-	ret = WSAGetLastError();
-	if (ret != WSA_IO_PENDING)
+	if ((ret = WSAGetLastError()) != WSA_IO_PENDING)
 	{
 		_ev_tcp_deactive_stream(sock);
 		return ev__translate_sys_error(ret);
@@ -735,17 +720,18 @@ int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev
 	ev__tcp_active(sock);
 
 	DWORD flags = 0;
-	DWORD num_recv;
 	ret = WSARecv(sock->sock, (WSABUF*)bufs, (DWORD)nbuf,
-		&num_recv, &flags, &req->backend.io.overlapped, NULL);
+		NULL, &flags, &req->backend.io.overlapped, NULL);
 	if (ret == 0)
 	{
-		_ev_tcp_process_direct_read_success(sock, req, num_recv);
+		/*
+		 * A result of zero means recv successful, but the result will still go
+		 * through IOCP callback, so it is necessary to return directly.
+		 */
 		return EV_SUCCESS;
 	}
 
-	ret = WSAGetLastError();
-	if (ret != WSA_IO_PENDING)
+	if ((ret = WSAGetLastError()) != WSA_IO_PENDING)
 	{
 		_ev_tcp_deactive_stream(sock);
 		return ev__translate_sys_error(ret);
