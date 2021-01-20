@@ -1,7 +1,7 @@
 #include "ev.h"
 #include "test.h"
 
-static ev_loop_t s_loop;
+static ev_loop_t s_loop = EV_LOOP_INIT;
 static ev_timer_t s_timer;
 
 static int f_on_timer = 0;

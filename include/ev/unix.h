@@ -34,7 +34,6 @@ typedef struct ev_loop_plt
 {
 	int							pollfd;			/**< Multiplexing */
 	ev_map_t					io;				/**< #ev_io_t */
-	struct epoll_event			events[128];	/**< Events array */
 }ev_loop_plt_t;
 #define EV_LOOP_PLT_INIT		{ -1, EV_MAP_INIT(NULL, NULL) }
 

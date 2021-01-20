@@ -35,6 +35,11 @@ if(WIN32)
 			Ws2_32
 			Mswsock
 	)
+else()
+	target_link_libraries(${PROJECT_NAME}
+		PRIVATE
+			rt
+	)
 endif()
 
 # define target include search paths
