@@ -476,10 +476,15 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
 	{
 		sock->base.flags &= ~EV_TCP_CONNECTING;
 		ev__tcp_deactive(sock);
-		return ev__translate_sys_error(errno);
+		ret = ev__translate_sys_error(errno);
+		goto err;
 	}
 
 	ev__io_add(loop, &sock->backend.io, EV_IO_OUT);
 
 	return EV_SUCCESS;
+
+err:
+	_ev_tcp_close_fd(sock);
+	return ret;
 }
