@@ -19,6 +19,8 @@ extern "C" {
 		_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR)
 #	define TEST_TEARDOWN	\
 		_CrtDumpMemoryLeaks()
+#	define TEST_SSCANF(str, fmt, ...)	\
+		sscanf_s(str, fmt, ##__VA_ARGS__)
 #else
 #	include <stdlib.h>
 #	if !defined(__native_client__) \
@@ -29,6 +31,8 @@ extern "C" {
 #	endif
 #	define TEST_SETUP				(void)0
 #	define TEST_TEARDOWN			(void)0
+#	define TEST_SSCANF(str, fmt, ...)	\
+		sscanf(str, fmt, ##__VA_ARGS__)
 #endif
 
 #include <inttypes.h>
@@ -141,7 +145,7 @@ extern "C" {
 		{\
 			int i, v;\
 			for (i = 0; i < argc; i++) {\
-				if (sscanf(argv[i], "--test_break_on_failure=%d", &v) == 1) {\
+				if (TEST_SSCANF(argv[i], "--test_break_on_failure=%d", &v) == 1) {\
 					__test_ctx.mask.break_on_failure = !!v;\
 				}\
 			}\
