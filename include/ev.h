@@ -258,7 +258,7 @@ struct ev_tcp
 	ev_os_socket_t			sock;			/**< Socket handle */
 	ev_tcp_backend_t		backend;		/**< Platform related implementation */
 };
-#define EV_TCP_INIT			{ EV_HANDLE_INIT, NULL, EV_OS_SOCKET_INIT, EV_TCP_BACKEND_INIT }
+#define EV_TCP_INIT			{ EV_HANDLE_INIT, NULL, EV_OS_SOCKET_INVALID, EV_TCP_BACKEND_INIT }
 
 /**
  * @brief Write request

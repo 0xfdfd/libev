@@ -15,7 +15,7 @@ extern "C" {
 #include "ev/map.h"
 
 typedef SOCKET ev_os_socket_t;
-#define EV_OS_SOCKET_INIT		INVALID_SOCKET
+#define EV_OS_SOCKET_INVALID	INVALID_SOCKET
 
 /**
  * @brief Buffer

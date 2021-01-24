@@ -7,7 +7,7 @@ static void _ev_tcp_on_event(ev_io_t* io, unsigned evts);
 
 static void _ev_tcp_close_fd(ev_tcp_t* sock)
 {
-	if (sock->sock != INVALID_SOCKET)
+	if (sock->sock != EV_OS_SOCKET_INVALID)
 	{
 		close(sock->sock);
 		sock->sock = -1;
@@ -245,12 +245,12 @@ static int _ev_tcp_setup_fd(ev_tcp_t* sock, int domain, int* new_fd)
 {
 	int ret = EV_SUCCESS;
 	int tmp_new_fd = 0;
-	if (sock->sock != INVALID_SOCKET)
+	if (sock->sock != EV_OS_SOCKET_INVALID)
 	{
 		goto fin;
 	}
 
-	if ((sock->sock = socket(domain, SOCK_STREAM, 0)) == INVALID_SOCKET)
+	if ((sock->sock = socket(domain, SOCK_STREAM, 0)) == EV_OS_SOCKET_INVALID)
 	{
 		ret = ev__translate_sys_error(errno);
 		goto fin;
@@ -267,8 +267,7 @@ static int _ev_tcp_setup_fd(ev_tcp_t* sock, int domain, int* new_fd)
 	goto fin;
 
 err_nonblock:
-	close(sock->sock);
-	sock->sock = INVALID_SOCKET;
+	_ev_tcp_close_fd(sock);
 fin:
 	if (new_fd != NULL)
 	{
@@ -301,7 +300,7 @@ int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* sock)
 {
 	ev__handle_init(loop, &sock->base, _ev_tcp_on_close);
 	sock->close_cb = NULL;
-	sock->sock = INVALID_SOCKET;
+	sock->sock = EV_OS_SOCKET_INVALID;
 
 	return EV_SUCCESS;
 }

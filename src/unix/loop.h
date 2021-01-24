@@ -11,8 +11,6 @@ extern "C" {
 #define EV_IO_IN			EPOLLIN		/**< The associated file is available for read(2) operations. */
 #define EV_IO_OUT			EPOLLOUT	/**< The associated file is available for write(2) operations. */
 
-#define INVALID_SOCKET		-1
-
 /**
  * @brief Initialize io structure
  * @param[out] io	A pointer to the structure

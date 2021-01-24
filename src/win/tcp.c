@@ -29,7 +29,7 @@ static void _ev_tcp_on_init(void)
 static void _ev_tcp_close_socket(ev_tcp_t* sock)
 {
 	closesocket(sock->sock);
-	sock->sock = INVALID_SOCKET;
+	sock->sock = EV_OS_SOCKET_INVALID;
 }
 
 static void _ev_tcp_cleanup_accept(ev_tcp_t* sock)
@@ -187,7 +187,7 @@ static int _ev_tcp_setup_sock(ev_tcp_t* sock, int af, int with_iocp)
 
 err:
 	ret = ev__translate_sys_error(WSAGetLastError());
-	if (os_sock != INVALID_SOCKET)
+	if (os_sock != EV_OS_SOCKET_INVALID)
 	{
 		closesocket(os_sock);
 	}
@@ -430,7 +430,7 @@ int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp)
 {
 	ev__handle_init(loop, &tcp->base, _ev_tcp_on_close);
 	tcp->close_cb = NULL;
-	tcp->sock = INVALID_SOCKET;
+	tcp->sock = EV_OS_SOCKET_INVALID;
 
 	tcp->backend.af = AF_INET6;
 	ev__iocp_init(&tcp->backend.io, _ev_tcp_on_iocp);
@@ -444,7 +444,7 @@ void ev_tcp_exit(ev_tcp_t* sock, ev_tcp_close_cb cb)
 	sock->close_cb = cb;
 
 	/* Close socket to avoid IOCP conflict with exiting process */
-	if (sock->sock != INVALID_SOCKET)
+	if (sock->sock != EV_OS_SOCKET_INVALID)
 	{
 		_ev_tcp_close_socket(sock);
 	}
@@ -468,7 +468,7 @@ int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen)
 		return EV_EALREADY;
 	}
 
-	if (tcp->sock == INVALID_SOCKET)
+	if (tcp->sock == EV_OS_SOCKET_INVALID)
 	{
 		if ((ret = _ev_tcp_setup_sock(tcp, addr->sa_family, 1)) != EV_SUCCESS)
 		{
@@ -521,7 +521,7 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
 		return EV_EINPROGRESS;
 	}
 
-	if (conn->sock == INVALID_SOCKET)
+	if (conn->sock == EV_OS_SOCKET_INVALID)
 	{
 		if ((ret = _ev_tcp_setup_sock(conn, lisn->backend.af, 1)) != EV_SUCCESS)
 		{
@@ -603,7 +603,7 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
 		return EV_EINPROGRESS;
 	}
 
-	if (sock->sock == INVALID_SOCKET)
+	if (sock->sock == EV_OS_SOCKET_INVALID)
 	{
 		if ((ret = _ev_tcp_setup_sock(sock, addr->sa_family, 1)) != EV_SUCCESS)
 		{
