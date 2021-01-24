@@ -1,4 +1,5 @@
 #include <sys/ioctl.h>
+#include <sys/uio.h>
 #include <string.h>
 #include <unistd.h>
 #include "ev-platform.h"
@@ -53,6 +54,150 @@ static int _ev_poll_once(ev_loop_t* loop, struct epoll_event* events, int maxeve
 	}
 
 	return nfds;
+}
+
+static int _ev_stream_do_write_once(ev_stream_t* stream, ev_write_t* req)
+{
+	ssize_t w;
+	struct iovec* iov;
+	int iovcnt;
+
+	do
+	{
+		iov = (struct iovec*)(req->data.bufs + req->backend.idx);
+		iovcnt = req->data.nbuf - req->backend.idx;
+		w = writev(stream->io.data.fd, iov, iovcnt);
+	} while (w == -1 && errno == EINTR);
+
+	if (w < 0)
+	{
+		return (errno == EAGAIN || errno == EWOULDBLOCK) ?
+			EV_EAGAIN : ev__translate_sys_error(errno);
+	}
+
+	req->backend.len += w;
+	while (w > 0)
+	{
+		if ((size_t)w < req->data.bufs[req->backend.idx].size)
+		{
+			req->data.bufs[req->backend.idx].data =
+				(void*)((uint8_t*)(req->data.bufs[req->backend.idx].data) + w);
+			req->data.bufs[req->backend.idx].size -= w;
+			break;
+		}
+
+		w -= req->data.bufs[req->backend.idx].size;
+		req->backend.idx++;
+	}
+
+	return req->backend.idx < req->data.nbuf ? EV_EAGAIN : EV_SUCCESS;
+}
+
+static void _ev_stream_do_write(ev_stream_t* stream)
+{
+	int ret;
+	ev_list_node_t* it;
+	ev_write_t* req;
+
+	while ((it = ev_list_pop_front(&stream->w_queue)) != NULL)
+	{
+		req = container_of(it, ev_write_t, node);
+		if ((ret = _ev_stream_do_write_once(stream, req)) == EV_SUCCESS)
+		{
+			stream->w_cb(stream, req, req->backend.len, EV_SUCCESS);
+			continue;
+		}
+
+		/* Unsuccess operation should restore list */
+		ev_list_push_front(&stream->w_queue, it);
+
+		if (ret == EV_EAGAIN)
+		{
+			break;
+		}
+		goto err;
+	}
+
+	return;
+
+err:
+	while ((it = ev_list_pop_front(&stream->w_queue)) != NULL)
+	{
+		req = container_of(it, ev_write_t, node);
+		stream->w_cb(stream, req, req->backend.len, ret);
+	}
+}
+
+static int _ev_stream_do_read_once(ev_stream_t* stream, ev_read_t* req, size_t* size)
+{
+	ssize_t r;
+	do
+	{
+		r = readv(stream->io.data.fd, (struct iovec*)req->data.bufs, req->data.nbuf);
+	} while (r == -1 && errno == EINTR);
+
+	if (r == 0)
+	{/* Peer close */
+		return EV_EOF;
+	}
+
+	if (r < 0)
+	{
+		return (errno == EAGAIN || errno == EWOULDBLOCK) ?
+			EV_EAGAIN : ev__translate_sys_error(errno);
+	}
+
+	*size = r;
+	return EV_SUCCESS;
+}
+
+static void _ev_stream_do_read(ev_stream_t* stream)
+{
+	int ret;
+	ev_list_node_t* it = ev_list_pop_front(&stream->r_queue);
+	ev_read_t* req = container_of(it, ev_read_t, node);
+
+	size_t r_size = 0;
+	if ((ret = _ev_stream_do_read_once(stream, req, &r_size)) == EV_SUCCESS)
+	{
+		stream->r_cb(stream, req, r_size, EV_SUCCESS);
+		return;
+	}
+
+	ev_list_push_front(&stream->r_queue, it);
+
+	if (ret == EV_EAGAIN)
+	{
+		return;
+	}
+
+	while ((it = ev_list_pop_front(&stream->r_queue)) != NULL)
+	{
+		req = container_of(it, ev_read_t, node);
+		stream->r_cb(stream, req, 0, ret);
+	}
+}
+
+static void _ev_stream_on_io(ev_io_t* io, unsigned evts)
+{
+	ev_stream_t* stream = container_of(io, ev_stream_t, io);
+
+	if (evts & EV_IO_OUT)
+	{
+		_ev_stream_do_write(stream);
+		if (ev_list_size(&stream->w_queue) == 0)
+		{
+			ev__io_del(stream->loop, &stream->io, EV_IO_OUT);
+		}
+	}
+	if (evts & EV_IO_IN)
+	{
+		_ev_stream_do_read(stream);
+		if (ev_list_size(&stream->r_queue) == 0)
+		{
+			ev__io_del(stream->loop, &stream->io, EV_IO_IN);
+		}
+	}
 }
 
 void ev__loop_update_time(ev_loop_t* loop)
@@ -371,4 +516,80 @@ int ev__translate_sys_error(int syserr)
 	}
 
 	return syserr;
+}
+
+void ev__write_init(ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb)
+{
+	req->data.cb = cb;
+	req->data.bufs = bufs;
+	req->data.nbuf = nbuf;
+	req->backend.idx = 0;
+	req->backend.len = 0;
+}
+
+void ev__read_init(ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev_read_cb cb)
+{
+	req->data.cb = cb;
+	req->data.bufs = bufs;
+	req->data.nbuf = nbuf;
+}
+
+void ev__stream_init(ev_loop_t* loop, ev_stream_t* stream, int fd, ev_stream_write_cb wcb, ev_stream_read_cb rcb)
+{
+	stream->loop = loop;
+	ev__io_init(&stream->io, fd, _ev_stream_on_io);
+	ev_list_init(&stream->w_queue);
+	ev_list_init(&stream->r_queue);
+	stream->w_cb = wcb;
+	stream->r_cb = rcb;
+}
+
+int ev__stream_write(ev_stream_t* stream, ev_write_t* req)
+{
+	ev_list_push_back(&stream->w_queue, &req->node);
+	ev__io_add(stream->loop, &stream->io, EV_IO_OUT);
+	return EV_SUCCESS;
+}
+
+int ev__stream_read(ev_stream_t* stream, ev_read_t* req)
+{
+	ev_list_push_back(&stream->r_queue, &req->node);
+	ev__io_add(stream->loop, &stream->io, EV_IO_IN);
+	return EV_SUCCESS;
+}
+
+size_t ev__stream_size(ev_stream_t* stream, unsigned evts)
+{
+	size_t ret = 0;
+	if (evts & EV_IO_IN)
+	{
+		ret += ev_list_size(&stream->r_queue);
+	}
+	if (evts & EV_IO_OUT)
+	{
+		ret += ev_list_size(&stream->w_queue);
+	}
+	return ret;
+}
+
+void ev__stream_abort(ev_stream_t* stream, unsigned evts)
+{
+	ev__io_del(stream->loop, &stream->io, evts);
+}
+
+void ev__stream_cleanup(ev_stream_t* stream, unsigned evts)
+{
+	ev_list_node_t* it;
+	while ((evts & EV_IO_OUT)
+		&& ((it = ev_list_pop_front(&stream->w_queue)) != NULL))
+	{
+		ev_write_t* req = container_of(it, ev_write_t, node);
+		stream->w_cb(stream, req, req->backend.len, EV_ECANCELED);
+	}
+	while ((evts & EV_IO_IN)
+		&& ((it = ev_list_pop_front(&stream->r_queue)) != NULL))
+	{
+		ev_read_t* req = container_of(it, ev_read_t, node);
+		stream->r_cb(stream, req, 0, EV_ECANCELED);
+	}
 }

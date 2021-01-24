@@ -13,6 +13,25 @@ extern "C" {
 typedef int ev_os_socket_t;
 #define EV_OS_SOCKET_INVALID	(-1)
 
+struct ev_stream;
+typedef struct ev_stream ev_stream_t;
+
+/**
+ * @brief Write callback
+ * @param[in] req		Write request
+ * @param[in] size		Write size
+ * @param[in] stat		Write result
+ */
+typedef void(*ev_stream_write_cb)(ev_stream_t* stream, ev_write_t* req, size_t size, int stat);
+
+/**
+ * @brief Read callback
+ * @param[in] req		Read callback
+ * @param[in] size		Read size
+ * @param[in] stat		Read result
+ */
+typedef void(*ev_stream_read_cb)(ev_stream_t* stream, ev_read_t* req, size_t size, int stat);
+
 /**
  * @brief Buffer
  * @internal Must share the same layout with struct iovec
@@ -79,6 +98,17 @@ typedef struct ev_async_backend
 	int							fd_write;		/**< File descriptor for write */
 }ev_async_backend_t;
 #define EV_ASYNC_BACKEND_INIT	{ EV_IO_INIT, -1 }
+
+struct ev_stream
+{
+	ev_loop_t*					loop;			/**< Event loop */
+	ev_io_t						io;				/**< IO object */
+	ev_list_t					w_queue;		/**< Write queue */
+	ev_list_t					r_queue;		/**< Read queue */
+	ev_stream_write_cb			w_cb;			/**< Write callback */
+	ev_stream_read_cb			r_cb;			/**< Read callback */
+};
+#define EV_STREAM_INIT			{ NULL, EV_IO_INIT, EV_LIST_INIT, EV_LIST_INIT, NULL, NULL }
 
 typedef struct ev_tcp_backend
 {

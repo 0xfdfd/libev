@@ -388,11 +388,7 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, 
 		_ev_tcp_setup_stream(sock);
 	}
 
-	req->data.cb = cb;
-	req->data.bufs = bufs;
-	req->data.nbuf = nbuf;
-	req->backend.idx = 0;
-	req->backend.len = 0;
+	ev__write_init(req, bufs, nbuf, cb);
 	ev_list_push_back(&sock->backend.u.stream.w_queue, &req->node);
 
 	ev__io_add(sock->base.loop, &sock->backend.io, EV_IO_OUT);
@@ -412,9 +408,7 @@ int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev
 		_ev_tcp_setup_stream(sock);
 	}
 
-	req->data.cb = cb;
-	req->data.bufs = bufs;
-	req->data.nbuf = nbuf;
+	ev__read_init(req, bufs, nbuf, cb);
 	ev_list_push_back(&sock->backend.u.stream.r_queue, &req->node);
 
 	ev__io_add(sock->base.loop, &sock->backend.io, EV_IO_IN);
