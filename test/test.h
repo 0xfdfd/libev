@@ -59,7 +59,7 @@ extern "C" {
 		if (__test_ctx.mask.break_on_failure){\
 			TEST_BREAK_POINT();\
 		}\
-		longjmp(__test_jmp, -1);\
+		longjmp(__test_jmp, EXIT_FAILURE);\
 	} while (0)
 
 #define ASSERT_TEMPLATE(TYPE, FMT, OP, CMP, a, b, u_fmt, ...)	\
@@ -76,7 +76,7 @@ extern "C" {
 		if (__test_ctx.mask.break_on_failure){\
 			TEST_BREAK_POINT();\
 		}\
-		longjmp(__test_jmp, -1);\
+		longjmp(__test_jmp, EXIT_FAILURE);\
 	} while(0)
 
 #define ASSERT_EQ_STR(a, b, ...)	ASSERT_TEMPLATE_VA(__VA_ARGS__)(const char*, "%s", ==, !strcmp, a, b, ##__VA_ARGS__)
@@ -133,7 +133,7 @@ extern "C" {
 #define _ASSERT_INTERNAL_HELPER_GE(a, b)						((a) >= (b))
 
 #define TEST(name)	\
-	test_global_ctx_t	__test_ctx = { 0, NULL, 0, { 0 } };\
+	test_global_ctx_t	__test_ctx = { 0, NULL, EXIT_SUCCESS, { 0 } };\
 	jmp_buf				__test_jmp;\
 	static void run_test_##name(void);\
 	int main(int argc, char* argv[]) {\
