@@ -73,11 +73,6 @@ static void _on_accept(ev_tcp_t* from, ev_tcp_t* to, int stat)
 
 static void _on_read(ev_read_t* req, size_t size, int stat)
 {
-	if (stat != EV_SUCCESS && stat != EV_EOF)
-	{
-		ABORT();
-	}
-
 	if (stat == EV_EOF)
 	{
 		int ret = memcmp(s_write_pack.send_buf, s_read_pack.recv_buf, sizeof(s_write_pack.send_buf));
