@@ -2,26 +2,27 @@ cmake_minimum_required(VERSION 3.2)
 project(ev)
 
 # add source files
-set(ev_sources
+add_library(${PROJECT_NAME}
 	src/ev-common.c
 	src/list.c
 	src/map.c
 	src/map_low.c
 	src/timer.c)
 if(WIN32)
-	list(APPEND ev_sources
-		src/win/async.c
-		src/win/loop.c
-		src/win/once.c
-		src/win/tcp.c)
+	target_sources(${PROJECT_NAME}
+		PRIVATE
+			src/win/async.c
+			src/win/loop.c
+			src/win/once.c
+			src/win/tcp.c)
 else()
-	list(APPEND ev_sources
-		src/unix/async.c
-		src/unix/loop.c
-		src/unix/once.c
-		src/unix/tcp.c)
+	target_sources(${PROJECT_NAME}
+		PRIVATE
+			src/unix/async.c
+			src/unix/loop.c
+			src/unix/once.c
+			src/unix/tcp.c)
 endif()
-add_library(${PROJECT_NAME} ${ev_sources})
 
 # add library dependencies
 find_package(Threads REQUIRED)
