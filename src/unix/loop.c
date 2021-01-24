@@ -66,7 +66,7 @@ void ev__loop_update_time(ev_loop_t* loop)
 		return;
 	}
 
-	loop->hwtime = t.tv_sec * (uint64_t)1e9 + t.tv_nsec;
+	loop->hwtime = t.tv_sec * 1000 + t.tv_nsec / 1000 / 1000;
 }
 
 int ev__cloexec(int fd, int set)
