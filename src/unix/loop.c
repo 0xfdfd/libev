@@ -1,7 +1,6 @@
-#include <asm-generic/errno-base.h>
-#include <asm-generic/errno.h>
 #include <sys/ioctl.h>
 #include <sys/uio.h>
+#include <errno.h>
 #include <string.h>
 #include <unistd.h>
 #include "ev-platform.h"
