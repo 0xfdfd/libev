@@ -174,7 +174,7 @@ int ev__translate_sys_error(int err)
 	case ERROR_NOT_SAME_DEVICE:             return EV_EXDEV;
 	case ERROR_INVALID_FUNCTION:            return EV_EISDIR;
 	case ERROR_META_EXPANSION_TOO_LONG:     return EV_E2BIG;
-	default:                                return EV_UNKNOWN;
+	default:                                return err;
 	}
 }
 
