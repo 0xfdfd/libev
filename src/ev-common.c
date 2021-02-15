@@ -355,6 +355,25 @@ ev_buf_t ev_buf_make(void* buf, size_t len)
 	return tmp;
 }
 
+void ev_buf_make_n(ev_buf_t bufs[], size_t nbuf, ...)
+{
+	va_list ap;
+	va_start(ap, nbuf);
+	ev_buf_make_v(bufs, nbuf, ap);
+	va_end(ap);
+}
+
+void ev_buf_make_v(ev_buf_t bufs[], size_t nbuf, va_list ap)
+{
+	size_t i;
+	for (i = 0; i < nbuf; i++)
+	{
+		void* v_b = va_arg(ap, void*);
+		size_t v_l = va_arg(ap, size_t);
+		bufs[i] = ev_buf_make(v_b, v_l);
+	}
+}
+
 const char* ev_strerror(int err)
 {
 	switch (err)

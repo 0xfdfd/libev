@@ -607,6 +607,34 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
 ev_buf_t ev_buf_make(void* buf, size_t len);
 
 /**
+ * @brief Constructor for #ev_buf_t list
+ * @example
+ * void foo_bar(void)
+ * {
+ *     ev_buf_t bufs[2];
+ *     void* buf_1 = some_address;
+ *     size_t len_1 = length_of_buf_1;
+ *     void* buf_2 = some_address;
+ *     size_t len_2 = length_of_buf_2;
+ *     ev_buf_make_n(bufs, 2, buf_1, len_1, buf_2, len_2);
+ * }
+ * @param[out] bufs	Buffer array
+ * @param[in] nbuf	Buffer number
+ * @param[in] ...	Buffer info, must a pair of (void*, size_t)
+ */
+void ev_buf_make_n(ev_buf_t bufs[], size_t nbuf, ...);
+
+/**
+ * @brief Constructor for #ev_buf_t list
+ * 
+ * Like #ev_buf_make_n(), but accept a va_list for argument.
+ * @param[out] bufs Buffer array
+ * @param[in] nbuf	Buffer number
+ * @param[in] ap	va_list for Buffer array
+ */
+void ev_buf_make_v(ev_buf_t bufs[], size_t nbuf, va_list ap);
+
+/**
  * @brief Describe the error code
  * @param[in] err	Error code
  * @return			Describe string

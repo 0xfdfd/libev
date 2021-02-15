@@ -8,6 +8,7 @@ function(EV_ADD_TEST name)
 endfunction()
 
 EV_ADD_TEST(test_async)
+EV_ADD_TEST(test_buf)
 EV_ADD_TEST(test_ipv4_addr)
 EV_ADD_TEST(test_once)
 EV_ADD_TEST(test_tcp_listen)
