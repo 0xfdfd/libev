@@ -8,6 +8,7 @@ extern "C" {
 #endif
 
 #include <stddef.h>
+#include <stdarg.h>
 #include "ev/list.h"
 
 enum ev_errno;
