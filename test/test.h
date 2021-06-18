@@ -88,6 +88,10 @@ extern "C" {
 
 #define ASSERT_EQ_PTR(a, b, ...)	ASSERT_TEMPLATE_VA(__VA_ARGS__)(const void*, "%p", ==, _ASSERT_INTERNAL_HELPER_EQ, a, b, ##__VA_ARGS__)
 #define ASSERT_NE_PTR(a, b, ...)	ASSERT_TEMPLATE_VA(__VA_ARGS__)(const void*, "%p", !=, _ASSERT_INTERNAL_HELPER_NE, a, b, ##__VA_ARGS__)
+#define ASSERT_LT_PTR(a, b, ...)	ASSERT_TEMPLATE_VA(__VA_ARGS__)(const void*, "%p", <, _ASSERT_INTERNAL_HELPER_LT, a, b, ##__VA_ARGS__)
+#define ASSERT_GT_PTR(a, b, ...)	ASSERT_TEMPLATE_VA(__VA_ARGS__)(const void*, "%p", >, _ASSERT_INTERNAL_HELPER_GT, a, b, ##__VA_ARGS__)
+#define ASSERT_LE_PTR(a, b, ...)	ASSERT_TEMPLATE_VA(__VA_ARGS__)(const void*, "%p", <=, _ASSERT_INTERNAL_HELPER_LE, a, b, ##__VA_ARGS__)
+#define ASSERT_GE_PTR(a, b, ...)	ASSERT_TEMPLATE_VA(__VA_ARGS__)(const void*, "%p", >=, _ASSERT_INTERNAL_HELPER_GE, a, b, ##__VA_ARGS__)
 
 #define ASSERT_EQ_D32(a, b, ...)	ASSERT_TEMPLATE_VA(__VA_ARGS__)(int32_t, "%"PRId32, ==, _ASSERT_INTERNAL_HELPER_EQ, a, b, ##__VA_ARGS__)
 #define ASSERT_NE_D32(a, b, ...)	ASSERT_TEMPLATE_VA(__VA_ARGS__)(int32_t, "%"PRId32, !=, _ASSERT_INTERNAL_HELPER_NE, a, b, ##__VA_ARGS__)
