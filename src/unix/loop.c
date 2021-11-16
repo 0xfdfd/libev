@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include "ev-platform.h"
 #include "ev.h"
 #include "loop.h"
@@ -181,11 +182,31 @@ static void _ev_stream_do_read(ev_stream_t* stream)
     }
 }
 
+static void _ev_stream_cleanup_r(ev_stream_t* stream, int errcode)
+{
+    ev_list_node_t* it;
+    while ((it = ev_list_pop_front(&stream->r_queue)) != NULL)
+    {
+        ev_read_t* req = container_of(it, ev_read_t, node);
+        stream->r_cb(stream, req, 0, errcode);
+    }
+}
+
+static void _ev_stream_cleanup_w(ev_stream_t* stream, int errcode)
+{
+    ev_list_node_t* it;
+    while ((it = ev_list_pop_front(&stream->w_queue)) != NULL)
+    {
+        ev_write_t* req = container_of(it, ev_write_t, node);
+        stream->w_cb(stream, req, req->backend.len, errcode);
+    }
+}
+
 static void _ev_stream_on_io(ev_io_t* io, unsigned evts)
 {
     ev_stream_t* stream = container_of(io, ev_stream_t, io);
 
-    if (evts & EV_IO_OUT)
+    if (evts & EPOLLOUT)
     {
         _ev_stream_do_write(stream);
         if (ev_list_size(&stream->w_queue) == 0)
@@ -193,7 +214,8 @@ static void _ev_stream_on_io(ev_io_t* io, unsigned evts)
             ev__io_del(stream->loop, &stream->io, EV_IO_OUT);
         }
     }
-    if (evts & EV_IO_IN)
+
+    else if (evts & (EPOLLIN | EPOLLHUP))
     {
         _ev_stream_do_read(stream);
         if (ev_list_size(&stream->r_queue) == 0)
@@ -349,8 +371,20 @@ int ev__nonblock(int fd, int set)
 #endif
 }
 
+int ev__getfl(int fd)
+{
+    int mode;
+    do
+    {
+        mode = fcntl(fd, F_GETFL);
+    } while (mode == -1 && errno == EINTR);
+    return mode;
+}
+
 int ev__loop_init_backend(ev_loop_t* loop)
 {
+    ENSURE_LAYOUT(ev_buf_t, struct iovec, data, iov_base, size, iov_len);
+
     ev_map_init(&loop->backend.io, _ev_cmp_io_unix, NULL);
 
     if ((loop->backend.pollfd = epoll_create1(EPOLL_CLOEXEC)) != -1)
@@ -587,6 +621,15 @@ void ev__stream_init(ev_loop_t* loop, ev_stream_t* stream, int fd, ev_stream_wri
     stream->r_cb = rcb;
 }
 
+void ev__stream_exit(ev_stream_t* stream)
+{
+    ev__stream_abort(stream, EV_IO_IN | EV_IO_OUT);
+    ev__stream_cleanup(stream, EV_IO_IN | EV_IO_OUT);
+    stream->loop = NULL;
+    stream->w_cb = NULL;
+    stream->r_cb = NULL;
+}
+
 int ev__stream_write(ev_stream_t* stream, ev_write_t* req)
 {
     ev_list_push_back(&stream->w_queue, &req->node);
@@ -622,17 +665,13 @@ void ev__stream_abort(ev_stream_t* stream, unsigned evts)
 
 void ev__stream_cleanup(ev_stream_t* stream, unsigned evts)
 {
-    ev_list_node_t* it;
-    while ((evts & EV_IO_OUT)
-        && ((it = ev_list_pop_front(&stream->w_queue)) != NULL))
+    if (evts & EV_IO_OUT)
     {
-        ev_write_t* req = container_of(it, ev_write_t, node);
-        stream->w_cb(stream, req, req->backend.len, EV_ECANCELED);
+        _ev_stream_cleanup_w(stream, EV_ECANCELED);
     }
-    while ((evts & EV_IO_IN)
-        && ((it = ev_list_pop_front(&stream->r_queue)) != NULL))
+
+    if (evts & EV_IO_IN)
     {
-        ev_read_t* req = container_of(it, ev_read_t, node);
-        stream->r_cb(stream, req, 0, EV_ECANCELED);
+        _ev_stream_cleanup_r(stream, EV_ECANCELED);
     }
 }

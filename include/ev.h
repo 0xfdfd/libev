@@ -38,6 +38,9 @@ typedef struct ev_async ev_async_t;
 struct ev_tcp;
 typedef struct ev_tcp ev_tcp_t;
 
+struct ev_pipe;
+typedef struct ev_pipe ev_pipe_t;
+
 struct ev_write;
 typedef struct ev_write ev_write_t;
 
@@ -77,6 +80,12 @@ typedef void(*ev_todo_cb)(ev_todo_t* todo);
  * @param[in] handle    A pointer to #ev_async_t structure
  */
 typedef void(*ev_async_cb)(ev_async_t* async);
+
+/**
+ * @brief Callback for #ev_pipe_t
+ * @param[in] handle      A pipe
+ */
+typedef void(*ev_pipe_cb)(ev_pipe_t* handle);
 
 /**
  * @brief Close callback for #ev_tcp_t
@@ -260,6 +269,16 @@ struct ev_tcp
     ev_tcp_backend_t        backend;        /**< Platform related implementation */
 };
 #define EV_TCP_INIT         { EV_HANDLE_INIT, NULL, EV_OS_SOCKET_INVALID, EV_TCP_BACKEND_INIT }
+
+struct ev_pipe
+{
+    ev_handle_t             base;           /**< Base object */
+    ev_pipe_cb              close_cb;       /**< User close callback */
+
+    ev_os_handle_t          pipfd;          /**< Pipe handle */
+    ev_pipe_backend_t       backend;        /**< Platform related implementation */
+};
+#define EV_PIPE_INIT        { EV_HANDLE_INIT, NULL, EV_OS_HANDLE_INVALID, EV_PIPE_BACKEND_INIT }
 
 /**
  * @brief Write request
@@ -535,6 +554,67 @@ int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len);
 /**
  * @} EV_TCP
  */
+
+/**
+ * @defgroup EV_PIPE Pipe
+ * @{
+ */
+
+/**
+ * @brief Initialize a pipe handle.
+ * @param[in] loop      Event loop
+ * @param[out] handle   Pipe handle
+ * @return              #ev_errno_t
+ */
+int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe);
+
+/**
+ * @brief Destroy pipe
+ * @param[in] sock      Socket
+ * @param[in] cb        Destroy callback
+ */
+void ev_pipe_exit(ev_pipe_t* pipe, ev_pipe_cb cb);
+
+/**
+ * @brief Open an existing file descriptor or HANDLE as a pipe.
+ * @param[in] handle    Pipe handle
+ * @param[in] file      File descriptor or HANDLE
+ * @return              #ev_errno_t
+ */
+int ev_pipe_open(ev_pipe_t* pipe, ev_os_handle_t handle);
+
+/**
+ * @brief Write data
+ * @param[in] pipe  Pipe handle
+ * @param[in] req   Write request
+ * @param[in] bufs  Buffer list
+ * @param[in] nbuf  Buffer list count
+ * @param[in] cb    Write complete callback
+ * @return          #ev_errno_t
+ */
+int ev_pipe_write(ev_pipe_t* pipe, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb);
+
+/**
+ * @brief Read data
+ * @param[in] pipe  Pipe handle
+ * @param[in] req   Read request
+ * @param[in] bufs  Buffer list
+ * @param[in] nbuf  Buffer list count
+ * @param[in] cb    Read complete callback
+ * @return          #ev_errno_t
+ */
+int ev_pipe_read(ev_pipe_t* pipe, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev_read_cb cb);
+
+/**
+ * @brief Make a pair of pipe
+ * @param[out] fds  fds[0] for read, fds[1] for write
+ * @return          #ev_errno_t
+ */
+int ev_pipe_make(ev_os_handle_t fds[2]);
+
+  /**
+   * @} EV_PIPE
+   */
 
 /**
  * @defgroup EV_UTILS Miscellaneous utilities

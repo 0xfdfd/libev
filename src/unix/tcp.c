@@ -376,8 +376,6 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
 
 int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb)
 {
-    ENSURE_LAYOUT(ev_buf_t, struct iovec, data, iov_base, size, iov_len);
-
     if (sock->base.flags & (EV_TCP_LISTING | EV_TCP_ACCEPTING | EV_TCP_CONNECTING))
     {
         return EV_EINVAL;

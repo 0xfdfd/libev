@@ -14,6 +14,9 @@ extern "C" {
 #include <windows.h>
 #include "ev/map.h"
 
+typedef HANDLE ev_os_handle_t;
+#define EV_OS_HANDLE_INVALID    INVALID_HANDLE_VALUE
+
 typedef SOCKET ev_os_socket_t;
 #define EV_OS_SOCKET_INVALID    INVALID_SOCKET
 

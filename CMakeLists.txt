@@ -3,25 +3,26 @@ project(ev)
 
 # add source files
 add_library(${PROJECT_NAME}
-    src/ev-common.c
-    src/list.c
-    src/map.c
-    src/map_low.c
-    src/timer.c)
+    "src/ev-common.c"
+    "src/list.c"
+    "src/map.c"
+    "src/map_low.c"
+    "src/timer.c")
 if(WIN32)
     target_sources(${PROJECT_NAME}
         PRIVATE
-            src/win/async.c
-            src/win/loop.c
-            src/win/once.c
-            src/win/tcp.c)
+            "src/win/async.c"
+            "src/win/loop.c"
+            "src/win/once.c"
+            "src/win/tcp.c")
 else()
     target_sources(${PROJECT_NAME}
         PRIVATE
-            src/unix/async.c
-            src/unix/loop.c
-            src/unix/once.c
-            src/unix/tcp.c)
+            "src/unix/async.c"
+            "src/unix/loop.c"
+            "src/unix/once.c"
+            "src/unix/pipe.c"
+            "src/unix/tcp.c")
 endif()
 
 # add library dependencies

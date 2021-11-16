@@ -55,13 +55,19 @@ void ev__read_init(ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev_read_cb cb);
 
 /**
  * @brief Initialize stream.
- * @param[in] loop  Event loop
+ * @param[in] loop      Event loop
  * @param[out] stream   Stream handler
- * @param[in] fd    File descriptor
- * @param[in] wcb   Write callback
- * @param[in] rcb   Read callback
+ * @param[in] fd        File descriptor
+ * @param[in] wcb       Write callback
+ * @param[in] rcb       Read callback
  */
 void ev__stream_init(ev_loop_t* loop, ev_stream_t* stream, int fd, ev_stream_write_cb wcb, ev_stream_read_cb rcb);
+
+/**
+ * @brief Cleanup and exit stream
+ * @param[in] stream    Stream handler
+ */
+void ev__stream_exit(ev_stream_t* stream);
 
 /**
  * @brief Do stream write
@@ -116,6 +122,11 @@ int ev__cloexec(int fd, int set);
  * @return          #ev_errno_t
  */
 int ev__nonblock(int fd, int set);
+
+/**
+ * @brief Return the file access mode and the file status flags
+ */
+int ev__getfl(int fd);
 
 #ifdef __cplusplus
 }

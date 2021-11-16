@@ -5,6 +5,7 @@ extern "C" {
 #endif
 
 #include <stdlib.h>
+#include <assert.h>
 #include "ev.h"
 
 #if defined(__GNUC__) || defined(__clang__)
