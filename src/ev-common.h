@@ -8,54 +8,54 @@ extern "C" {
 #include "ev.h"
 
 #if defined(__GNUC__) || defined(__clang__)
-#	define container_of(ptr, type, member) \
-		({ \
-			const typeof(((type *)0)->member)*__mptr = (ptr); \
-			(type *)((char *)__mptr - offsetof(type, member)); \
-		})
+#   define container_of(ptr, type, member) \
+        ({ \
+            const typeof(((type *)0)->member)*__mptr = (ptr); \
+            (type *)((char *)__mptr - offsetof(type, member)); \
+        })
 #else
-#	define container_of(ptr, type, member) \
-		((type *) ((char *) (ptr) - offsetof(type, member)))
+#   define container_of(ptr, type, member) \
+        ((type *) ((char *) (ptr) - offsetof(type, member)))
 #endif
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 #if defined(_WIN32)
-#	define ABORT()		__debugbreak()
+#   define ABORT()      __debugbreak()
 #elif (defined(__clang__) || defined(__GNUC__)) && (defined(__x86_64__) || defined(__i386__))
-#	define ABORT()		asm("int3")
+#   define ABORT()      asm("int3")
 #else
-#	define ABORT()		*(volatile int*)NULL = 1
+#   define ABORT()      *(volatile int*)NULL = 1
 #endif
 
-#define ENSURE_LAYOUT(TYPE_A, TYPE_B, FIELD_A_1, FIELD_B_1, FIELD_A_2, FIELD_B_2)	\
-	assert(sizeof(TYPE_A) == sizeof(TYPE_B));\
-	assert(offsetof(TYPE_A, FIELD_A_1) == offsetof(TYPE_B, FIELD_B_1));\
-	assert(sizeof(((TYPE_A*)0)->FIELD_A_1) == sizeof(((TYPE_B*)0)->FIELD_B_1));\
-	assert(offsetof(TYPE_A, FIELD_A_2) == offsetof(TYPE_B, FIELD_B_2));\
-	assert(sizeof(((TYPE_A*)0)->FIELD_A_2) == sizeof(((TYPE_B*)0)->FIELD_B_2))
+#define ENSURE_LAYOUT(TYPE_A, TYPE_B, FIELD_A_1, FIELD_B_1, FIELD_A_2, FIELD_B_2)   \
+    assert(sizeof(TYPE_A) == sizeof(TYPE_B));\
+    assert(offsetof(TYPE_A, FIELD_A_1) == offsetof(TYPE_B, FIELD_B_1));\
+    assert(sizeof(((TYPE_A*)0)->FIELD_A_1) == sizeof(((TYPE_B*)0)->FIELD_B_1));\
+    assert(offsetof(TYPE_A, FIELD_A_2) == offsetof(TYPE_B, FIELD_B_2));\
+    assert(sizeof(((TYPE_A*)0)->FIELD_A_2) == sizeof(((TYPE_B*)0)->FIELD_B_2))
 
 typedef enum ev_handle_flag
 {
-	/* Used by all handles. Bit 0-7. */
-	EV_HANDLE_CLOSING		= 0x01 << 0x00,		/**< 1. Handle is going to close */
-	EV_HANDLE_CLOSED		= 0x01 << 0x01,		/**< 2. Handle is closed */
-	EV_HANDLE_ACTIVE		= 0x01 << 0x02,		/**< 4. Handle is busy */
+    /* Used by all handles. Bit 0-7. */
+    EV_HANDLE_CLOSING       = 0x01 << 0x00,     /**< 1. Handle is going to close */
+    EV_HANDLE_CLOSED        = 0x01 << 0x01,     /**< 2. Handle is closed */
+    EV_HANDLE_ACTIVE        = 0x01 << 0x02,     /**< 4. Handle is busy */
 
-	/* Used by socket */
-	EV_TCP_LISTING			= 0x01 << 0x08,		/**< 256. This is a listen socket and is listening */
-	EV_TCP_ACCEPTING		= 0x01 << 0x09,		/**< 512. This is a socket waiting for accept */
-	EV_TCP_STREAMING		= 0x01 << 0x0A,		/**< 1024. This is a socket waiting for read or write */
-	EV_TCP_CONNECTING		= 0x01 << 0x0B,		/**< 2048. This is a connect and waiting for connect complete */
-	EV_TCP_BOUND			= 0x01 << 0x0C,		/**< 4096. Socket is bond to address */
-	EV_TCP_STREAM_INIT		= 0x01 << 0x0D,		/**< 8192. Stream structure is initialized */
+    /* Used by socket */
+    EV_TCP_LISTING          = 0x01 << 0x08,     /**< 256. This is a listen socket and is listening */
+    EV_TCP_ACCEPTING        = 0x01 << 0x09,     /**< 512. This is a socket waiting for accept */
+    EV_TCP_STREAMING        = 0x01 << 0x0A,     /**< 1024. This is a socket waiting for read or write */
+    EV_TCP_CONNECTING       = 0x01 << 0x0B,     /**< 2048. This is a connect and waiting for connect complete */
+    EV_TCP_BOUND            = 0x01 << 0x0C,     /**< 4096. Socket is bond to address */
+    EV_TCP_STREAM_INIT      = 0x01 << 0x0D,     /**< 8192. Stream structure is initialized */
 }ev_handle_flag_t;
 
 /**
  * @brief Initialize a handle
- * @param[in] loop		The loop own the handle
- * @param[out] handle	A pointer to the structure
- * @param[in] close_cb	A callback when handle is closed
+ * @param[in] loop      The loop own the handle
+ * @param[out] handle   A pointer to the structure
+ * @param[in] close_cb  A callback when handle is closed
  */
 void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_close_cb close_cb);
 
@@ -63,53 +63,53 @@ void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_close_cb close_cb)
  * @brief Close the handle
  * @note The handle will not closed until close_cb was called, which was given
  *   by #ev__handle_init()
- * @param[in] handle	handler
+ * @param[in] handle    handler
  */
 void ev__handle_exit(ev_handle_t* handle);
 
 /**
  * @brief Set handle as active
- * @param[in] handle	handler
+ * @param[in] handle    handler
  */
 void ev__handle_active(ev_handle_t* handle);
 
 /**
  * @brief Set handle as inactive
- * @param[in] handle	handler
+ * @param[in] handle    handler
  */
 void ev__handle_deactive(ev_handle_t* handle);
 
 /**
  * @brief Check if the handle is in active state
- * @param[in] handle	handler
- * @return				bool
+ * @param[in] handle    handler
+ * @return              bool
  */
 int ev__handle_is_active(ev_handle_t* handle);
 
 /**
  * @brief Check if the handle is in closing or closed state
- * @param[in] handle	handler
- * @return				bool
+ * @param[in] handle    handler
+ * @return              bool
  */
 int ev__handle_is_closing(ev_handle_t* handle);
 
 /**
  * @brief Add a pending task
- * @param[in] loop		Event loop
- * @param[in] token		A pointer to the pending token
- * @param[in] cb		A callback when the pending task is active
+ * @param[in] loop      Event loop
+ * @param[in] token     A pointer to the pending token
+ * @param[in] cb        A callback when the pending task is active
  */
 void ev__todo(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb);
 
 /**
  * @brief Active TCP socket
- * @param[in] sock		Socket handle
+ * @param[in] sock      Socket handle
  */
 void ev__tcp_active(ev_tcp_t* sock);
 
 /**
  * @brief De-active TCP socket
- * @param[in] sock		Socket handle
+ * @param[in] sock      Socket handle
  */
 void ev__tcp_deactive(ev_tcp_t* sock);
 

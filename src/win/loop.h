@@ -10,8 +10,8 @@ extern "C" {
 
 /**
  * @brief Initialize IOCP request
- * @param[out] req		A pointer to the IOCP request
- * @param[in] cb		A callback when the request is finish
+ * @param[out] req      A pointer to the IOCP request
+ * @param[in] cb        A callback when the request is finish
  */
 void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb cb);
 
