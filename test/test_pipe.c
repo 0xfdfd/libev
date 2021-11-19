@@ -45,7 +45,7 @@ static void _on_read_callback(ev_read_t* req, size_t size, int stat)
     ASSERT_EQ_D32(ev_pipe_read(&s_pipe_r, &s_r_pack.read_req, &s_r_pack.buf, 1, _on_read_callback), 0);
 }
 
-TEST(pipe)
+TEST(pipe, pipe)
 {
     test_random(s_w_pack.buffer, sizeof(s_w_pack.buffer));
 

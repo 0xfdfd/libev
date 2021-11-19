@@ -6,14 +6,14 @@ static int s_count = 0;
 
 static void _once_callback(void)
 {
-	s_count++;
+    s_count++;
 }
 
-TEST(once)
+TEST(misc, once)
 {
-	ASSERT_EQ_D32(s_count, 0);
-	ev_once_execute(&s_once_token, _once_callback);
-	ASSERT_EQ_D32(s_count, 1);
-	ev_once_execute(&s_once_token, _once_callback);
-	ASSERT_EQ_D32(s_count, 1);
+    ASSERT_EQ_D32(s_count, 0);
+    ev_once_execute(&s_once_token, _once_callback);
+    ASSERT_EQ_D32(s_count, 1);
+    ev_once_execute(&s_once_token, _once_callback);
+    ASSERT_EQ_D32(s_count, 1);
 }

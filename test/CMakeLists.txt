@@ -1,19 +1,17 @@
 cmake_minimum_required(VERSION 3.2)
-project(ev_test)
 
-function(EV_ADD_TEST name)
-	add_executable(${name} ${name}.c)
-	target_link_libraries(${name} PRIVATE ev)
-	add_test(${name} ${name})
-endfunction()
-
-EV_ADD_TEST(test_async)
-EV_ADD_TEST(test_buf)
-EV_ADD_TEST(test_ipv4_addr)
-EV_ADD_TEST(test_once)
-EV_ADD_TEST(test_pipe)
-EV_ADD_TEST(test_tcp_listen)
-EV_ADD_TEST(test_tcp_push_server)
-EV_ADD_TEST(test_timer)
-EV_ADD_TEST(test_timer_exit_in_callback)
-EV_ADD_TEST(test_timer_stop_loop_in_callback)
+add_executable(unittest
+    "utils/random.c"
+    "test_async.c"
+    "test_buf.c"
+    "test_ipv4_addr.c"
+    "test_once.c"
+    "test_pipe.c"
+    "test_tcp_listen.c"
+    "test_tcp_push_server.c"
+    "test_timer.c"
+    "test_timer_exit_in_callback.c"
+    "test_timer_stop_loop_in_callback.c"
+    "main.c")
+target_link_libraries(unittest PRIVATE ev cutest)
+add_test(unittest unittest)
