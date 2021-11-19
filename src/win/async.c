@@ -1,9 +1,9 @@
 #include <assert.h>
 #include "loop.h"
 
-static void _ev_async_on_active(ev_iocp_t* req, size_t transferred)
+static void _ev_async_on_active(ev_iocp_t* req, size_t transferred, void* arg)
 {
-    (void)transferred;
+    (void)transferred; (void)arg;
     ev_async_t* async = container_of(req, ev_async_t, backend.iocp);
 
     /**
@@ -31,7 +31,7 @@ int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
     ev__handle_init(loop, &handle->base, _ev_async_on_close_win);
     handle->active_cb = cb;
 
-    ev__iocp_init(&handle->backend.iocp, _ev_async_on_active);
+    ev__iocp_init(&handle->backend.iocp, _ev_async_on_active, NULL);
 
     ev__handle_active(&handle->base);
 

@@ -54,7 +54,7 @@ static void _ev_pool_win_handle_req(OVERLAPPED_ENTRY* overlappeds, ULONG count)
         if (overlappeds[i].lpOverlapped)
         {
             ev_iocp_t* req = container_of(overlappeds[i].lpOverlapped, ev_iocp_t, overlapped);
-            req->cb(req, overlappeds[i].dwNumberOfBytesTransferred);
+            req->cb(req, overlappeds[i].dwNumberOfBytesTransferred, req->arg);
         }
     }
 }
@@ -62,6 +62,7 @@ static void _ev_pool_win_handle_req(OVERLAPPED_ENTRY* overlappeds, ULONG count)
 static void _ev_init_once_win(void)
 {
     ev__tcp_init();
+    ev__winapi_init();
 }
 
 void ev__loop_update_time(ev_loop_t* loop)
@@ -226,9 +227,10 @@ void ev__poll(ev_loop_t* loop, uint32_t timeout)
     }
 }
 
-void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb cb)
+void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg)
 {
-    req->cb = cb;
+    req->cb = callback;
+    req->arg = arg;
     memset(&req->overlapped, 0, sizeof(req->overlapped));
 }
 
@@ -372,18 +374,19 @@ int ev__ntstatus_to_winsock_error(NTSTATUS status)
     }
 }
 
-int ev__write_init_win(ev_write_t* req, ev_buf_t bufs[], size_t nbuf, void* owner, int stat, ev_iocp_cb iocp_cb, ev_write_cb w_cb)
+int ev__write_init_win(ev_write_t* req, ev_buf_t bufs[], size_t nbuf, void* owner, int stat,
+    ev_iocp_cb iocp_cb, void* iocp_arg, ev_write_cb w_cb)
 {
     req->data.cb = w_cb;
     req->data.nbuf = nbuf;
     req->backend.owner = owner;
     req->backend.size = 0;
     req->backend.stat = stat;
-    ev__iocp_init(&req->backend.io, iocp_cb);
 
     if (nbuf <= ARRAY_SIZE(req->data.bufsml))
     {
         req->data.bufs = req->data.bufsml;
+        req->backend.io = req->backend.ioml;
     }
     else
     {
@@ -391,8 +394,20 @@ int ev__write_init_win(ev_write_t* req, ev_buf_t bufs[], size_t nbuf, void* owne
         {
             return EV_ENOMEM;
         }
+        if ((req->backend.io = malloc(sizeof(ev_iocp_t) * nbuf)) == NULL)
+        {
+            free(req->data.bufs);
+            return EV_ENOMEM;
+        }
     }
-    memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);
+
+    size_t i;
+    for (i = 0; i < nbuf; i++)
+    {
+        req->data.bufs[i] = bufs[i];
+        ev__iocp_init(&req->backend.io[i], iocp_cb, iocp_arg);
+    }
+
     return EV_SUCCESS;
 }
 
@@ -403,21 +418,26 @@ void ev__write_exit_win(ev_write_t* req)
         free(req->data.bufs);
     }
     req->data.bufs = NULL;
+    if (req->backend.io != req->backend.ioml)
+    {
+        free(req->backend.io);
+    }
+    req->backend.io = NULL;
 }
 
 int ev__read_init_win(ev_read_t* req, ev_buf_t bufs[], size_t nbuf, void* owner,
-    int stat, ev_iocp_cb iocp_cb, ev_read_cb r_cb)
+    int stat, ev_iocp_cb iocp_cb, void* iocp_arg, ev_read_cb r_cb)
 {
     req->data.cb = r_cb;
     req->data.nbuf = nbuf;
     req->backend.owner = owner;
     req->backend.size = 0;
     req->backend.stat = stat;
-    ev__iocp_init(&req->backend.io, iocp_cb);
 
     if (nbuf <= ARRAY_SIZE(req->data.bufsml))
     {
         req->data.bufs = req->data.bufsml;
+        req->backend.io = req->backend.ioml;
     }
     else
     {
@@ -425,8 +445,20 @@ int ev__read_init_win(ev_read_t* req, ev_buf_t bufs[], size_t nbuf, void* owner,
         {
             return EV_ENOMEM;
         }
+        if ((req->backend.io = malloc(sizeof(ev_iocp_t) * nbuf)) == NULL)
+        {
+            free(req->data.bufs);
+            return EV_ENOMEM;
+        }
     }
-    memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);
+
+    size_t i;
+    for (i = 0; i < nbuf; i++)
+    {
+        req->data.bufs[i] = bufs[i];
+        ev__iocp_init(&req->backend.io[i], iocp_cb, iocp_arg);
+    }
+
     return EV_SUCCESS;
 }
 
@@ -437,4 +469,9 @@ void ev__read_exit_win(ev_read_t* req)
         free(req->data.bufs);
     }
     req->data.bufs = NULL;
+    if (req->backend.io != req->backend.ioml)
+    {
+        free(req->backend.io);
+    }
+    req->backend.io = NULL;
 }

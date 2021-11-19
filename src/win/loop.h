@@ -11,9 +11,10 @@ extern "C" {
 /**
  * @brief Initialize IOCP request
  * @param[out] req      A pointer to the IOCP request
- * @param[in] cb        A callback when the request is finish
+ * @param[in] callback  A callback when the request is finish
+ * @param[in] arg       User defined argument passed to callback
  */
-void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb cb);
+void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg);
 
 /**
  * @brief Initialize #ev_write_t
@@ -27,7 +28,7 @@ void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb cb);
  * @return              #ev_errno_t
  */
 int ev__write_init_win(ev_write_t* req, ev_buf_t bufs[], size_t nbuf, void* owner,
-    int stat, ev_iocp_cb iocp_cb, ev_write_cb w_cb);
+    int stat, ev_iocp_cb iocp_cb, void* iocp_arg, ev_write_cb w_cb);
 
 /**
  * @brief Cleanup #ev_write_t
@@ -46,7 +47,7 @@ void ev__write_exit_win(ev_write_t* req);
  * @return              #ev_errno_t
  */
 int ev__read_init_win(ev_read_t* req, ev_buf_t bufs[], size_t nbuf, void* owner,
-    int stat, ev_iocp_cb iocp_cb, ev_read_cb r_cb);
+    int stat, ev_iocp_cb iocp_cb, void* iocp_arg, ev_read_cb r_cb);
 
 /**
  * @brief Cleanup #ev_read_t

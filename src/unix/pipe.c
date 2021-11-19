@@ -112,7 +112,6 @@ int ev_pipe_write(ev_pipe_t* pipe, ev_write_t* req, ev_buf_t bufs[], size_t nbuf
     }
 
     ev__handle_active(&pipe->base);
-    
     return ev__stream_write(&pipe->backend.stream, req);
 }
 
@@ -125,6 +124,5 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, 
     }
 
     ev__handle_active(&pipe->base);
-    
     return ev__stream_read(&pipe->backend.stream, req);
 }

@@ -5,26 +5,6 @@
 
 tcp_ctx_t g_tcp_ctx;
 
-static void _ev_tcp_on_init(void)
-{
-    int ret;
-    WSADATA wsa_data;
-    if ((ret = WSAStartup(MAKEWORD(2, 2), &wsa_data)) != 0)
-    {
-        assert(ret == 0);
-    }
-
-    if ((ret = ev_ipv4_addr("0.0.0.0", 0, &g_tcp_ctx.addr_any_ip4)) != EV_SUCCESS)
-    {
-        assert(ret == EV_SUCCESS);
-    }
-
-    if ((ret = ev_ipv6_addr("::", 0, &g_tcp_ctx.addr_any_ip6)) != EV_SUCCESS)
-    {
-        assert(ret == EV_SUCCESS);
-    }
-}
-
 static void _ev_tcp_close_socket(ev_tcp_t* sock)
 {
     closesocket(sock->sock);
@@ -376,9 +356,9 @@ static int _ev_tcp_bind_any_addr(ev_tcp_t* sock, int af)
     return ev_tcp_bind(sock, bind_addr, name_len);
 }
 
-static void _ev_tcp_on_stream_write_done(ev_iocp_t* iocp, size_t transferred)
+static void _ev_tcp_on_stream_write_done(ev_iocp_t* iocp, size_t transferred, void* arg)
 {
-    ev_write_t* req = container_of(iocp, ev_write_t, backend.io);
+    ev_write_t* req = arg;
     ev_tcp_t* sock = req->backend.owner;
 
     req->backend.size = transferred;
@@ -391,9 +371,9 @@ static void _ev_tcp_on_stream_write_done(ev_iocp_t* iocp, size_t transferred)
     _ev_tcp_submit_stream_todo(sock);
 }
 
-static void _ev_tcp_on_stream_read_done(ev_iocp_t* iocp, size_t transferred)
+static void _ev_tcp_on_stream_read_done(ev_iocp_t* iocp, size_t transferred, void* arg)
 {
-    ev_read_t* req = container_of(iocp, ev_read_t, backend.io);
+    ev_read_t* req = arg;
     ev_tcp_t* sock = req->backend.owner;
 
     req->backend.size = transferred;
@@ -413,9 +393,10 @@ static void _ev_tcp_on_stream_read_done(ev_iocp_t* iocp, size_t transferred)
     _ev_tcp_submit_stream_todo(sock);
 }
 
-static void _ev_tcp_on_iocp(ev_iocp_t* req, size_t transferred)
+static void _ev_tcp_on_iocp(ev_iocp_t* req, size_t transferred, void* arg)
 {
-    ev_tcp_t* sock = container_of(req, ev_tcp_t, backend.io);
+    (void)req;
+    ev_tcp_t* sock = arg;
 
     if (sock->base.flags & EV_TCP_ACCEPTING)
     {
@@ -429,8 +410,22 @@ static void _ev_tcp_on_iocp(ev_iocp_t* req, size_t transferred)
 
 void ev__tcp_init(void)
 {
-    static ev_once_t token = EV_ONCE_INIT;
-    ev_once_execute(&token, _ev_tcp_on_init);
+    int ret;
+    WSADATA wsa_data;
+    if ((ret = WSAStartup(MAKEWORD(2, 2), &wsa_data)) != 0)
+    {
+        assert(ret == 0);
+    }
+
+    if ((ret = ev_ipv4_addr("0.0.0.0", 0, &g_tcp_ctx.addr_any_ip4)) != EV_SUCCESS)
+    {
+        assert(ret == EV_SUCCESS);
+    }
+
+    if ((ret = ev_ipv6_addr("::", 0, &g_tcp_ctx.addr_any_ip6)) != EV_SUCCESS)
+    {
+        assert(ret == EV_SUCCESS);
+    }
 }
 
 int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp)
@@ -440,7 +435,7 @@ int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp)
     tcp->sock = EV_OS_SOCKET_INVALID;
 
     tcp->backend.af = AF_INET6;
-    ev__iocp_init(&tcp->backend.io, _ev_tcp_on_iocp);
+    ev__iocp_init(&tcp->backend.io, _ev_tcp_on_iocp, tcp);
     memset(&tcp->backend.mask, 0, sizeof(tcp->backend.mask));
 
     return EV_SUCCESS;
@@ -672,7 +667,7 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, 
         _ev_tcp_setup_stream_win(sock);
     }
 
-    ret = ev__write_init_win(req, bufs, nbuf, sock, EV_EINPROGRESS, _ev_tcp_on_stream_write_done, cb);
+    ret = ev__write_init_win(req, bufs, nbuf, sock, EV_EINPROGRESS, _ev_tcp_on_stream_write_done, req, cb);
     if (ret != EV_SUCCESS)
     {
         return ret;
@@ -683,7 +678,7 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, 
     ev__tcp_active(sock);
 
     ret = WSASend(sock->sock, (WSABUF*)bufs, (DWORD)nbuf,
-        NULL, 0, &req->backend.io.overlapped, NULL);
+        NULL, 0, &req->backend.io[0].overlapped, NULL);
     if (ret == 0)
     {
         /*
@@ -712,7 +707,7 @@ int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev
         _ev_tcp_setup_stream_win(sock);
     }
 
-    ret = ev__read_init_win(req, bufs, nbuf, sock, EV_EINPROGRESS, _ev_tcp_on_stream_read_done, cb);
+    ret = ev__read_init_win(req, bufs, nbuf, sock, EV_EINPROGRESS, _ev_tcp_on_stream_read_done, req, cb);
     if (ret != EV_SUCCESS)
     {
         return ret;
@@ -724,7 +719,7 @@ int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev
 
     DWORD flags = 0;
     ret = WSARecv(sock->sock, (WSABUF*)bufs, (DWORD)nbuf,
-        NULL, &flags, &req->backend.io.overlapped, NULL);
+        NULL, &flags, &req->backend.io[0].overlapped, NULL);
     if (ret == 0)
     {
         /*

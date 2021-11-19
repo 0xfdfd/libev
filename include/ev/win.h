@@ -50,10 +50,11 @@ typedef struct ev_iocp ev_iocp_t;
  * @brief IOCP complete callback
  * @param[in] req   IOCP request
  */
-typedef void(*ev_iocp_cb)(ev_iocp_t* req, size_t transferred);
+typedef void(*ev_iocp_cb)(ev_iocp_t* req, size_t transferred, void* arg);
 
 struct ev_iocp
 {
+    void*                       arg;                /**< Index */
     ev_iocp_cb                  cb;                 /**< Callback */
     OVERLAPPED                  overlapped;         /**< IOCP field */
 };
@@ -68,18 +69,20 @@ typedef struct ev_async_backend
 typedef struct ev_write_backend
 {
     void*                       owner;              /**< Owner */
-    ev_iocp_t                   io;                 /**< IOCP backend */
-    size_t                      size;               /**< Written size */
+    ev_iocp_t*                  io;                 /**< IOCP backend */
+    size_t                      size;               /**< Write size */
     int                         stat;               /**< Write result */
+    ev_iocp_t                   ioml[8];            /**< Bound iocp */
 }ev_write_backend_t;
 #define EV_WRITE_BACKEND_INIT   { NULL, EV_IOCP_INIT, 0, 0 }
 
 typedef struct ev_read_backend
 {
     void*                       owner;              /**< Owner */
-    ev_iocp_t                   io;                 /**< IOCP backend */
-    size_t                      size;               /**< Written size */
+    ev_iocp_t*                  io;                 /**< IOCP backend */
+    size_t                      size;               /**< Read size */
     int                         stat;               /**< Write result */
+    ev_iocp_t                   ioml[8];            /**< Bound iocp */
 }ev_read_backend_t;
 #define EV_READ_BACKEND_INIT    { NULL, EV_IOCP_INIT, 0, 0 }
 
@@ -136,9 +139,7 @@ typedef struct ev_pipe_backend
     struct
     {
         ev_list_t               w_queue;
-        ev_list_t               w_queue_done;
         ev_list_t               r_queue;
-        ev_list_t               r_queue_done;
     }stream;
 }ev_pipe_backend_t;
 

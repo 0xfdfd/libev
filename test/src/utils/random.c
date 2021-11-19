@@ -5,6 +5,7 @@
 
 #if defined(_WIN32)
 #   include <windows.h>
+#   include <ntsecapi.h>
 #else
 #   if defined(__GLIBC__) && __GLIBC__ >= 2 && defined(__GLIBC_MINOR__) && __GLIBC_MINOR__ >= 25
 #       include <sys/random.h>
