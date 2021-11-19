@@ -251,13 +251,21 @@ static void _ev_tcp_process_stream(ev_tcp_t* sock)
     while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue_done)) != NULL)
     {
         ev_write_t* req = container_of(it, ev_write_t, node);
-        req->data.cb(req, req->backend.size, req->backend.stat);
+        size_t write_size = req->backend.size;
+        int write_stat = req->backend.stat;
+
+        ev__write_exit_win(req);
+        req->data.cb(req, write_size, write_stat);
     }
 
     while ((it = ev_list_pop_front(&sock->backend.u.stream.r_queue_done)) != NULL)
     {
         ev_read_t* req = container_of(it, ev_read_t, node);
-        req->data.cb(req, req->backend.size, req->backend.stat);
+        size_t read_size = req->backend.size;
+        int read_stat = req->backend.stat;
+
+        ev__read_exit_win(req);
+        req->data.cb(req, read_size, read_stat);
     }
 
     _ev_tcp_deactive_stream(sock);
@@ -664,7 +672,11 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, 
         _ev_tcp_setup_stream_win(sock);
     }
 
-    ev__write_init_win(req, bufs, nbuf, sock, EV_EINPROGRESS, _ev_tcp_on_stream_write_done, cb);
+    ret = ev__write_init_win(req, bufs, nbuf, sock, EV_EINPROGRESS, _ev_tcp_on_stream_write_done, cb);
+    if (ret != EV_SUCCESS)
+    {
+        return ret;
+    }
 
     ev_list_push_back(&sock->backend.u.stream.w_queue, &req->node);
     sock->base.flags |= EV_TCP_STREAMING;
@@ -700,13 +712,11 @@ int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev
         _ev_tcp_setup_stream_win(sock);
     }
 
-    req->data.cb = cb;
-    req->data.bufs = bufs;
-    req->data.nbuf = nbuf;
-    req->backend.owner = sock;
-    req->backend.size = 0;
-    req->backend.stat = EV_EINPROGRESS;
-    ev__iocp_init(&req->backend.io, _ev_tcp_on_stream_read_done);
+    ret = ev__read_init_win(req, bufs, nbuf, sock, EV_EINPROGRESS, _ev_tcp_on_stream_read_done, cb);
+    if (ret != EV_SUCCESS)
+    {
+        return ret;
+    }
 
     ev_list_push_back(&sock->backend.u.stream.r_queue, &req->node);
     sock->base.flags |= EV_TCP_STREAMING;

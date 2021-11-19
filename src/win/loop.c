@@ -372,13 +372,69 @@ int ev__ntstatus_to_winsock_error(NTSTATUS status)
     }
 }
 
-void ev__write_init_win(ev_write_t* req, ev_buf_t bufs[], size_t nbuf, void* owner, int stat, ev_iocp_cb iocp_cb, ev_write_cb w_cb)
+int ev__write_init_win(ev_write_t* req, ev_buf_t bufs[], size_t nbuf, void* owner, int stat, ev_iocp_cb iocp_cb, ev_write_cb w_cb)
 {
     req->data.cb = w_cb;
-    req->data.bufs = bufs;
     req->data.nbuf = nbuf;
     req->backend.owner = owner;
     req->backend.size = 0;
     req->backend.stat = stat;
     ev__iocp_init(&req->backend.io, iocp_cb);
+
+    if (nbuf <= ARRAY_SIZE(req->data.bufsml))
+    {
+        req->data.bufs = req->data.bufsml;
+    }
+    else
+    {
+        if ((req->data.bufs = malloc(sizeof(ev_buf_t) * nbuf)) == NULL)
+        {
+            return EV_ENOMEM;
+        }
+    }
+    memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);
+    return EV_SUCCESS;
+}
+
+void ev__write_exit_win(ev_write_t* req)
+{
+    if (req->data.bufs != req->data.bufsml)
+    {
+        free(req->data.bufs);
+    }
+    req->data.bufs = NULL;
+}
+
+int ev__read_init_win(ev_read_t* req, ev_buf_t bufs[], size_t nbuf, void* owner,
+    int stat, ev_iocp_cb iocp_cb, ev_read_cb r_cb)
+{
+    req->data.cb = r_cb;
+    req->data.nbuf = nbuf;
+    req->backend.owner = owner;
+    req->backend.size = 0;
+    req->backend.stat = stat;
+    ev__iocp_init(&req->backend.io, iocp_cb);
+
+    if (nbuf <= ARRAY_SIZE(req->data.bufsml))
+    {
+        req->data.bufs = req->data.bufsml;
+    }
+    else
+    {
+        if ((req->data.bufs = malloc(sizeof(ev_buf_t) * nbuf)) == NULL)
+        {
+            return EV_ENOMEM;
+        }
+    }
+    memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);
+    return EV_SUCCESS;
+}
+
+void ev__read_exit_win(ev_read_t* req)
+{
+    if (req->data.bufs != req->data.bufsml)
+    {
+        free(req->data.bufs);
+    }
+    req->data.bufs = NULL;
 }

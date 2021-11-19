@@ -93,6 +93,7 @@ static void _ev_tcp_cleanup_all_read_request(ev_tcp_t* sock, int err)
     while ((it = ev_list_pop_front(&sock->backend.u.stream.r_queue)) != NULL)
     {
         ev_read_t* req = container_of(it, ev_read_t, node);
+        ev__read_exit(req);
         req->data.cb(req, 0, err);
     }
 }
@@ -112,6 +113,7 @@ static void _ev_tcp_do_read(ev_tcp_t* sock)
     /* Peer close */
     if (r == 0)
     {
+        ev__read_exit(req);
         req->data.cb(req, 0, EV_EOF);
         goto fin;
     }
@@ -129,6 +131,7 @@ static void _ev_tcp_do_read(ev_tcp_t* sock)
         goto fin;
     }
 
+    ev__read_exit(req);
     req->data.cb(req, r, EV_SUCCESS);
 
 fin:
@@ -144,7 +147,14 @@ static void _ev_tcp_cleanup_all_write_request(ev_tcp_t* sock, int err)
     while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue)) != NULL)
     {
         ev_write_t* req = container_of(it, ev_write_t, node);
-        req->data.cb(req, req->backend.len, err);
+        size_t written_size = req->backend.len;
+
+        /**
+         * resource must be cleanup before callback, allows user to reuse this object.
+         */
+        ev__write_exit(req);
+
+        req->data.cb(req, written_size, err);
     }
 }
 
@@ -194,7 +204,9 @@ static void _ev_tcp_do_write(ev_tcp_t* sock)
     if (req->backend.idx == req->data.nbuf)
     {
         ev_list_erase(&sock->backend.u.stream.w_queue, it);
-        req->data.cb(req, req->backend.len, EV_SUCCESS);
+        size_t written_size = req->backend.len;
+        ev__write_exit(req);
+        req->data.cb(req, written_size, EV_SUCCESS);
     }
 
 fin:
@@ -381,14 +393,18 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, 
         return EV_EINVAL;
     }
 
+    int ret = ev__write_init(req, bufs, nbuf, cb);
+    if (ret != EV_SUCCESS)
+    {
+        return ret;
+    }
+
     if (!(sock->base.flags & EV_TCP_STREAMING))
     {
         _ev_tcp_setup_stream(sock);
     }
 
-    ev__write_init(req, bufs, nbuf, cb);
     ev_list_push_back(&sock->backend.u.stream.w_queue, &req->node);
-
     ev__io_add(sock->base.loop, &sock->backend.io, EV_IO_OUT);
 
     return EV_SUCCESS;
@@ -406,7 +422,12 @@ int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev
         _ev_tcp_setup_stream(sock);
     }
 
-    ev__read_init(req, bufs, nbuf, cb);
+    int ret = ev__read_init(req, bufs, nbuf, cb);
+    if (ret != EV_SUCCESS)
+    {
+        return ret;
+    }
+
     ev_list_push_back(&sock->backend.u.stream.r_queue, &req->node);
 
     ev__io_add(sock->base.loop, &sock->backend.io, EV_IO_IN);

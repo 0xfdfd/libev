@@ -38,6 +38,8 @@ static void _ev_pipe_on_write(ev_stream_t* stream, ev_write_t* req, size_t size,
 {
     ev_pipe_t* pipe_handle = container_of(stream, ev_pipe_t, backend.stream);
     _ev_pipe_smart_deactive(pipe_handle);
+
+    ev__write_exit(req);
     req->data.cb(req, size, stat);
 }
 
@@ -103,14 +105,26 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_handle_t handle)
 
 int ev_pipe_write(ev_pipe_t* pipe, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb)
 {
+    int ret;
+    if ((ret = ev__write_init(req, bufs, nbuf, cb)) != EV_SUCCESS)
+    {
+        return ret;
+    }
+
     ev__handle_active(&pipe->base);
-    ev__write_init(req, bufs, nbuf, cb);
+    
     return ev__stream_write(&pipe->backend.stream, req);
 }
 
 int ev_pipe_read(ev_pipe_t* pipe, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev_read_cb cb)
 {
+    int ret;
+    if ((ret = ev__read_init(req, bufs, nbuf, cb)) != EV_SUCCESS)
+    {
+        return ret;
+    }
+
     ev__handle_active(&pipe->base);
-    ev__read_init(req, bufs, nbuf, cb);
+    
     return ev__stream_read(&pipe->backend.stream, req);
 }

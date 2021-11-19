@@ -291,6 +291,7 @@ struct ev_write
         ev_write_cb         cb;             /**< Write complete callback */
         ev_buf_t*           bufs;           /**< Buffer list */
         size_t              nbuf;           /**< Buffer list count */
+        ev_buf_t            bufsml[8];      /**< Bound buffer list */
     }data;
     ev_write_backend_t      backend;        /**< Back-end */
 };
@@ -307,6 +308,7 @@ struct ev_read
         ev_read_cb          cb;             /**< Read complete callback */
         ev_buf_t*           bufs;           /**< Buffer list */
         size_t              nbuf;           /**< Buffer list count */
+        ev_buf_t            bufsml[8];      /**< Bound buffer list */
     }data;
     ev_read_backend_t       backend;        /**< Back-end */
 };

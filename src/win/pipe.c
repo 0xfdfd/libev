@@ -145,7 +145,12 @@ static void _ev_pipe_on_write_iocp(ev_iocp_t* req, size_t transferred)
 
 int ev_pipe_write(ev_pipe_t* pipe, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb)
 {
-    ev__write_init_win(req, bufs, nbuf, pipe, EV_EINPROGRESS, _ev_pipe_on_write_iocp, cb);
+    int ret;
+    ret = ev__write_init_win(req, bufs, nbuf, pipe, EV_EINPROGRESS, _ev_pipe_on_write_iocp, cb);
+    if (ret != EV_SUCCESS)
+    {
+        return ret;
+    }
 
     ev_list_push_back(&pipe->backend.stream.w_queue, &req->node);
 }

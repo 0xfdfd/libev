@@ -595,20 +595,66 @@ int ev__translate_sys_error(int syserr)
     return syserr;
 }
 
-void ev__write_init(ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb)
+int ev__write_init(ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb)
 {
     req->data.cb = cb;
-    req->data.bufs = bufs;
     req->data.nbuf = nbuf;
     req->backend.idx = 0;
     req->backend.len = 0;
+
+    if (nbuf <= ARRAY_SIZE(req->data.bufsml))
+    {
+        req->data.bufs = req->data.bufsml;
+    }
+    else
+    {
+        if ((req->data.bufs = malloc(sizeof(ev_buf_t) * nbuf)) == NULL)
+        {
+            return EV_ENOMEM;
+        }
+    }
+
+    memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);
+    return EV_SUCCESS;
 }
 
-void ev__read_init(ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev_read_cb cb)
+void ev__write_exit(ev_write_t* req)
+{
+    if (req->data.bufs != req->data.bufsml)
+    {
+        free(req->data.bufs);
+    }
+    req->data.bufs = NULL;
+}
+
+int ev__read_init(ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev_read_cb cb)
 {
     req->data.cb = cb;
-    req->data.bufs = bufs;
     req->data.nbuf = nbuf;
+
+    if (nbuf <= ARRAY_SIZE(req->data.bufsml))
+    {
+        req->data.bufs = req->data.bufsml;
+    }
+    else
+    {
+        if ((req->data.bufs = malloc(sizeof(ev_buf_t) * nbuf)) == NULL)
+        {
+            return EV_ENOMEM;
+        }
+    }
+
+    memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);
+    return  EV_SUCCESS;
+}
+
+void ev__read_exit(ev_read_t* req)
+{
+    if (req->data.bufs != req->data.bufsml)
+    {
+        free(req->data.bufs);
+    }
+    req->data.bufs = NULL;
 }
 
 void ev__stream_init(ev_loop_t* loop, ev_stream_t* stream, int fd, ev_stream_write_cb wcb, ev_stream_read_cb rcb)

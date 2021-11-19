@@ -41,8 +41,14 @@ void ev__io_del(ev_loop_t* loop, ev_io_t* io, unsigned evts);
  * @param[in] bufs  Buffer list
  * @param[in] nbuf  Buffer list size
  * @param[in] cb    Write complete callback
+ * @return          #ev_errno_t
  */
-void ev__write_init(ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb);
+int ev__write_init(ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb);
+
+/**
+ * @brief Cleanup #ev_write_t
+ */
+void ev__write_exit(ev_write_t* req);
 
 /**
  * @brief Initialize #ev_read_t
@@ -50,8 +56,14 @@ void ev__write_init(ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb c
  * @param[in] bufs  Buffer list
  * @param[in] nbuf  Buffer list size
  * @param[in] cb    Read complete callback
+ * @return          #ev_errno_t
  */
-void ev__read_init(ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev_read_cb cb);
+int ev__read_init(ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev_read_cb cb);
+
+/**
+ * @brief Cleanup #ev_read_t
+ */
+void ev__read_exit(ev_read_t* req);
 
 /**
  * @brief Initialize stream.
