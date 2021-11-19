@@ -1,6 +1,5 @@
+#include <WinSock2.h>
 #include <assert.h>
-#include <winsock2.h>
-#include <mswsock.h>
 #include "loop.h"
 #include "tcp.h"
 
@@ -665,13 +664,7 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, 
         _ev_tcp_setup_stream_win(sock);
     }
 
-    req->data.cb = cb;
-    req->data.bufs = bufs;
-    req->data.nbuf = nbuf;
-    req->backend.owner = sock;
-    req->backend.size = 0;
-    req->backend.stat = EV_EINPROGRESS;
-    ev__iocp_init(&req->backend.io, _ev_tcp_on_stream_write_done);
+    ev__write_init_win(req, bufs, nbuf, sock, EV_EINPROGRESS, _ev_tcp_on_stream_write_done, cb);
 
     ev_list_push_back(&sock->backend.u.stream.w_queue, &req->node);
     sock->base.flags |= EV_TCP_STREAMING;

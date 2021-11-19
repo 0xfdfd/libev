@@ -14,7 +14,9 @@ if(WIN32)
             "src/win/async.c"
             "src/win/loop.c"
             "src/win/once.c"
-            "src/win/tcp.c")
+            "src/win/pipe.c"
+            "src/win/tcp.c"
+            "src/win/winapi.c")
 else()
     target_sources(${PROJECT_NAME}
         PRIVATE

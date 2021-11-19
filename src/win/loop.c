@@ -371,3 +371,14 @@ int ev__ntstatus_to_winsock_error(NTSTATUS status)
         }
     }
 }
+
+void ev__write_init_win(ev_write_t* req, ev_buf_t bufs[], size_t nbuf, void* owner, int stat, ev_iocp_cb iocp_cb, ev_write_cb w_cb)
+{
+    req->data.cb = w_cb;
+    req->data.bufs = bufs;
+    req->data.nbuf = nbuf;
+    req->backend.owner = owner;
+    req->backend.size = 0;
+    req->backend.stat = stat;
+    ev__iocp_init(&req->backend.io, iocp_cb);
+}
