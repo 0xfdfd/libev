@@ -264,7 +264,8 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_handle_t handle)
 
     IO_STATUS_BLOCK io_status;
     FILE_ACCESS_INFORMATION access;
-    NTSTATUS nt_status = NtQueryInformationFile(handle, &io_status, &access, sizeof(access), FileAccessInformation);
+    NTSTATUS nt_status = g_ev_loop_win_ctx.NtQueryInformationFile(handle,
+        &io_status, &access, sizeof(access), FileAccessInformation);
     if (nt_status != STATUS_SUCCESS)
     {
         return EV_EINVAL;
@@ -291,7 +292,8 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_handle_t handle)
     }
 
     FILE_MODE_INFORMATION mode_info;
-    nt_status = NtQueryInformationFile(handle, &io_status, &mode_info, sizeof(mode_info), FileModeInformation);
+    nt_status = g_ev_loop_win_ctx.NtQueryInformationFile(handle,
+        &io_status, &mode_info, sizeof(mode_info), FileModeInformation);
     if (nt_status != STATUS_SUCCESS)
     {
         return ev__translate_sys_error(GetLastError());

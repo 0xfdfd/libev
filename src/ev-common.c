@@ -43,15 +43,13 @@ static int _ev_loop_alive(ev_loop_t* loop)
 
 int ev_loop_init(ev_loop_t* loop)
 {
-    loop->hwtime = 0;
-    ev__loop_update_time(loop);
-
     int ret = ev__loop_init_backend(loop);
     if (ret < 0)
     {
         return ret;
     }
 
+    ev__loop_update_time(loop);
     _ev_loop_init(loop);
 
     return EV_SUCCESS;

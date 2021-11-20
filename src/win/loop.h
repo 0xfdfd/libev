@@ -6,6 +6,18 @@ extern "C" {
 
 #include "winapi.h"
 
+typedef struct ev_loop_win_ctx
+{
+    /**
+     * Frequency of the high-resolution clock.
+     */
+    uint64_t                    hrtime_frequency_;
+
+    fn_NtQueryInformationFile   NtQueryInformationFile;
+}ev_loop_win_ctx_t;
+
+extern ev_loop_win_ctx_t g_ev_loop_win_ctx;
+
 /**
  * @brief Initialize IOCP request
  * @param[out] req      A pointer to the IOCP request

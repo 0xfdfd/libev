@@ -3,8 +3,9 @@
 #include "loop.h"
 #include "tcp.h"
 
-/* Frequency of the high-resolution clock. */
-static uint64_t hrtime_frequency_ = 0;
+ev_loop_win_ctx_t g_ev_loop_win_ctx = {
+    0, NULL
+};
 
 static void _ev_time_init_win(void)
 {
@@ -15,7 +16,7 @@ static void _ev_time_init_win(void)
      */
     if (QueryPerformanceFrequency(&perf_frequency))
     {
-        hrtime_frequency_ = perf_frequency.QuadPart;
+        g_ev_loop_win_ctx.hrtime_frequency_ = perf_frequency.QuadPart;
     }
     else
     {
@@ -29,7 +30,7 @@ static uint64_t _ev_hrtime_win(unsigned int scale)
     double scaled_freq;
     double result;
 
-    assert(hrtime_frequency_ != 0);
+    assert(g_ev_loop_win_ctx.hrtime_frequency_ != 0);
     assert(scale != 0);
     if (!QueryPerformanceCounter(&counter))
     {
@@ -41,7 +42,7 @@ static uint64_t _ev_hrtime_win(unsigned int scale)
      * performance counter interval, integer math could cause this computation
      * to overflow. Therefore we resort to floating point math.
      */
-    scaled_freq = (double)hrtime_frequency_ / scale;
+    scaled_freq = (double)g_ev_loop_win_ctx.hrtime_frequency_ / scale;
     result = (double)counter.QuadPart / scaled_freq;
     return (uint64_t)result;
 }
@@ -63,13 +64,11 @@ static void _ev_init_once_win(void)
 {
     ev__tcp_init();
     ev__winapi_init();
+    _ev_time_init_win();
 }
 
 void ev__loop_update_time(ev_loop_t* loop)
 {
-    static ev_once_t s_guard = EV_ONCE_INIT;
-    ev_once_execute(&s_guard, _ev_time_init_win);
-
     loop->hwtime = _ev_hrtime_win(1000);
 }
 
