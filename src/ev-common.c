@@ -96,6 +96,7 @@ static void _ev_loop_active_todo(ev_loop_t* loop)
     while ((it = ev_list_pop_front(&loop->todo.queue)) != NULL)
     {
         ev_todo_t* todo = container_of(it, ev_todo_t, node);
+        todo->flags = todo->flags & ~EV_TODO_QUEUED;
         todo->cb(todo);
     }
 }
@@ -154,7 +155,7 @@ void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_close_cb close_cb)
     assert(close_cb != NULL);
     handle->loop = loop;
     handle->close_cb = close_cb;
-    handle->close_queue = (ev_todo_t)EV_TODO_INIT;
+    ev__todo_init(&handle->close_queue);
     handle->flags = 0;
 }
 
@@ -206,8 +207,17 @@ int ev__handle_is_closing(ev_handle_t* handle)
     return handle->flags & (EV_HANDLE_CLOSING | EV_HANDLE_CLOSED);
 }
 
+void ev__todo_init(ev_todo_t* token)
+{
+    token->flags = 0;
+    token->cb = NULL;
+}
+
 void ev__todo(ev_loop_t* loop, ev_todo_t* todo, ev_todo_cb cb)
 {
+    assert(!(todo->flags & EV_TODO_QUEUED));
+
+    todo->flags |= EV_TODO_QUEUED;
     todo->cb = cb;
     ev_list_push_back(&loop->todo.queue, &todo->node);
 }

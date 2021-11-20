@@ -53,6 +53,11 @@ typedef enum ev_handle_flag
     EV_TCP_STREAM_INIT      = 0x01 << 0x0D,     /**< 8192. Stream structure is initialized */
 }ev_handle_flag_t;
 
+typedef enum ev_todo_flag
+{
+    EV_TODO_QUEUED          = 0x01 << 0x00,     /**< 1. token is in the queue */
+}ev_todo_flag_t;
+
 /**
  * @brief Initialize a handle
  * @param[in] loop      The loop own the handle
@@ -94,6 +99,12 @@ API_LOCAL int ev__handle_is_active(ev_handle_t* handle);
  * @return              bool
  */
 API_LOCAL int ev__handle_is_closing(ev_handle_t* handle);
+
+/**
+ * @brief Initialize todo token
+ * @param[out] token    Todo token
+ */
+API_LOCAL void ev__todo_init(ev_todo_t* token);
 
 /**
  * @brief Add a pending task

@@ -127,9 +127,10 @@ typedef void(*ev_read_cb)(ev_read_t* req, size_t size, int stat);
 struct ev_todo
 {
     ev_list_node_t          node;           /**< List node */
+    unsigned                flags;          /**< Attributes */
     ev_todo_cb              cb;             /**< Callback */
 };
-#define EV_TODO_INIT        { EV_LIST_NODE_INIT, NULL }
+#define EV_TODO_INIT        { EV_LIST_NODE_INIT, 0, NULL }
 
 #if defined(_WIN32)
 #   include "ev/win.h"
