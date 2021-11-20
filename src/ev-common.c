@@ -1,7 +1,6 @@
 #include <assert.h>
 #include <string.h>
 #include "ev-common.h"
-#include "ev-platform.h"
 #include "ev.h"
 
 typedef struct ev_strerror_pair

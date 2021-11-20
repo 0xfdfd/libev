@@ -5,7 +5,6 @@ extern "C" {
 #endif
 
 #include "ev-common.h"
-#include "ev-platform.h"
 
 #include <sys/epoll.h>
 #define EV_IO_IN            EPOLLIN     /**< The associated file is available for read(2) operations. */
@@ -17,7 +16,7 @@ extern "C" {
  * @param[in] fd    File descriptor
  * @param[in] cb    IO active callback
  */
-void ev__io_init(ev_io_t* io, int fd, ev_io_cb cb);
+API_LOCAL void ev__io_init(ev_io_t* io, int fd, ev_io_cb cb);
 
 /**
  * @brief Add events to IO structure
@@ -25,7 +24,7 @@ void ev__io_init(ev_io_t* io, int fd, ev_io_cb cb);
  * @param[in] io    IO structure
  * @param[in] evts  #EV_IO_IN or #EV_IO_OUT
  */
-void ev__io_add(ev_loop_t* loop, ev_io_t* io, unsigned evts);
+API_LOCAL void ev__io_add(ev_loop_t* loop, ev_io_t* io, unsigned evts);
 
 /**
  * @brief Delete events from IO structure
@@ -33,7 +32,7 @@ void ev__io_add(ev_loop_t* loop, ev_io_t* io, unsigned evts);
  * @param[in] io    IO structure
  * @param[in] evts  #EV_IO_IN or #EV_IO_OUT
  */
-void ev__io_del(ev_loop_t* loop, ev_io_t* io, unsigned evts);
+API_LOCAL void ev__io_del(ev_loop_t* loop, ev_io_t* io, unsigned evts);
 
 /**
  * @brief Initialize #ev_write_t
@@ -43,12 +42,12 @@ void ev__io_del(ev_loop_t* loop, ev_io_t* io, unsigned evts);
  * @param[in] cb    Write complete callback
  * @return          #ev_errno_t
  */
-int ev__write_init(ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb);
+API_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb);
 
 /**
  * @brief Cleanup #ev_write_t
  */
-void ev__write_exit(ev_write_t* req);
+API_LOCAL void ev__write_exit(ev_write_t* req);
 
 /**
  * @brief Initialize #ev_read_t
@@ -58,12 +57,12 @@ void ev__write_exit(ev_write_t* req);
  * @param[in] cb    Read complete callback
  * @return          #ev_errno_t
  */
-int ev__read_init(ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev_read_cb cb);
+API_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev_read_cb cb);
 
 /**
  * @brief Cleanup #ev_read_t
  */
-void ev__read_exit(ev_read_t* req);
+API_LOCAL void ev__read_exit(ev_read_t* req);
 
 /**
  * @brief Initialize stream.
@@ -73,13 +72,14 @@ void ev__read_exit(ev_read_t* req);
  * @param[in] wcb       Write callback
  * @param[in] rcb       Read callback
  */
-void ev__stream_init(ev_loop_t* loop, ev_stream_t* stream, int fd, ev_stream_write_cb wcb, ev_stream_read_cb rcb);
+API_LOCAL void ev__stream_init(ev_loop_t* loop, ev_stream_t* stream, int fd,
+    ev_stream_write_cb wcb, ev_stream_read_cb rcb);
 
 /**
  * @brief Cleanup and exit stream
  * @param[in] stream    Stream handler
  */
-void ev__stream_exit(ev_stream_t* stream);
+API_LOCAL void ev__stream_exit(ev_stream_t* stream);
 
 /**
  * @brief Do stream write
@@ -87,7 +87,7 @@ void ev__stream_exit(ev_stream_t* stream);
  * @param[in] req       Write request
  * @return              #ev_errno_t
  */
-int ev__stream_write(ev_stream_t* stream, ev_write_t* req);
+API_LOCAL int ev__stream_write(ev_stream_t* stream, ev_write_t* req);
 
 /**
  * @brief Do stream read
@@ -95,7 +95,7 @@ int ev__stream_write(ev_stream_t* stream, ev_write_t* req);
  * @param[in] req       Read request
  * @return              #ev_errno_t
  */
-int ev__stream_read(ev_stream_t* stream, ev_read_t* req);
+API_LOCAL int ev__stream_read(ev_stream_t* stream, ev_read_t* req);
 
 /**
  * @brief Get pending action count.
@@ -103,21 +103,21 @@ int ev__stream_read(ev_stream_t* stream, ev_read_t* req);
  * @param[in] evts      #EV_IO_IN or #EV_IO_OUT
  * @return              Action count
  */
-size_t ev__stream_size(ev_stream_t* stream, unsigned evts);
+API_LOCAL size_t ev__stream_size(ev_stream_t* stream, unsigned evts);
 
 /**
  * @brief Abort pending requests
  * @param[in] stream    Stream handle
  * @param[in] evts      #EV_IO_IN or #EV_IO_OUT
  */
-void ev__stream_abort(ev_stream_t* stream, unsigned evts);
+API_LOCAL void ev__stream_abort(ev_stream_t* stream, unsigned evts);
 
 /**
  * @brief Cleanup pending requests
  * @param[in] stream    Stream handle
  * @param[in] evts      #EV_IO_IN or #EV_IO_OUT
  */
-void ev__stream_cleanup(ev_stream_t* stream, unsigned evts);
+API_LOCAL void ev__stream_cleanup(ev_stream_t* stream, unsigned evts);
 
 /**
  * @brief Add or remove FD_CLOEXEC
@@ -125,7 +125,7 @@ void ev__stream_cleanup(ev_stream_t* stream, unsigned evts);
  * @param[in] set   bool
  * @return          #ev_errno_t
  */
-int ev__cloexec(int fd, int set);
+API_LOCAL int ev__cloexec(int fd, int set);
 
 /**
  * @brief Add or remove O_NONBLOCK
@@ -133,12 +133,17 @@ int ev__cloexec(int fd, int set);
  * @param[in] set   bool
  * @return          #ev_errno_t
  */
-int ev__nonblock(int fd, int set);
+API_LOCAL int ev__nonblock(int fd, int set);
 
 /**
  * @brief Return the file access mode and the file status flags
  */
-int ev__getfl(int fd);
+API_LOCAL int ev__getfl(int fd);
+
+/**
+ * @brief Return the file descriptor flags.
+ */
+API_LOCAL int ev__getfd(int fd);
 
 #ifdef __cplusplus
 }

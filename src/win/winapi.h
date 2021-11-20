@@ -4,6 +4,7 @@
 extern "C" {
 #endif
 
+#include "ev-common.h"
 #include <windows.h>
 
 #ifndef _NTDEF_
@@ -312,7 +313,7 @@ extern fn_NtQueryInformationFile NtQueryInformationFile;
 /**
  * @brief Initialize WinAPI
  */
-void ev__winapi_init(void);
+API_LOCAL void ev__winapi_init(void);
 
 #ifdef __cplusplus
 }

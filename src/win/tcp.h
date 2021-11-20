@@ -4,6 +4,8 @@
 extern "C" {
 #endif
 
+#include "ev-common.h"
+
 typedef struct tcp_ctx
 {
     struct sockaddr_in      addr_any_ip4;   /**< 0.0.0.0:0 */
@@ -15,7 +17,7 @@ extern tcp_ctx_t            g_tcp_ctx;      /**< Global TCP context */
 /**
  * @brief Initialize TCP
  */
-void ev__tcp_init(void);
+API_LOCAL void ev__tcp_init(void);
 
 #ifdef __cplusplus
 }

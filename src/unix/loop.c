@@ -264,13 +264,8 @@ int ev__cloexec(int fd, int set)
     return EV_SUCCESS;
 #else
     int flags;
-    int r;
 
-    do
-    {
-        r = fcntl(fd, F_GETFD);
-    } while (r == -1 && errno == EINTR);
-
+    int r = ev__getfd(fd);
     if (r == -1)
     {
         return errno;
@@ -330,13 +325,8 @@ int ev__nonblock(int fd, int set)
     return EV_SUCCESS;
 #else
     int flags;
-    int r;
 
-    do
-    {
-        r = fcntl(fd, F_GETFL);
-    } while (r == -1 && errno == EINTR);
-
+    int r = ev__getfl(fd);
     if (r == -1)
     {
         return ev__translate_sys_error(errno);
@@ -379,6 +369,18 @@ int ev__getfl(int fd)
         mode = fcntl(fd, F_GETFL);
     } while (mode == -1 && errno == EINTR);
     return mode;
+}
+
+int ev__getfd(int fd)
+{
+    int flags;
+
+    do
+    {
+        flags = fcntl(fd, F_GETFD);
+    } while (flags == -1 && errno == EINTR);
+
+    return flags;
 }
 
 int ev__loop_init_backend(ev_loop_t* loop)

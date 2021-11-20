@@ -7,6 +7,7 @@ extern "C" {
 #include <stdlib.h>
 #include <assert.h>
 #include "ev.h"
+#include "ev-platform.h"
 
 #if defined(__GNUC__) || defined(__clang__)
 #   define container_of(ptr, type, member) \
@@ -58,7 +59,7 @@ typedef enum ev_handle_flag
  * @param[out] handle   A pointer to the structure
  * @param[in] close_cb  A callback when handle is closed
  */
-void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_close_cb close_cb);
+API_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_close_cb close_cb);
 
 /**
  * @brief Close the handle
@@ -66,33 +67,33 @@ void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_close_cb close_cb)
  *   by #ev__handle_init()
  * @param[in] handle    handler
  */
-void ev__handle_exit(ev_handle_t* handle);
+API_LOCAL void ev__handle_exit(ev_handle_t* handle);
 
 /**
  * @brief Set handle as active
  * @param[in] handle    handler
  */
-void ev__handle_active(ev_handle_t* handle);
+API_LOCAL void ev__handle_active(ev_handle_t* handle);
 
 /**
  * @brief Set handle as inactive
  * @param[in] handle    handler
  */
-void ev__handle_deactive(ev_handle_t* handle);
+API_LOCAL void ev__handle_deactive(ev_handle_t* handle);
 
 /**
  * @brief Check if the handle is in active state
  * @param[in] handle    handler
  * @return              bool
  */
-int ev__handle_is_active(ev_handle_t* handle);
+API_LOCAL int ev__handle_is_active(ev_handle_t* handle);
 
 /**
  * @brief Check if the handle is in closing or closed state
  * @param[in] handle    handler
  * @return              bool
  */
-int ev__handle_is_closing(ev_handle_t* handle);
+API_LOCAL int ev__handle_is_closing(ev_handle_t* handle);
 
 /**
  * @brief Add a pending task
@@ -100,19 +101,19 @@ int ev__handle_is_closing(ev_handle_t* handle);
  * @param[in] token     A pointer to the pending token
  * @param[in] cb        A callback when the pending task is active
  */
-void ev__todo(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb);
+API_LOCAL void ev__todo(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb);
 
 /**
  * @brief Active TCP socket
  * @param[in] sock      Socket handle
  */
-void ev__tcp_active(ev_tcp_t* sock);
+API_LOCAL void ev__tcp_active(ev_tcp_t* sock);
 
 /**
  * @brief De-active TCP socket
  * @param[in] sock      Socket handle
  */
-void ev__tcp_deactive(ev_tcp_t* sock);
+API_LOCAL void ev__tcp_deactive(ev_tcp_t* sock);
 
 #ifdef __cplusplus
 }
