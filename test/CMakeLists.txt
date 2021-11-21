@@ -8,6 +8,7 @@ add_executable(unittest
     "src/cases/once.c"
     "src/cases/pipe.c"
     "src/cases/tcp.c"
+    "src/cases/tcp_idle_client.c"
     "src/cases/tcp_listen.c"
     "src/cases/tcp_push_server.c"
     "src/cases/timer.c"

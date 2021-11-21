@@ -11,6 +11,9 @@ extern "C" {
 #	include <pthread.h>
 #endif
 
+/**
+ * @brief #TEST_F() with timeout
+ */
 #define TEST_T(fixture_name, case_name, timeout)	\
 	static void TEST_##fixture_name##_##case_name##_timeout(void);\
 	TEST_F(fixture_name, case_name) {\
