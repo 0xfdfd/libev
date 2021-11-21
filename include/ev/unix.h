@@ -116,12 +116,11 @@ struct ev_stream
 
 typedef struct ev_tcp_backend
 {
-    ev_io_t                     io;                 /**< IO object */
-
     union
     {
         struct
         {
+            ev_io_t             io;                 /**< IO object */
             ev_list_t           accept_queue;       /**< Accept queue */
         }listen;
 
@@ -135,6 +134,7 @@ typedef struct ev_tcp_backend
 
         struct
         {
+            ev_io_t             io;                 /**< IO object */
             ev_connect_cb       cb;                 /**< Connect callback */
             ev_todo_t           token;              /**< Todo token */
             int                 stat;               /**< Connect result */
