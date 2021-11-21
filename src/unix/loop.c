@@ -8,6 +8,11 @@
 #include "ev.h"
 #include "loop.h"
 
+typedef enum stream_flags
+{
+    STREAM_REG_IO = 1,
+}stream_flags_t;
+
 static clockid_t g_hwtime_clock_id = CLOCK_MONOTONIC;
 
 static void _ev_init_hwtime(void)
@@ -662,6 +667,7 @@ void ev__read_exit(ev_read_t* req)
 void ev__stream_init(ev_loop_t* loop, ev_stream_t* stream, int fd, ev_stream_write_cb wcb, ev_stream_read_cb rcb)
 {
     stream->loop = loop;
+    stream->flags = STREAM_REG_IO;
     ev__io_init(&stream->io, fd, _ev_stream_on_io);
     ev_list_init(&stream->w_queue);
     ev_list_init(&stream->r_queue);
@@ -680,6 +686,11 @@ void ev__stream_exit(ev_stream_t* stream)
 
 int ev__stream_write(ev_stream_t* stream, ev_write_t* req)
 {
+    if (!(stream->flags & STREAM_REG_IO))
+    {
+        return EV_EPERM;
+    }
+
     ev_list_push_back(&stream->w_queue, &req->node);
     ev__io_add(stream->loop, &stream->io, EV_IO_OUT);
     return EV_SUCCESS;
@@ -687,6 +698,11 @@ int ev__stream_write(ev_stream_t* stream, ev_write_t* req)
 
 int ev__stream_read(ev_stream_t* stream, ev_read_t* req)
 {
+    if (!(stream->flags & STREAM_REG_IO))
+    {
+        return EV_EPERM;
+    }
+
     ev_list_push_back(&stream->r_queue, &req->node);
     ev__io_add(stream->loop, &stream->io, EV_IO_IN);
     return EV_SUCCESS;
@@ -708,7 +724,11 @@ size_t ev__stream_size(ev_stream_t* stream, unsigned evts)
 
 void ev__stream_abort(ev_stream_t* stream, unsigned evts)
 {
-    ev__io_del(stream->loop, &stream->io, evts);
+    if (stream->flags & STREAM_REG_IO)
+    {
+        ev__io_del(stream->loop, &stream->io, evts);
+        stream->flags &= ~STREAM_REG_IO;
+    }
 }
 
 void ev__stream_cleanup(ev_stream_t* stream, unsigned evts)

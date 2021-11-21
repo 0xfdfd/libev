@@ -50,7 +50,6 @@ typedef enum ev_handle_flag
     EV_TCP_STREAMING        = 0x01 << 0x0A,     /**< 1024. This is a socket waiting for read or write */
     EV_TCP_CONNECTING       = 0x01 << 0x0B,     /**< 2048. This is a connect and waiting for connect complete */
     EV_TCP_BOUND            = 0x01 << 0x0C,     /**< 4096. Socket is bond to address */
-    EV_TCP_STREAM_INIT      = 0x01 << 0x0D,     /**< 8192. Stream structure is initialized */
 }ev_handle_flag_t;
 
 typedef enum ev_todo_flag

@@ -105,13 +105,14 @@ typedef struct ev_async_backend
 struct ev_stream
 {
     ev_loop_t*                  loop;               /**< Event loop */
+    unsigned                    flags;              /**< Flags */
     ev_io_t                     io;                 /**< IO object */
     ev_list_t                   w_queue;            /**< Write queue */
     ev_list_t                   r_queue;            /**< Read queue */
     ev_stream_write_cb          w_cb;               /**< Write callback */
     ev_stream_read_cb           r_cb;               /**< Read callback */
 };
-#define EV_STREAM_INIT          { NULL, EV_IO_INIT, EV_LIST_INIT, EV_LIST_INIT, NULL, NULL }
+#define EV_STREAM_INIT          { NULL, 0, EV_IO_INIT, EV_LIST_INIT, EV_LIST_INIT, NULL, NULL }
 
 typedef struct ev_tcp_backend
 {
@@ -130,11 +131,7 @@ typedef struct ev_tcp_backend
             ev_list_node_t      accept_node;        /**< Accept queue node */
         }accept;
 
-        struct
-        {
-            ev_list_t           w_queue;            /**< #ev_read_t Write queue */
-            ev_list_t           r_queue;            /**< #ev_write_t Read queue */
-        }stream;
+        ev_stream_t             stream;             /**< IO component */
 
         struct
         {
