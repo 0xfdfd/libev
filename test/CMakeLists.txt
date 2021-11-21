@@ -7,11 +7,13 @@ add_executable(unittest
     "src/cases/ipv4_addr.c"
     "src/cases/once.c"
     "src/cases/pipe.c"
+    "src/cases/tcp.c"
     "src/cases/tcp_listen.c"
     "src/cases/tcp_push_server.c"
     "src/cases/timer.c"
     "src/cases/timer_exit_in_callback.c"
     "src/cases/timer_stop_loop_in_callback.c"
+    "src/test.c"
     "src/main.c")
 
 target_include_directories(unittest
