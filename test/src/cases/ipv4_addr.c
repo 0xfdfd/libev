@@ -6,13 +6,23 @@ static ev_loop_t    s_loop;
 static ev_tcp_t     s_socket;
 static char         s_buffer[64];
 
-TEST(misc, ipv4_addr)
+TEST_FIXTURE_SETUP(misc)
+{
+    ASSERT_EQ_D32(ev_loop_init(&s_loop), 0);
+    ASSERT_EQ_D32(ev_tcp_init(&s_loop, &s_socket), 0);
+}
+
+TEST_FIXTURE_TEAREDOWN(misc)
+{
+    ev_tcp_exit(&s_socket, NULL);
+    ASSERT_EQ_D32(ev_loop_run(&s_loop, ev_loop_mode_default), 0);
+    ev_loop_exit(&s_loop);
+}
+
+TEST_F(misc, ipv4_addr)
 {
     const char* ip = "127.0.0.1";
     memset(s_buffer, 0, sizeof(s_buffer));
-
-    ASSERT_EQ_D32(ev_loop_init(&s_loop), 0);
-    ASSERT_EQ_D32(ev_tcp_init(&s_loop, &s_socket), 0);
 
     struct sockaddr_in addr;
     size_t len = sizeof(addr);
