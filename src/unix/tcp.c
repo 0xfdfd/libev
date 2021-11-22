@@ -22,22 +22,29 @@ static void _ev_tcp_cleanup_listen_queue(ev_tcp_t* s_sock, int stat)
     }
 }
 
+static int _ev_tcp_is_listening_active(ev_tcp_t* sock)
+{
+    return (sock->base.flags & EV_TCP_LISTING) && (ev_list_size(&sock->backend.u.listen.accept_queue) != 0);
+}
+
+static int _ev_tcp_is_streaming_active(ev_tcp_t* sock)
+{
+    return (sock->base.flags & EV_TCP_STREAMING) && (ev__stream_size(&sock->backend.u.stream, EV_IO_IN | EV_IO_OUT) != 0);
+}
+
+/**
+ * @brief Deactive socket if no active event
+ */
 static void _tcp_smart_deactive(ev_tcp_t* sock)
 {
     int flag_have_events = 0;
-    if (sock->base.flags & EV_TCP_LISTING)
+    if (_ev_tcp_is_listening_active(sock))
     {
-        if (ev_list_size(&sock->backend.u.listen.accept_queue) != 0)
-        {
-            flag_have_events = 1;
-        }
+        flag_have_events = 1;
     }
-    if (sock->base.flags & EV_TCP_STREAMING)
+    if (_ev_tcp_is_streaming_active(sock))
     {
-        if (ev__stream_size(&sock->backend.u.stream, EV_IO_IN | EV_IO_OUT) != 0)
-        {
-            flag_have_events = 1;
-        }
+        flag_have_events = 1;
     }
     if (sock->base.flags & EV_TCP_CONNECTING)
     {

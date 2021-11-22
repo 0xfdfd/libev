@@ -29,20 +29,25 @@ static int _ev_cmp_timer(const ev_map_node_t* key1, const ev_map_node_t* key2, v
 
 static void _ev_loop_init(ev_loop_t* loop)
 {
+    loop->hwtime = 0;
+    ev_list_init(&loop->handles.idle_handles);
+    ev_list_init(&loop->handles.active_handles);
+
     ev_map_init(&loop->timer.heap, _ev_cmp_timer, NULL);
     ev_list_init(&loop->todo.queue);
-    loop->active_handles = 0;
 
     memset(&loop->mask, 0, sizeof(loop->mask));
 }
 
 static int _ev_loop_alive(ev_loop_t* loop)
 {
-    return loop->active_handles || ev_list_size(&loop->todo.queue);
+    return ev_list_size(&loop->handles.active_handles) || ev_list_size(&loop->todo.queue);
 }
 
 int ev_loop_init(ev_loop_t* loop)
 {
+    _ev_loop_init(loop);
+
     int ret = ev__loop_init_backend(loop);
     if (ret < 0)
     {
@@ -50,8 +55,6 @@ int ev_loop_init(ev_loop_t* loop)
     }
 
     ev__loop_update_time(loop);
-    _ev_loop_init(loop);
-
     return EV_SUCCESS;
 }
 
@@ -137,7 +140,7 @@ static uint32_t _ev_backend_timeout(ev_loop_t* loop)
     }
 
     /* If no active handle, set timeout to max value */
-    return loop->active_handles ? (uint32_t)-1 : 0;
+    return ev_list_size(&loop->handles.active_handles) ? 0 : (uint32_t)-1;
 }
 
 static void _ev_to_close(ev_todo_t* todo)
@@ -147,6 +150,7 @@ static void _ev_to_close(ev_todo_t* todo)
     handle->flags &= ~EV_HANDLE_CLOSING;
     handle->flags |= EV_HANDLE_CLOSED;
 
+    ev_list_erase(&handle->loop->handles.idle_handles, &handle->node);
     handle->close_cb(handle);
 }
 
@@ -157,6 +161,8 @@ void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_close_cb close_cb)
     handle->close_cb = close_cb;
     ev__todo_init(&handle->close_queue);
     handle->flags = 0;
+
+    ev_list_push_back(&loop->handles.idle_handles, &handle->node);
 }
 
 void ev__handle_exit(ev_handle_t* handle)
@@ -171,7 +177,6 @@ void ev__handle_exit(ev_handle_t* handle)
     ev__handle_deactive(handle);
 
     handle->flags |= EV_HANDLE_CLOSING;
-
     ev__todo(handle->loop, &handle->close_queue, _ev_to_close);
 }
 
@@ -183,7 +188,8 @@ void ev__handle_active(ev_handle_t* handle)
     }
 
     handle->flags |= EV_HANDLE_ACTIVE;
-    handle->loop->active_handles++;
+    ev_list_erase(&handle->loop->handles.idle_handles, &handle->node);
+    ev_list_push_back(&handle->loop->handles.active_handles, &handle->node);
 }
 
 void ev__handle_deactive(ev_handle_t* handle)
@@ -194,7 +200,8 @@ void ev__handle_deactive(ev_handle_t* handle)
     }
 
     handle->flags &= ~EV_HANDLE_ACTIVE;
-    handle->loop->active_handles--;
+    ev_list_erase(&handle->loop->handles.active_handles, &handle->node);
+    ev_list_push_back(&handle->loop->handles.idle_handles, &handle->node);
 }
 
 int ev__handle_is_active(ev_handle_t* handle)

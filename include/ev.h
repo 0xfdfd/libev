@@ -199,7 +199,12 @@ enum ev_loop_mode
 struct ev_loop
 {
     uint64_t                hwtime;         /**< A fast clock time in milliseconds */
-    size_t                  active_handles; /**< Active handle counter */
+
+    struct
+    {
+        ev_list_t           idle_handles;   /**< All idle handles */
+        ev_list_t           active_handles; /**< All active handles */
+    }handles;
 
     struct
     {
@@ -218,10 +223,12 @@ struct ev_loop
 
     ev_loop_plt_t           backend;        /**< Platform related implementation */
 };
-#define EV_LOOP_INIT        { 0, 0, { EV_LIST_INIT }, { EV_MAP_INIT(NULL, NULL) }, { 0 }, EV_LOOP_PLT_INIT }
+#define EV_LOOP_INIT        \
+    { 0, { EV_LIST_INIT, EV_LIST_INIT }, { EV_LIST_INIT }, { EV_MAP_INIT(NULL, NULL) }, { 0 }, EV_LOOP_PLT_INIT }
 
 struct ev_handle
 {
+    ev_list_node_t          node;           /**< Node for #ev_loop_t::handles */
     ev_loop_t*              loop;           /**< The event loop belong to */
     ev_close_cb             close_cb;       /**< Close callback */
     ev_todo_t               close_queue;    /**< Close queue token */
