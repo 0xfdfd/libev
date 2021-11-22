@@ -1,9 +1,6 @@
 #include <WinSock2.h>
 #include <assert.h>
 #include "loop.h"
-#include "tcp.h"
-
-tcp_ctx_t g_tcp_ctx;
 
 static void _ev_tcp_deactive(ev_tcp_t* sock)
 {
@@ -351,13 +348,13 @@ static int _ev_tcp_bind_any_addr(ev_tcp_t* sock, int af)
     switch (af)
     {
     case AF_INET:
-        bind_addr = (struct sockaddr*)&g_tcp_ctx.addr_any_ip4;
-        name_len = sizeof(g_tcp_ctx.addr_any_ip4);
+        bind_addr = (struct sockaddr*)&g_ev_loop_win_ctx.net.addr_any_ip4;
+        name_len = sizeof(g_ev_loop_win_ctx.net.addr_any_ip4);
         break;
 
     case AF_INET6:
-        bind_addr = (struct sockaddr*)&g_tcp_ctx.addr_any_ip6;
-        name_len = sizeof(g_tcp_ctx.addr_any_ip6);
+        bind_addr = (struct sockaddr*)&g_ev_loop_win_ctx.net.addr_any_ip6;
+        name_len = sizeof(g_ev_loop_win_ctx.net.addr_any_ip6);
         break;
 
     default:
@@ -416,26 +413,6 @@ static void _ev_tcp_on_iocp(ev_iocp_t* req, size_t transferred, void* arg)
     if (sock->base.data.flags & EV_TCP_CONNECTING)
     {
         _ev_tcp_on_connect_win(sock, transferred);
-    }
-}
-
-void ev__tcp_init(void)
-{
-    int ret;
-    WSADATA wsa_data;
-    if ((ret = WSAStartup(MAKEWORD(2, 2), &wsa_data)) != 0)
-    {
-        assert(ret == 0);
-    }
-
-    if ((ret = ev_ipv4_addr("0.0.0.0", 0, &g_tcp_ctx.addr_any_ip4)) != EV_SUCCESS)
-    {
-        assert(ret == EV_SUCCESS);
-    }
-
-    if ((ret = ev_ipv6_addr("::", 0, &g_tcp_ctx.addr_any_ip6)) != EV_SUCCESS)
-    {
-        assert(ret == EV_SUCCESS);
     }
 }
 

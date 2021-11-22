@@ -1,11 +1,28 @@
 #include <assert.h>
 #include "ev-platform.h"
 #include "loop.h"
-#include "tcp.h"
 
-ev_loop_win_ctx_t g_ev_loop_win_ctx = {
-    0, NULL
-};
+ev_loop_win_ctx_t g_ev_loop_win_ctx;
+
+static void _ev_tcp_init(void)
+{
+    int ret; (void)ret;
+    WSADATA wsa_data;
+    if ((ret = WSAStartup(MAKEWORD(2, 2), &wsa_data)) != 0)
+    {
+        assert(ret == 0);
+    }
+
+    if ((ret = ev_ipv4_addr("0.0.0.0", 0, &g_ev_loop_win_ctx.net.addr_any_ip4)) != EV_SUCCESS)
+    {
+        assert(ret == EV_SUCCESS);
+    }
+
+    if ((ret = ev_ipv6_addr("::", 0, &g_ev_loop_win_ctx.net.addr_any_ip6)) != EV_SUCCESS)
+    {
+        assert(ret == EV_SUCCESS);
+    }
+}
 
 static void _ev_time_init_win(void)
 {
@@ -30,7 +47,6 @@ static uint64_t _ev_hrtime_win(unsigned int scale)
     double scaled_freq;
     double result;
 
-    assert(g_ev_loop_win_ctx.hrtime_frequency_ != 0);
     assert(scale != 0);
     if (!QueryPerformanceCounter(&counter))
     {
@@ -62,7 +78,7 @@ static void _ev_pool_win_handle_req(OVERLAPPED_ENTRY* overlappeds, ULONG count)
 
 static void _ev_init_once_win(void)
 {
-    ev__tcp_init();
+    _ev_tcp_init();
     ev__winapi_init();
     _ev_time_init_win();
 }

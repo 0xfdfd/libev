@@ -13,6 +13,12 @@ typedef struct ev_loop_win_ctx
      */
     uint64_t                    hrtime_frequency_;
 
+    struct
+    {
+        struct sockaddr_in      addr_any_ip4;   /**< 0.0.0.0:0 */
+        struct sockaddr_in6     addr_any_ip6;   /**< :::0 */
+    }net;
+
     fn_NtQueryInformationFile   NtQueryInformationFile;
 }ev_loop_win_ctx_t;
 
