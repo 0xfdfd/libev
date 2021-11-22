@@ -253,14 +253,18 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
 {
     uint32_t timeout;
 
-    int r = _ev_loop_alive(loop);
-
-    while (r != 0 && !loop->mask.b_stop)
+    int ret;
+    while ((ret = _ev_loop_alive(loop)) && !loop->mask.b_stop)
     {
         ev__loop_update_time(loop);
 
         _ev_loop_active_timer(loop);
         _ev_loop_active_todo(loop);
+
+        if ((ret = _ev_loop_alive(loop)) == 0)
+        {
+            break;
+        }
 
         /* Calculate timeout */
         timeout = mode != ev_loop_mode_nowait ?
@@ -286,7 +290,6 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
         /* Callback maybe added */
         _ev_loop_active_todo(loop);
 
-        r = _ev_loop_alive(loop);
         if (mode != ev_loop_mode_default)
         {
             break;
@@ -299,7 +302,7 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
         loop->mask.b_stop = 0;
     }
 
-    return r;
+    return ret;
 }
 
 int ev_ipv4_addr(const char* ip, int port, struct sockaddr_in* addr)
