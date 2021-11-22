@@ -10,6 +10,13 @@ extern "C" {
 #define EV_IO_IN            EPOLLIN     /**< The associated file is available for read(2) operations. */
 #define EV_IO_OUT           EPOLLOUT    /**< The associated file is available for write(2) operations. */
 
+typedef struct ev_loop_unix_ctx
+{
+    clockid_t hwtime_clock_id;
+}ev_loop_unix_ctx_t;
+
+extern ev_loop_unix_ctx_t g_ev_loop_unix_ctx;
+
 /**
  * @brief Initialize io structure
  * @param[out] io   A pointer to the structure

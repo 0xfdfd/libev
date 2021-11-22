@@ -13,7 +13,9 @@ typedef enum stream_flags
     STREAM_REG_IO = 1,
 }stream_flags_t;
 
-static clockid_t g_hwtime_clock_id = CLOCK_MONOTONIC;
+ev_loop_unix_ctx_t g_ev_loop_unix_ctx = {
+    CLOCK_MONOTONIC
+};
 
 static void _ev_init_hwtime(void)
 {
@@ -26,7 +28,7 @@ static void _ev_init_hwtime(void)
     {
         return;
     }
-    g_hwtime_clock_id = CLOCK_MONOTONIC_COARSE;
+    g_ev_loop_unix_ctx.hwtime_clock_id = CLOCK_MONOTONIC_COARSE;
 }
 
 static int _ev_cmp_io_unix(const ev_map_node_t* key1, const ev_map_node_t* key2, void* arg)
@@ -230,13 +232,15 @@ static void _ev_stream_on_io(ev_io_t* io, unsigned evts)
     }
 }
 
+static void _ev_init_once_unix(void)
+{
+    _ev_init_hwtime();
+}
+
 void ev__loop_update_time(ev_loop_t* loop)
 {
-    static ev_once_t token = EV_ONCE_INIT;
-    ev_once_execute(&token, _ev_init_hwtime);
-
     struct timespec t;
-    if (clock_gettime(g_hwtime_clock_id, &t) != 0)
+    if (clock_gettime(g_ev_loop_unix_ctx.hwtime_clock_id, &t) != 0)
     {
         return;
     }
@@ -391,6 +395,9 @@ int ev__getfd(int fd)
 int ev__loop_init_backend(ev_loop_t* loop)
 {
     ENSURE_LAYOUT(ev_buf_t, struct iovec, data, iov_base, size, iov_len);
+
+    static ev_once_t once = EV_ONCE_INIT;
+    ev_once_execute(&once, _ev_init_once_unix);
 
     ev_map_init(&loop->backend.io, _ev_cmp_io_unix, NULL);
 
