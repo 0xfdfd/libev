@@ -9,6 +9,7 @@ extern "C" {
 
 #include <stddef.h>
 #include <stdarg.h>
+#include "ev/defs.h"
 #include "ev/list.h"
 
 enum ev_errno;
@@ -316,24 +317,21 @@ struct ev_pipe
  */
 struct ev_write
 {
-    ev_list_node_t          node;           /**< Intrusive node */
+    ev_list_node_t          node;               /**< Intrusive node */
     struct
     {
-        ev_write_cb         cb;             /**< Write complete callback */
-        size_t              nbuf;           /**< Buffer list count */
-        ev_buf_t            bufs[16];       /**< Bound buffer list */
+        ev_write_cb         cb;                 /**< Write complete callback */
+        size_t              nbuf;               /**< Buffer list count */
+        ev_buf_t            bufs[EV_IOV_MAX];   /**< Bound buffer list */
     }data;
-    ev_write_backend_t      backend;        /**< Back-end */
+    ev_write_backend_t      backend;            /**< Back-end */
 };
 #define EV_WRITE_INIT       \
     {\
         EV_LIST_NODE_INIT,\
         {\
-            NULL, NULL,\
-            EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL),\
-            EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL),\
-            EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL),\
-            EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL),\
+            NULL, 0,\
+            { EV_INIT_REPEAT(EV_IOV_MAX, EV_BUF_INIT(NULL, 0)), }\
         },\
         EV_WRITE_BACKEND_INIT\
     }
@@ -343,24 +341,21 @@ struct ev_write
  */
 struct ev_read
 {
-    ev_list_node_t          node;           /**< Intrusive node */
+    ev_list_node_t          node;               /**< Intrusive node */
     struct
     {
-        ev_read_cb          cb;             /**< Read complete callback */
-        size_t              nbuf;           /**< Buffer list count */
-        ev_buf_t            bufs[16];       /**< Bound buffer list */
+        ev_read_cb          cb;                 /**< Read complete callback */
+        size_t              nbuf;               /**< Buffer list count */
+        ev_buf_t            bufs[EV_IOV_MAX];   /**< Bound buffer list */
     }data;
-    ev_read_backend_t       backend;        /**< Back-end */
+    ev_read_backend_t       backend;            /**< Back-end */
 };
 #define EV_READ_INIT        \
     {\
         EV_LIST_NODE_INIT,\
         {\
             NULL, 0,\
-            EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL),\
-            EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL),\
-            EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL),\
-            EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL),\
+            { EV_INIT_REPEAT(EV_IOV_MAX, EV_BUF_INIT(NULL, 0)), },\
         },\
         EV_READ_BACKEND_INIT\
     }
@@ -736,7 +731,7 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
  * @brief Initialize #ev_write_t
  * @param[out] req  A write request to be initialized
  * @param[in] bufs  Buffer list
- * @param[in] nbuf  Buffer list size, can not larger than 16.
+ * @param[in] nbuf  Buffer list size, can not larger than #EV_IOV_MAX.
  * @param[in] cb    Write complete callback
  * @return          #ev_errno_t
  */
@@ -746,7 +741,7 @@ int ev_write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb);
  * @brief Initialize #ev_read_t
  * @param[out] req  A read request to be initialized
  * @param[in] bufs  Buffer list
- * @param[in] nbuf  Buffer list size, can not larger than 16.
+ * @param[in] nbuf  Buffer list size, can not larger than #EV_IOV_MAX.
  * @param[in] cb    Read complete callback
  * @return          #ev_errno_t
  */

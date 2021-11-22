@@ -58,7 +58,7 @@ struct ev_iocp
     ev_iocp_cb                  cb;                 /**< Callback */
     OVERLAPPED                  overlapped;         /**< IOCP field */
 };
-#define EV_IOCP_INIT            { NULL, { NULL, NULL, { { 0, 0 } }, NULL } }
+#define EV_IOCP_INIT            { NULL, NULL, { 0, 0, { { 0, 0 } }, NULL } }
 
 typedef struct ev_async_backend
 {
@@ -71,15 +71,12 @@ typedef struct ev_write_backend
     void*                       owner;              /**< Owner */
     size_t                      size;               /**< Write size */
     int                         stat;               /**< Write result */
-    ev_iocp_t                   io[16];             /**< IOCP backend */
+    ev_iocp_t                   io[EV_IOV_MAX];     /**< IOCP backend */
 }ev_write_backend_t;
 #define EV_WRITE_BACKEND_INIT   \
     {\
         NULL, 0, 0,\
-        EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT,\
-        EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT,\
-        EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT,\
-        EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT,\
+        { EV_INIT_REPEAT(EV_IOV_MAX, EV_IOCP_INIT), }\
     }
 
 typedef struct ev_read_backend
@@ -87,15 +84,12 @@ typedef struct ev_read_backend
     void*                       owner;              /**< Owner */
     size_t                      size;               /**< Read size */
     int                         stat;               /**< Write result */
-    ev_iocp_t                   io[16];             /**< IOCP backend */
+    ev_iocp_t                   io[EV_IOV_MAX];     /**< IOCP backend */
 }ev_read_backend_t;
 #define EV_READ_BACKEND_INIT    \
     {\
         NULL, 0, 0,\
-        EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT,\
-        EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT,\
-        EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT,\
-        EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT,\
+        { EV_INIT_REPEAT(EV_IOV_MAX, EV_IOCP_INIT), }\
     }
 
 typedef struct ev_tcp_backend
