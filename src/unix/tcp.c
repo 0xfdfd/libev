@@ -345,8 +345,8 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
     ev_list_push_back(&lisn->backend.u.listen.accept_queue, &conn->backend.u.accept.accept_node);
     ev__io_add(lisn->base.data.loop, &lisn->backend.u.listen.io, EV_IO_IN);
 
-    ev__tcp_active(lisn);
-    ev__tcp_active(conn);
+    ev__handle_active(&lisn->base);
+    ev__handle_active(&conn->base);
 
     return EV_SUCCESS;
 }
@@ -451,7 +451,7 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
         goto err;
     }
 
-    ev__tcp_active(sock);
+    ev__handle_active(&sock->base);
     ev__io_add(loop, &sock->backend.u.client.io, EV_IO_OUT);
 
     return EV_SUCCESS;

@@ -112,18 +112,6 @@ API_LOCAL void ev__todo_init(ev_todo_t* token);
  */
 API_LOCAL void ev__todo(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb);
 
-/**
- * @brief Active TCP socket
- * @param[in] sock      Socket handle
- */
-API_LOCAL void ev__tcp_active(ev_tcp_t* sock);
-
-/**
- * @brief De-active TCP socket
- * @param[in] sock      Socket handle
- */
-API_LOCAL void ev__tcp_deactive(ev_tcp_t* sock);
-
 #ifdef __cplusplus
 }
 #endif

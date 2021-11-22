@@ -5,6 +5,17 @@
 
 tcp_ctx_t g_tcp_ctx;
 
+static void _ev_tcp_deactive(ev_tcp_t* sock)
+{
+    unsigned flags = sock->base.data.flags;
+    if (flags & (EV_TCP_ACCEPTING | EV_TCP_STREAMING | EV_TCP_CONNECTING))
+    {
+        return;
+    }
+
+    ev__handle_deactive(&sock->base);
+}
+
 static void _ev_tcp_close_socket(ev_tcp_t* sock)
 {
     closesocket(sock->sock);
@@ -27,7 +38,7 @@ static void _ev_tcp_cleanup_accept(ev_tcp_t* sock)
     }
 
     sock->base.data.flags &= ~EV_TCP_ACCEPTING;
-    ev__tcp_deactive(sock);
+    _ev_tcp_deactive(sock);
 
     sock->backend.u.accept.cb(lisn, sock, sock->backend.u.accept.stat);
 }
@@ -40,7 +51,7 @@ static void _ev_tcp_cleanup_listen(ev_tcp_t* sock)
         ev_tcp_t* conn = container_of(it, ev_tcp_t, backend.u.accept.node);
         _ev_tcp_close_socket(conn);
         conn->base.data.flags &= ~EV_TCP_ACCEPTING;
-        ev__tcp_deactive(conn);
+        _ev_tcp_deactive(conn);
         conn->backend.u.accept.cb(sock, conn, EV_ECANCELED);
     }
     while ((it = ev_list_pop_front(&sock->backend.u.listen.a_queue_done)) != NULL)
@@ -48,7 +59,7 @@ static void _ev_tcp_cleanup_listen(ev_tcp_t* sock)
         ev_tcp_t* conn = container_of(it, ev_tcp_t, backend.u.accept.node);
         _ev_tcp_close_socket(conn);
         conn->base.data.flags &= ~EV_TCP_ACCEPTING;
-        ev__tcp_deactive(conn);
+        _ev_tcp_deactive(conn);
         conn->backend.u.accept.cb(sock, conn, conn->backend.u.accept.stat);
     }
 }
@@ -220,7 +231,7 @@ static void _ev_tcp_deactive_stream(ev_tcp_t* sock)
         && ev_list_size(&sock->backend.u.stream.w_queue_done) == 0)
     {
         sock->base.data.flags &= ~EV_TCP_STREAMING;
-        ev__tcp_deactive(sock);
+        _ev_tcp_deactive(sock);
     }
 }
 
@@ -257,7 +268,7 @@ static void _ev_tcp_process_accept(ev_tcp_t* conn)
     ev_list_erase(&lisn->backend.u.listen.a_queue_done, &conn->backend.u.accept.node);
 
     conn->base.data.flags &= ~EV_TCP_ACCEPTING;
-    ev__tcp_deactive(conn);
+    _ev_tcp_deactive(conn);
 
     conn->backend.u.accept.cb(lisn, conn, conn->backend.u.accept.stat);
 }
@@ -275,7 +286,7 @@ static void _ev_tcp_process_connect(ev_tcp_t* sock)
     }
 
     sock->base.data.flags &= ~EV_TCP_CONNECTING;
-    ev__tcp_deactive(sock);
+    _ev_tcp_deactive(sock);
 
     sock->backend.u.client.cb(sock, sock->backend.u.client.stat);
 }
@@ -532,7 +543,7 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
         flag_new_sock = 1;
     }
     _ev_tcp_setup_accept_win(lisn, conn, cb);
-    ev__tcp_active(conn);
+    ev__handle_active(&conn->base);
 
     DWORD bytes = 0;
     ret = AcceptEx(lisn->sock, conn->sock,
@@ -551,7 +562,7 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
     if ((ret = WSAGetLastError()) != WSA_IO_PENDING)
     {
         conn->base.data.flags &= ~EV_TCP_CONNECTING;
-        ev__tcp_deactive(conn);
+        _ev_tcp_deactive(conn);
         return ev__translate_sys_error(ret);
     }
     conn->base.data.flags |= EV_TCP_ACCEPTING;
@@ -626,7 +637,7 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
     {
         goto err;
     }
-    ev__tcp_active(sock);
+    ev__handle_active(&sock->base);
 
     DWORD bytes;
     ret = sock->backend.u.client.fn_connectex(sock->sock, addr, (int)size,
@@ -642,7 +653,7 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
     if (ret != WSA_IO_PENDING)
     {
         sock->base.data.flags &= ~EV_TCP_CONNECTING;
-        ev__tcp_deactive(sock);
+        _ev_tcp_deactive(sock);
         ret = ev__translate_sys_error(ret);
         goto err;
     }
@@ -675,7 +686,7 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, 
 
     ev_list_push_back(&sock->backend.u.stream.w_queue, &req->node);
     sock->base.data.flags |= EV_TCP_STREAMING;
-    ev__tcp_active(sock);
+    ev__handle_active(&sock->base);
 
     ret = WSASend(sock->sock, (WSABUF*)bufs, (DWORD)nbuf,
         NULL, 0, &req->backend.io[0].overlapped, NULL);
@@ -715,7 +726,7 @@ int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev
 
     ev_list_push_back(&sock->backend.u.stream.r_queue, &req->node);
     sock->base.data.flags |= EV_TCP_STREAMING;
-    ev__tcp_active(sock);
+    ev__handle_active(&sock->base);
 
     DWORD flags = 0;
     ret = WSARecv(sock->sock, (WSABUF*)bufs, (DWORD)nbuf,
