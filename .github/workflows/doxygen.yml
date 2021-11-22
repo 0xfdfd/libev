@@ -25,12 +25,7 @@ jobs:
 
       # Build documents
       - name: Doxygen Action
-        # You may pin to the exact commit or the version.
-        # uses: mattnotmitt/doxygen-action@26c5585d9d0077c5c6f6c700bc6434ef03956fd4
-        uses: mattnotmitt/doxygen-action@v1.2.1
-        with:
-          doxyfile-path: ./Doxyfile
-          working-directory: .
+        uses: mattnotmitt/doxygen-action@v1.3.1
 
       # Deploy to github gh-pages
       - name: Deploy
