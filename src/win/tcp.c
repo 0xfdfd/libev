@@ -209,7 +209,7 @@ static void _ev_tcp_setup_stream_win(ev_tcp_t* sock)
     ev_list_init(&sock->backend.u.stream.r_queue_done);
     ev_list_init(&sock->backend.u.stream.w_queue);
     ev_list_init(&sock->backend.u.stream.w_queue_done);
-    sock->base.flags |= EV_TCP_STREAM_INIT;
+    sock->base.flags |= EV_TCP_STREAMING;
 }
 
 static void _ev_tcp_deactive_stream(ev_tcp_t* sock)
@@ -662,7 +662,7 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, 
     int ret;
     ENSURE_LAYOUT(ev_buf_t, WSABUF, size, len, data, buf);
 
-    if (!(sock->base.flags & EV_TCP_STREAM_INIT))
+    if (!(sock->base.flags & EV_TCP_STREAMING))
     {
         _ev_tcp_setup_stream_win(sock);
     }
@@ -702,7 +702,7 @@ int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev
     int ret;
     ENSURE_LAYOUT(ev_buf_t, WSABUF, size, len, data, buf);
 
-    if (!(sock->base.flags & EV_TCP_STREAM_INIT))
+    if (!(sock->base.flags & EV_TCP_STREAMING))
     {
         _ev_tcp_setup_stream_win(sock);
     }

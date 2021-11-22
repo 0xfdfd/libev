@@ -39,6 +39,9 @@ static void _ev_loop_init(ev_loop_t* loop)
     memset(&loop->mask, 0, sizeof(loop->mask));
 }
 
+/**
+ * @return bool. non-zero for have active events.
+ */
 static int _ev_loop_alive(ev_loop_t* loop)
 {
     return ev_list_size(&loop->handles.active_handles) || ev_list_size(&loop->todo.queue);
@@ -254,7 +257,7 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
     uint32_t timeout;
 
     int ret;
-    while ((ret = _ev_loop_alive(loop)) && !loop->mask.b_stop)
+    while ((ret = _ev_loop_alive(loop)) != 0 && !loop->mask.b_stop)
     {
         ev__loop_update_time(loop);
 
