@@ -440,15 +440,13 @@ int ev__read_init_win(ev_read_t* req, ev_buf_t bufs[], size_t nbuf, void* owner,
     }
     else
     {
-        if ((req->data.bufs = malloc(sizeof(ev_buf_t) * nbuf)) == NULL)
+        size_t malloc_size = (sizeof(ev_buf_t) + sizeof(ev_iocp_t)) * nbuf;
+        if ((req->data.bufs = malloc(malloc_size)) == NULL)
         {
             return EV_ENOMEM;
         }
-        if ((req->backend.io = malloc(sizeof(ev_iocp_t) * nbuf)) == NULL)
-        {
-            free(req->data.bufs);
-            return EV_ENOMEM;
-        }
+
+        req->backend.io = (ev_iocp_t*)(req->data.bufs + nbuf);
     }
 
     size_t i;
@@ -468,9 +466,5 @@ void ev__read_exit_win(ev_read_t* req)
         free(req->data.bufs);
     }
     req->data.bufs = NULL;
-    if (req->backend.io != req->backend.ioml)
-    {
-        free(req->backend.io);
-    }
     req->backend.io = NULL;
 }
