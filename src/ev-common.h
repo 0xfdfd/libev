@@ -55,11 +55,6 @@ typedef enum ev_handle_flag
     EV_PIPE_STREAMING       = 0x01 << 0x08,     /**< 256. This pipe is initialized by #ev_stream_t */
 }ev_handle_flag_t;
 
-typedef enum ev_todo_flag
-{
-    EV_TODO_QUEUED          = 0x01 << 0x00,     /**< 1. token is in the queue */
-}ev_todo_flag_t;
-
 /**
  * @brief Initialize a handle
  * @param[in] loop      The loop own the handle
