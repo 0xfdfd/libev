@@ -609,68 +609,6 @@ int ev__translate_sys_error(int syserr)
     return syserr;
 }
 
-int ev__write_init(ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb)
-{
-    req->data.cb = cb;
-    req->data.nbuf = nbuf;
-    req->backend.idx = 0;
-    req->backend.len = 0;
-
-    if (nbuf <= ARRAY_SIZE(req->data.bufsml))
-    {
-        req->data.bufs = req->data.bufsml;
-    }
-    else
-    {
-        if ((req->data.bufs = malloc(sizeof(ev_buf_t) * nbuf)) == NULL)
-        {
-            return EV_ENOMEM;
-        }
-    }
-
-    memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);
-    return EV_SUCCESS;
-}
-
-void ev__write_exit(ev_write_t* req)
-{
-    if (req->data.bufs != req->data.bufsml)
-    {
-        free(req->data.bufs);
-    }
-    req->data.bufs = NULL;
-}
-
-int ev__read_init(ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev_read_cb cb)
-{
-    req->data.cb = cb;
-    req->data.nbuf = nbuf;
-
-    if (nbuf <= ARRAY_SIZE(req->data.bufsml))
-    {
-        req->data.bufs = req->data.bufsml;
-    }
-    else
-    {
-        if ((req->data.bufs = malloc(sizeof(ev_buf_t) * nbuf)) == NULL)
-        {
-            return EV_ENOMEM;
-        }
-    }
-
-    memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);
-    return  EV_SUCCESS;
-}
-
-void ev__read_exit(ev_read_t* req)
-{
-    if (req->data.bufs != req->data.bufsml)
-    {
-        free(req->data.bufs);
-    }
-    req->data.bufs = NULL;
-}
-
 void ev__stream_init(ev_loop_t* loop, ev_stream_t* stream, int fd, ev_stream_write_cb wcb, ev_stream_read_cb rcb)
 {
     stream->loop = loop;
@@ -749,4 +687,15 @@ void ev__stream_cleanup(ev_stream_t* stream, unsigned evts)
     {
         _ev_stream_cleanup_r(stream, EV_ECANCELED);
     }
+}
+
+void ev__write_init_unix(ev_write_t* req)
+{
+    req->backend.idx = 0;
+    req->backend.len = 0;
+}
+
+void ev__read_init_unix(ev_read_t* req)
+{
+    (void)req;
 }

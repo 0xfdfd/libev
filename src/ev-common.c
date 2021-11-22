@@ -344,6 +344,34 @@ int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t le
     return EV_SUCCESS;
 }
 
+int ev_write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb)
+{
+    if (nbuf > ARRAY_SIZE(req->data.bufs))
+    {
+        return EV_EINVAL;
+    }
+
+    req->data.cb = cb;
+    req->data.nbuf = nbuf;
+    memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);
+
+    return EV_SUCCESS;
+}
+
+int ev_read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb)
+{
+    if (nbuf > ARRAY_SIZE(req->data.bufs))
+    {
+        return EV_EINVAL;
+    }
+
+    req->data.cb = cb;
+    req->data.nbuf = nbuf;
+    memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);
+
+    return  EV_SUCCESS;
+}
+
 ev_buf_t ev_buf_make(void* buf, size_t len)
 {
     ev_buf_t tmp;

@@ -69,22 +69,34 @@ typedef struct ev_async_backend
 typedef struct ev_write_backend
 {
     void*                       owner;              /**< Owner */
-    ev_iocp_t*                  io;                 /**< IOCP backend */
     size_t                      size;               /**< Write size */
     int                         stat;               /**< Write result */
-    ev_iocp_t                   ioml[8];            /**< Bound iocp */
+    ev_iocp_t                   io[16];             /**< IOCP backend */
 }ev_write_backend_t;
-#define EV_WRITE_BACKEND_INIT   { NULL, EV_IOCP_INIT, 0, 0 }
+#define EV_WRITE_BACKEND_INIT   \
+    {\
+        NULL, 0, 0,\
+        EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT,\
+        EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT,\
+        EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT,\
+        EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT,\
+    }
 
 typedef struct ev_read_backend
 {
     void*                       owner;              /**< Owner */
-    ev_iocp_t*                  io;                 /**< IOCP backend */
     size_t                      size;               /**< Read size */
     int                         stat;               /**< Write result */
-    ev_iocp_t                   ioml[8];            /**< Bound iocp */
+    ev_iocp_t                   io[16];             /**< IOCP backend */
 }ev_read_backend_t;
-#define EV_READ_BACKEND_INIT    { NULL, EV_IOCP_INIT, 0, 0 }
+#define EV_READ_BACKEND_INIT    \
+    {\
+        NULL, 0, 0,\
+        EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT,\
+        EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT,\
+        EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT,\
+        EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT, EV_IOCP_INIT,\
+    }
 
 typedef struct ev_tcp_backend
 {

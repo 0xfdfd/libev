@@ -81,7 +81,6 @@ static void _ev_pipe_on_write_iocp_success(ev_write_t* req, size_t transferred)
     req->backend.size += transferred;
 
     size_t write_size = req->backend.size;
-    ev__write_exit_win(req);
 
     req->data.cb(req, write_size, EV_SUCCESS);
 }
@@ -92,7 +91,6 @@ static void _ev_pipe_on_write_iocp_failure(ev_write_t* req, ev_iocp_t* iocp, siz
 
     size_t write_size = req->backend.size;
     int stat = ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal));
-    ev__write_exit_win(req);
 
     req->data.cb(req, write_size, stat);
 }
@@ -178,7 +176,6 @@ static void _ev_pipe_on_read_iocp(ev_iocp_t* iocp, size_t transferred, void* arg
 
 fin:
     ev_list_erase(&pipe->backend.stream.r_queue, &req->node);
-    ev__read_exit_win(req);
     _ev_pipe_smart_deactive_win(pipe);
     req->data.cb(req, read_size, stat);
 }
@@ -309,25 +306,19 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_handle_t handle)
     return EV_SUCCESS;
 }
 
-int ev_pipe_write(ev_pipe_t* pipe, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb)
+int ev_pipe_write(ev_pipe_t* pipe, ev_write_t* req)
 {
-    int ret;
     int result;
-
-    ret = ev__write_init_win(req, bufs, nbuf, pipe, EV_EINPROGRESS, _ev_pipe_on_write_iocp, req, cb);
-    if (ret != EV_SUCCESS)
-    {
-        return ret;
-    }
-
     int flag_failure = 0;
     DWORD err = 0;
 
+    ev__write_init_win(req, pipe, EV_EINPROGRESS, _ev_pipe_on_write_iocp, req);
+
     size_t idx;
-    for (idx = 0; idx < nbuf; idx++)
+    for (idx = 0; idx < req->data.nbuf; idx++)
     {
-        result = WriteFile(pipe->pipfd, bufs[idx].data, bufs[idx].size, NULL,
-            &req->backend.io[idx].overlapped);
+        result = WriteFile(pipe->pipfd, req->data.bufs[idx].data, req->data.bufs[idx].size,
+            NULL, &req->backend.io[idx].overlapped);
 
         /* write success */
         if (result)
@@ -361,15 +352,11 @@ int ev_pipe_write(ev_pipe_t* pipe, ev_write_t* req, ev_buf_t bufs[], size_t nbuf
     return EV_SUCCESS;
 }
 
-int ev_pipe_read(ev_pipe_t* pipe, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev_read_cb cb)
+int ev_pipe_read(ev_pipe_t* pipe, ev_read_t* req)
 {
     static char s_ev_zero[] = "";
 
-    int ret = ev__read_init_win(req, bufs, nbuf, pipe, EV_EINPROGRESS, _ev_pipe_on_read_iocp, req, cb);
-    if (ret != EV_SUCCESS)
-    {
-        return ret;
-    }
+    ev__read_init_win(req, pipe, EV_EINPROGRESS, _ev_pipe_on_read_iocp, req);
 
     int result = ReadFile(pipe->pipfd, s_ev_zero, 0, NULL, &req->backend.io[0].overlapped);
     int err = GetLastError();

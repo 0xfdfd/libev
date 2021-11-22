@@ -42,7 +42,8 @@ static void _on_read_callback(ev_read_t* req, size_t size, int stat)
     }
 
     s_r_pack.buf = ev_buf_make((char*)s_r_pack.buf.data + size, s_r_pack.buf.size - size);
-    ASSERT_EQ_D32(ev_pipe_read(&s_pipe_r, &s_r_pack.read_req, &s_r_pack.buf, 1, _on_read_callback), 0);
+    ASSERT_EQ_D32(ev_read_init(&s_r_pack.read_req, &s_r_pack.buf, 1, _on_read_callback), 0);
+    ASSERT_EQ_D32(ev_pipe_read(&s_pipe_r, &s_r_pack.read_req), 0);
 }
 
 TEST(pipe, pipe)
@@ -59,10 +60,12 @@ TEST(pipe, pipe)
     ASSERT_EQ_D32(ev_pipe_open(&s_pipe_w, fds[1]), 0);
 
     s_w_pack.buf = ev_buf_make(s_w_pack.buffer, sizeof(s_w_pack.buffer));
-    ASSERT_EQ_D32(ev_pipe_write(&s_pipe_w, &s_w_pack.write_req, &s_w_pack.buf, 1, _on_write_callback), 0);
+    ASSERT_EQ_D32(ev_write_init(&s_w_pack.write_req, &s_w_pack.buf, 1, _on_write_callback), 0);
+    ASSERT_EQ_D32(ev_pipe_write(&s_pipe_w, &s_w_pack.write_req), 0);
 
     s_r_pack.buf = ev_buf_make(s_r_pack.buffer, sizeof(s_r_pack.buffer));
-    ASSERT_EQ_D32(ev_pipe_read(&s_pipe_r, &s_r_pack.read_req, &s_r_pack.buf, 1, _on_read_callback), 0);
+    ASSERT_EQ_D32(ev_read_init(&s_r_pack.read_req, &s_r_pack.buf, 1, _on_read_callback), 0);
+    ASSERT_EQ_D32(ev_pipe_read(&s_pipe_r, &s_r_pack.read_req), 0);
 
     ASSERT_EQ_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
     {

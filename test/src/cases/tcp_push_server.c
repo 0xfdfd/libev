@@ -68,7 +68,8 @@ static void _on_accept(ev_tcp_t* from, ev_tcp_t* to, int stat)
     ASSERT_EQ_D32(stat, EV_SUCCESS);
 
     ev_tcp_exit(&s_server, _on_close_server_socket);
-    ASSERT_EQ_D32(ev_tcp_write(to, &s_write_pack.w_req, &s_write_pack.buf, 1, _on_send_finish), 0);
+    ASSERT_EQ_D32(ev_write_init(&s_write_pack.w_req, &s_write_pack.buf, 1, _on_send_finish), 0);
+    ASSERT_EQ_D32(ev_tcp_write(to, &s_write_pack.w_req), 0);
 }
 
 static void _on_read(ev_read_t* req, size_t size, int stat)
@@ -83,7 +84,8 @@ static void _on_read(ev_read_t* req, size_t size, int stat)
     ASSERT_EQ_D32(stat, EV_SUCCESS);
 
     s_read_pack.buf = ev_buf_make((char*)s_read_pack.buf.data + size, s_read_pack.buf.size - size);
-    ASSERT_EQ_D32(ev_tcp_read(&s_client, &s_read_pack.r_req, &s_read_pack.buf, 1, _on_read), 0);
+    ASSERT_EQ_D32(ev_read_init(&s_read_pack.r_req, &s_read_pack.buf, 1, _on_read), 0);
+    ASSERT_EQ_D32(ev_tcp_read(&s_client, &s_read_pack.r_req), 0);
 }
 
 static void _on_connect(ev_tcp_t* sock, int stat)
@@ -91,7 +93,8 @@ static void _on_connect(ev_tcp_t* sock, int stat)
     ASSERT_EQ_PTR(sock, &s_client);
     ASSERT_EQ_D32(stat, EV_SUCCESS);
 
-    ASSERT_EQ_D32(ev_tcp_read(&s_client, &s_read_pack.r_req, &s_read_pack.buf, 1, _on_read), 0);
+    ASSERT_EQ_D32(ev_read_init(&s_read_pack.r_req, &s_read_pack.buf, 1, _on_read), 0);
+    ASSERT_EQ_D32(ev_tcp_read(&s_client, &s_read_pack.r_req), 0);
 }
 
 TEST(tcp, push_server)

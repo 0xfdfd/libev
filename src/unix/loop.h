@@ -42,36 +42,6 @@ API_LOCAL void ev__io_add(ev_loop_t* loop, ev_io_t* io, unsigned evts);
 API_LOCAL void ev__io_del(ev_loop_t* loop, ev_io_t* io, unsigned evts);
 
 /**
- * @brief Initialize #ev_write_t
- * @param[out] req  A write request to be initialized
- * @param[in] bufs  Buffer list
- * @param[in] nbuf  Buffer list size
- * @param[in] cb    Write complete callback
- * @return          #ev_errno_t
- */
-API_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb);
-
-/**
- * @brief Cleanup #ev_write_t
- */
-API_LOCAL void ev__write_exit(ev_write_t* req);
-
-/**
- * @brief Initialize #ev_read_t
- * @param[out] req  A read request to be initialized
- * @param[in] bufs  Buffer list
- * @param[in] nbuf  Buffer list size
- * @param[in] cb    Read complete callback
- * @return          #ev_errno_t
- */
-API_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev_read_cb cb);
-
-/**
- * @brief Cleanup #ev_read_t
- */
-API_LOCAL void ev__read_exit(ev_read_t* req);
-
-/**
  * @brief Initialize stream.
  * @param[in] loop      Event loop
  * @param[out] stream   Stream handler
@@ -125,6 +95,10 @@ API_LOCAL void ev__stream_abort(ev_stream_t* stream, unsigned evts);
  * @param[in] evts      #EV_IO_IN or #EV_IO_OUT
  */
 API_LOCAL void ev__stream_cleanup(ev_stream_t* stream, unsigned evts);
+
+API_LOCAL void ev__write_init_unix(ev_write_t* req);
+
+API_LOCAL void ev__read_init_unix(ev_read_t* req);
 
 /**
  * @brief Add or remove FD_CLOEXEC

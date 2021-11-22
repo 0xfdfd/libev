@@ -389,98 +389,30 @@ int ev__ntstatus_to_winsock_error(NTSTATUS status)
     }
 }
 
-int ev__write_init_win(ev_write_t* req, ev_buf_t bufs[], size_t nbuf, void* owner, int stat,
-    ev_iocp_cb iocp_cb, void* iocp_arg, ev_write_cb w_cb)
+void ev__write_init_win(ev_write_t* req, void* owner, int stat,
+    ev_iocp_cb iocp_cb, void* iocp_arg)
 {
-    req->data.cb = w_cb;
-    req->data.nbuf = nbuf;
     req->backend.owner = owner;
     req->backend.size = 0;
     req->backend.stat = stat;
 
-    if (nbuf <= ARRAY_SIZE(req->data.bufsml))
-    {
-        req->data.bufs = req->data.bufsml;
-        req->backend.io = req->backend.ioml;
-    }
-    else
-    {
-        if ((req->data.bufs = malloc(sizeof(ev_buf_t) * nbuf)) == NULL)
-        {
-            return EV_ENOMEM;
-        }
-        if ((req->backend.io = malloc(sizeof(ev_iocp_t) * nbuf)) == NULL)
-        {
-            free(req->data.bufs);
-            return EV_ENOMEM;
-        }
-    }
-
     size_t i;
-    for (i = 0; i < nbuf; i++)
+    for (i = 0; i < req->data.nbuf; i++)
     {
-        req->data.bufs[i] = bufs[i];
         ev__iocp_init(&req->backend.io[i], iocp_cb, iocp_arg);
     }
-
-    return EV_SUCCESS;
 }
 
-void ev__write_exit_win(ev_write_t* req)
+void ev__read_init_win(ev_read_t* req, void* owner, int stat,
+    ev_iocp_cb iocp_cb, void* iocp_arg)
 {
-    if (req->data.bufs != req->data.bufsml)
-    {
-        free(req->data.bufs);
-    }
-    req->data.bufs = NULL;
-    if (req->backend.io != req->backend.ioml)
-    {
-        free(req->backend.io);
-    }
-    req->backend.io = NULL;
-}
-
-int ev__read_init_win(ev_read_t* req, ev_buf_t bufs[], size_t nbuf, void* owner,
-    int stat, ev_iocp_cb iocp_cb, void* iocp_arg, ev_read_cb r_cb)
-{
-    req->data.cb = r_cb;
-    req->data.nbuf = nbuf;
     req->backend.owner = owner;
     req->backend.size = 0;
     req->backend.stat = stat;
 
-    if (nbuf <= ARRAY_SIZE(req->data.bufsml))
-    {
-        req->data.bufs = req->data.bufsml;
-        req->backend.io = req->backend.ioml;
-    }
-    else
-    {
-        size_t malloc_size = (sizeof(ev_buf_t) + sizeof(ev_iocp_t)) * nbuf;
-        if ((req->data.bufs = malloc(malloc_size)) == NULL)
-        {
-            return EV_ENOMEM;
-        }
-
-        req->backend.io = (ev_iocp_t*)(req->data.bufs + nbuf);
-    }
-
     size_t i;
-    for (i = 0; i < nbuf; i++)
+    for (i = 0; i < req->data.nbuf; i++)
     {
-        req->data.bufs[i] = bufs[i];
         ev__iocp_init(&req->backend.io[i], iocp_cb, iocp_arg);
     }
-
-    return EV_SUCCESS;
-}
-
-void ev__read_exit_win(ev_read_t* req)
-{
-    if (req->data.bufs != req->data.bufsml)
-    {
-        free(req->data.bufs);
-    }
-    req->data.bufs = NULL;
-    req->backend.io = NULL;
 }

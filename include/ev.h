@@ -320,13 +320,23 @@ struct ev_write
     struct
     {
         ev_write_cb         cb;             /**< Write complete callback */
-        ev_buf_t*           bufs;           /**< Buffer list */
         size_t              nbuf;           /**< Buffer list count */
-        ev_buf_t            bufsml[8];      /**< Bound buffer list */
+        ev_buf_t            bufs[16];       /**< Bound buffer list */
     }data;
     ev_write_backend_t      backend;        /**< Back-end */
 };
-#define EV_WRITE_INIT       { EV_LIST_NODE_INIT, { NULL, NULL, 0 }, EV_WRITE_BACKEND_INIT }
+#define EV_WRITE_INIT       \
+    {\
+        EV_LIST_NODE_INIT,\
+        {\
+            NULL, NULL,\
+            EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL),\
+            EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL),\
+            EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL),\
+            EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL),\
+        },\
+        EV_WRITE_BACKEND_INIT\
+    }
 
 /**
  * @brief Read request
@@ -337,13 +347,23 @@ struct ev_read
     struct
     {
         ev_read_cb          cb;             /**< Read complete callback */
-        ev_buf_t*           bufs;           /**< Buffer list */
         size_t              nbuf;           /**< Buffer list count */
-        ev_buf_t            bufsml[8];      /**< Bound buffer list */
+        ev_buf_t            bufs[16];       /**< Bound buffer list */
     }data;
     ev_read_backend_t       backend;        /**< Back-end */
 };
-#define EV_READ_INIT        { EV_LIST_NODE_INIT, { NULL, NULL, 0 }, EV_READ_BACKEND_INIT }
+#define EV_READ_INIT        \
+    {\
+        EV_LIST_NODE_INIT,\
+        {\
+            NULL, 0,\
+            EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL),\
+            EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL),\
+            EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL),\
+            EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL), EV_BUF_INIT(NULL, NULL),\
+        },\
+        EV_READ_BACKEND_INIT\
+    }
 
 /**
  * @defgroup EV_LOOP Event loop
@@ -553,7 +573,7 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
  * @param[in] cb    Write complete callback
  * @return          #ev_errno_t
  */
-int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb);
+int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req);
 
 /**
  * @brief Read data
@@ -564,7 +584,7 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, 
  * @param[in] cb    Read complete callback
  * @return          #ev_errno_t
  */
-int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev_read_cb cb);
+int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req);
 
 /**
  * @brief Get the current address to which the socket is bound.
@@ -625,7 +645,7 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_handle_t handle);
  * @param[in] cb    Write complete callback
  * @return          #ev_errno_t
  */
-int ev_pipe_write(ev_pipe_t* pipe, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, ev_write_cb cb);
+int ev_pipe_write(ev_pipe_t* pipe, ev_write_t* req);
 
 /**
  * @brief Read data
@@ -636,7 +656,7 @@ int ev_pipe_write(ev_pipe_t* pipe, ev_write_t* req, ev_buf_t bufs[], size_t nbuf
  * @param[in] cb    Read complete callback
  * @return          #ev_errno_t
  */
-int ev_pipe_read(ev_pipe_t* pipe, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev_read_cb cb);
+int ev_pipe_read(ev_pipe_t* pipe, ev_read_t* req);
 
 /**
  * @brief Make a pair of pipe
@@ -645,9 +665,9 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, 
  */
 int ev_pipe_make(ev_os_handle_t fds[2]);
 
-  /**
-   * @} EV_PIPE
-   */
+/**
+ * @} EV_PIPE
+ */
 
 /**
  * @defgroup EV_UTILS Miscellaneous utilities
@@ -711,6 +731,26 @@ int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t le
  * @param[in] cb        A pointer to an application-defined InitOnceCallback function.
  */
 void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
+
+/**
+ * @brief Initialize #ev_write_t
+ * @param[out] req  A write request to be initialized
+ * @param[in] bufs  Buffer list
+ * @param[in] nbuf  Buffer list size, can not larger than 16.
+ * @param[in] cb    Write complete callback
+ * @return          #ev_errno_t
+ */
+int ev_write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb);
+
+/**
+ * @brief Initialize #ev_read_t
+ * @param[out] req  A read request to be initialized
+ * @param[in] bufs  Buffer list
+ * @param[in] nbuf  Buffer list size, can not larger than 16.
+ * @param[in] cb    Read complete callback
+ * @return          #ev_errno_t
+ */
+int ev_read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb);
 
 /**
  * @brief Constructor for #ev_buf_t
