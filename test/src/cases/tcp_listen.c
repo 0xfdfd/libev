@@ -38,7 +38,7 @@ TEST(tcp, bind)
     ASSERT_NE_D32(ev_tcp_listen(&s_sock, 1), 0);
 
     ev_tcp_exit(&s_sock, _on_close_socket);
-    ASSERT_EQ_D32(ev_loop_run(&s_loop, ev_loop_mode_default), 0);
+    ASSERT_EQ_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
 
     ASSERT_EQ_D32(s_flag_socket_close, 1);
     ev_loop_exit(&s_loop);

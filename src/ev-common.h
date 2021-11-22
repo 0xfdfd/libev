@@ -44,12 +44,15 @@ typedef enum ev_handle_flag
     EV_HANDLE_CLOSED        = 0x01 << 0x01,     /**< 2. Handle is closed */
     EV_HANDLE_ACTIVE        = 0x01 << 0x02,     /**< 4. Handle is busy */
 
-    /* Used by socket */
+    /* EV_ROLE_TCP */
     EV_TCP_LISTING          = 0x01 << 0x08,     /**< 256. This is a listen socket and is listening */
     EV_TCP_ACCEPTING        = 0x01 << 0x09,     /**< 512. This is a socket waiting for accept */
     EV_TCP_STREAMING        = 0x01 << 0x0A,     /**< 1024. This is a socket waiting for read or write */
     EV_TCP_CONNECTING       = 0x01 << 0x0B,     /**< 2048. This is a connect and waiting for connect complete */
     EV_TCP_BOUND            = 0x01 << 0x0C,     /**< 4096. Socket is bond to address */
+
+    /* EV_ROLE_PIPE */
+    EV_PIPE_STREAMING       = 0x01 << 0x08,     /**< 256. This pipe is initialized by #ev_stream_t */
 }ev_handle_flag_t;
 
 typedef enum ev_todo_flag
@@ -61,9 +64,10 @@ typedef enum ev_todo_flag
  * @brief Initialize a handle
  * @param[in] loop      The loop own the handle
  * @param[out] handle   A pointer to the structure
+ * @param[in] role      Who we are
  * @param[in] close_cb  A callback when handle is closed
  */
-API_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_close_cb close_cb);
+API_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t role, ev_close_cb close_cb);
 
 /**
  * @brief Close the handle

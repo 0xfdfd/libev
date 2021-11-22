@@ -21,7 +21,7 @@ TEST(timer, exit_in_callback)
     ASSERT_EQ_D32(ev_timer_init(&s_loop, &s_timer), 0);
     ASSERT_EQ_D32(ev_timer_start(&s_timer, _on_timer, 1, 1), 0);
 
-    ASSERT_EQ_D32(ev_loop_run(&s_loop, ev_loop_mode_default), 0);
+    ASSERT_EQ_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
 
     ASSERT_EQ_D32(flag_timer_exit, 1);
     ev_loop_exit(&s_loop);

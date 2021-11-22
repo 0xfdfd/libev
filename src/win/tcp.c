@@ -430,7 +430,7 @@ void ev__tcp_init(void)
 
 int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp)
 {
-    ev__handle_init(loop, &tcp->base, _ev_tcp_on_close);
+    ev__handle_init(loop, &tcp->base, EV_ROLE_TCP, _ev_tcp_on_close);
     tcp->close_cb = NULL;
     tcp->sock = EV_OS_SOCKET_INVALID;
 

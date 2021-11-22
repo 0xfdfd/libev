@@ -145,10 +145,6 @@ typedef struct ev_tcp_backend
 
 typedef struct ev_pipe_backend
 {
-    struct
-    {
-        unsigned                init_stream : 1;    /**< Is stream initialized */
-    }flags;
     ev_stream_t                 stream;             /**< Stream */
 }ev_pipe_backend_t;
 #define EV_PIPE_BACKEND_INIT    { { 0, 0 }, EV_STREAM_INIT }

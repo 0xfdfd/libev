@@ -19,7 +19,7 @@ TEST_FIXTURE_TEAREDOWN(tcp)
     ev_tcp_exit(&l_sock, NULL);
     ev_tcp_exit(&s_sock, NULL);
     ev_tcp_exit(&c_sock, NULL);
-    ASSERT_EQ_D32(ev_loop_run(&s_loop, ev_loop_mode_default), 0);
+    ASSERT_EQ_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
     ev_loop_exit(&s_loop);
 }
 
@@ -68,6 +68,6 @@ TEST_T(tcp, idle_client, 1000)
     int port = _idle_client_setup_once_server();
     _idle_client_connect(port);
 
-    ASSERT_EQ_D32(ev_loop_run(&s_loop, ev_loop_mode_default), 0);
-    ASSERT_EQ_D32(ev_loop_run(&s_loop, ev_loop_mode_default), 0);
+    ASSERT_EQ_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
 }

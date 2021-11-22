@@ -8,10 +8,10 @@ static void _ev_pipe_on_close(ev_handle_t* handle)
 {
     ev_pipe_t* pipe_handle = container_of(handle, ev_pipe_t, base);
 
-    if (pipe_handle->backend.flags.init_stream)
+    if (handle->data.flags & EV_PIPE_STREAMING)
     {
         ev__stream_exit(&pipe_handle->backend.stream);
-        pipe_handle->backend.flags.init_stream = 0;
+        handle->data.flags &= ~EV_PIPE_STREAMING;
     }
 
     if (pipe_handle->pipfd != EV_OS_HANDLE_INVALID)
@@ -63,10 +63,9 @@ int ev_pipe_make(ev_os_handle_t fds[2])
 
 int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe)
 {
-    ev__handle_init(loop, &pipe->base, _ev_pipe_on_close);
+    ev__handle_init(loop, &pipe->base, EV_ROLE_PIPE, _ev_pipe_on_close);
     pipe->close_cb = NULL;
     pipe->pipfd = EV_OS_HANDLE_INVALID;
-    memset(&pipe->backend.flags, 0, sizeof(pipe->backend.flags));
 
     return EV_SUCCESS;
 }
@@ -99,7 +98,7 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_handle_t handle)
     pipe->pipfd = handle;
     ev__stream_init(pipe->base.data.loop, &pipe->backend.stream, handle,
         _ev_pipe_on_write, _ev_pipe_on_read);
-    pipe->backend.flags.init_stream = 1;
+    pipe->base.data.flags |= EV_PIPE_STREAMING;
 
     return EV_SUCCESS;
 }

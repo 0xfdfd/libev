@@ -226,7 +226,7 @@ int ev_pipe_make(ev_os_handle_t fds[2])
 
 int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe)
 {
-    ev__handle_init(loop, &pipe->base, _ev_pipe_on_close_win);
+    ev__handle_init(loop, &pipe->base, EV_ROLE_PIPE, _ev_pipe_on_close_win);
     pipe->close_cb = NULL;
     pipe->pipfd = EV_OS_HANDLE_INVALID;
 

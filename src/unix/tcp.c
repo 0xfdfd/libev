@@ -258,7 +258,7 @@ static void _ev_tcp_setup_stream_once(ev_tcp_t* sock)
 
 int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* sock)
 {
-    ev__handle_init(loop, &sock->base, _ev_tcp_on_close);
+    ev__handle_init(loop, &sock->base, EV_ROLE_TCP, _ev_tcp_on_close);
     sock->close_cb = NULL;
     sock->sock = EV_OS_SOCKET_INVALID;
 

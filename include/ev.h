@@ -17,6 +17,9 @@ typedef enum ev_errno ev_errno_t;
 enum ev_loop_mode;
 typedef enum ev_loop_mode ev_loop_mode_t;
 
+enum ev_role;
+typedef enum ev_role ev_role_t;
+
 struct ev_handle;
 typedef struct ev_handle ev_handle_t;
 
@@ -191,9 +194,17 @@ enum ev_errno
 
 enum ev_loop_mode
 {
-    ev_loop_mode_default,
-    ev_loop_mode_once,
-    ev_loop_mode_nowait,
+    EV_LOOP_MODE_DEFAULT,
+    EV_LOOP_MODE_ONCE,
+    EV_LOOP_MODE_NOWAIT,
+};
+
+enum ev_role
+{
+    EV_ROLE_TIMER,
+    EV_ROLE_ASYNC,
+    EV_ROLE_TCP,
+    EV_ROLE_PIPE,
 };
 
 struct ev_loop
@@ -233,9 +244,12 @@ struct ev_handle
     struct
     {
         ev_loop_t*          loop;           /**< The event loop belong to */
+
+        ev_role_t           role;           /**< Who we are */
+        unsigned            flags;          /**< Handle flags */
+
         ev_close_cb         close_cb;       /**< Close callback */
         ev_todo_t           close_queue;    /**< Close queue token */
-        unsigned            flags;          /**< Handle flags */
     }data;
 };
 #define EV_HANDLE_INIT      { NULL, NULL, EV_TODO_INIT, 0 }
@@ -362,15 +376,15 @@ void ev_loop_stop(ev_loop_t* loop);
  * @brief This function runs the event loop.
  *
  * It will act differently depending on the specified mode:
- * + #ev_loop_mode_default: Runs the event loop until there are no more active
+ * + #EV_LOOP_MODE_DEFAULT: Runs the event loop until there are no more active
  *     and referenced handles or requests. Returns non-zero if #ev_loop_stop()
  *     was called and there are still active handles or requests. Returns zero
  *     in all other cases.
- * + #ev_loop_mode_once: Poll for i/o once. Note that this function blocks if
+ * + #EV_LOOP_MODE_ONCE: Poll for i/o once. Note that this function blocks if
  *     there are no pending callbacks. Returns zero when done (no active
  *     handles or requests left), or non-zero if more callbacks are expected
  *     (meaning you should run the event loop again sometime in the future).
- * + #ev_loop_mode_nowait: Poll for i/o once but don't block if there are no
+ * + #EV_LOOP_MODE_NOWAIT: Poll for i/o once but don't block if there are no
  *     pending callbacks. Returns zero if done (no active handles or requests
  *     left), or non-zero if more callbacks are expected (meaning you should
  *     run the event loop again sometime in the future).

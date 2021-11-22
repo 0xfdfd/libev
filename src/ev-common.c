@@ -157,15 +157,17 @@ void ev_loop_stop(ev_loop_t* loop)
     loop->mask.b_stop = 1;
 }
 
-void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_close_cb close_cb)
+void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t role, ev_close_cb close_cb)
 {
     assert(close_cb != NULL);
+    ev_list_push_back(&loop->handles.idle_handles, &handle->node);
+
     handle->data.loop = loop;
-    handle->data.close_cb = close_cb;
-    ev__todo_init(&handle->data.close_queue);
+    handle->data.role = role;
     handle->data.flags = 0;
 
-    ev_list_push_back(&loop->handles.idle_handles, &handle->node);
+    handle->data.close_cb = close_cb;
+    ev__todo_init(&handle->data.close_queue);
 }
 
 void ev__handle_exit(ev_handle_t* handle)
@@ -272,21 +274,21 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
         }
 
         /* Calculate timeout */
-        timeout = mode != ev_loop_mode_nowait ?
+        timeout = mode != EV_LOOP_MODE_NOWAIT ?
             _ev_backend_timeout(loop) : 0;
 
         ev__poll(loop, timeout);
 
         /**
-         * #ev_loop_mode_once implies forward progress: at least one callback must have
+         * #EV_LOOP_MODE_ONCE implies forward progress: at least one callback must have
          * been invoked when it returns. #_ev_poll_win() can return without doing
          * I/O (meaning: no callbacks) when its timeout expires - which means we
          * have pending timers that satisfy the forward progress constraint.
          *
-         * #ev_loop_mode_nowait makes no guarantees about progress so it's omitted from
+         * #EV_LOOP_MODE_NOWAIT makes no guarantees about progress so it's omitted from
          * the check.
          */
-        if (mode == ev_loop_mode_once)
+        if (mode == EV_LOOP_MODE_ONCE)
         {
             ev__loop_update_time(loop);
             _ev_loop_active_timer(loop);
@@ -295,7 +297,7 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
         /* Callback maybe added */
         _ev_loop_active_todo(loop);
 
-        if (mode != ev_loop_mode_default)
+        if (mode != EV_LOOP_MODE_DEFAULT)
         {
             break;
         }

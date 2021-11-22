@@ -19,7 +19,7 @@ TEST(async, async)
     ev_async_weakup(&s_async);
     ev_async_weakup(&s_async);
     ev_async_weakup(&s_async);
-    ASSERT_EQ_D32(ev_loop_run(&s_loop, ev_loop_mode_default), 0);
+    ASSERT_EQ_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
 
     ev_loop_exit(&s_loop);
 }

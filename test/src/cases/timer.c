@@ -27,7 +27,7 @@ TEST(timer, timer)
     ASSERT_EQ_D32(f_on_timer, 0);
     ASSERT_EQ_D32(f_on_timer_close, 0);
     
-    ASSERT_EQ_D32(ev_loop_run(&s_loop, ev_loop_mode_default), 0);
+    ASSERT_EQ_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
 
     ASSERT_EQ_D32(f_on_timer, 1);
     ASSERT_EQ_D32(f_on_timer_close, 0);
@@ -37,7 +37,7 @@ TEST(timer, timer)
     ASSERT_EQ_D32(f_on_timer, 1);
     ASSERT_EQ_D32(f_on_timer_close, 0);
 
-    ASSERT_EQ_D32(ev_loop_run(&s_loop, ev_loop_mode_default), 0);
+    ASSERT_EQ_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
 
     ASSERT_EQ_D32(f_on_timer, 1);
     ASSERT_EQ_D32(f_on_timer_close, 1);

@@ -28,7 +28,7 @@ static void _ev_async_on_close_win(ev_handle_t* handle)
 
 int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
 {
-    ev__handle_init(loop, &handle->base, _ev_async_on_close_win);
+    ev__handle_init(loop, &handle->base, EV_ROLE_ASYNC, _ev_async_on_close_win);
     handle->active_cb = cb;
 
     ev__iocp_init(&handle->backend.iocp, _ev_async_on_active, NULL);

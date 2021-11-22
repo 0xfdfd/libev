@@ -64,14 +64,14 @@ TEST(pipe, pipe)
     s_r_pack.buf = ev_buf_make(s_r_pack.buffer, sizeof(s_r_pack.buffer));
     ASSERT_EQ_D32(ev_pipe_read(&s_pipe_r, &s_r_pack.read_req, &s_r_pack.buf, 1, _on_read_callback), 0);
 
-    ASSERT_EQ_D32(ev_loop_run(&s_loop, ev_loop_mode_default), 0);
+    ASSERT_EQ_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
     {
         int ret = memcmp(s_w_pack.buffer, s_r_pack.buffer, sizeof(s_w_pack.buffer));
         ASSERT_EQ_D32(ret, 0);
     }
 
     ev_pipe_exit(&s_pipe_r, NULL);
-    ASSERT_EQ_D32(ev_loop_run(&s_loop, ev_loop_mode_default), 0);
+    ASSERT_EQ_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
 
     ev_loop_exit(&s_loop);
 }

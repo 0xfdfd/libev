@@ -124,11 +124,11 @@ TEST(tcp, push_server)
     ASSERT_EQ_D32(ev_tcp_connect(&s_client, (struct sockaddr*)&addr, sizeof(addr), _on_connect), 0,
         "%s", ev_strerror(_1));
 
-    ASSERT_EQ_D32(ev_loop_run(&s_loop, ev_loop_mode_default), 0);
+    ASSERT_EQ_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
 
     /* Close all socket */
     ev_tcp_exit(&s_client, _on_close_client_socket);
-    ASSERT_EQ_D32(ev_loop_run(&s_loop, ev_loop_mode_default), 0);
+    ASSERT_EQ_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
 
     ASSERT_EQ_D32(s_cnt_server_close, 1);
     ev_loop_exit(&s_loop);
