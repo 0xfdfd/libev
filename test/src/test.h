@@ -10,6 +10,7 @@ extern "C" {
 #else
 #	include <pthread.h>
 #endif
+#include <stdio.h>
 
 /**
  * @brief #TEST_F() with timeout

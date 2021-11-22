@@ -35,7 +35,7 @@ static int _ev_tcp_is_streaming_active(ev_tcp_t* sock)
 /**
  * @brief Deactive socket if no active event
  */
-static void _tcp_smart_deactive(ev_tcp_t* sock)
+static void _ev_tcp_smart_deactive(ev_tcp_t* sock)
 {
     int flag_have_events = 0;
     if (_ev_tcp_is_listening_active(sock))
@@ -53,14 +53,13 @@ static void _tcp_smart_deactive(ev_tcp_t* sock)
 
     if (!flag_have_events)
     {
-        ev__tcp_deactive(sock);
+        ev__handle_deactive(&sock->base);
     }
 }
 
 static void _ev_tcp_on_close(ev_handle_t* handle)
 {
     ev_tcp_t* sock = container_of(handle, ev_tcp_t, base);
-    _ev_tcp_close_fd(sock);
 
     if (sock->base.flags & EV_TCP_STREAMING)
     {
@@ -80,7 +79,7 @@ static void _ev_tcp_on_close(ev_handle_t* handle)
         sock->base.flags &= ~EV_TCP_CONNECTING;
     }
 
-    _tcp_smart_deactive(sock);
+    _ev_tcp_smart_deactive(sock);
     if (sock->close_cb != NULL)
     {
         sock->close_cb(sock);
@@ -112,7 +111,7 @@ fin:
 static void _on_tcp_write_done(ev_stream_t* stream, ev_write_t* req, size_t size, int stat)
 {
     ev_tcp_t* sock = container_of(stream, ev_tcp_t, backend.u.stream);
-    _tcp_smart_deactive(sock);
+    _ev_tcp_smart_deactive(sock);
 
     ev__write_exit(req);
     req->data.cb(req, size, stat);
@@ -121,7 +120,7 @@ static void _on_tcp_write_done(ev_stream_t* stream, ev_write_t* req, size_t size
 static void _on_tcp_read_done(ev_stream_t* stream, ev_read_t* req, size_t size, int stat)
 {
     ev_tcp_t* sock = container_of(stream, ev_tcp_t, backend.u.stream);
-    _tcp_smart_deactive(sock);
+    _ev_tcp_smart_deactive(sock);
 
     ev__read_exit(req);
     req->data.cb(req, size, stat);
@@ -144,7 +143,7 @@ static void _ev_tcp_on_accept(ev_tcp_t* acpt)
     } while (conn->sock == -1 && errno == EINTR);
 
     conn->base.flags &= ~EV_TCP_ACCEPTING;
-    ev__tcp_deactive(conn);
+    _ev_tcp_smart_deactive(conn);
 
     int ret = conn->sock >= 0 ? EV_SUCCESS : ev__translate_sys_error(errno);
     if (ret == EV_SUCCESS)
@@ -174,7 +173,7 @@ static void _ev_tcp_on_server_event(ev_io_t* io, unsigned evts)
     ev_tcp_t* sock = container_of(io, ev_tcp_t, backend.u.listen.io);
 
     _ev_tcp_on_accept(sock);
-    _tcp_smart_deactive(sock);
+    _ev_tcp_smart_deactive(sock);
 }
 
 static void _ev_tcp_on_client_event(ev_io_t* io, unsigned evts)
@@ -183,7 +182,7 @@ static void _ev_tcp_on_client_event(ev_io_t* io, unsigned evts)
     ev_tcp_t* sock = container_of(io, ev_tcp_t, backend.u.client.io);
 
     _ev_tcp_on_connect(sock);
-    _tcp_smart_deactive(sock);
+    _ev_tcp_smart_deactive(sock);
 }
 
 /**
@@ -266,20 +265,22 @@ int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* sock)
 
 void ev_tcp_exit(ev_tcp_t* sock, ev_tcp_close_cb cb)
 {
+    /* Stop all pending IO actions */
     if (sock->base.flags & EV_TCP_STREAMING)
     {
         ev__stream_abort(&sock->backend.u.stream, EV_IO_IN | EV_IO_OUT);
     }
-
     if (sock->base.flags & EV_TCP_LISTING)
     {
         ev__io_del(sock->base.loop, &sock->backend.u.listen.io, EV_IO_IN);
     }
-
     if (sock->base.flags & EV_TCP_CONNECTING)
     {
         ev__io_del(sock->base.loop, &sock->backend.u.client.io, EV_IO_OUT);
     }
+
+    /* Close fd */
+    _ev_tcp_close_fd(sock);
 
     sock->close_cb = cb;
     ev__handle_exit(&sock->base);
@@ -363,6 +364,7 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, 
         return ret;
     }
 
+    ev__handle_active(&sock->base);
     return ev__stream_write(&sock->backend.u.stream, req);
 }
 
@@ -381,6 +383,7 @@ int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev
         return ret;
     }
 
+    ev__handle_active(&sock->base);
     return ev__stream_read(&sock->backend.u.stream, req);
 }
 
