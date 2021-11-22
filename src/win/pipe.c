@@ -299,7 +299,7 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_handle_t handle)
         return ev__translate_sys_error(GetLastError());
     }
 
-    if (CreateIoCompletionPort(handle, pipe->base.loop->backend.iocp, (ULONG_PTR)pipe, 0) == NULL)
+    if (CreateIoCompletionPort(handle, pipe->base.data.loop->backend.iocp, (ULONG_PTR)pipe, 0) == NULL)
     {
         return ev__translate_sys_error(GetLastError());
     }

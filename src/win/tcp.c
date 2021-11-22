@@ -26,7 +26,7 @@ static void _ev_tcp_cleanup_accept(ev_tcp_t* sock)
         ev_list_erase(&lisn->backend.u.listen.a_queue_done, &sock->backend.u.accept.node);
     }
 
-    sock->base.flags &= ~EV_TCP_ACCEPTING;
+    sock->base.data.flags &= ~EV_TCP_ACCEPTING;
     ev__tcp_deactive(sock);
 
     sock->backend.u.accept.cb(lisn, sock, sock->backend.u.accept.stat);
@@ -39,7 +39,7 @@ static void _ev_tcp_cleanup_listen(ev_tcp_t* sock)
     {
         ev_tcp_t* conn = container_of(it, ev_tcp_t, backend.u.accept.node);
         _ev_tcp_close_socket(conn);
-        conn->base.flags &= ~EV_TCP_ACCEPTING;
+        conn->base.data.flags &= ~EV_TCP_ACCEPTING;
         ev__tcp_deactive(conn);
         conn->backend.u.accept.cb(sock, conn, EV_ECANCELED);
     }
@@ -47,7 +47,7 @@ static void _ev_tcp_cleanup_listen(ev_tcp_t* sock)
     {
         ev_tcp_t* conn = container_of(it, ev_tcp_t, backend.u.accept.node);
         _ev_tcp_close_socket(conn);
-        conn->base.flags &= ~EV_TCP_ACCEPTING;
+        conn->base.data.flags &= ~EV_TCP_ACCEPTING;
         ev__tcp_deactive(conn);
         conn->backend.u.accept.cb(sock, conn, conn->backend.u.accept.stat);
     }
@@ -95,24 +95,24 @@ static void _ev_tcp_on_close(ev_handle_t* handle)
         _ev_tcp_close_socket(sock);
     }
 
-    if (sock->base.flags & EV_TCP_LISTING)
+    if (sock->base.data.flags & EV_TCP_LISTING)
     {
-        sock->base.flags &= ~EV_TCP_LISTING;
+        sock->base.data.flags &= ~EV_TCP_LISTING;
         _ev_tcp_cleanup_listen(sock);
     }
-    if (sock->base.flags & EV_TCP_ACCEPTING)
+    if (sock->base.data.flags & EV_TCP_ACCEPTING)
     {
-        sock->base.flags &= ~EV_TCP_ACCEPTING;
+        sock->base.data.flags &= ~EV_TCP_ACCEPTING;
         _ev_tcp_cleanup_accept(sock);
     }
-    if (sock->base.flags & EV_TCP_STREAMING)
+    if (sock->base.data.flags & EV_TCP_STREAMING)
     {
-        sock->base.flags &= ~EV_TCP_STREAMING;
+        sock->base.data.flags &= ~EV_TCP_STREAMING;
         _ev_tcp_cleanup_stream(sock);
     }
-    if (sock->base.flags & EV_TCP_CONNECTING)
+    if (sock->base.data.flags & EV_TCP_CONNECTING)
     {
-        sock->base.flags &= ~EV_TCP_CONNECTING;
+        sock->base.data.flags &= ~EV_TCP_CONNECTING;
         _ev_tcp_cleanup_connect(sock);
     }
 
@@ -153,7 +153,7 @@ static int _ev_tcp_setup_sock(ev_tcp_t* sock, int af, int with_iocp)
         goto err;
     }
 
-    HANDLE iocp = sock->base.loop->backend.iocp;
+    HANDLE iocp = sock->base.data.loop->backend.iocp;
     if (with_iocp && CreateIoCompletionPort((HANDLE)os_sock, iocp, os_sock, 0) == 0)
     {
         goto err;
@@ -177,7 +177,7 @@ static void _ev_tcp_setup_listen_win(ev_tcp_t* sock)
 {
     ev_list_init(&sock->backend.u.listen.a_queue);
     ev_list_init(&sock->backend.u.listen.a_queue_done);
-    sock->base.flags |= EV_TCP_LISTING;
+    sock->base.data.flags |= EV_TCP_LISTING;
 }
 
 static void _ev_tcp_setup_accept_win(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
@@ -185,7 +185,7 @@ static void _ev_tcp_setup_accept_win(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_c
     conn->backend.u.accept.cb = cb;
     conn->backend.u.accept.listen = lisn;
     conn->backend.u.accept.stat = EV_EINPROGRESS;
-    conn->base.flags |= EV_TCP_ACCEPTING;
+    conn->base.data.flags |= EV_TCP_ACCEPTING;
 }
 
 static int _ev_tcp_setup_client_win(ev_tcp_t* sock, ev_connect_cb cb)
@@ -198,7 +198,7 @@ static int _ev_tcp_setup_client_win(ev_tcp_t* sock, ev_connect_cb cb)
 
     sock->backend.u.client.stat = EV_EINPROGRESS;
     sock->backend.u.client.cb = cb;
-    sock->base.flags |= EV_TCP_CONNECTING;
+    sock->base.data.flags |= EV_TCP_CONNECTING;
 
     return EV_SUCCESS;
 }
@@ -209,7 +209,7 @@ static void _ev_tcp_setup_stream_win(ev_tcp_t* sock)
     ev_list_init(&sock->backend.u.stream.r_queue_done);
     ev_list_init(&sock->backend.u.stream.w_queue);
     ev_list_init(&sock->backend.u.stream.w_queue_done);
-    sock->base.flags |= EV_TCP_STREAMING;
+    sock->base.data.flags |= EV_TCP_STREAMING;
 }
 
 static void _ev_tcp_deactive_stream(ev_tcp_t* sock)
@@ -219,7 +219,7 @@ static void _ev_tcp_deactive_stream(ev_tcp_t* sock)
         && ev_list_size(&sock->backend.u.stream.w_queue) == 0
         && ev_list_size(&sock->backend.u.stream.w_queue_done) == 0)
     {
-        sock->base.flags &= ~EV_TCP_STREAMING;
+        sock->base.data.flags &= ~EV_TCP_STREAMING;
         ev__tcp_deactive(sock);
     }
 }
@@ -256,7 +256,7 @@ static void _ev_tcp_process_accept(ev_tcp_t* conn)
     ev_tcp_t* lisn = conn->backend.u.accept.listen;
     ev_list_erase(&lisn->backend.u.listen.a_queue_done, &conn->backend.u.accept.node);
 
-    conn->base.flags &= ~EV_TCP_ACCEPTING;
+    conn->base.data.flags &= ~EV_TCP_ACCEPTING;
     ev__tcp_deactive(conn);
 
     conn->backend.u.accept.cb(lisn, conn, conn->backend.u.accept.stat);
@@ -274,7 +274,7 @@ static void _ev_tcp_process_connect(ev_tcp_t* sock)
         }
     }
 
-    sock->base.flags &= ~EV_TCP_CONNECTING;
+    sock->base.data.flags &= ~EV_TCP_CONNECTING;
     ev__tcp_deactive(sock);
 
     sock->backend.u.client.cb(sock, sock->backend.u.client.stat);
@@ -285,15 +285,15 @@ static void _ev_tcp_on_task_done(ev_todo_t* todo)
     ev_tcp_t* sock = container_of(todo, ev_tcp_t, backend.token);
     sock->backend.mask.todo_pending = 0;
 
-    if (sock->base.flags & EV_TCP_STREAMING)
+    if (sock->base.data.flags & EV_TCP_STREAMING)
     {
         _ev_tcp_process_stream(sock);
     }
-    if (sock->base.flags & EV_TCP_ACCEPTING)
+    if (sock->base.data.flags & EV_TCP_ACCEPTING)
     {
         _ev_tcp_process_accept(sock);
     }
-    if (sock->base.flags & EV_TCP_CONNECTING)
+    if (sock->base.data.flags & EV_TCP_CONNECTING)
     {
         _ev_tcp_process_connect(sock);
     }
@@ -306,7 +306,7 @@ static void _ev_tcp_submit_stream_todo(ev_tcp_t* sock)
         return;
     }
 
-    ev__todo(sock->base.loop, &sock->backend.token, _ev_tcp_on_task_done);
+    ev__todo(sock->base.data.loop, &sock->backend.token, _ev_tcp_on_task_done);
     sock->backend.mask.todo_pending = 1;
 }
 
@@ -398,11 +398,11 @@ static void _ev_tcp_on_iocp(ev_iocp_t* req, size_t transferred, void* arg)
     (void)req;
     ev_tcp_t* sock = arg;
 
-    if (sock->base.flags & EV_TCP_ACCEPTING)
+    if (sock->base.data.flags & EV_TCP_ACCEPTING)
     {
         _ev_tcp_on_accept_win(sock, transferred);
     }
-    if (sock->base.flags & EV_TCP_CONNECTING)
+    if (sock->base.data.flags & EV_TCP_CONNECTING)
     {
         _ev_tcp_on_connect_win(sock, transferred);
     }
@@ -465,7 +465,7 @@ int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen)
     int ret;
     int flag_new_socket = 0;
 
-    if (tcp->base.flags & EV_TCP_BOUND)
+    if (tcp->base.data.flags & EV_TCP_BOUND)
     {
         return EV_EALREADY;
     }
@@ -484,7 +484,7 @@ int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen)
         ret = ev__translate_sys_error(WSAGetLastError());
         goto err;
     }
-    tcp->base.flags |= EV_TCP_BOUND;
+    tcp->base.data.flags |= EV_TCP_BOUND;
 
     return EV_SUCCESS;
 
@@ -498,7 +498,7 @@ err:
 
 int ev_tcp_listen(ev_tcp_t* sock, int backlog)
 {
-    if (sock->base.flags & EV_TCP_LISTING)
+    if (sock->base.data.flags & EV_TCP_LISTING)
     {
         return EV_EADDRINUSE;
     }
@@ -518,7 +518,7 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
     int ret;
     int flag_new_sock = 0;
 
-    if (conn->base.flags & EV_TCP_ACCEPTING)
+    if (conn->base.data.flags & EV_TCP_ACCEPTING)
     {
         return EV_EINPROGRESS;
     }
@@ -550,11 +550,11 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
 
     if ((ret = WSAGetLastError()) != WSA_IO_PENDING)
     {
-        conn->base.flags &= ~EV_TCP_CONNECTING;
+        conn->base.data.flags &= ~EV_TCP_CONNECTING;
         ev__tcp_deactive(conn);
         return ev__translate_sys_error(ret);
     }
-    conn->base.flags |= EV_TCP_ACCEPTING;
+    conn->base.data.flags |= EV_TCP_ACCEPTING;
     ev_list_push_back(&lisn->backend.u.listen.a_queue, &conn->backend.u.accept.node);
 
     return EV_SUCCESS;
@@ -600,7 +600,7 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
     int ret;
     int flag_new_sock = 0;
 
-    if (sock->base.flags & EV_TCP_CONNECTING)
+    if (sock->base.data.flags & EV_TCP_CONNECTING)
     {
         return EV_EINPROGRESS;
     }
@@ -614,7 +614,7 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
         flag_new_sock = 1;
     }
 
-    if (!(sock->base.flags & EV_TCP_BOUND))
+    if (!(sock->base.data.flags & EV_TCP_BOUND))
     {
         if ((ret = _ev_tcp_bind_any_addr(sock, addr->sa_family)) != EV_SUCCESS)
         {
@@ -641,7 +641,7 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
     ret = WSAGetLastError();
     if (ret != WSA_IO_PENDING)
     {
-        sock->base.flags &= ~EV_TCP_CONNECTING;
+        sock->base.data.flags &= ~EV_TCP_CONNECTING;
         ev__tcp_deactive(sock);
         ret = ev__translate_sys_error(ret);
         goto err;
@@ -662,7 +662,7 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, 
     int ret;
     ENSURE_LAYOUT(ev_buf_t, WSABUF, size, len, data, buf);
 
-    if (!(sock->base.flags & EV_TCP_STREAMING))
+    if (!(sock->base.data.flags & EV_TCP_STREAMING))
     {
         _ev_tcp_setup_stream_win(sock);
     }
@@ -674,7 +674,7 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t bufs[], size_t nbuf, 
     }
 
     ev_list_push_back(&sock->backend.u.stream.w_queue, &req->node);
-    sock->base.flags |= EV_TCP_STREAMING;
+    sock->base.data.flags |= EV_TCP_STREAMING;
     ev__tcp_active(sock);
 
     ret = WSASend(sock->sock, (WSABUF*)bufs, (DWORD)nbuf,
@@ -702,7 +702,7 @@ int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev
     int ret;
     ENSURE_LAYOUT(ev_buf_t, WSABUF, size, len, data, buf);
 
-    if (!(sock->base.flags & EV_TCP_STREAMING))
+    if (!(sock->base.data.flags & EV_TCP_STREAMING))
     {
         _ev_tcp_setup_stream_win(sock);
     }
@@ -714,7 +714,7 @@ int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t bufs[], size_t nbuf, ev
     }
 
     ev_list_push_back(&sock->backend.u.stream.r_queue, &req->node);
-    sock->base.flags |= EV_TCP_STREAMING;
+    sock->base.data.flags |= EV_TCP_STREAMING;
     ev__tcp_active(sock);
 
     DWORD flags = 0;

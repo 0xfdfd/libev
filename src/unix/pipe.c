@@ -97,7 +97,8 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_handle_t handle)
     }
 
     pipe->pipfd = handle;
-    ev__stream_init(pipe->base.loop, &pipe->backend.stream, handle, _ev_pipe_on_write, _ev_pipe_on_read);
+    ev__stream_init(pipe->base.data.loop, &pipe->backend.stream, handle,
+        _ev_pipe_on_write, _ev_pipe_on_read);
     pipe->backend.flags.init_stream = 1;
 
     return EV_SUCCESS;

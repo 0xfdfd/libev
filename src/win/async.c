@@ -48,7 +48,7 @@ void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
 
 void ev_async_weakup(ev_async_t* handle)
 {
-    ev_loop_t* loop = handle->base.loop;
+    ev_loop_t* loop = handle->base.data.loop;
 
     PostQueuedCompletionStatus(loop->backend.iocp,
         0, 0, &handle->backend.iocp.overlapped);

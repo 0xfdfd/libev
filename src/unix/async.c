@@ -122,7 +122,7 @@ void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
     assert(!ev__handle_is_closing(&handle->base));
 
     handle->close_cb = close_cb;
-    ev__io_del(handle->base.loop, &handle->backend.io_read, EV_IO_IN);
+    ev__io_del(handle->base.data.loop, &handle->backend.io_read, EV_IO_IN);
     ev__handle_exit(&handle->base);
 }
 

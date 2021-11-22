@@ -28,7 +28,7 @@ void ev_timer_exit(ev_timer_t* handle, ev_timer_cb close_cb)
 
 int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_t repeat)
 {
-    ev_loop_t* loop = handle->base.loop;
+    ev_loop_t* loop = handle->base.data.loop;
     if (ev__handle_is_active(&handle->base))
     {
         ev_timer_stop(handle);
@@ -56,5 +56,5 @@ void ev_timer_stop(ev_timer_t* handle)
     }
 
     ev__handle_deactive(&handle->base);
-    ev_map_erase(&handle->base.loop->timer.heap, &handle->node);
+    ev_map_erase(&handle->base.data.loop->timer.heap, &handle->node);
 }

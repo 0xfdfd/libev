@@ -47,30 +47,6 @@ static int _ev_loop_alive(ev_loop_t* loop)
     return ev_list_size(&loop->handles.active_handles) || ev_list_size(&loop->todo.queue);
 }
 
-int ev_loop_init(ev_loop_t* loop)
-{
-    _ev_loop_init(loop);
-
-    int ret = ev__loop_init_backend(loop);
-    if (ret < 0)
-    {
-        return ret;
-    }
-
-    ev__loop_update_time(loop);
-    return EV_SUCCESS;
-}
-
-void ev_loop_exit(ev_loop_t* loop)
-{
-    ev__loop_exit_backend(loop);
-}
-
-void ev_loop_stop(ev_loop_t* loop)
-{
-    loop->mask.b_stop = 1;
-}
-
 static int _ev_loop_active_timer(ev_loop_t* loop)
 {
     int ret = 0;
@@ -148,22 +124,46 @@ static uint32_t _ev_backend_timeout(ev_loop_t* loop)
 
 static void _ev_to_close(ev_todo_t* todo)
 {
-    ev_handle_t* handle = container_of(todo, ev_handle_t, close_queue);
+    ev_handle_t* handle = container_of(todo, ev_handle_t, data.close_queue);
 
-    handle->flags &= ~EV_HANDLE_CLOSING;
-    handle->flags |= EV_HANDLE_CLOSED;
+    handle->data.flags &= ~EV_HANDLE_CLOSING;
+    handle->data.flags |= EV_HANDLE_CLOSED;
 
-    ev_list_erase(&handle->loop->handles.idle_handles, &handle->node);
-    handle->close_cb(handle);
+    ev_list_erase(&handle->data.loop->handles.idle_handles, &handle->node);
+    handle->data.close_cb(handle);
+}
+
+int ev_loop_init(ev_loop_t* loop)
+{
+    _ev_loop_init(loop);
+
+    int ret = ev__loop_init_backend(loop);
+    if (ret < 0)
+    {
+        return ret;
+    }
+
+    ev__loop_update_time(loop);
+    return EV_SUCCESS;
+}
+
+void ev_loop_exit(ev_loop_t* loop)
+{
+    ev__loop_exit_backend(loop);
+}
+
+void ev_loop_stop(ev_loop_t* loop)
+{
+    loop->mask.b_stop = 1;
 }
 
 void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_close_cb close_cb)
 {
     assert(close_cb != NULL);
-    handle->loop = loop;
-    handle->close_cb = close_cb;
-    ev__todo_init(&handle->close_queue);
-    handle->flags = 0;
+    handle->data.loop = loop;
+    handle->data.close_cb = close_cb;
+    ev__todo_init(&handle->data.close_queue);
+    handle->data.flags = 0;
 
     ev_list_push_back(&loop->handles.idle_handles, &handle->node);
 }
@@ -179,42 +179,44 @@ void ev__handle_exit(ev_handle_t* handle)
     /* Stop if necessary */
     ev__handle_deactive(handle);
 
-    handle->flags |= EV_HANDLE_CLOSING;
-    ev__todo(handle->loop, &handle->close_queue, _ev_to_close);
+    handle->data.flags |= EV_HANDLE_CLOSING;
+    ev__todo(handle->data.loop, &handle->data.close_queue, _ev_to_close);
 }
 
 void ev__handle_active(ev_handle_t* handle)
 {
-    if (handle->flags & EV_HANDLE_ACTIVE)
+    if (handle->data.flags & EV_HANDLE_ACTIVE)
     {
         return;
     }
+    handle->data.flags |= EV_HANDLE_ACTIVE;
 
-    handle->flags |= EV_HANDLE_ACTIVE;
-    ev_list_erase(&handle->loop->handles.idle_handles, &handle->node);
-    ev_list_push_back(&handle->loop->handles.active_handles, &handle->node);
+    ev_loop_t* loop = handle->data.loop;
+    ev_list_erase(&loop->handles.idle_handles, &handle->node);
+    ev_list_push_back(&loop->handles.active_handles, &handle->node);
 }
 
 void ev__handle_deactive(ev_handle_t* handle)
 {
-    if (!(handle->flags & EV_HANDLE_ACTIVE))
+    if (!(handle->data.flags & EV_HANDLE_ACTIVE))
     {
         return;
     }
+    handle->data.flags &= ~EV_HANDLE_ACTIVE;
 
-    handle->flags &= ~EV_HANDLE_ACTIVE;
-    ev_list_erase(&handle->loop->handles.active_handles, &handle->node);
-    ev_list_push_back(&handle->loop->handles.idle_handles, &handle->node);
+    ev_loop_t* loop = handle->data.loop;
+    ev_list_erase(&loop->handles.active_handles, &handle->node);
+    ev_list_push_back(&loop->handles.idle_handles, &handle->node);
 }
 
 int ev__handle_is_active(ev_handle_t* handle)
 {
-    return handle->flags & EV_HANDLE_ACTIVE;
+    return handle->data.flags & EV_HANDLE_ACTIVE;
 }
 
 int ev__handle_is_closing(ev_handle_t* handle)
 {
-    return handle->flags & (EV_HANDLE_CLOSING | EV_HANDLE_CLOSED);
+    return handle->data.flags & (EV_HANDLE_CLOSING | EV_HANDLE_CLOSED);
 }
 
 void ev__todo_init(ev_todo_t* token)
@@ -234,7 +236,7 @@ void ev__todo(ev_loop_t* loop, ev_todo_t* todo, ev_todo_cb cb)
 
 void ev__tcp_active(ev_tcp_t* sock)
 {
-    unsigned flags = sock->base.flags;
+    unsigned flags = sock->base.data.flags;
     if (flags & (EV_TCP_ACCEPTING | EV_TCP_STREAMING | EV_TCP_CONNECTING))
     {
         ev__handle_active(&sock->base);
@@ -243,7 +245,7 @@ void ev__tcp_active(ev_tcp_t* sock)
 
 void ev__tcp_deactive(ev_tcp_t* sock)
 {
-    unsigned flags = sock->base.flags;
+    unsigned flags = sock->base.data.flags;
     if (flags & (EV_TCP_ACCEPTING | EV_TCP_STREAMING | EV_TCP_CONNECTING))
     {
         return;

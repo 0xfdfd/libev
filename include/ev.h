@@ -229,10 +229,14 @@ struct ev_loop
 struct ev_handle
 {
     ev_list_node_t          node;           /**< Node for #ev_loop_t::handles */
-    ev_loop_t*              loop;           /**< The event loop belong to */
-    ev_close_cb             close_cb;       /**< Close callback */
-    ev_todo_t               close_queue;    /**< Close queue token */
-    unsigned                flags;          /**< Handle flags */
+
+    struct
+    {
+        ev_loop_t*          loop;           /**< The event loop belong to */
+        ev_close_cb         close_cb;       /**< Close callback */
+        ev_todo_t           close_queue;    /**< Close queue token */
+        unsigned            flags;          /**< Handle flags */
+    }data;
 };
 #define EV_HANDLE_INIT      { NULL, NULL, EV_TODO_INIT, 0 }
 
