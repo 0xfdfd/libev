@@ -180,7 +180,7 @@ fin:
     req->data.cb(req, read_size, stat);
 }
 
-int ev_pipe_make(ev_os_handle_t fds[2])
+int ev_pipe_make(ev_os_pipe_t fds[2])
 {
     static long volatile s_pipe_serial_no = 0;
 
@@ -225,7 +225,7 @@ int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe)
 {
     ev__handle_init(loop, &pipe->base, EV_ROLE_PIPE, _ev_pipe_on_close_win);
     pipe->close_cb = NULL;
-    pipe->pipfd = EV_OS_HANDLE_INVALID;
+    pipe->pipfd = EV_OS_PIPE_INVALID;
 
     ev_list_init(&pipe->backend.stream.r_queue);
     ev_list_init(&pipe->backend.stream.w_queue);
@@ -235,26 +235,26 @@ int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe)
 
 void ev_pipe_exit(ev_pipe_t* pipe, ev_pipe_cb cb)
 {
-    if (pipe->pipfd != EV_OS_HANDLE_INVALID)
+    if (pipe->pipfd != EV_OS_PIPE_INVALID)
     {
         _ev_pipe_cancel_all_r(pipe);
         _ev_pipe_cancel_all_w(pipe);
 
         CloseHandle(pipe->pipfd);
-        pipe->pipfd = EV_OS_HANDLE_INVALID;
+        pipe->pipfd = EV_OS_PIPE_INVALID;
     }
 
     pipe->close_cb = cb;
     ev__handle_exit(&pipe->base);
 }
 
-int ev_pipe_open(ev_pipe_t* pipe, ev_os_handle_t handle)
+int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
 {
-    if (pipe->pipfd != EV_OS_HANDLE_INVALID)
+    if (pipe->pipfd != EV_OS_PIPE_INVALID)
     {
         return EV_EEXIST;
     }
-    if (handle == EV_OS_HANDLE_INVALID)
+    if (handle == EV_OS_PIPE_INVALID)
     {
         return EV_EBADF;
     }

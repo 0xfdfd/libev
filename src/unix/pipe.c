@@ -14,10 +14,10 @@ static void _ev_pipe_on_close(ev_handle_t* handle)
         handle->data.flags &= ~EV_PIPE_STREAMING;
     }
 
-    if (pipe_handle->pipfd != EV_OS_HANDLE_INVALID)
+    if (pipe_handle->pipfd != EV_OS_PIPE_INVALID)
     {
         close(pipe_handle->pipfd);
-        pipe_handle->pipfd = EV_OS_HANDLE_INVALID;
+        pipe_handle->pipfd = EV_OS_PIPE_INVALID;
     }
 
     if (pipe_handle->close_cb != NULL)
@@ -49,7 +49,7 @@ static void _ev_pipe_on_read(ev_stream_t* stream, ev_read_t* req, size_t size, i
     req->data.cb(req, size, stat);
 }
 
-int ev_pipe_make(ev_os_handle_t fds[2])
+int ev_pipe_make(ev_os_pipe_t fds[2])
 {
     int flags = O_CLOEXEC | O_NONBLOCK;
 
@@ -64,7 +64,7 @@ int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe)
 {
     ev__handle_init(loop, &pipe->base, EV_ROLE_PIPE, _ev_pipe_on_close);
     pipe->close_cb = NULL;
-    pipe->pipfd = EV_OS_HANDLE_INVALID;
+    pipe->pipfd = EV_OS_PIPE_INVALID;
 
     return EV_SUCCESS;
 }
@@ -75,9 +75,9 @@ void ev_pipe_exit(ev_pipe_t* pipe, ev_pipe_cb cb)
     ev__handle_exit(&pipe->base);
 }
 
-int ev_pipe_open(ev_pipe_t* pipe, ev_os_handle_t handle)
+int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
 {
-    if (pipe->pipfd != EV_OS_HANDLE_INVALID)
+    if (pipe->pipfd != EV_OS_PIPE_INVALID)
     {
         return EV_EEXIST;
     }

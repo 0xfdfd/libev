@@ -54,7 +54,7 @@ TEST(pipe, pipe)
     ASSERT_EQ_D32(ev_pipe_init(&s_loop, &s_pipe_r), 0);
     ASSERT_EQ_D32(ev_pipe_init(&s_loop, &s_pipe_w), 0);
 
-    ev_os_handle_t fds[2];
+    ev_os_pipe_t fds[2];
     ASSERT_EQ_D32(ev_pipe_make(fds), 0);
     ASSERT_EQ_D32(ev_pipe_open(&s_pipe_r, fds[0]), 0);
     ASSERT_EQ_D32(ev_pipe_open(&s_pipe_w, fds[1]), 0);

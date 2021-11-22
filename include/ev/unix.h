@@ -10,8 +10,8 @@ extern "C" {
 #include <sys/epoll.h>
 #include "ev/map.h"
 
-typedef int ev_os_handle_t;
-#define EV_OS_HANDLE_INVALID    (-1)
+typedef int ev_os_pipe_t;
+#define EV_OS_PIPE_INVALID      (-1)
 
 typedef int ev_os_socket_t;
 #define EV_OS_SOCKET_INVALID    (-1)

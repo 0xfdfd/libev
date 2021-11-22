@@ -307,10 +307,10 @@ struct ev_pipe
     ev_handle_t             base;           /**< Base object */
     ev_pipe_cb              close_cb;       /**< User close callback */
 
-    ev_os_handle_t          pipfd;          /**< Pipe handle */
+    ev_os_pipe_t            pipfd;          /**< Pipe handle */
     ev_pipe_backend_t       backend;        /**< Platform related implementation */
 };
-#define EV_PIPE_INIT        { EV_HANDLE_INIT, NULL, EV_OS_HANDLE_INVALID, EV_PIPE_BACKEND_INIT }
+#define EV_PIPE_INIT        { EV_HANDLE_INIT, NULL, EV_OS_PIPE_INVALID, EV_PIPE_BACKEND_INIT }
 
 /**
  * @brief Write request
@@ -629,7 +629,7 @@ void ev_pipe_exit(ev_pipe_t* pipe, ev_pipe_cb cb);
  * @param[in] file      File descriptor or HANDLE
  * @return              #ev_errno_t
  */
-int ev_pipe_open(ev_pipe_t* pipe, ev_os_handle_t handle);
+int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle);
 
 /**
  * @brief Write data
@@ -658,7 +658,7 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_read_t* req);
  * @param[out] fds  fds[0] for read, fds[1] for write
  * @return          #ev_errno_t
  */
-int ev_pipe_make(ev_os_handle_t fds[2]);
+int ev_pipe_make(ev_os_pipe_t fds[2]);
 
 /**
  * @} EV_PIPE
