@@ -149,7 +149,7 @@ struct ev_todo
 
 enum ev_errno
 {
-    EV_SUCCESS          =  0,                   /**< Success */
+    EV_SUCCESS          =  0,                   /**< Operation success */
 
     /* POSIX compatible error code */
     EV_EPERM            = -1,                   /**< Operation not permitted (POSIX.1-2001) */
@@ -191,7 +191,7 @@ enum ev_errno
     EV_ENOTSOCK         = -128,                 /**< Not a socket (POSIX.1-2001) */
     EV_ENOTSUP          = -129,                 /**< Operation not supported (POSIX.1-2001) */
     EV_EPROTONOSUPPORT  = -135,                 /**< Protocol not supported (POSIX.1-2001) */
-    EV_ETIMEDOUT        = -138,                 /**< Connection timed out (POSIX.1-2001) */
+    EV_ETIMEDOUT        = -138,                 /**< Operation timed out (POSIX.1-2001) */
 
     /* Extend error code */
     EV_UNKNOWN          = -1001,                /**< Unknown error */

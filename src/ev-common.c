@@ -366,7 +366,7 @@ int ev_write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb)
 {
     if (nbuf > ARRAY_SIZE(req->data.bufs))
     {
-        return EV_EINVAL;
+        return EV_E2BIG;
     }
 
     req->data.cb = cb;
@@ -380,7 +380,7 @@ int ev_read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb)
 {
     if (nbuf > ARRAY_SIZE(req->data.bufs))
     {
-        return EV_EINVAL;
+        return EV_E2BIG;
     }
 
     req->data.cb = cb;
@@ -429,19 +429,56 @@ const char* ev_strerror(int err)
     switch (err)
     {
         /* Success */
-    case EV_SUCCESS:    return "Success";
+    case EV_SUCCESS:            return "Operation success";
+
         /* Posix compatible error code */
-    case EV_EACCES:     return "Permission denied";
-    case EV_EBUSY:      return "Device or resource busy";
-    case EV_EINVAL:     return "Invalid argument";
-    case EV_ENOSPC:     return "No space left on device";
-    case EV_EADDRINUSE: return "Address already in use";
-    case EV_EINPROGRESS:    return "Operation in progress";
+    case EV_EPERM:              return "Operation not permitted";
+    case EV_ENOENT:             return "No such file or directory";
+    case EV_EIO:                return "Host is unreachable";
+    case EV_E2BIG:              return "Argument list too long";
+    case EV_EBADF:              return "Bad file descriptor";
+    case EV_EAGAIN:             return "Resource temporarily unavailable";
+    case EV_ENOMEM:             return "EV_ENOMEM";
+    case EV_EACCES:             return "Permission denied";
+    case EV_EFAULT:             return "Bad address";
+    case EV_EBUSY:              return "Device or resource busy";
+    case EV_EEXIST:             return "File exists";
+    case EV_EXDEV:              return "Improper link";
+    case EV_EISDIR:             return "Is a directory";
+    case EV_EINVAL:             return "Invalid argument";
+    case EV_EMFILE:             return "Too many open files";
+    case EV_ENOSPC:             return "No space left on device";
+    case EV_EROFS:              return "Read-only filesystem";
+    case EV_EPIPE:              return "Broken pipe";
+    case EV_ENAMETOOLONG:       return "Filename too long";
+    case EV_ENOTEMPTY:          return "Directory not empty";
+    case EV_EADDRINUSE:         return "Address already in use";
+    case EV_EADDRNOTAVAIL:      return "Address not available";
+    case EV_EAFNOSUPPORT:       return "Address family not supported";
+    case EV_EALREADY:           return "Connection already in progress";
+    case EV_ECANCELED:          return "Operation canceled";
+    case EV_ECONNABORTED:       return "Connection aborted";
+    case EV_ECONNREFUSED:       return "Connection refused";
+    case EV_ECONNRESET:         return "Connection reset";
+    case EV_EHOSTUNREACH:       return "Host is unreachable";
+    case EV_EINPROGRESS:        return "Operation in progress";
+    case EV_EISCONN:            return "Socket is connected";
+    case EV_ELOOP:              return "Too many levels of symbolic links";
+    case EV_EMSGSIZE:           return "Message too long";
+    case EV_ENETUNREACH:        return "Network unreachable";
+    case EV_ENOBUFS:            return "No buffer space available";
+    case EV_ENOTCONN:           return "The socket is not connected";
+    case EV_ENOTSOCK:           return "Not a socket";
+    case EV_ENOTSUP:            return "Operation not supported";
+    case EV_EPROTONOSUPPORT:    return "Protocol not supported";
+    case EV_ETIMEDOUT:          return "Operation timed out";
+
         /* Extend error code */
-    case EV_EOF:        return "End of file";
-    case EV_UNKNOWN:
-    default:
-        break;
+    case EV_EOF:                return "End of file";
+    case EV_UNKNOWN:            return "Unknown error";
+
+        /* Unknown error */
+    default:                    break;
     }
-    return "Unknown";
+    return "Unknown error";
 }
