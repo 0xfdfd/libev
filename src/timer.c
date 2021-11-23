@@ -41,7 +41,7 @@ int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_
 
     if (ev_map_insert(&loop->timer.heap, &handle->node) < 0)
     {
-        ABORT();
+        BREAK_ABORT();
     }
     ev__handle_active(&handle->base);
 

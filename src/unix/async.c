@@ -30,7 +30,7 @@ static void _ev_async_clear_recv_buffer(ev_io_t* io)
             continue;
         }
 
-        ABORT();
+        BREAK_ABORT();
     }
 }
 
@@ -136,6 +136,6 @@ void ev_async_weakup(ev_async_t* handle)
 
     if (r == -1 && errno != EAGAIN && errno != EWOULDBLOCK)
     {
-        ABORT();
+        BREAK_ABORT();
     }
 }

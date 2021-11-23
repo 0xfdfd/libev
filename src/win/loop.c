@@ -37,7 +37,7 @@ static void _ev_time_init_win(void)
     }
     else
     {
-        ABORT();
+        BREAK_ABORT();
     }
 }
 
@@ -50,7 +50,7 @@ static uint64_t _ev_hrtime_win(unsigned int scale)
     assert(scale != 0);
     if (!QueryPerformanceCounter(&counter))
     {
-        ABORT();
+        BREAK_ABORT();
     }
     assert(counter.QuadPart != 0);
 
@@ -218,7 +218,7 @@ void ev__poll(ev_loop_t* loop, uint32_t timeout)
         /* Cannot handle any other error */
         if (GetLastError() != WAIT_TIMEOUT)
         {
-            ABORT();
+            BREAK_ABORT();
         }
 
         if (timeout == 0)

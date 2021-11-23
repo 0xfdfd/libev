@@ -131,7 +131,7 @@ static void _ev_tcp_on_accept(ev_tcp_t* acpt)
     ev_list_node_t* it = ev_list_pop_front(&acpt->backend.u.listen.accept_queue);
     if (it == NULL)
     {
-        ABORT();
+        BREAK_ABORT();
     }
 
     ev_tcp_t* conn = container_of(it, ev_tcp_t, backend.u.accept.accept_node);

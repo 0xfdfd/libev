@@ -183,7 +183,7 @@ void ev__handle_exit(ev_handle_t* handle)
 {
     if (ev__handle_is_closing(handle))
     {
-        ABORT();
+        BREAK_ABORT();
         return;
     }
 

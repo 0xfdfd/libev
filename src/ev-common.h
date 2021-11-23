@@ -22,12 +22,24 @@ extern "C" {
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
-#if defined(_WIN32)
-#   define ABORT()      __debugbreak()
+#if defined(_MSC_VER)
+#   define BREAK_ABORT()        __debugbreak()
 #elif (defined(__clang__) || defined(__GNUC__)) && (defined(__x86_64__) || defined(__i386__))
-#   define ABORT()      asm("int3")
+#   define BREAK_ABORT()        __asm__ volatile("int $0x03")
+#elif (defined(__clang__) || defined(__GNUC__)) && defined(__thumb__)
+#   define BREAK_ABORT()        __asm__ volatile(".inst 0xde01")
+#elif (defined(__clang__) || defined(__GNUC__)) && defined(__arm__) && !defined(__thumb__)
+#   define BREAK_ABORT()        __asm__ volatile(".inst 0xe7f001f0")
+#elif (defined(__clang__) || defined(__GNUC__)) && defined(__aarch64__) && defined(__APPLE__)
+#   define BREAK_ABORT()        __builtin_debugtrap()
+#elif (defined(__clang__) || defined(__GNUC__)) && defined(__aarch64__)
+#   define BREAK_ABORT()        __asm__ volatile(".inst 0xd4200000")
+#elif (defined(__clang__) || defined(__GNUC__)) && defined(__powerpc__)
+#   define BREAK_ABORT()        __asm__ volatile(".4byte 0x7d821008")
+#elif (defined(__clang__) || defined(__GNUC__)) && defined(__riscv)
+#   define BREAK_ABORT()        __asm__ volatile(".4byte 0x00100073")
 #else
-#   define ABORT()      *(volatile int*)NULL = 1
+#   define BREAK_ABORT()        *(volatile int*)NULL = 1
 #endif
 
 #define ENSURE_LAYOUT(TYPE_A, TYPE_B, FIELD_A_1, FIELD_B_1, FIELD_A_2, FIELD_B_2)   \

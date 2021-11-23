@@ -12,7 +12,8 @@ extern "C" {
 
 typedef struct ev_loop_unix_ctx
 {
-    clockid_t hwtime_clock_id;
+    clockid_t   hwtime_clock_id;    /**< Clock id */
+    int         iovmax;             /**< The limits instead of readv/writev */
 }ev_loop_unix_ctx_t;
 
 extern ev_loop_unix_ctx_t g_ev_loop_unix_ctx;

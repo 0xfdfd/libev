@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <limits.h>
 #include "ev-platform.h"
 #include "ev.h"
 #include "loop.h"
@@ -13,22 +14,24 @@ typedef enum stream_flags
     STREAM_REG_IO = 1,
 }stream_flags_t;
 
-ev_loop_unix_ctx_t g_ev_loop_unix_ctx = {
-    CLOCK_MONOTONIC
-};
+ev_loop_unix_ctx_t g_ev_loop_unix_ctx;
 
 static void _ev_init_hwtime(void)
 {
     struct timespec t;
     if (clock_getres(CLOCK_MONOTONIC_COARSE, &t) != 0)
     {
-        return;
+        goto err;
     }
     if (t.tv_nsec > 1 * 1000 * 1000)
     {
-        return;
+        goto err;
     }
     g_ev_loop_unix_ctx.hwtime_clock_id = CLOCK_MONOTONIC_COARSE;
+    return;
+
+err:
+    g_ev_loop_unix_ctx.hwtime_clock_id = CLOCK_MONOTONIC;
 }
 
 static int _ev_cmp_io_unix(const ev_map_node_t* key1, const ev_map_node_t* key2, void* arg)
@@ -68,35 +71,37 @@ static int _ev_poll_once(ev_loop_t* loop, struct epoll_event* events, int maxeve
 
 static int _ev_stream_do_write_once(ev_stream_t* stream, ev_write_t* req)
 {
-    ssize_t w;
-    struct iovec* iov;
-    int iovcnt;
+    struct iovec* iov = (struct iovec*)(req->data.bufs + req->backend.idx);
+    int iovcnt = req->data.nbuf - req->backend.idx;
+    if (iovcnt > g_ev_loop_unix_ctx.iovmax)
+    {
+        iovcnt = g_ev_loop_unix_ctx.iovmax;
+    }
 
+    ssize_t write_size;
     do
     {
-        iov = (struct iovec*)(req->data.bufs + req->backend.idx);
-        iovcnt = req->data.nbuf - req->backend.idx;
-        w = writev(stream->io.data.fd, iov, iovcnt);
-    } while (w == -1 && errno == EINTR);
+        write_size = writev(stream->io.data.fd, iov, iovcnt);
+    } while (write_size == -1 && errno == EINTR);
 
-    if (w < 0)
+    if (write_size < 0)
     {
         return (errno == EAGAIN || errno == EWOULDBLOCK) ?
             EV_EAGAIN : ev__translate_sys_error(errno);
     }
 
-    req->backend.len += w;
-    while (w > 0)
+    req->backend.len += write_size;
+    while (write_size > 0)
     {
-        if ((size_t)w < req->data.bufs[req->backend.idx].size)
+        if ((size_t)write_size < req->data.bufs[req->backend.idx].size)
         {
             req->data.bufs[req->backend.idx].data =
-                (void*)((uint8_t*)(req->data.bufs[req->backend.idx].data) + w);
-            req->data.bufs[req->backend.idx].size -= w;
+                (void*)((uint8_t*)(req->data.bufs[req->backend.idx].data) + write_size);
+            req->data.bufs[req->backend.idx].size -= write_size;
             break;
         }
 
-        w -= req->data.bufs[req->backend.idx].size;
+        write_size -= req->data.bufs[req->backend.idx].size;
         req->backend.idx++;
     }
 
@@ -140,24 +145,30 @@ err:
 
 static int _ev_stream_do_read_once(ev_stream_t* stream, ev_read_t* req, size_t* size)
 {
-    ssize_t r;
+    int iovcnt = req->data.nbuf;
+    if (iovcnt > g_ev_loop_unix_ctx.iovmax)
+    {
+        iovcnt = g_ev_loop_unix_ctx.iovmax;
+    }
+
+    ssize_t read_size;
     do
     {
-        r = readv(stream->io.data.fd, (struct iovec*)req->data.bufs, req->data.nbuf);
-    } while (r == -1 && errno == EINTR);
+        read_size = readv(stream->io.data.fd, (struct iovec*)req->data.bufs, iovcnt);
+    } while (read_size == -1 && errno == EINTR);
 
-    if (r == 0)
+    if (read_size == 0)
     {/* Peer close */
         return EV_EOF;
     }
 
-    if (r < 0)
+    if (read_size < 0)
     {
         return (errno == EAGAIN || errno == EWOULDBLOCK) ?
             EV_EAGAIN : ev__translate_sys_error(errno);
     }
 
-    *size = r;
+    *size = read_size;
     return EV_SUCCESS;
 }
 
@@ -232,9 +243,27 @@ static void _ev_stream_on_io(ev_io_t* io, unsigned evts)
     }
 }
 
+static void _ev_init_iovmax(void)
+{
+#if defined(IOV_MAX)
+    g_ev_loop_unix_ctx.iovmax = IOV_MAX;
+#elif defined(__IOV_MAX)
+    g_ev_loop_unix_ctx.iovmax = __IOV_MAX;
+#elif defined(_SC_IOV_MAX)
+    g_ev_loop_unix_ctx.iovmax = sysconf(_SC_IOV_MAX);
+    if (g_ev_loop_unix_ctx.iovmax == -1)
+    {
+        g_ev_loop_unix_ctx.iovmax = 1;
+    }
+#else
+    g_ev_loop_unix_ctx.iovmax = EV_IOV_MAX;
+#endif
+}
+
 static void _ev_init_once_unix(void)
 {
     _ev_init_hwtime();
+    _ev_init_iovmax();
 }
 
 void ev__loop_update_time(ev_loop_t* loop)
@@ -242,7 +271,7 @@ void ev__loop_update_time(ev_loop_t* loop)
     struct timespec t;
     if (clock_gettime(g_ev_loop_unix_ctx.hwtime_clock_id, &t) != 0)
     {
-        return;
+        BREAK_ABORT();
     }
 
     loop->hwtime = t.tv_sec * 1000 + t.tv_nsec / 1000 / 1000;
@@ -459,7 +488,7 @@ void ev__io_add(ev_loop_t* loop, ev_io_t* io, unsigned evts)
 
     if (epoll_ctl(loop->backend.pollfd, op, io->data.fd, &poll_event) != 0)
     {
-        ABORT();
+        BREAK_ABORT();
     }
 
     io->data.c_events = io->data.n_events;
@@ -486,7 +515,7 @@ void ev__io_del(ev_loop_t* loop, ev_io_t* io, unsigned evts)
 
     if (epoll_ctl(loop->backend.pollfd, op, io->data.fd, &poll_event) != 0)
     {
-        ABORT();
+        BREAK_ABORT();
     }
 
     io->data.c_events = io->data.n_events;
@@ -542,7 +571,7 @@ void ev__poll(ev_loop_t* loop, uint32_t timeout)
         /* If errno is not EINTR, something must wrong in the program */
         if (errno != EINTR)
         {
-            ABORT();
+            BREAK_ABORT();
         }
 
         ev__loop_update_time(loop);
