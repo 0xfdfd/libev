@@ -14,6 +14,8 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
+
 /**
  * @defgroup EV_UTILS_LIST List
  * @ingroup EV_UTILS

@@ -30,11 +30,11 @@ static int _ev_cmp_timer(const ev_map_node_t* key1, const ev_map_node_t* key2, v
 static void _ev_loop_init(ev_loop_t* loop)
 {
     loop->hwtime = 0;
-    ev_list_init(&loop->handles.idle_handles);
-    ev_list_init(&loop->handles.active_handles);
+    ev_list_init(&loop->handles.idle_list);
+    ev_list_init(&loop->handles.active_list);
 
     ev_map_init(&loop->timer.heap, _ev_cmp_timer, NULL);
-    ev_list_init(&loop->todo.queue);
+    ev_list_init(&loop->todo.pending);
 
     memset(&loop->mask, 0, sizeof(loop->mask));
 }
@@ -44,7 +44,8 @@ static void _ev_loop_init(ev_loop_t* loop)
  */
 static int _ev_loop_alive(ev_loop_t* loop)
 {
-    return ev_list_size(&loop->handles.active_handles) || ev_list_size(&loop->todo.queue);
+    return ev_list_size(&loop->handles.active_list)
+        || ev_list_size(&loop->todo.pending);
 }
 
 static int _ev_loop_active_timer(ev_loop_t* loop)
@@ -75,7 +76,7 @@ static int _ev_loop_active_timer(ev_loop_t* loop)
 static void _ev_loop_active_todo(ev_loop_t* loop)
 {
     ev_list_node_t* it;
-    while ((it = ev_list_pop_front(&loop->todo.queue)) != NULL)
+    while ((it = ev_list_pop_front(&loop->todo.pending)) != NULL)
     {
         ev_todo_t* todo = container_of(it, ev_todo_t, node);
         todo->mask.queued = 0;
@@ -108,7 +109,7 @@ static uint32_t _ev_backend_timeout(ev_loop_t* loop)
         return 0;
     }
 
-    if (ev_list_size(&loop->todo.queue) != 0)
+    if (ev_list_size(&loop->todo.pending) != 0)
     {
         return 0;
     }
@@ -119,7 +120,7 @@ static uint32_t _ev_backend_timeout(ev_loop_t* loop)
     }
 
     /* If no active handle, set timeout to max value */
-    return ev_list_size(&loop->handles.active_handles) ? 0 : (uint32_t)-1;
+    return ev_list_size(&loop->handles.active_list) ? 0 : (uint32_t)-1;
 }
 
 static void _ev_to_close(ev_todo_t* todo)
@@ -129,7 +130,7 @@ static void _ev_to_close(ev_todo_t* todo)
     handle->data.flags &= ~EV_HANDLE_CLOSING;
     handle->data.flags |= EV_HANDLE_CLOSED;
 
-    ev_list_erase(&handle->data.loop->handles.idle_handles, &handle->node);
+    ev_list_erase(&handle->data.loop->handles.idle_list, &handle->node);
     handle->data.close_cb(handle);
 }
 
@@ -147,9 +148,17 @@ int ev_loop_init(ev_loop_t* loop)
     return EV_SUCCESS;
 }
 
-void ev_loop_exit(ev_loop_t* loop)
+int ev_loop_exit(ev_loop_t* loop)
 {
+    if (ev_list_size(&loop->handles.active_list)
+        || ev_list_size(&loop->todo.pending)
+        || ev_map_size(&loop->timer.heap))
+    {
+        return EV_EBUSY;
+    }
+
     ev__loop_exit_backend(loop);
+    return EV_SUCCESS;
 }
 
 void ev_loop_stop(ev_loop_t* loop)
@@ -160,7 +169,7 @@ void ev_loop_stop(ev_loop_t* loop)
 void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t role, ev_close_cb close_cb)
 {
     assert(close_cb != NULL);
-    ev_list_push_back(&loop->handles.idle_handles, &handle->node);
+    ev_list_push_back(&loop->handles.idle_list, &handle->node);
 
     handle->data.loop = loop;
     handle->data.role = role;
@@ -182,7 +191,7 @@ void ev__handle_exit(ev_handle_t* handle)
     ev__handle_deactive(handle);
 
     handle->data.flags |= EV_HANDLE_CLOSING;
-    ev__todo(handle->data.loop, &handle->data.close_queue, _ev_to_close);
+    ev__todo_queue(handle->data.loop, &handle->data.close_queue, _ev_to_close);
 }
 
 void ev__handle_active(ev_handle_t* handle)
@@ -194,8 +203,8 @@ void ev__handle_active(ev_handle_t* handle)
     handle->data.flags |= EV_HANDLE_ACTIVE;
 
     ev_loop_t* loop = handle->data.loop;
-    ev_list_erase(&loop->handles.idle_handles, &handle->node);
-    ev_list_push_back(&loop->handles.active_handles, &handle->node);
+    ev_list_erase(&loop->handles.idle_list, &handle->node);
+    ev_list_push_back(&loop->handles.active_list, &handle->node);
 }
 
 void ev__handle_deactive(ev_handle_t* handle)
@@ -207,8 +216,8 @@ void ev__handle_deactive(ev_handle_t* handle)
     handle->data.flags &= ~EV_HANDLE_ACTIVE;
 
     ev_loop_t* loop = handle->data.loop;
-    ev_list_erase(&loop->handles.active_handles, &handle->node);
-    ev_list_push_back(&loop->handles.idle_handles, &handle->node);
+    ev_list_erase(&loop->handles.active_list, &handle->node);
+    ev_list_push_back(&loop->handles.idle_list, &handle->node);
 }
 
 int ev__handle_is_active(ev_handle_t* handle)
@@ -227,13 +236,22 @@ void ev__todo_init(ev_todo_t* token)
     token->cb = NULL;
 }
 
-void ev__todo(ev_loop_t* loop, ev_todo_t* todo, ev_todo_cb cb)
+void ev__todo_queue(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb)
 {
-    assert(!todo->mask.queued);
+    assert(!token->mask.queued);
 
-    todo->mask.queued = 1;
-    todo->cb = cb;
-    ev_list_push_back(&loop->todo.queue, &todo->node);
+    ev_list_push_back(&loop->todo.pending, &token->node);
+    token->mask.queued = 1;
+    token->cb = cb;
+}
+
+void ev__todo_cancel(ev_loop_t* loop, ev_todo_t* token)
+{
+    assert(!token->mask.queued);
+
+    ev_list_erase(&loop->todo.pending, &token->node);
+    token->mask.queued = 0;
+    token->cb = NULL;
 }
 
 int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)

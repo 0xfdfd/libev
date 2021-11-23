@@ -149,166 +149,197 @@ struct ev_todo
 
 enum ev_errno
 {
-    EV_SUCCESS          =  0,           /**< Success */
+    EV_SUCCESS          =  0,                   /**< Success */
 
     /* POSIX compatible error code */
-    EV_EPERM            = -1,           /**< Operation not permitted (POSIX.1-2001) */
-    EV_ENOENT           = -2,           /**< No such file or directory (POSIX.1-2001) */
-    EV_EIO              = -5,           /**< Host is unreachable (POSIX.1-2001) */
-    EV_E2BIG            = -7,           /**< Argument list too long (POSIX.1-2001) */
-    EV_EBADF            = -9,           /**< Bad file descriptor (POSIX.1-2001) */
-    EV_EAGAIN           = -11,          /**< Resource temporarily unavailable (POSIX.1-2001) */
-    EV_ENOMEM           = -12,          /**< Not enough space/cannot allocate memory (POSIX.1-2001) */
-    EV_EACCES           = -13,          /**< Permission denied (POSIX.1-2001) */
-    EV_EFAULT           = -14,          /**< Bad address (POSIX.1-2001) */
-    EV_EBUSY            = -16,          /**< Device or resource busy (POSIX.1-2001) */
-    EV_EEXIST           = -17,          /**< File exists (POSIX.1-2001) */
-    EV_EXDEV            = -18,          /**< Improper link (POSIX.1-2001) */
-    EV_EISDIR           = -21,          /**< Is a directory (POSIX.1-2001) */
-    EV_EINVAL           = -22,          /**< Invalid argument (POSIX.1-2001) */
-    EV_EMFILE           = -24,          /**< Too many open files (POSIX.1-2001) */
-    EV_ENOSPC           = -28,          /**< No space left on device (POSIX.1-2001) */
-    EV_EROFS            = -30,          /**< Read-only filesystem (POSIX.1-2001) */
-    EV_EPIPE            = -32,          /**< Broken pipe (POSIX.1-2001) */
-    EV_ENAMETOOLONG     = -38,          /**< Filename too long (POSIX.1-2001) */
-    EV_ENOTEMPTY        = -41,          /**< Directory not empty (POSIX.1-2001) */
-    EV_EADDRINUSE       = -100,         /**< Address already in use (POSIX.1-2001) */
-    EV_EADDRNOTAVAIL    = -101,         /**< Address not available (POSIX.1-2001) */
-    EV_EAFNOSUPPORT     = -102,         /**< Address family not supported (POSIX.1-2001) */
-    EV_EALREADY         = -103,         /**< Connection already in progress (POSIX.1-2001) */
-    EV_ECANCELED        = -105,         /**< Operation canceled (POSIX.1-2001) */
-    EV_ECONNABORTED     = -106,         /**< Connection aborted (POSIX.1-2001) */
-    EV_ECONNREFUSED     = -107,         /**< Connection refused (POSIX.1-2001) */
-    EV_ECONNRESET       = -108,         /**< Connection reset (POSIX.1-2001) */
-    EV_EHOSTUNREACH     = -110,         /**< Host is unreachable (POSIX.1-2001) */
-    EV_EINPROGRESS      = -112,         /**< Operation in progress (POSIX.1-2001) */
-    EV_EISCONN          = -113,         /**< Socket is connected (POSIX.1-2001) */
-    EV_ELOOP            = -114,         /**< Too many levels of symbolic links (POSIX.1-2001) */
-    EV_EMSGSIZE         = -115,         /**< Message too long (POSIX.1-2001) */
-    EV_ENETUNREACH      = -118,         /**< Network unreachable (POSIX.1-2001) */
-    EV_ENOBUFS          = -119,         /**< No buffer space available (POSIX.1 (XSI STREAMS option)) */
-    EV_ENOTCONN         = -126,         /**< The socket is not connected (POSIX.1-2001) */
-    EV_ENOTSOCK         = -128,         /**< Not a socket (POSIX.1-2001) */
-    EV_ENOTSUP          = -129,         /**< Operation not supported (POSIX.1-2001) */
-    EV_EPROTONOSUPPORT  = -135,         /**< Protocol not supported (POSIX.1-2001) */
-    EV_ETIMEDOUT        = -138,         /**< Connection timed out (POSIX.1-2001) */
+    EV_EPERM            = -1,                   /**< Operation not permitted (POSIX.1-2001) */
+    EV_ENOENT           = -2,                   /**< No such file or directory (POSIX.1-2001) */
+    EV_EIO              = -5,                   /**< Host is unreachable (POSIX.1-2001) */
+    EV_E2BIG            = -7,                   /**< Argument list too long (POSIX.1-2001) */
+    EV_EBADF            = -9,                   /**< Bad file descriptor (POSIX.1-2001) */
+    EV_EAGAIN           = -11,                  /**< Resource temporarily unavailable (POSIX.1-2001) */
+    EV_ENOMEM           = -12,                  /**< Not enough space/cannot allocate memory (POSIX.1-2001) */
+    EV_EACCES           = -13,                  /**< Permission denied (POSIX.1-2001) */
+    EV_EFAULT           = -14,                  /**< Bad address (POSIX.1-2001) */
+    EV_EBUSY            = -16,                  /**< Device or resource busy (POSIX.1-2001) */
+    EV_EEXIST           = -17,                  /**< File exists (POSIX.1-2001) */
+    EV_EXDEV            = -18,                  /**< Improper link (POSIX.1-2001) */
+    EV_EISDIR           = -21,                  /**< Is a directory (POSIX.1-2001) */
+    EV_EINVAL           = -22,                  /**< Invalid argument (POSIX.1-2001) */
+    EV_EMFILE           = -24,                  /**< Too many open files (POSIX.1-2001) */
+    EV_ENOSPC           = -28,                  /**< No space left on device (POSIX.1-2001) */
+    EV_EROFS            = -30,                  /**< Read-only filesystem (POSIX.1-2001) */
+    EV_EPIPE            = -32,                  /**< Broken pipe (POSIX.1-2001) */
+    EV_ENAMETOOLONG     = -38,                  /**< Filename too long (POSIX.1-2001) */
+    EV_ENOTEMPTY        = -41,                  /**< Directory not empty (POSIX.1-2001) */
+    EV_EADDRINUSE       = -100,                 /**< Address already in use (POSIX.1-2001) */
+    EV_EADDRNOTAVAIL    = -101,                 /**< Address not available (POSIX.1-2001) */
+    EV_EAFNOSUPPORT     = -102,                 /**< Address family not supported (POSIX.1-2001) */
+    EV_EALREADY         = -103,                 /**< Connection already in progress (POSIX.1-2001) */
+    EV_ECANCELED        = -105,                 /**< Operation canceled (POSIX.1-2001) */
+    EV_ECONNABORTED     = -106,                 /**< Connection aborted (POSIX.1-2001) */
+    EV_ECONNREFUSED     = -107,                 /**< Connection refused (POSIX.1-2001) */
+    EV_ECONNRESET       = -108,                 /**< Connection reset (POSIX.1-2001) */
+    EV_EHOSTUNREACH     = -110,                 /**< Host is unreachable (POSIX.1-2001) */
+    EV_EINPROGRESS      = -112,                 /**< Operation in progress (POSIX.1-2001) */
+    EV_EISCONN          = -113,                 /**< Socket is connected (POSIX.1-2001) */
+    EV_ELOOP            = -114,                 /**< Too many levels of symbolic links (POSIX.1-2001) */
+    EV_EMSGSIZE         = -115,                 /**< Message too long (POSIX.1-2001) */
+    EV_ENETUNREACH      = -118,                 /**< Network unreachable (POSIX.1-2001) */
+    EV_ENOBUFS          = -119,                 /**< No buffer space available (POSIX.1 (XSI STREAMS option)) */
+    EV_ENOTCONN         = -126,                 /**< The socket is not connected (POSIX.1-2001) */
+    EV_ENOTSOCK         = -128,                 /**< Not a socket (POSIX.1-2001) */
+    EV_ENOTSUP          = -129,                 /**< Operation not supported (POSIX.1-2001) */
+    EV_EPROTONOSUPPORT  = -135,                 /**< Protocol not supported (POSIX.1-2001) */
+    EV_ETIMEDOUT        = -138,                 /**< Connection timed out (POSIX.1-2001) */
 
     /* Extend error code */
-    EV_UNKNOWN          = -1001,        /**< Unknown error */
-    EV_EOF              = -1002,        /**< End of file */
+    EV_UNKNOWN          = -1001,                /**< Unknown error */
+    EV_EOF              = -1002,                /**< End of file */
 };
 
 enum ev_loop_mode
 {
+    /**
+     * @brief Runs the event loop until there are no more active and referenced
+     *   handles or requests.
+     *
+     * Returns non-zero if #ev_loop_stop() was called and there are
+     * still active handles or requests. Returns zero in all other cases.
+     */
     EV_LOOP_MODE_DEFAULT,
+
+    /**
+     * @brief Poll for I/O once.
+     *
+     * Note that this function blocks if there are no pending callbacks. Returns
+     * zero when done (no active handles or requests left), or non-zero if more
+     * callbacks are expected (meaning you should run the event loop again sometime
+     * in the future).
+     */
     EV_LOOP_MODE_ONCE,
+
+    /**
+     * @brief Poll for i/o once but don't block if there are no pending callbacks.
+     *
+     * Returns zero if done (no active handles or requests left), or non-zero if
+     * more callbacks are expected (meaning you should run the event loop again
+     * sometime in the future).
+     */
     EV_LOOP_MODE_NOWAIT,
 };
 
 enum ev_role
 {
-    EV_ROLE_TIMER,
-    EV_ROLE_ASYNC,
-    EV_ROLE_TCP,
-    EV_ROLE_PIPE,
+    EV_ROLE_TIMER,                              /**< typeof #ev_timer_t */
+    EV_ROLE_ASYNC,                              /**< typeof #ev_async_t */
+    EV_ROLE_TCP,                                /**< typeof #ev_tcp_t */
+    EV_ROLE_PIPE,                               /**< typeof #ev_pipe_t */
 };
 
 struct ev_loop
 {
-    uint64_t                hwtime;         /**< A fast clock time in milliseconds */
+    uint64_t                hwtime;             /**< A fast clock time in milliseconds */
 
     struct
     {
-        ev_list_t           idle_handles;   /**< All idle handles */
-        ev_list_t           active_handles; /**< All active handles */
+        ev_list_t           idle_list;          /**< (#ev_handle::node) All idle handles */
+        ev_list_t           active_list;        /**< (#ev_handle::node) All active handles */
     }handles;
 
     struct
     {
-        ev_list_t           queue;          /**< (#ev_todo_t::node) Pending task */
+        ev_list_t           pending;            /**< (#ev_todo_t::node) Pending task */
     }todo;
 
     struct
     {
-        ev_map_t            heap;           /**< (#ev_timer_t::node) Timer heap */
+        ev_map_t            heap;               /**< (#ev_timer_t::node) Timer heap */
     }timer;
 
     struct
     {
-        unsigned            b_stop : 1;     /**< Flag: need to stop */
+        unsigned            b_stop : 1;         /**< Flag: need to stop */
     }mask;
 
-    ev_loop_plt_t           backend;        /**< Platform related implementation */
+    ev_loop_plt_t           backend;            /**< Platform related implementation */
 };
 #define EV_LOOP_INIT        \
-    { 0, { EV_LIST_INIT, EV_LIST_INIT }, { EV_LIST_INIT }, { EV_MAP_INIT(NULL, NULL) }, { 0 }, EV_LOOP_PLT_INIT }
+    {\
+        0,                                      /* .hwtime */\
+        { EV_LIST_INIT, EV_LIST_INIT },         /* .handles */\
+        { EV_LIST_INIT },                       /* .todo */\
+        { EV_MAP_INIT(NULL, NULL) },            /* .timer */\
+        { 0 },                                  /* .mask */\
+        EV_LOOP_PLT_INIT,                       /* .backend */\
+    }
 
 struct ev_handle
 {
-    ev_list_node_t          node;           /**< Node for #ev_loop_t::handles */
+    ev_list_node_t          node;               /**< Node for #ev_loop_t::handles */
 
     struct
     {
-        ev_loop_t*          loop;           /**< The event loop belong to */
+        ev_loop_t*          loop;               /**< The event loop belong to */
 
-        ev_role_t           role;           /**< Who we are */
-        unsigned            flags;          /**< Handle flags */
+        ev_role_t           role;               /**< The type of this object */
+        unsigned            flags;              /**< Handle flags */
 
-        ev_close_cb         close_cb;       /**< Close callback */
-        ev_todo_t           close_queue;    /**< Close queue token */
+        ev_close_cb         close_cb;           /**< Close callback */
+        ev_todo_t           close_queue;        /**< Close queue token */
     }data;
 };
 #define EV_HANDLE_INIT      { NULL, NULL, EV_TODO_INIT, 0 }
 
 struct ev_timer
 {
-    ev_handle_t             base;           /**< Base object */
-    ev_map_node_t           node;           /**< (#ev_loop_t::timer::heap) */
+    ev_handle_t             base;               /**< Base object */
+    ev_map_node_t           node;               /**< (#ev_loop_t::timer::heap) */
 
-    ev_timer_cb             close_cb;       /**< Close callback */
+    ev_timer_cb             close_cb;           /**< Close callback */
 
     struct
     {
-        uint64_t            active;         /**< Active time */
+        uint64_t            active;             /**< Active time */
     }data;
 
     struct
     {
-        ev_timer_cb         cb;             /**< User callback */
-        uint64_t            timeout;        /**< Timeout */
-        uint64_t            repeat;         /**< Repeat */
+        ev_timer_cb         cb;                 /**< User callback */
+        uint64_t            timeout;            /**< Timeout */
+        uint64_t            repeat;             /**< Repeat */
     }attr;
 };
 #define EV_TIMER_INIT       { EV_HANDLE_INIT, EV_MAP_NODE_INIT, NULL, { 0 }, { NULL, 0, 0 } }
 
 struct ev_async
 {
-    ev_handle_t             base;           /**< Base object */
+    ev_handle_t             base;               /**< Base object */
 
-    ev_async_cb             active_cb;      /**< Active callback */
-    ev_async_cb             close_cb;       /**< Close callback */
+    ev_async_cb             active_cb;          /**< Active callback */
+    ev_async_cb             close_cb;           /**< Close callback */
 
-    ev_async_backend_t      backend;        /**< Platform related implementation */
+    ev_async_backend_t      backend;            /**< Platform related implementation */
 };
 #define EV_ASYNC_INIT       { EV_HANDLE_INIT, NULL, NULL, EV_ASYNC_BACKEND_INIT }
 
 struct ev_tcp
 {
-    ev_handle_t             base;           /**< Base object */
-    ev_tcp_close_cb         close_cb;       /**< User close callback */
+    ev_handle_t             base;               /**< Base object */
+    ev_tcp_close_cb         close_cb;           /**< User close callback */
 
-    ev_os_socket_t          sock;           /**< Socket handle */
-    ev_tcp_backend_t        backend;        /**< Platform related implementation */
+    ev_os_socket_t          sock;               /**< Socket handle */
+    ev_tcp_backend_t        backend;            /**< Platform related implementation */
 };
 #define EV_TCP_INIT         { EV_HANDLE_INIT, NULL, EV_OS_SOCKET_INVALID, EV_TCP_BACKEND_INIT }
 
 struct ev_pipe
 {
-    ev_handle_t             base;           /**< Base object */
-    ev_pipe_cb              close_cb;       /**< User close callback */
+    ev_handle_t             base;               /**< Base object */
+    ev_pipe_cb              close_cb;           /**< User close callback */
 
-    ev_os_pipe_t            pipfd;          /**< Pipe handle */
-    ev_pipe_backend_t       backend;        /**< Platform related implementation */
+    ev_os_pipe_t            pipfd;              /**< Pipe handle */
+    ev_pipe_backend_t       backend;            /**< Platform related implementation */
 };
 #define EV_PIPE_INIT        { EV_HANDLE_INIT, NULL, EV_OS_PIPE_INVALID, EV_PIPE_BACKEND_INIT }
 
@@ -378,8 +409,10 @@ int ev_loop_init(ev_loop_t* loop);
  * Call this function only when the loop has finished executing and all open
  * handles and requests have been closed, or it will return #EV_EBUSY. After
  * this function returns, the user can free the memory allocated for the loop.
+ * 
+ * @return #ev_errno_t
  */
-void ev_loop_exit(ev_loop_t* loop);
+int ev_loop_exit(ev_loop_t* loop);
 
 /**
  * @brief Stop the event loop, causing uv_run() to end as soon as possible.
@@ -395,24 +428,12 @@ void ev_loop_stop(ev_loop_t* loop);
 /**
  * @brief This function runs the event loop.
  *
- * It will act differently depending on the specified mode:
- * + #EV_LOOP_MODE_DEFAULT: Runs the event loop until there are no more active
- *     and referenced handles or requests. Returns non-zero if #ev_loop_stop()
- *     was called and there are still active handles or requests. Returns zero
- *     in all other cases.
- * + #EV_LOOP_MODE_ONCE: Poll for i/o once. Note that this function blocks if
- *     there are no pending callbacks. Returns zero when done (no active
- *     handles or requests left), or non-zero if more callbacks are expected
- *     (meaning you should run the event loop again sometime in the future).
- * + #EV_LOOP_MODE_NOWAIT: Poll for i/o once but don't block if there are no
- *     pending callbacks. Returns zero if done (no active handles or requests
- *     left), or non-zero if more callbacks are expected (meaning you should
- *     run the event loop again sometime in the future).
- *
+ * Checkout #ev_loop_mode_t for mode details.
  * @param[in] loop      Event loop handler
  * @param[in] mode      Running mode
  * @return              Returns zero when no active handles or requests left,
  *                      otherwise return non-zero
+ * @see ev_loop_mode_t
  */
 int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode);
 
@@ -561,22 +582,36 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
 
 /**
  * @brief Write data
+ * 
+ * Once #ev_tcp_write() return #EV_SUCCESS, it take the ownership of \p req, so
+ * you should not modify the content of it until bounded callback is called.
+ * 
+ * It is a guarantee that every bounded callback of \p req will be called, with
+ * following scene:
+ *   + If write success or failure. The callback will be called with write status.
+ *   + If \p pipe is exiting but there are pending write request. The callback
+ *     will be called with status #EV_ECANCELED.
+ * 
  * @param[in] sock  Socket handle
  * @param[in] req   Write request
- * @param[in] bufs  Buffer list
- * @param[in] nbuf  Buffer list count
- * @param[in] cb    Write complete callback
  * @return          #ev_errno_t
  */
 int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req);
 
 /**
  * @brief Read data
+ * 
+ * Once #ev_tcp_read() return #EV_SUCCESS, it take the ownership of \p req, so
+ * you should not modify the content of it until bounded callback is called.
+ * 
+ * It is a guarantee that every bounded callback of \p req will be called, with
+ * following scene:
+ *   + If read success or failure. The callback will be called with read status.
+ *   + If \p pipe is exiting but there are pending read request. The callback
+ *     will be called with status #EV_ECANCELED.
+ * 
  * @param[in] sock  Socket handle
  * @param[in] req   Read request
- * @param[in] bufs  Buffer list
- * @param[in] nbuf  Buffer list count
- * @param[in] cb    Read complete callback
  * @return          #ev_errno_t
  */
 int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req);
@@ -633,22 +668,36 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle);
 
 /**
  * @brief Write data
+ *
+ * Once #ev_pipe_write() return #EV_SUCCESS, it take the ownership of \p req, so
+ * you should not modify the content of it until bounded callback is called.
+ *
+ * It is a guarantee that every bounded callback of \p req will be called, with
+ * following scene:
+ *   + If write success or failure. The callback will be called with write status.
+ *   + If \p pipe is exiting but there are pending write request. The callback
+ *     will be called with status #EV_ECANCELED.
+ *
  * @param[in] pipe  Pipe handle
  * @param[in] req   Write request
- * @param[in] bufs  Buffer list
- * @param[in] nbuf  Buffer list count
- * @param[in] cb    Write complete callback
  * @return          #ev_errno_t
  */
 int ev_pipe_write(ev_pipe_t* pipe, ev_write_t* req);
 
 /**
  * @brief Read data
+ * 
+ * Once #ev_pipe_read() return #EV_SUCCESS, it take the ownership of \p req, so
+ * you should not modify the content of it until bounded callback is called.
+ * 
+ * It is a guarantee that every bounded callback of \p req will be called, with
+ * following scene:
+ *   + If read success or failure. The callback will be called with read status.
+ *   + If \p pipe is exiting but there are pending read request. The callback
+ *     will be called with status #EV_ECANCELED.
+ * 
  * @param[in] pipe  Pipe handle
  * @param[in] req   Read request
- * @param[in] bufs  Buffer list
- * @param[in] nbuf  Buffer list count
- * @param[in] cb    Read complete callback
  * @return          #ev_errno_t
  */
 int ev_pipe_read(ev_pipe_t* pipe, ev_read_t* req);
@@ -773,7 +822,7 @@ ev_buf_t ev_buf_make(void* buf, size_t len);
  *     ev_buf_make_n(bufs, 2, buf_1, len_1, buf_2, len_2);
  * }
  * @endcode
- * 
+ *
  * @param[out] bufs Buffer array
  * @param[in] nbuf  Buffer number
  * @param[in] ...   Buffer info, must a pair of (void*, size_t)

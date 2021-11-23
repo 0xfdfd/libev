@@ -110,7 +110,14 @@ API_LOCAL void ev__todo_init(ev_todo_t* token);
  * @param[in] token     A pointer to the pending token
  * @param[in] cb        A callback when the pending task is active
  */
-API_LOCAL void ev__todo(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb);
+API_LOCAL void ev__todo_queue(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb);
+
+/**
+ * @brief Cancel a pending task
+ * @param[in] loop      Event loop
+ * @param[in] token     A pending token
+ */
+API_LOCAL void ev__todo_cancel(ev_loop_t* loop, ev_todo_t* token);
 
 #ifdef __cplusplus
 }

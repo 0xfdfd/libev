@@ -312,7 +312,7 @@ static void _ev_tcp_submit_stream_todo(ev_tcp_t* sock)
         return;
     }
 
-    ev__todo(sock->base.data.loop, &sock->backend.token, _ev_tcp_on_task_done);
+    ev__todo_queue(sock->base.data.loop, &sock->backend.token, _ev_tcp_on_task_done);
     sock->backend.mask.todo_pending = 1;
 }
 
