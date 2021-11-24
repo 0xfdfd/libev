@@ -231,6 +231,7 @@ enum ev_loop_mode
 
 enum ev_role
 {
+    EV_ROLE_UNKNOWN,                            /**< Unknown type */
     EV_ROLE_TIMER,                              /**< typeof #ev_timer_t */
     EV_ROLE_ASYNC,                              /**< typeof #ev_async_t */
     EV_ROLE_TCP,                                /**< typeof #ev_tcp_t */
@@ -289,7 +290,17 @@ struct ev_handle
         ev_todo_t           close_queue;        /**< Close queue token */
     }data;
 };
-#define EV_HANDLE_INIT      { NULL, NULL, EV_TODO_INIT, 0 }
+#define EV_HANDLE_INIT      \
+    {\
+        EV_LIST_NODE_INIT,      /* .node */\
+        {/* .data */\
+            NULL,               /* .loop */\
+            EV_ROLE_UNKNOWN,    /* .role */\
+            0,                  /* .flags */\
+            NULL,               /* .close_cb */\
+            EV_TODO_INIT        /* .close_queue */\
+        }\
+    }
 
 struct ev_timer
 {

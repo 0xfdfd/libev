@@ -21,12 +21,6 @@ TEST_FIXTURE_TEAREDOWN(tcp)
     ev_loop_exit(&s_loop);
 }
 
-TEST_F(tcp, static_initializer)
-{
-    { ev_write_t ret = EV_WRITE_INIT; (void)ret; }
-    { ev_read_t ret = EV_READ_INIT; (void)ret; }
-}
-
 /**
  * @defgroup empty_loop
  * @{

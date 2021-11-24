@@ -16,8 +16,8 @@ typedef int ev_os_pipe_t;
 typedef int ev_os_socket_t;
 #define EV_OS_SOCKET_INVALID    (-1)
 
-struct ev_stream;
-typedef struct ev_stream ev_stream_t;
+struct ev_nonblock_stream;
+typedef struct ev_nonblock_stream ev_nonblock_stream_t;
 
 /**
  * @brief Write callback
@@ -25,7 +25,7 @@ typedef struct ev_stream ev_stream_t;
  * @param[in] size      Write size
  * @param[in] stat      Write result
  */
-typedef void(*ev_stream_write_cb)(ev_stream_t* stream, ev_write_t* req, size_t size, int stat);
+typedef void(*ev_stream_write_cb)(ev_nonblock_stream_t* stream, ev_write_t* req, size_t size, int stat);
 
 /**
  * @brief Read callback
@@ -33,7 +33,7 @@ typedef void(*ev_stream_write_cb)(ev_stream_t* stream, ev_write_t* req, size_t s
  * @param[in] size      Read size
  * @param[in] stat      Read result
  */
-typedef void(*ev_stream_read_cb)(ev_stream_t* stream, ev_read_t* req, size_t size, int stat);
+typedef void(*ev_stream_read_cb)(ev_nonblock_stream_t* stream, ev_read_t* req, size_t size, int stat);
 
 /**
  * @brief Buffer
@@ -72,17 +72,17 @@ typedef struct ev_read_backend
 }ev_read_backend_t;
 #define EV_READ_BACKEND_INIT    { }
 
-struct ev_io;
-typedef struct ev_io ev_io_t;
+struct ev_nonblock_io;
+typedef struct ev_nonblock_io ev_nonblock_io_t;
 
 /**
  * @brief IO active callback
  * @param[in] io    IO object
  * @param[in] evts  IO events
  */
-typedef void(*ev_io_cb)(ev_io_t* io, unsigned evts);
+typedef void(*ev_nonblock_io_cb)(ev_nonblock_io_t* io, unsigned evts);
 
-struct ev_io
+struct ev_nonblock_io
 {
     ev_map_node_t               node;               /**< #ev_loop_plt_t::io */
     struct
@@ -90,29 +90,51 @@ struct ev_io
         int                     fd;                 /**< File descriptor */
         unsigned                c_events;           /**< Current events */
         unsigned                n_events;           /**< Next events */
-        ev_io_cb                cb;                 /**< IO active callback */
+        ev_nonblock_io_cb       cb;                 /**< IO active callback */
     }data;
 };
-#define EV_IO_INIT              { EV_MAP_NODE_INIT, { 0, 0, 0, NULL } }
+#define EV_NONBLOCK_IO_INIT     { EV_MAP_NODE_INIT, { 0, 0, 0, NULL } }
 
 typedef struct ev_async_backend
 {
-    ev_io_t                     io_read;            /**< Read request */
+    ev_nonblock_io_t            io_read;            /**< Read request */
     int                         fd_write;           /**< File descriptor for write */
 }ev_async_backend_t;
-#define EV_ASYNC_BACKEND_INIT   { EV_IO_INIT, -1 }
+#define EV_ASYNC_BACKEND_INIT   { EV_NONBLOCK_IO_INIT, -1 }
 
-struct ev_stream
+struct ev_nonblock_stream
 {
     ev_loop_t*                  loop;               /**< Event loop */
-    unsigned                    flags;              /**< Flags */
-    ev_io_t                     io;                 /**< IO object */
-    ev_list_t                   w_queue;            /**< Write queue */
-    ev_list_t                   r_queue;            /**< Read queue */
-    ev_stream_write_cb          w_cb;               /**< Write callback */
-    ev_stream_read_cb           r_cb;               /**< Read callback */
+
+    struct
+    {
+        unsigned                io_abort : 1;       /**< No futher IO allowed */
+        unsigned                io_reg_r : 1;       /**< IO registered read event */
+        unsigned                io_reg_w : 1;       /**< IO registered write event */
+    }flags;
+
+    ev_nonblock_io_t            io;                 /**< IO object */
+
+    struct
+    {
+        ev_list_t               w_queue;            /**< Write queue */
+        ev_list_t               r_queue;            /**< Read queue */
+    }pending;
+
+    struct
+    {
+        ev_stream_write_cb      w_cb;               /**< Write callback */
+        ev_stream_read_cb       r_cb;               /**< Read callback */
+    }callbacks;
 };
-#define EV_STREAM_INIT          { NULL, 0, EV_IO_INIT, EV_LIST_INIT, EV_LIST_INIT, NULL, NULL }
+#define EV_NONBLOCK_STREAM_INIT \
+    {\
+        NULL,                           /* .loop */\
+        { 0, 0, 0 },                    /* .flags */\
+        EV_NONBLOCK_IO_INIT,            /* .io */\
+        { EV_LIST_INIT, EV_LIST_INIT }, /* .pending */\
+        { NULL, NULL }                  /* .callbacks */\
+    }
 
 typedef struct ev_tcp_backend
 {
@@ -120,7 +142,7 @@ typedef struct ev_tcp_backend
     {
         struct
         {
-            ev_io_t             io;                 /**< IO object */
+            ev_nonblock_io_t    io;                 /**< IO object */
             ev_list_t           accept_queue;       /**< Accept queue */
         }listen;
 
@@ -130,24 +152,24 @@ typedef struct ev_tcp_backend
             ev_list_node_t      accept_node;        /**< Accept queue node */
         }accept;
 
-        ev_stream_t             stream;             /**< IO component */
+        ev_nonblock_stream_t    stream;             /**< IO component */
 
         struct
         {
-            ev_io_t             io;                 /**< IO object */
+            ev_nonblock_io_t    io;                 /**< IO object */
             ev_connect_cb       cb;                 /**< Connect callback */
             ev_todo_t           token;              /**< Todo token */
             int                 stat;               /**< Connect result */
         }client;
     }u;
 }ev_tcp_backend_t;
-#define EV_TCP_BACKEND_INIT     { EV_IO_INIT, { { EV_LIST_INIT } } }
+#define EV_TCP_BACKEND_INIT     { { { EV_NONBLOCK_IO_INIT, EV_LIST_INIT } } }
 
 typedef struct ev_pipe_backend
 {
-    ev_stream_t                 stream;             /**< Stream */
+    ev_nonblock_stream_t        stream;             /**< Stream */
 }ev_pipe_backend_t;
-#define EV_PIPE_BACKEND_INIT    { { 0, 0 }, EV_STREAM_INIT }
+#define EV_PIPE_BACKEND_INIT    { EV_NONBLOCK_STREAM_INIT }
 
 #ifdef __cplusplus
 }

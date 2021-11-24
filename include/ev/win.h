@@ -148,6 +148,7 @@ typedef struct ev_pipe_backend
         ev_list_t               r_queue;
     }stream;
 }ev_pipe_backend_t;
+#define EV_PIPE_BACKEND_INIT    { { EV_LIST_INIT, EV_LIST_INIT } }
 
 #ifdef __cplusplus
 }

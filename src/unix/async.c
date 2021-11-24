@@ -2,7 +2,7 @@
 #include <assert.h>
 #include "loop.h"
 
-static void _ev_async_clear_recv_buffer(ev_io_t* io)
+static void _ev_async_clear_recv_buffer(ev_nonblock_io_t* io)
 {
     char buffer[64];
 
@@ -50,7 +50,7 @@ static void _ev_async_on_close_unix(ev_handle_t* handle)
     }
 }
 
-static void _ev_async_on_io_active(ev_io_t* io, unsigned evts)
+static void _ev_async_on_io_active(ev_nonblock_io_t* io, unsigned evts)
 {
     (void)evts;
     _ev_async_clear_recv_buffer(io);
@@ -103,10 +103,10 @@ int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
         goto err;
     }
 
-    ev__io_init(&handle->backend.io_read, pipefd[0], _ev_async_on_io_active);
+    ev__nonblock_io_init(&handle->backend.io_read, pipefd[0], _ev_async_on_io_active);
     handle->backend.fd_write = pipefd[1];
 
-    ev__io_add(loop, &handle->backend.io_read, EV_IO_IN);
+    ev__nonblock_io_add(loop, &handle->backend.io_read, EV_IO_IN);
     ev__handle_active(&handle->base);
 
     return EV_SUCCESS;
@@ -122,7 +122,7 @@ void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
     assert(!ev__handle_is_closing(&handle->base));
 
     handle->close_cb = close_cb;
-    ev__io_del(handle->base.data.loop, &handle->backend.io_read, EV_IO_IN);
+    ev__nonblock_io_del(handle->base.data.loop, &handle->backend.io_read, EV_IO_IN);
     ev__handle_exit(&handle->base);
 }
 
