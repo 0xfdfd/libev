@@ -9,6 +9,16 @@
 #include "ev.h"
 #include "loop.h"
 
+#if defined(__PASE__)
+/* on IBMi PASE the control message length can not exceed 256. */
+#   define EV__CMSG_FD_COUNT 60
+#else
+#   define EV__CMSG_FD_COUNT 64
+#endif
+#define EV__CMSG_FD_SIZE (EV__CMSG_FD_COUNT * sizeof(int))
+
+typedef char ev_ipc_msghdr[CMSG_SPACE(sizeof(int))];
+
 ev_loop_unix_ctx_t g_ev_loop_unix_ctx;
 
 static void _ev_init_hwtime(void)
@@ -64,6 +74,54 @@ static int _ev_poll_once(ev_loop_t* loop, struct epoll_event* events, int maxeve
     return nfds;
 }
 
+static ssize_t _ev_stream_writev(int fd, struct iovec* iov, int iovcnt)
+{
+    ssize_t write_size;
+    do
+    {
+        write_size = writev(fd, iov, iovcnt);
+    } while (write_size == -1 && errno == EINTR);
+
+    return write_size;
+}
+
+static ssize_t _ev_stream_sendmsg(int fd, int fd_to_send, struct iovec* iov, int iovcnt)
+{
+    struct msghdr msg;
+    struct cmsghdr* cmsg;
+
+    ev_ipc_msghdr msg_ctrl_hdr;
+    memset(&msg_ctrl_hdr, 0, sizeof(msg_ctrl_hdr));
+
+    msg.msg_name = NULL;
+    msg.msg_namelen = 0;
+    msg.msg_iov = iov;
+    msg.msg_iovlen = iovcnt;
+    msg.msg_flags = 0;
+
+    msg.msg_control = msg_ctrl_hdr;
+    msg.msg_controllen = sizeof(msg_ctrl_hdr);
+
+    cmsg = CMSG_FIRSTHDR(&msg);
+    cmsg->cmsg_level = SOL_SOCKET;
+    cmsg->cmsg_type = SCM_RIGHTS;
+    cmsg->cmsg_len = CMSG_LEN(sizeof(fd_to_send));
+
+    /* silence aliasing warning */
+    {
+        void* pv = CMSG_DATA(cmsg);
+        int* pi = pv;
+        *pi = fd_to_send;
+    }
+
+    ssize_t n;
+    do
+        n = sendmsg(fd, &msg, 0);
+    while (n == -1 && errno == EINTR);
+
+    return n;
+}
+
 static int _ev_stream_do_write_once(ev_nonblock_stream_t* stream, ev_write_t* req)
 {
     struct iovec* iov = (struct iovec*)(req->data.bufs + req->backend.idx);
@@ -74,10 +132,15 @@ static int _ev_stream_do_write_once(ev_nonblock_stream_t* stream, ev_write_t* re
     }
 
     ssize_t write_size;
-    do
+    if (stream->flags.ipc && req->handle.role != EV_ROLE_UNKNOWN)
     {
-        write_size = writev(stream->io.data.fd, iov, iovcnt);
-    } while (write_size == -1 && errno == EINTR);
+        write_size = _ev_stream_sendmsg(stream->io.data.fd, req->handle.u.os_socket, iov, iovcnt);
+        req->handle.role = EV_ROLE_UNKNOWN;
+    }
+    else
+    {
+        write_size = _ev_stream_writev(stream->io.data.fd, iov, iovcnt);
+    }
 
     if (write_size < 0)
     {
@@ -138,8 +201,86 @@ err:
     }
 }
 
+static ssize_t _ev_stream_readv(int fd, struct iovec* iov, int iovcnt)
+{
+    ssize_t read_size;
+    do
+    {
+        read_size = readv(fd, iov, iovcnt);
+    } while (read_size == -1 && errno == EINTR);
+    return read_size;
+}
+
+static ssize_t _ev_stream_recvmsg(ev_nonblock_stream_t* stream, struct msghdr* msg)
+{
+    struct cmsghdr* cmsg;
+    ssize_t rc;
+    int* pfd;
+    int* end;
+    int fd = stream->io.data.fd;
+#if defined(__linux__)
+    if (!stream->flags.no_cmsg_cloexec)
+    {
+        rc = recvmsg(fd, msg, MSG_CMSG_CLOEXEC);
+        if (rc != -1)
+        {
+            return rc;
+        }
+        if (errno != EINVAL)
+        {
+            return ev__translate_sys_error(errno);
+        }
+        rc = recvmsg(fd, msg, 0);
+        if (rc == -1)
+        {
+            return ev__translate_sys_error(errno);
+        }
+        stream->flags.no_cmsg_cloexec = 1;
+    }
+    else
+    {
+        rc = recvmsg(fd, msg, 0);
+    }
+#else
+    rc = recvmsg(fd, msg, 0);
+#endif
+    if (rc == -1)
+    {
+        return ev__translate_sys_error(errno);
+    }
+    if (msg->msg_controllen == 0)
+    {
+        return rc;
+    }
+    for (cmsg = CMSG_FIRSTHDR(msg); cmsg != NULL; cmsg = CMSG_NXTHDR(msg, cmsg))
+    {
+        if (cmsg->cmsg_type == SCM_RIGHTS)
+        {
+            for (pfd = (int*)CMSG_DATA(cmsg),
+                end = (int*)((char*)cmsg + cmsg->cmsg_len);
+                pfd < end;
+                pfd += 1)
+            {
+                ev__cloexec(*pfd, 1);
+            }
+        }
+    }
+    return rc;
+}
+
+static void _ev_stream_do_read_parser_msghdr(ev_read_t* req, struct msghdr* msg)
+{
+    struct cmsghdr* cmsg = CMSG_FIRSTHDR(msg);
+    void* pv = CMSG_DATA(cmsg);
+    int* pi = pv;
+    req->handle.os_socket = *pi;
+
+    assert(CMSG_NXTHDR(msg, cmsg) == NULL);
+}
+
 static int _ev_stream_do_read_once(ev_nonblock_stream_t* stream, ev_read_t* req, size_t* size)
 {
+    struct iovec* iov = (struct iovec*)req->data.bufs;
     int iovcnt = req->data.nbuf;
     if (iovcnt > g_ev_loop_unix_ctx.iovmax)
     {
@@ -147,10 +288,31 @@ static int _ev_stream_do_read_once(ev_nonblock_stream_t* stream, ev_read_t* req,
     }
 
     ssize_t read_size;
-    do
+    if (stream->flags.ipc)
     {
-        read_size = readv(stream->io.data.fd, (struct iovec*)req->data.bufs, iovcnt);
-    } while (read_size == -1 && errno == EINTR);
+        struct msghdr msg;
+        ev_ipc_msghdr cmsg_space;
+
+        /* ipc uses recvmsg */
+        msg.msg_flags = 0;
+        msg.msg_iov = iov;
+        msg.msg_iovlen = iovcnt;
+        msg.msg_name = NULL;
+        msg.msg_namelen = 0;
+        /* Set up to receive a descriptor even if one isn't in the message */
+        msg.msg_controllen = sizeof(cmsg_space);
+        msg.msg_control = cmsg_space;
+
+        read_size = _ev_stream_recvmsg(stream, &msg);
+        if (read_size > 0)
+        {
+            _ev_stream_do_read_parser_msghdr(req, &msg);
+        }
+    }
+    else
+    {
+        read_size = _ev_stream_readv(stream->io.data.fd, iov, iovcnt);
+    }
 
     if (read_size == 0)
     {/* Peer close */
@@ -293,7 +455,7 @@ int ev__cloexec(int fd, int set)
 
     if (r)
     {
-        return errno;
+        return ev__translate_sys_error(errno);
     }
 
     return EV_SUCCESS;
@@ -328,7 +490,7 @@ int ev__cloexec(int fd, int set)
 
     if (r)
     {
-        return errno;
+        return ev__translate_sys_error(errno);
     }
 
     return EV_SUCCESS;
@@ -635,13 +797,16 @@ int ev__translate_sys_error(int syserr)
     return syserr;
 }
 
-void ev__nonblock_stream_init(ev_loop_t* loop, ev_nonblock_stream_t* stream, int fd, ev_stream_write_cb wcb, ev_stream_read_cb rcb)
+void ev__nonblock_stream_init(ev_loop_t* loop, ev_nonblock_stream_t* stream,
+    int fd, int ipc, ev_stream_write_cb wcb, ev_stream_read_cb rcb)
 {
     stream->loop = loop;
 
+    stream->flags.ipc = !!ipc;
     stream->flags.io_abort = 0;
     stream->flags.io_reg_r = 0;
     stream->flags.io_reg_w = 0;
+    stream->flags.no_cmsg_cloexec = 0;
 
     ev__nonblock_io_init(&stream->io, fd, _ev_nonblock_stream_on_io);
 

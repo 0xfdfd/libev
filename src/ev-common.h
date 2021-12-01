@@ -21,6 +21,7 @@ extern "C" {
 #endif
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#define EV_MIN(a, b)    ((a) < (b) ? (a) : (b))
 
 #if defined(_MSC_VER)
 #   define BREAK_ABORT()        __debugbreak()
@@ -49,6 +50,19 @@ extern "C" {
     assert(offsetof(TYPE_A, FIELD_A_2) == offsetof(TYPE_B, FIELD_B_2));\
     assert(sizeof(((TYPE_A*)0)->FIELD_A_2) == sizeof(((TYPE_B*)0)->FIELD_B_2))
 
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#   define EV_IPC_FRAME_HDR_MAGIC  (0x48465645)
+#elif __BYTE_ORDER == __BIG_ENDIAN
+#   define EV_IPC_FRAME_HDR_MAGIC  (0x45564648)
+#else
+#   error unknown endian
+#endif
+
+typedef enum ev_ipc_frame_flag
+{
+    EV_IPC_FRAME_FLAG_INFORMATION = 1,
+}ev_ipc_frame_flag_t;
+
 typedef enum ev_handle_flag
 {
     /* Used by all handles. Bit 0-7. */
@@ -64,7 +78,8 @@ typedef enum ev_handle_flag
     EV_TCP_BOUND            = 0x01 << 0x0C,     /**< 4096. Socket is bond to address */
 
     /* EV_ROLE_PIPE */
-    EV_PIPE_STREAMING       = 0x01 << 0x08,     /**< 256. This pipe is initialized by #ev_stream_t */
+    EV_PIPE_IPC             = 0x01 << 0x08,     /**< 256. This pipe is support IPC */
+    EV_PIPE_STREAMING       = 0x01 << 0x09,     /**< 512. This pipe is initialized by #ev_stream_t */
 }ev_handle_flag_t;
 
 /**

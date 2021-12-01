@@ -37,6 +37,17 @@ extern "C" {
     }\
     static void TEST_##fixture_name##_##case_name##_timeout(void)
 
+#if defined(__GNUC__) || defined(__clang__)
+#   define container_of(ptr, type, member) \
+        ({ \
+            const typeof(((type *)0)->member)*__mptr = (ptr); \
+            (type *)((char *)__mptr - offsetof(type, member)); \
+        })
+#else
+#   define container_of(ptr, type, member) \
+        ((type *) ((char *) (ptr) - offsetof(type, member)))
+#endif
+
 typedef void (*fn_execute)(void);
 
 typedef struct test_execute_token

@@ -42,6 +42,7 @@ TEST_T(tcp, empty_loop, 1000)
 
 static void _connect_non_exist_on_ret(ev_tcp_t* sock, int stat)
 {
+    (void)sock;
     ASSERT_EQ_D32(stat, EV_ECONNREFUSED);
 }
 

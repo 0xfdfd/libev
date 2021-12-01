@@ -2,7 +2,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
-#include "loop.h"
+#include "unix/loop.h"
+#include "unix/tcp.h"
 
 static void _ev_pipe_on_close(ev_handle_t* handle)
 {
@@ -51,20 +52,35 @@ static void _ev_pipe_on_read(ev_nonblock_stream_t* stream, ev_read_t* req, size_
 
 int ev_pipe_make(ev_os_pipe_t fds[2])
 {
-    int flags = O_CLOEXEC | O_NONBLOCK;
-
-    if (pipe2(fds, flags) != 0)
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, fds) != 0)
     {
         return ev__translate_sys_error(errno);
     }
+
+    if (ev__cloexec(fds[0], 1) != EV_SUCCESS
+        || ev__cloexec(fds[1], 1) != EV_SUCCESS
+        || ev__nonblock(fds[0], 1)
+        || ev__nonblock(fds[1], 1))
+    {
+        int err = errno;
+        close(fds[0]);
+        close(fds[1]);
+        return ev__translate_sys_error(err);
+    }
+
     return EV_SUCCESS;
 }
 
-int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe)
+int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe, int ipc)
 {
-    ev__handle_init(loop, &pipe->base, EV_ROLE_PIPE, _ev_pipe_on_close);
+    ev__handle_init(loop, &pipe->base, EV_ROLE_EV_PIPE, _ev_pipe_on_close);
     pipe->close_cb = NULL;
     pipe->pipfd = EV_OS_PIPE_INVALID;
+
+    if (ipc)
+    {
+        pipe->base.data.flags |= EV_PIPE_IPC;
+    }
 
     return EV_SUCCESS;
 }
@@ -95,9 +111,11 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
     }
 
     pipe->pipfd = handle;
-    ev__nonblock_stream_init(pipe->base.data.loop, &pipe->backend.stream, handle,
-        _ev_pipe_on_write, _ev_pipe_on_read);
     pipe->base.data.flags |= EV_PIPE_STREAMING;
+
+    int is_ipc = pipe->base.data.flags & EV_PIPE_IPC;
+    ev__nonblock_stream_init(pipe->base.data.loop, &pipe->backend.stream, handle,
+        is_ipc, _ev_pipe_on_write, _ev_pipe_on_read);
 
     return EV_SUCCESS;
 }
@@ -116,4 +134,26 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_read_t* req)
 
     ev__read_init_unix(req);
     return ev__nonblock_stream_read(&pipe->backend.stream, req);
+}
+
+int ev_pipe_accept(ev_pipe_t* pipe, ev_read_t* req,
+    ev_role_t handle_role, void* handle_addr, size_t handle_size)
+{
+    if (!(pipe->base.data.flags & EV_PIPE_IPC)
+        || handle_role != EV_ROLE_EV_TCP
+        || handle_addr == NULL)
+    {
+        return EV_EINVAL;
+    }
+    if (req->handle.os_socket == EV_OS_SOCKET_INVALID)
+    {
+        return EV_ENOENT;
+    }
+    if (handle_size < sizeof(ev_buf_t))
+    {
+        return EV_ENOMEM;
+    }
+
+    ev_tcp_t* tcp = handle_addr;
+    return ev__tcp_open(tcp, req->handle.os_socket);
 }

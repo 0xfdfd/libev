@@ -15,6 +15,7 @@ static void _on_timer(ev_timer_t* timer)
 
 static void _on_timer_close(ev_timer_t* timer)
 {
+    (void)timer;
     f_on_timer_close = 1;
 }
 

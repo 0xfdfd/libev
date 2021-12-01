@@ -119,8 +119,8 @@ static uint32_t _ev_backend_timeout(ev_loop_t* loop)
         return ret;
     }
 
-    /* If no active handle, set timeout to max value */
-    return ev_list_size(&loop->handles.active_list) ? 0 : (uint32_t)-1;
+    /* If has active handle, set timeout to max value */
+    return ev_list_size(&loop->handles.active_list) ? (uint32_t)-1 : 0;
 }
 
 static void _ev_to_close(ev_todo_t* todo)
@@ -181,11 +181,7 @@ void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t role, ev_cl
 
 void ev__handle_exit(ev_handle_t* handle)
 {
-    if (ev__handle_is_closing(handle))
-    {
-        BREAK_ABORT();
-        return;
-    }
+    assert(!ev__handle_is_closing(handle));
 
     /* Stop if necessary */
     ev__handle_deactive(handle);
@@ -364,30 +360,123 @@ int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t le
 
 int ev_write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb)
 {
-    if (nbuf > ARRAY_SIZE(req->data.bufs))
+    return ev_write_init_ext(req, cb, bufs, nbuf, NULL, 0, EV_ROLE_UNKNOWN, NULL, 0);
+}
+
+static size_t _ev_calculate_write_size(const ev_write_t* req)
+{
+    size_t total = 0;
+
+    size_t i;
+    for (i = 0; i < req->data.nbuf; i++)
     {
-        return EV_E2BIG;
+        total += req->data.bufs[i].size;
+    }
+    return total;
+}
+
+int ev_write_init_ext(ev_write_t* req, ev_write_cb callback,
+    ev_buf_t* bufs, size_t nbuf,
+    void* iov_bufs, size_t iov_size,
+    ev_role_t handle_role, void* handle_addr, size_t handle_size)
+{
+    req->data.cb = callback;
+    req->data.nbuf = nbuf;
+    req->handle.role = handle_role;
+    switch (handle_role)
+    {
+        /* no handle need to send */
+    case EV_ROLE_UNKNOWN:
+        break;
+
+    case EV_ROLE_EV_TCP:
+        if (handle_size != sizeof(ev_tcp_t))
+        {
+            return EV_EINVAL;
+        }
+        req->handle.u.os_socket = ((ev_tcp_t*)handle_addr)->sock;
+        break;
+
+        /* not support other type */
+    default:
+        return EV_EINVAL;
     }
 
-    req->data.cb = cb;
-    req->data.nbuf = nbuf;
-    memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);
+    if (nbuf <= ARRAY_SIZE(req->data.bufsml))
+    {
+        req->data.bufs = req->data.bufsml;
+#if defined(_MSC_VER)
+        req->backend.io = req->backend.iosml;
+#endif
+        goto fin;
+    }
 
+    if (iov_bufs == NULL || iov_size < EV_IOV_BUF_SIZE(nbuf))
+    {
+        return EV_ENOBUFS;
+    }
+
+    req->data.bufs = iov_bufs;
+#if defined(_MSC_VER)
+    req->backend.io = (ev_iocp_t*)(req->data.bufs + nbuf);
+#endif
+
+fin:
+    memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);
+    req->data.size = 0;
+    req->data.capacity = _ev_calculate_write_size(req);
     return EV_SUCCESS;
 }
 
 int ev_read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb)
 {
-    if (nbuf > ARRAY_SIZE(req->data.bufs))
+    return ev_read_init_ext(req, cb, bufs, nbuf, NULL, 0);
+}
+
+static size_t _ev_calculate_read_capacity(const ev_read_t* req)
+{
+    size_t total = 0;
+
+    size_t i;
+    for (i = 0; i < req->data.nbuf; i++)
     {
-        return EV_E2BIG;
+        total += req->data.bufs[i].size;
     }
 
-    req->data.cb = cb;
-    req->data.nbuf = nbuf;
-    memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);
+    return total;
+}
 
-    return  EV_SUCCESS;
+int ev_read_init_ext(ev_read_t* req, ev_read_cb callback,
+    ev_buf_t* bufs, size_t nbuf,
+    void* iov_bufs, size_t iov_size)
+{
+    req->data.cb = callback;
+    req->data.nbuf = nbuf;
+    req->handle.os_socket = EV_OS_SOCKET_INVALID;
+
+    if (nbuf <= ARRAY_SIZE(req->data.bufsml))
+    {
+        req->data.bufs = req->data.bufsml;
+#if defined(_MSC_VER)
+        req->backend.io = req->backend.iosml;
+#endif
+        goto fin;
+    }
+
+    if (iov_bufs == NULL || iov_size < EV_IOV_BUF_SIZE(nbuf))
+    {
+        return EV_ENOBUFS;
+    }
+    req->data.bufs = iov_bufs;
+#if defined(_MSC_VER)
+    req->backend.io = (ev_iocp_t*)(req->data.bufs + nbuf);
+#endif
+
+fin:
+    memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);
+    req->data.capacity = _ev_calculate_read_capacity(req);
+    req->data.size = 0;
+    return EV_SUCCESS;
 }
 
 ev_buf_t ev_buf_make(void* buf, size_t len)

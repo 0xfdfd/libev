@@ -14,7 +14,7 @@ int ev_timer_init(ev_loop_t* loop, ev_timer_t* handle)
 {
     memset(handle, 0, sizeof(*handle));
 
-    ev__handle_init(loop, &handle->base, EV_ROLE_TIMER, _ev_timer_on_close);
+    ev__handle_init(loop, &handle->base, EV_ROLE_EV_TIMER, _ev_timer_on_close);
     return EV_SUCCESS;
 }
 

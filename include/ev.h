@@ -3,14 +3,15 @@
  */
 #ifndef __EV_H__
 #define __EV_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include <stddef.h>
 #include <stdarg.h>
 #include "ev/defs.h"
 #include "ev/list.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 enum ev_errno;
 typedef enum ev_errno ev_errno_t;
@@ -147,6 +148,13 @@ struct ev_todo
 #   include "ev/unix.h"
 #endif
 
+/**
+ * @brief Calculate minimum size of iov storage.
+ * @param[in] nbuf  The number of iov buffers
+ * @return          The size of iov storage in bytes
+ */
+#define EV_IOV_BUF_SIZE(nbuf)   EV_IOV_BUF_SIZE_INTERNAL(nbuf)
+
 enum ev_errno
 {
     EV_SUCCESS          =  0,                   /**< Operation success */
@@ -231,11 +239,18 @@ enum ev_loop_mode
 
 enum ev_role
 {
-    EV_ROLE_UNKNOWN,                            /**< Unknown type */
-    EV_ROLE_TIMER,                              /**< typeof #ev_timer_t */
-    EV_ROLE_ASYNC,                              /**< typeof #ev_async_t */
-    EV_ROLE_TCP,                                /**< typeof #ev_tcp_t */
-    EV_ROLE_PIPE,                               /**< typeof #ev_pipe_t */
+    EV_ROLE_UNKNOWN         = 0,                /**< Unknown type */
+
+    EV_ROLE_EV_TIMER        = 1,                /**< Type of #ev_timer_t */
+    EV_ROLE_EV_ASYNC        = 2,                /**< Type of #ev_async_t */
+    EV_ROLE_EV_PIPE         = 3,                /**< Type of #ev_pipe_t */
+    EV_ROLE_EV_TCP          = 4,                /**< Type of #ev_tcp_t */
+    EV_ROLE_EV__RANGE_BEG   = EV_ROLE_EV_TIMER,
+    EV_ROLE_EV__RANGE_END   = EV_ROLE_EV_TCP,
+
+    EV_ROLE_OS_SOCKET       = 100,              /**< OS socket */
+    EV_ROLE_OS__RANGE_BEG   = EV_ROLE_OS_SOCKET,
+    EV_ROLE_OS__RANGE_END   = EV_ROLE_OS_SOCKET,
 };
 
 struct ev_loop
@@ -363,19 +378,38 @@ struct ev_write
     struct
     {
         ev_write_cb         cb;                 /**< Write complete callback */
+        ev_buf_t*           bufs;               /**< Buffer list */
         size_t              nbuf;               /**< Buffer list count */
-        ev_buf_t            bufs[EV_IOV_MAX];   /**< Bound buffer list */
+        size_t              size;               /**< Write size */
+        size_t              capacity;           /**< Total bytes need to send */
+        ev_buf_t            bufsml[EV_IOV_MAX]; /**< Bound buffer list */
     }data;
+    struct
+    {
+        ev_role_t           role;               /**< The type of handle to send */
+        union
+        {
+            ev_os_socket_t  os_socket;          /**< A EV handle instance */
+        }u;
+    }handle;
     ev_write_backend_t      backend;            /**< Back-end */
 };
 #define EV_WRITE_INIT       \
     {\
-        EV_LIST_NODE_INIT,\
-        {\
-            NULL, 0,\
-            { EV_INIT_REPEAT(EV_IOV_MAX, EV_BUF_INIT(NULL, 0)), }\
+        EV_LIST_NODE_INIT,                                          /* .node */\
+        {/* .data */\
+            NULL,                                                   /* .data.cb */\
+            NULL,                                                   /* .data.bufs */\
+            0,                                                      /* .data.nbuf */\
+            0,                                                      /* .data.size */\
+            0,                                                      /* .data.capacity */\
+            { EV_INIT_REPEAT(EV_IOV_MAX, EV_BUF_INIT(NULL, 0)), }   /* .data.bufsml */\
         },\
-        EV_WRITE_BACKEND_INIT\
+        {/* .handle */\
+            EV_ROLE_UNKNOWN,                                        /* .handle.role */\
+            { EV_OS_SOCKET_INVALID }                                /* .handle.u.os_socket */\
+        },\
+        EV_WRITE_BACKEND_INIT                                       /* .backend */\
     }
 
 /**
@@ -387,17 +421,31 @@ struct ev_read
     struct
     {
         ev_read_cb          cb;                 /**< Read complete callback */
+        ev_buf_t*           bufs;               /**< Buffer list */
         size_t              nbuf;               /**< Buffer list count */
-        ev_buf_t            bufs[EV_IOV_MAX];   /**< Bound buffer list */
+        size_t              capacity;           /**< Total bytes of buffer */
+        size_t              size;               /**< Data size */
+        ev_buf_t            bufsml[EV_IOV_MAX]; /**< Bound buffer list */
     }data;
+    struct
+    {
+        ev_os_socket_t      os_socket;
+    }handle;
     ev_read_backend_t       backend;            /**< Back-end */
 };
 #define EV_READ_INIT        \
     {\
-        EV_LIST_NODE_INIT,\
+        EV_LIST_NODE_INIT,/* .node */\
+        {/* .data */\
+            NULL,                                                   /* .data.cb */\
+            NULL,                                                   /* .data.bufs */\
+            0,                                                      /* .data.nbuf */\
+            0,                                                      /* .data.capacity */\
+            0,                                                      /* .data.size */\
+            { EV_INIT_REPEAT(EV_IOV_MAX, EV_BUF_INIT(NULL, 0)), },  /* .data.bufsml */\
+        },\
         {\
-            NULL, 0,\
-            { EV_INIT_REPEAT(EV_IOV_MAX, EV_BUF_INIT(NULL, 0)), },\
+            EV_OS_SOCKET_INVALID,                                   /* .handle.os_socket */\
         },\
         EV_READ_BACKEND_INIT\
     }
@@ -660,7 +708,7 @@ int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len);
  * @param[out] handle   Pipe handle
  * @return              #ev_errno_t
  */
-int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe);
+int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe, int ipc);
 
 /**
  * @brief Destroy pipe
@@ -671,6 +719,7 @@ void ev_pipe_exit(ev_pipe_t* pipe, ev_pipe_cb cb);
 
 /**
  * @brief Open an existing file descriptor or HANDLE as a pipe.
+ * @note The pipe must have established connection.
  * @param[in] handle    Pipe handle
  * @param[in] file      File descriptor or HANDLE
  * @return              #ev_errno_t
@@ -712,6 +761,17 @@ int ev_pipe_write(ev_pipe_t* pipe, ev_write_t* req);
  * @return          #ev_errno_t
  */
 int ev_pipe_read(ev_pipe_t* pipe, ev_read_t* req);
+
+/**
+ * @return
+ *   + #EV_SUCCESS: Operation success.
+ *   + #EV_EINVAL: \p pipe is not initialized with IPC, or \p handle_role is not
+ *     support, or \p handle_addr is NULL.
+ *   + #EV_ENOENT: \p req does not receive a handle.
+ *   + #EV_ENOMEM: \p handle_size is too small.
+ */
+int ev_pipe_accept(ev_pipe_t* pipe, ev_read_t* req,
+    ev_role_t handle_role, void* handle_addr, size_t handle_size);
 
 /**
  * @brief Make a pair of pipe
@@ -798,6 +858,40 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
 int ev_write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb);
 
 /**
+ * @brief Initialize #ev_write_t
+ * 
+ * The extend version of #ev_write_init(). You should use this function if any
+ * of following condition is meet:
+ *
+ *   + The value of \p nbuf is larger than #EV_IOV_MAX.<br>
+ *     In this case you should pass \p iov_bufs as storage, the minimum value of
+ *     \p iov_size can be calculated by #EV_IOV_BUF_SIZE(). \p take the ownership
+ *     of \p iov_bufs, so you cannot modify or free \p iov_bufs until \p callback
+ *     is called.
+ *
+ *   + Need to transfer a handle to peer.<br>
+ *     In this case you should set the type of handle via \p handle_role and pass
+ *     the address of the handle via \p handle_addr. \p req does not take the ownership
+ *     of the handle, but the handle should not be closed or destroy until \p callback
+ *     is called.
+ * 
+ * @param[out] req          A write request to be initialized
+ * @param[in] callback      Write complete callback
+ * @param[in] bufs          Buffer list
+ * @param[in] nbuf          Buffer list size
+ * @param[in] iov_bufs      The buffer to store IOV request
+ * @param[in] iov_size      The size of \p iov_bufs in bytes
+ * @param[in] handle_role   The type of handle to send
+ * @param[in] handle_addr   The address of handle to send
+ * @param[in] handle_size   The size of handle to send
+ * @return                  #ev_errno_t
+ */
+int ev_write_init_ext(ev_write_t* req, ev_write_cb callback,
+    ev_buf_t* bufs, size_t nbuf,
+    void* iov_bufs, size_t iov_size,
+    ev_role_t handle_role, void* handle_addr, size_t handle_size);
+
+/**
  * @brief Initialize #ev_read_t
  * @param[out] req  A read request to be initialized
  * @param[in] bufs  Buffer list
@@ -806,6 +900,30 @@ int ev_write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb);
  * @return          #ev_errno_t
  */
 int ev_read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb);
+
+/**
+ * @brief Initialize #ev_write_t
+ *
+ * The extend version of #ev_write_init(). You should use this function if any
+ * of following condition is meet:
+ *
+ *   + The value of \p nbuf is larger than #EV_IOV_MAX.<br>
+ *     In this case you should pass \p iov_bufs as storage, the minimum value of
+ *     \p iov_size can be calculated by #EV_IOV_BUF_SIZE(). \p take the ownership
+ *     of \p iov_bufs, so you cannot modify or free \p iov_bufs until \p callback
+ *     is called.
+ *
+ * @param[out] req          A write request to be initialized
+ * @param[in] callback      Write complete callback
+ * @param[in] bufs          Buffer list
+ * @param[in] nbuf          Buffer list size
+ * @param[in] iov_bufs      The buffer to store IOV request
+ * @param[in] iov_size      The size of \p iov_bufs in bytes
+ * @return                  #ev_errno_t
+ */
+int ev_read_init_ext(ev_read_t* req, ev_read_cb callback,
+    ev_buf_t* bufs, size_t nbuf,
+    void* iov_bufs, size_t iov_size);
 
 /**
  * @brief Constructor for #ev_buf_t

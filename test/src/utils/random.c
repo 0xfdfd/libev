@@ -1,6 +1,6 @@
 #include "random.h"
+#include "test.h"
 
-#include <assert.h>
 #include <errno.h>
 
 #if defined(_WIN32)
@@ -21,7 +21,7 @@ void test_random(void* buffer, size_t size)
 {
 #if defined(_WIN32)
     BOOLEAN ret = RtlGenRandom(buffer, (ULONG)size);
-    assert(ret);
+    ASSERT_NE_D32(ret, 0);
 #elif defined(TEST_EV_HAVE_GETRANDOM)
     size_t w_size = 0;
     ssize_t r;
@@ -33,14 +33,14 @@ void test_random(void* buffer, size_t size)
         {
             continue;
         }
-        assert(r > 0);
+        ASSERT_GT_D32(r, 0);
         w_size += r;
     }
 #else
     int s = open("/dev/urandom", O_RDONLY);
-    assert(s >= 0);
+    ASSERT_GE_D32(s, 0);
     ssize_t r = read(s, buffer, size);
-    assert(r == size);
+    ASSERT_EQ_D32(r, size);
     close(s);
 #endif
 }

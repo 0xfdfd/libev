@@ -91,7 +91,7 @@ int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
     int ret;
     int pipefd[2];
 
-    ev__handle_init(loop, &handle->base, EV_ROLE_ASYNC, _ev_async_on_close_unix);
+    ev__handle_init(loop, &handle->base, EV_ROLE_EV_ASYNC, _ev_async_on_close_unix);
     handle->active_cb = cb;
 
     if (pipe(pipefd) != 0)

@@ -55,6 +55,7 @@ static void _on_close_client_socket(ev_tcp_t* sock)
 
 static void _on_send_finish(ev_write_t* req, size_t size, int stat)
 {
+    (void)req; (void)size;
     ASSERT_EQ_D32(stat, EV_SUCCESS);
 
     /* Close connection */
@@ -74,6 +75,7 @@ static void _on_accept(ev_tcp_t* from, ev_tcp_t* to, int stat)
 
 static void _on_read(ev_read_t* req, size_t size, int stat)
 {
+    (void)req;
     if (stat == EV_EOF)
     {
         int ret = memcmp(s_write_pack.send_buf, s_read_pack.recv_buf, sizeof(s_write_pack.send_buf));

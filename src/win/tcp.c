@@ -1,6 +1,7 @@
 #include <WinSock2.h>
 #include <assert.h>
-#include "loop.h"
+#include "win/loop.h"
+#include "win/tcp.h"
 
 static void _ev_tcp_deactive(ev_tcp_t* sock)
 {
@@ -67,7 +68,7 @@ static void _ev_tcp_cleanup_stream(ev_tcp_t* sock)
     while ((it = ev_list_pop_front(&sock->backend.u.stream.r_queue_done)) != NULL)
     {
         ev_read_t* req = container_of(it, ev_read_t, node);
-        req->data.cb(req, req->backend.size, req->backend.stat);
+        req->data.cb(req, req->data.size, req->backend.stat);
     }
     while ((it = ev_list_pop_front(&sock->backend.u.stream.r_queue)) != NULL)
     {
@@ -77,7 +78,7 @@ static void _ev_tcp_cleanup_stream(ev_tcp_t* sock)
     while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue_done)) != NULL)
     {
         ev_write_t* req = container_of(it, ev_write_t, node);
-        req->data.cb(req, req->backend.size, req->backend.stat);
+        req->data.cb(req, req->data.size, req->backend.stat);
     }
     while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue)) != NULL)
     {
@@ -239,7 +240,7 @@ static void _ev_tcp_process_stream(ev_tcp_t* sock)
     while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue_done)) != NULL)
     {
         ev_write_t* req = container_of(it, ev_write_t, node);
-        size_t write_size = req->backend.size;
+        size_t write_size = req->data.size;
         int write_stat = req->backend.stat;
 
         req->data.cb(req, write_size, write_stat);
@@ -248,7 +249,7 @@ static void _ev_tcp_process_stream(ev_tcp_t* sock)
     while ((it = ev_list_pop_front(&sock->backend.u.stream.r_queue_done)) != NULL)
     {
         ev_read_t* req = container_of(it, ev_read_t, node);
-        size_t read_size = req->backend.size;
+        size_t read_size = req->data.size;
         int read_stat = req->backend.stat;
 
         req->data.cb(req, read_size, read_stat);
@@ -367,7 +368,7 @@ static void _ev_tcp_on_stream_write_done(ev_iocp_t* iocp, size_t transferred, vo
     ev_write_t* req = arg;
     ev_tcp_t* sock = req->backend.owner;
 
-    req->backend.size = transferred;
+    req->data.size = transferred;
     req->backend.stat = NT_SUCCESS(iocp->overlapped.Internal) ?
         EV_SUCCESS : ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal));
 
@@ -382,7 +383,7 @@ static void _ev_tcp_on_stream_read_done(ev_iocp_t* iocp, size_t transferred, voi
     ev_read_t* req = arg;
     ev_tcp_t* sock = req->backend.owner;
 
-    req->backend.size = transferred;
+    req->data.size = transferred;
     if (transferred == 0)
     {/* Zero recv means peer close */
         req->backend.stat = EV_EOF;
@@ -416,7 +417,7 @@ static void _ev_tcp_on_iocp(ev_iocp_t* req, size_t transferred, void* arg)
 
 int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp)
 {
-    ev__handle_init(loop, &tcp->base, EV_ROLE_TCP, _ev_tcp_on_close);
+    ev__handle_init(loop, &tcp->base, EV_ROLE_EV_TCP, _ev_tcp_on_close);
     tcp->close_cb = NULL;
     tcp->sock = EV_OS_SOCKET_INVALID;
 
@@ -711,6 +712,17 @@ int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req)
     {
         _ev_tcp_deactive_stream(sock);
         return ev__translate_sys_error(ret);
+    }
+
+    return EV_SUCCESS;
+}
+
+int ev__tcp_open_win(ev_tcp_t* tcp, SOCKET fd)
+{
+    tcp->sock = fd;
+    if (!(tcp->base.data.flags & EV_TCP_STREAMING))
+    {
+        _ev_tcp_setup_stream_win(tcp);
     }
 
     return EV_SUCCESS;

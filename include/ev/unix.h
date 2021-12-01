@@ -72,6 +72,12 @@ typedef struct ev_read_backend
 }ev_read_backend_t;
 #define EV_READ_BACKEND_INIT    { }
 
+/**
+ * @brief Can be used by #ev_write_backend_t and #ev_read_backend_t
+ */
+#define EV_IOV_BUF_SIZE_INTERNAL(nbuf)   \
+    (sizeof(ev_buf_t) * (nbuf))
+
 struct ev_nonblock_io;
 typedef struct ev_nonblock_io ev_nonblock_io_t;
 
@@ -108,9 +114,11 @@ struct ev_nonblock_stream
 
     struct
     {
+        unsigned                ipc : 1;            /**< Support IPC */
         unsigned                io_abort : 1;       /**< No futher IO allowed */
         unsigned                io_reg_r : 1;       /**< IO registered read event */
         unsigned                io_reg_w : 1;       /**< IO registered write event */
+        unsigned                no_cmsg_cloexec : 1;/**< No MSG_CMSG_CLOEXEC */
     }flags;
 
     ev_nonblock_io_t            io;                 /**< IO object */
@@ -130,7 +138,7 @@ struct ev_nonblock_stream
 #define EV_NONBLOCK_STREAM_INIT \
     {\
         NULL,                           /* .loop */\
-        { 0, 0, 0 },                    /* .flags */\
+        { 0, 0, 0, 0, 0 },              /* .flags */\
         EV_NONBLOCK_IO_INIT,            /* .io */\
         { EV_LIST_INIT, EV_LIST_INIT }, /* .pending */\
         { NULL, NULL }                  /* .callbacks */\

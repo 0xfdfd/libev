@@ -54,7 +54,7 @@ API_LOCAL void ev__nonblock_io_del(ev_loop_t* loop, ev_nonblock_io_t* io, unsign
  * @param[in] rcb       Read callback
  */
 API_LOCAL void ev__nonblock_stream_init(ev_loop_t* loop, ev_nonblock_stream_t* stream,
-    int fd, ev_stream_write_cb wcb, ev_stream_read_cb rcb);
+    int fd, int ipc, ev_stream_write_cb wcb, ev_stream_read_cb rcb);
 
 /**
  * @brief Cleanup and exit stream

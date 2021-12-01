@@ -1,13 +1,21 @@
+/**
+ * @file
+ */
 #ifndef __EV_DEFINES_H__
 #define __EV_DEFINES_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+/**
+ * @brief The maximum number of iov buffers can be support.
+ */
 #define EV_IOV_MAX              16
 
 #define EV_EXPAND(...)          __VA_ARGS__
 
 #define EV_INIT_REPEAT(n, ...)   EV_INIT_REPEAT2(n, __VA_ARGS__)
 #define EV_INIT_REPEAT2(n, ...)  EV_INIT_REPEAT_##n(__VA_ARGS__)
-
 #define EV_INIT_REPEAT_1(...)    EV_EXPAND(__VA_ARGS__)
 #define EV_INIT_REPEAT_2(...)    EV_INIT_REPEAT_1(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
 #define EV_INIT_REPEAT_3(...)    EV_INIT_REPEAT_2(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
@@ -25,4 +33,7 @@
 #define EV_INIT_REPEAT_15(...)   EV_INIT_REPEAT_14(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
 #define EV_INIT_REPEAT_16(...)   EV_INIT_REPEAT_15(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
 
+#ifdef __cplusplus
+}
+#endif
 #endif

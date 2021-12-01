@@ -1,7 +1,8 @@
 #include <sys/uio.h>
 #include <assert.h>
 #include <unistd.h>
-#include "loop.h"
+#include "unix/loop.h"
+#include "unix/tcp.h"
 
 static void _ev_tcp_close_fd(ev_tcp_t* sock)
 {
@@ -250,13 +251,13 @@ static void _ev_tcp_setup_stream_once(ev_tcp_t* sock)
         return;
     }
     ev__nonblock_stream_init(sock->base.data.loop, &sock->backend.u.stream, sock->sock,
-        _on_tcp_write_done, _on_tcp_read_done);
+        0, _on_tcp_write_done, _on_tcp_read_done);
     sock->base.data.flags |= EV_TCP_STREAMING;
 }
 
 int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* sock)
 {
-    ev__handle_init(loop, &sock->base, EV_ROLE_TCP, _ev_tcp_on_close);
+    ev__handle_init(loop, &sock->base, EV_ROLE_EV_TCP, _ev_tcp_on_close);
     sock->close_cb = NULL;
     sock->sock = EV_OS_SOCKET_INVALID;
 
@@ -447,4 +448,18 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
 err:
     _ev_tcp_close_fd(sock);
     return ret;
+}
+
+int ev__tcp_open(ev_tcp_t* tcp, int fd)
+{
+    int busy_flags = EV_TCP_LISTING | EV_TCP_ACCEPTING | EV_TCP_STREAMING | EV_TCP_CONNECTING | EV_TCP_BOUND;
+    if (tcp->base.data.flags & busy_flags)
+    {
+        return EV_EBUSY;
+    }
+
+    tcp->sock = fd;
+    _ev_tcp_setup_stream_once(tcp);
+
+    return EV_SUCCESS;
 }

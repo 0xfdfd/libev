@@ -6,6 +6,8 @@ extern "C" {
 
 #include "winapi.h"
 
+#define EV_INVALID_PID_WIN  0
+
 typedef struct ev_loop_win_ctx
 {
     /**

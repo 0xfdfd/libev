@@ -190,7 +190,7 @@ int ev__translate_sys_error(int err)
     case ERROR_NOT_SAME_DEVICE:             return EV_EXDEV;
     case ERROR_INVALID_FUNCTION:            return EV_EISDIR;
     case ERROR_META_EXPANSION_TOO_LONG:     return EV_E2BIG;
-    default:                                return err;
+    default:                                BREAK_ABORT(); return err;
     }
 }
 
@@ -393,7 +393,6 @@ void ev__write_init_win(ev_write_t* req, void* owner, int stat,
     ev_iocp_cb iocp_cb, void* iocp_arg)
 {
     req->backend.owner = owner;
-    req->backend.size = 0;
     req->backend.stat = stat;
 
     size_t i;
@@ -407,7 +406,6 @@ void ev__read_init_win(ev_read_t* req, void* owner, int stat,
     ev_iocp_cb iocp_cb, void* iocp_arg)
 {
     req->backend.owner = owner;
-    req->backend.size = 0;
     req->backend.stat = stat;
 
     size_t i;

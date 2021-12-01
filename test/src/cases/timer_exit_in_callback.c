@@ -7,6 +7,7 @@ static int flag_timer_exit = 0;
 
 static void _on_timer_exit(ev_timer_t* timer)
 {
+    (void)timer;
     flag_timer_exit = 1;
 }
 
