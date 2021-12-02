@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.2)
 
-add_executable(unittest
+add_executable(ev_unittest
     "src/utils/random.c"
     "src/utils/sockpair.c"
     "src/cases/async.c"
@@ -20,7 +20,7 @@ add_executable(unittest
     "src/test.c"
     "src/main.c")
 
-target_include_directories(unittest
+target_include_directories(ev_unittest
     PUBLIC
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -29,24 +29,24 @@ target_include_directories(unittest
 )
 
 if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-    target_compile_options(unittest PRIVATE /W4 /WX)
+    target_compile_options(ev_unittest PRIVATE /W4 /WX)
 else ()
-    target_compile_options(unittest PRIVATE -Wall -Wextra -Werror)
+    target_compile_options(ev_unittest PRIVATE -Wall -Wextra -Werror)
 endif ()
 
-target_link_libraries(unittest PRIVATE ev cutest)
-add_test(unittest unittest)
+target_link_libraries(ev_unittest PRIVATE ev cutest)
+add_test(ev_unittest ev_unittest)
 
-add_custom_target(test_valgrind
+add_custom_target(ev_test_valgrind
     COMMAND valgrind
             --trace-children=yes
             --track-fds=all
             --leak-check=full
             --show-leak-kinds=all
-            $<TARGET_FILE:unittest>)
+            $<TARGET_FILE:ev_unittest>)
 
-add_custom_target(test_drmemory
+add_custom_target(ev_test_drmemory
     COMMAND drmemory
             -show_reachable
-            -logdir $<TARGET_FILE_DIR:unittest>
-            $<TARGET_FILE:unittest>)
+            -logdir $<TARGET_FILE_DIR:ev_unittest>
+            $<TARGET_FILE:ev_unittest>)
