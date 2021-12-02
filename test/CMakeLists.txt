@@ -44,3 +44,9 @@ add_custom_target(test_valgrind
             --leak-check=full
             --show-leak-kinds=all
             $<TARGET_FILE:unittest>)
+
+add_custom_target(test_drmemory
+    COMMAND drmemory
+            -show_reachable
+            -logdir $<TARGET_FILE_DIR:unittest>
+            $<TARGET_FILE:unittest>)
