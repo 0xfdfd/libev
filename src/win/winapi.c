@@ -15,6 +15,7 @@ void ev__winapi_init(void)
     assert(ntdll_modeule != NULL);
 
     GET_NTDLL_FUNC(NtQueryInformationFile);
+    GET_NTDLL_FUNC(RtlNtStatusToDosError);
 
 #undef GET_NTDLL_FUNC
 }

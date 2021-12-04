@@ -255,7 +255,22 @@ static int _ev_pipe_data_mode_want_read(ev_pipe_t* pipe)
     return EV_SUCCESS;
 }
 
-static void _ev_pipe_on_data_mode_read_recv(ev_pipe_t* pipe)
+static void _ev_pipe_data_mode_callback_and_mount_next_win(ev_pipe_t* pipe, ev_read_t* req)
+{
+    ev_list_node_t* it = ev_list_pop_front(&pipe->backend.data_mode.rio.r_pending);
+    if (it == NULL)
+    {
+        pipe->backend.data_mode.rio.r_doing = NULL;
+    }
+    else
+    {
+        pipe->backend.data_mode.rio.r_doing = container_of(it, ev_read_t, node);
+    }
+
+    req->data.cb(req, req->data.size, EV_SUCCESS);
+}
+
+static int _ev_pipe_on_data_mode_read_recv(ev_pipe_t* pipe)
 {
     int ret = EV_SUCCESS;
 
@@ -278,14 +293,13 @@ static void _ev_pipe_on_data_mode_read_recv(ev_pipe_t* pipe)
             {
                 ret = ev__translate_sys_error(ret);
             }
-            goto err;
+            return ret;
         }
+
+        /* no more data to read */
         if (avail == 0)
         {
-            if ((ret = _ev_pipe_data_mode_want_read(pipe)) != EV_SUCCESS)
-            {
-                goto err;
-            }
+            _ev_pipe_data_mode_callback_and_mount_next_win(pipe, req);
             break;
         }
 
@@ -296,7 +310,7 @@ static void _ev_pipe_on_data_mode_read_recv(ev_pipe_t* pipe)
 
         if (ret != EV_SUCCESS)
         {
-            goto err;
+            return ret;
         }
 
         if (req->data.size < req->data.capacity)
@@ -304,42 +318,55 @@ static void _ev_pipe_on_data_mode_read_recv(ev_pipe_t* pipe)
             continue;
         }
 
-        ev_list_node_t* it = ev_list_pop_front(&pipe->backend.data_mode.rio.r_pending);
-        if (it == NULL)
-        {
-            pipe->backend.data_mode.rio.r_doing = NULL;
-        }
-        else
-        {
-            pipe->backend.data_mode.rio.r_doing = container_of(it, ev_read_t, node);
-        }
-
-        req->data.cb(req, req->data.size, EV_SUCCESS);
+        _ev_pipe_data_mode_callback_and_mount_next_win(pipe, req);
     }
 
-    _ev_pipe_smart_deactive_win(pipe);
-    return;
-
-err:
-    _ev_pipe_abort(pipe, ret);
-    return;
+    return EV_SUCCESS;
 }
 
-static void _ev_pipe_on_data_mode_read(ev_iocp_t* iocp, size_t transferred, void* arg)
+static int _ev_pipe_is_success_iocp_request(const ev_iocp_t* iocp)
+{
+    NTSTATUS status = (NTSTATUS)(iocp->overlapped.Internal);
+    return NT_SUCCESS(status);
+}
+
+static DWORD _ev_pipe_get_iocp_error(const ev_iocp_t* iocp)
+{
+    NTSTATUS status = (NTSTATUS)(iocp->overlapped.Internal);
+    return g_ev_loop_win_ctx.RtlNtStatusToDosError(status);
+}
+
+static void _ev_pipe_on_data_mode_read_win(ev_iocp_t* iocp, size_t transferred, void* arg)
 {
     (void)transferred;
+
+    int ret;
     ev_pipe_t* pipe = arg;
 
-    if (!NT_SUCCESS(iocp->overlapped.Internal))
+    if (!_ev_pipe_is_success_iocp_request(iocp))
     {
-        int winsock_err = ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal);
-        int ret = ev__translate_sys_error(winsock_err);
+        int err = _ev_pipe_get_iocp_error(iocp);
+        ret = ev__translate_sys_error(err);
         _ev_pipe_abort(pipe, ret);
 
         return;
     }
 
-    _ev_pipe_on_data_mode_read_recv(pipe);
+    ret = _ev_pipe_on_data_mode_read_recv(pipe);
+    if (ret != EV_SUCCESS)
+    {
+        _ev_pipe_abort(pipe, ret);
+        return;
+    }
+    if (pipe->backend.data_mode.rio.r_doing != NULL
+        || ev_list_size(&pipe->backend.data_mode.rio.r_pending) != 0)
+    {
+        _ev_pipe_data_mode_want_read(pipe);
+    }
+    else
+    {
+        _ev_pipe_smart_deactive_win(pipe);
+    }
 }
 
 static int _ev_pipe_write_file_iocp(HANDLE file, const void* buffer, size_t size, LPOVERLAPPED iocp)
@@ -465,7 +492,7 @@ static void _ev_pipe_on_data_mode_write(ev_iocp_t* iocp, size_t transferred, voi
 
 static void _ev_pipe_init_data_mode_r(ev_pipe_t* pipe)
 {
-    ev__iocp_init(&pipe->backend.data_mode.rio.io, _ev_pipe_on_data_mode_read, pipe);
+    ev__iocp_init(&pipe->backend.data_mode.rio.io, _ev_pipe_on_data_mode_read_win, pipe);
     ev_list_init(&pipe->backend.data_mode.rio.r_pending);
     pipe->backend.data_mode.rio.r_doing = NULL;
 }

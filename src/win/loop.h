@@ -22,6 +22,7 @@ typedef struct ev_loop_win_ctx
     }net;
 
     fn_NtQueryInformationFile   NtQueryInformationFile;
+    fn_RtlNtStatusToDosError    RtlNtStatusToDosError;
 }ev_loop_win_ctx_t;
 
 extern ev_loop_win_ctx_t g_ev_loop_win_ctx;

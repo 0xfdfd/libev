@@ -309,6 +309,8 @@ typedef struct _FILE_MODE_INFORMATION {
 typedef NTSTATUS (NTAPI* fn_NtQueryInformationFile)(HANDLE FileHandle, PIO_STATUS_BLOCK IoStatusBlock,
     PVOID FileInformation,ULONG Length,FILE_INFORMATION_CLASS FileInformationClass);
 
+typedef ULONG (NTAPI* fn_RtlNtStatusToDosError)(NTSTATUS Status);
+
 /**
  * @brief Initialize WinAPI
  */

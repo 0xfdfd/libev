@@ -7,14 +7,14 @@ typedef struct r_pack
 {
     ev_read_t   read_req;
     ev_buf_t    buf;
-    char        buffer[4096];
+    uint8_t     buffer[33 * 1024 * 1024];
 }r_pack_t;
 
 typedef struct w_pack
 {
     ev_write_t  write_req;
     ev_buf_t    buf;
-    char        buffer[1024];
+    uint8_t     buffer[32 * 1024 * 1024];
 }w_pack_t;
 
 static ev_loop_t    s_loop;
@@ -47,7 +47,7 @@ static void _on_read_callback(ev_read_t* req, size_t size, int stat)
     ASSERT_EQ_D32(ev_pipe_read(&s_pipe_r, &s_r_pack.read_req), 0);
 }
 
-TEST(pipe, data_mode)
+TEST_FIXTURE_SETUP(pipe)
 {
     test_random(s_w_pack.buffer, sizeof(s_w_pack.buffer));
 
@@ -59,7 +59,18 @@ TEST(pipe, data_mode)
     ASSERT_EQ_D32(ev_pipe_make(fds), 0);
     ASSERT_EQ_D32(ev_pipe_open(&s_pipe_r, fds[0]), 0);
     ASSERT_EQ_D32(ev_pipe_open(&s_pipe_w, fds[1]), 0);
+}
 
+TEST_FIXTURE_TEAREDOWN(pipe)
+{
+    ev_pipe_exit(&s_pipe_r, NULL);
+    ASSERT_EQ_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
+
+    ev_loop_exit(&s_loop);
+}
+
+TEST_F(pipe, data_mode)
+{
     s_w_pack.buf = ev_buf_make(s_w_pack.buffer, sizeof(s_w_pack.buffer));
     ASSERT_EQ_D32(ev_write_init(&s_w_pack.write_req, &s_w_pack.buf, 1, _on_write_callback), 0);
     ASSERT_EQ_D32(ev_pipe_write(&s_pipe_w, &s_w_pack.write_req), 0);
@@ -73,9 +84,4 @@ TEST(pipe, data_mode)
         int ret = memcmp(s_w_pack.buffer, s_r_pack.buffer, sizeof(s_w_pack.buffer));
         ASSERT_EQ_D32(ret, 0);
     }
-
-    ev_pipe_exit(&s_pipe_r, NULL);
-    ASSERT_EQ_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
-
-    ev_loop_exit(&s_loop);
 }
