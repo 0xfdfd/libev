@@ -116,7 +116,6 @@ struct ev_nonblock_stream
 
     struct
     {
-        unsigned                ipc : 1;            /**< Support IPC */
         unsigned                io_abort : 1;       /**< No futher IO allowed */
         unsigned                io_reg_r : 1;       /**< IO registered read event */
         unsigned                io_reg_w : 1;       /**< IO registered write event */

@@ -740,7 +740,7 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
     else
     {
         ev__nonblock_stream_init(pipe->base.data.loop, &pipe->backend.data_mode.stream, handle,
-            0, _ev_pipe_on_data_mode_write_unix, _ev_pipe_on_data_mode_read_unix);
+            _ev_pipe_on_data_mode_write_unix, _ev_pipe_on_data_mode_read_unix);
     }
 
     return EV_SUCCESS;

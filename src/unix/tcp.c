@@ -251,7 +251,7 @@ static void _ev_tcp_setup_stream_once(ev_tcp_t* sock)
         return;
     }
     ev__nonblock_stream_init(sock->base.data.loop, &sock->backend.u.stream, sock->sock,
-        0, _on_tcp_write_done, _on_tcp_read_done);
+        _on_tcp_write_done, _on_tcp_read_done);
     sock->base.data.flags |= EV_TCP_STREAMING;
 }
 

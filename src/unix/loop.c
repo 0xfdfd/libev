@@ -680,11 +680,10 @@ int ev__translate_sys_error(int syserr)
 }
 
 void ev__nonblock_stream_init(ev_loop_t* loop, ev_nonblock_stream_t* stream,
-    int fd, int ipc, ev_stream_write_cb wcb, ev_stream_read_cb rcb)
+    int fd, ev_stream_write_cb wcb, ev_stream_read_cb rcb)
 {
     stream->loop = loop;
 
-    stream->flags.ipc = !!ipc;
     stream->flags.io_abort = 0;
     stream->flags.io_reg_r = 0;
     stream->flags.io_reg_w = 0;
