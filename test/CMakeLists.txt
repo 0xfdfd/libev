@@ -42,7 +42,7 @@ add_test(ev_test ev_test)
 add_custom_target(ev_test_valgrind
     COMMAND valgrind
             --trace-children=yes
-            --track-fds=all
+            --track-fds=yes
             --leak-check=full
             --show-leak-kinds=all
             $<TARGET_FILE:ev_test>)
