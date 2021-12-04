@@ -735,7 +735,7 @@ static void _ev_pipe_on_ipc_mode_read(ev_iocp_t* iocp, size_t transferred, void*
  *
  * Write sizeof(ev_ipc_frame_hdr_t) bytes
  */
-static void _ev_pipe_init_ipc_frame_hdr(uint8_t* buffer, size_t bufsize, uint8_t flags, size_t dtsz)
+static void _ev_pipe_init_ipc_frame_hdr(uint8_t* buffer, size_t bufsize, uint8_t flags, uint32_t dtsz)
 {
     assert(bufsize >= sizeof(ev_ipc_frame_hdr_t)); (void)bufsize;
 
@@ -745,7 +745,7 @@ static void _ev_pipe_init_ipc_frame_hdr(uint8_t* buffer, size_t bufsize, uint8_t
         exsz = sizeof(ev_pipe_win_ipc_info_t);
     }
 
-    ev__ipc_init_frame_hdr(buffer, flags, exsz, dtsz);
+    ev__ipc_init_frame_hdr((ev_ipc_frame_hdr_t*)buffer, flags, exsz, dtsz);
 }
 
 /**
@@ -784,7 +784,7 @@ static int _ev_pipe_ipc_mode_write_data(ev_pipe_t* pipe, ev_write_t* req)
     }
 
     _ev_pipe_init_ipc_frame_hdr(pipe->backend.ipc_mode.wio.buffer,
-        sizeof(pipe->backend.ipc_mode.wio.buffer), flags, req->data.capacity);
+        sizeof(pipe->backend.ipc_mode.wio.buffer), flags, (uint32_t)req->data.capacity);
     hdr_size += sizeof(ev_ipc_frame_hdr_t);
 
     int ret = _ev_pipe_write_file_iocp(pipe->pipfd, pipe->backend.ipc_mode.wio.buffer,
