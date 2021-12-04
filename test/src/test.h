@@ -48,6 +48,9 @@ extern "C" {
         ((type *) ((char *) (ptr) - offsetof(type, member)))
 #endif
 
+#define ALIGN_ADDR(addr, align)	\
+	(((uintptr_t)(addr) + ((uintptr_t)(align) - 1)) & ~((uintptr_t)(align) - 1))
+
 typedef void (*fn_execute)(void);
 
 typedef struct test_execute_token
