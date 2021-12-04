@@ -15,8 +15,7 @@ struct wdata_pack_a548
         size_t              size;
         uint64_t            hash;
     }data1;
-    void*                   data2;
-    size_t                  data2_size; /**< 32MB */
+    uint8_t                 data2[32 * 1024 * 1024];
 };
 
 struct rdata_pack_a548
@@ -27,8 +26,7 @@ struct rdata_pack_a548
         size_t              size;
         uint64_t            hash;
     }data1;
-    void*                   data2;
-    size_t                  data2_size; /**< 64MB */
+    uint8_t                 data2[33 * 1024 * 1024];
 };
 
 struct test_a548
@@ -63,16 +61,9 @@ TEST_FIXTURE_SETUP(pipe)
     size_t i;
     for (i = 0; i < TEST_PACK_NUM_A548; i++)
     {
-        g_test_a548.w_req[i].data2_size = 32 * 1024 * 1024;
-        g_test_a548.w_req[i].data2 = malloc(g_test_a548.w_req[i].data2_size);
-        ASSERT_NE_PTR(g_test_a548.w_req[i].data2, NULL);
-        test_random(g_test_a548.w_req[i].data2, g_test_a548.w_req[i].data2_size);
-        g_test_a548.w_req[i].data1.size = g_test_a548.w_req[i].data2_size;
-        g_test_a548.w_req[i].data1.hash = test_hash64(g_test_a548.w_req[i].data2, g_test_a548.w_req[i].data2_size, 0);
-
-        g_test_a548.r_req[i].data2_size = 64 * 1024 * 1024;
-        g_test_a548.r_req[i].data2 = malloc(g_test_a548.r_req[i].data2_size);
-        ASSERT_NE_PTR(g_test_a548.r_req[i].data2, NULL);
+        test_random(g_test_a548.w_req[i].data2, sizeof(g_test_a548.w_req[i].data2));
+        g_test_a548.w_req[i].data1.size = sizeof(g_test_a548.w_req[i].data2);
+        g_test_a548.w_req[i].data1.hash = test_hash64(g_test_a548.w_req[i].data2, sizeof(g_test_a548.w_req[i].data2), 0);
     }
 }
 
@@ -83,13 +74,6 @@ TEST_FIXTURE_TEAREDOWN(pipe)
 
     ASSERT_EQ_D32(ev_loop_run(&g_test_a548.loop, EV_LOOP_MODE_DEFAULT), 0);
     ASSERT_EQ_D32(ev_loop_exit(&g_test_a548.loop), 0);
-
-    size_t i;
-    for (i = 0; i < TEST_PACK_NUM_A548; i++)
-    {
-        free(g_test_a548.r_req[i].data2);
-        free(g_test_a548.w_req[i].data2);
-    }
 }
 
 static void _on_test_a548_write_done(ev_write_t* req, size_t size, int stat)
@@ -99,7 +83,7 @@ static void _on_test_a548_write_done(ev_write_t* req, size_t size, int stat)
     ASSERT_EQ_D32(stat, EV_SUCCESS);
     struct wdata_pack_a548* w_pack = container_of(req, struct wdata_pack_a548, req);
 
-    ASSERT_EQ_SIZE(size, w_pack->data2_size + sizeof(w_pack->data1));
+    ASSERT_EQ_SIZE(size, sizeof(w_pack->data2) + sizeof(w_pack->data1));
 }
 
 static void _on_test_a548_read_done(ev_read_t* req, size_t size, int stat)
@@ -123,11 +107,11 @@ TEST_F(pipe, ipc_mode_dgram)
         ev_buf_t bufs[2];
 
         bufs[0] = ev_buf_make(&g_test_a548.w_req[i].data1, sizeof(g_test_a548.w_req[i].data1));
-        bufs[1] = ev_buf_make(g_test_a548.w_req[i].data2, g_test_a548.w_req[i].data2_size);
+        bufs[1] = ev_buf_make(g_test_a548.w_req[i].data2, sizeof(g_test_a548.w_req[i].data2));
         ASSERT_EQ_D32(ev_write_init(&g_test_a548.w_req[i].req, bufs, 2, _on_test_a548_write_done), 0);
 
         bufs[0] = ev_buf_make(&g_test_a548.r_req[i].data1, sizeof(g_test_a548.r_req[i].data1));
-        bufs[1] = ev_buf_make(g_test_a548.r_req[i].data2, g_test_a548.r_req[i].data2_size);
+        bufs[1] = ev_buf_make(g_test_a548.r_req[i].data2, sizeof(g_test_a548.r_req[i].data2));
         ASSERT_EQ_D32(ev_read_init(&g_test_a548.r_req[i].req, bufs, 2, _on_test_a548_read_done), 0);
     }
 
