@@ -306,9 +306,17 @@ typedef struct _FILE_MODE_INFORMATION {
     ULONG Mode;
 } FILE_MODE_INFORMATION, * PFILE_MODE_INFORMATION;
 
+/**
+ * @brief The NtQueryInformationFile routine returns various kinds of information about a file object.
+ * @see https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntqueryinformationfile
+ */
 typedef NTSTATUS (NTAPI* fn_NtQueryInformationFile)(HANDLE FileHandle, PIO_STATUS_BLOCK IoStatusBlock,
     PVOID FileInformation,ULONG Length,FILE_INFORMATION_CLASS FileInformationClass);
 
+/**
+ * @brief Converts the specified NTSTATUS code to its equivalent system error code.
+ * @see https://docs.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-rtlntstatustodoserror
+ */
 typedef ULONG (NTAPI* fn_RtlNtStatusToDosError)(NTSTATUS Status);
 
 /**

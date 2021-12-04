@@ -9,39 +9,8 @@ extern "C" {
 #include "ev.h"
 #include "ev-platform.h"
 
-#if defined(__GNUC__) || defined(__clang__)
-#   define container_of(ptr, type, member) \
-        ({ \
-            const typeof(((type *)0)->member)*__mptr = (ptr); \
-            (type *)((char *)__mptr - offsetof(type, member)); \
-        })
-#else
-#   define container_of(ptr, type, member) \
-        ((type *) ((char *) (ptr) - offsetof(type, member)))
-#endif
-
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #define EV_MIN(a, b)    ((a) < (b) ? (a) : (b))
-
-#if defined(_MSC_VER)
-#   define BREAK_ABORT()        __debugbreak()
-#elif (defined(__clang__) || defined(__GNUC__)) && (defined(__x86_64__) || defined(__i386__))
-#   define BREAK_ABORT()        __asm__ volatile("int $0x03")
-#elif (defined(__clang__) || defined(__GNUC__)) && defined(__thumb__)
-#   define BREAK_ABORT()        __asm__ volatile(".inst 0xde01")
-#elif (defined(__clang__) || defined(__GNUC__)) && defined(__arm__) && !defined(__thumb__)
-#   define BREAK_ABORT()        __asm__ volatile(".inst 0xe7f001f0")
-#elif (defined(__clang__) || defined(__GNUC__)) && defined(__aarch64__) && defined(__APPLE__)
-#   define BREAK_ABORT()        __builtin_debugtrap()
-#elif (defined(__clang__) || defined(__GNUC__)) && defined(__aarch64__)
-#   define BREAK_ABORT()        __asm__ volatile(".inst 0xd4200000")
-#elif (defined(__clang__) || defined(__GNUC__)) && defined(__powerpc__)
-#   define BREAK_ABORT()        __asm__ volatile(".4byte 0x7d821008")
-#elif (defined(__clang__) || defined(__GNUC__)) && defined(__riscv)
-#   define BREAK_ABORT()        __asm__ volatile(".4byte 0x00100073")
-#else
-#   define BREAK_ABORT()        *(volatile int*)NULL = 1
-#endif
 
 #define ENSURE_LAYOUT(TYPE_A, TYPE_B, FIELD_A_1, FIELD_B_1, FIELD_A_2, FIELD_B_2)   \
     assert(sizeof(TYPE_A) == sizeof(TYPE_B));\
@@ -49,14 +18,6 @@ extern "C" {
     assert(sizeof(((TYPE_A*)0)->FIELD_A_1) == sizeof(((TYPE_B*)0)->FIELD_B_1));\
     assert(offsetof(TYPE_A, FIELD_A_2) == offsetof(TYPE_B, FIELD_B_2));\
     assert(sizeof(((TYPE_A*)0)->FIELD_A_2) == sizeof(((TYPE_B*)0)->FIELD_B_2))
-
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-#   define EV_IPC_FRAME_HDR_MAGIC  (0x48465645)
-#elif __BYTE_ORDER == __BIG_ENDIAN
-#   define EV_IPC_FRAME_HDR_MAGIC  (0x45564648)
-#else
-#   error unknown endian
-#endif
 
 typedef enum ev_ipc_frame_flag
 {
@@ -154,6 +115,13 @@ API_LOCAL void ev__todo_cancel(ev_loop_t* loop, ev_todo_t* token);
  */
 API_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size);
 
+/**
+ * @brief Initialize IPC frame header
+ * @param[out] hdr      Frame header to initialize
+ * @param[in] flags     Control flags
+ * @param[in] exsz      Extra information size
+ * @param[in] dtsz      Data size
+ */
 API_LOCAL void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr,
     uint8_t flags, uint16_t exsz, uint32_t dtsz);
 
