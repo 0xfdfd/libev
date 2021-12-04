@@ -1,5 +1,11 @@
 #ifndef __EV_MAP_H__
 #define __EV_MAP_H__
+
+#include <stdint.h>
+#include <inttypes.h>
+#include <stddef.h>
+#include "map_low.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -9,11 +15,6 @@ extern "C" {
  * @ingroup EV_UTILS
  * @{
  */
-
-#include <stdint.h>
-#include <inttypes.h>
-#include <stddef.h>
-#include "map_low.h"
 
 /**
  * @brief Static initializer for #ev_map_t

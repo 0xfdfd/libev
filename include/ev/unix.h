@@ -1,14 +1,17 @@
 #ifndef __EV_UNIX_H__
 #define __EV_UNIX_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include <errno.h>
 #include <pthread.h>
 #include <netinet/in.h>
 #include <sys/epoll.h>
 #include "ev/map.h"
+#include "ev/list.h"
+#include "ev/ipc-protocol.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef int ev_os_pipe_t;
 #define EV_OS_PIPE_INVALID      (-1)
@@ -62,9 +65,8 @@ typedef struct ev_loop_plt
 typedef struct ev_write_backend
 {
     size_t                      idx;                /**< Write buffer index */
-    size_t                      len;                /**< Total write size */
 }ev_write_backend_t;
-#define EV_WRITE_BACKEND_INIT   { 0, 0 }
+#define EV_WRITE_BACKEND_INIT   { 0 }
 
 typedef struct ev_read_backend
 {
@@ -118,7 +120,6 @@ struct ev_nonblock_stream
         unsigned                io_abort : 1;       /**< No futher IO allowed */
         unsigned                io_reg_r : 1;       /**< IO registered read event */
         unsigned                io_reg_w : 1;       /**< IO registered write event */
-        unsigned                no_cmsg_cloexec : 1;/**< No MSG_CMSG_CLOEXEC */
     }flags;
 
     ev_nonblock_io_t            io;                 /**< IO object */
@@ -173,11 +174,62 @@ typedef struct ev_tcp_backend
 }ev_tcp_backend_t;
 #define EV_TCP_BACKEND_INIT     { { { EV_NONBLOCK_IO_INIT, EV_LIST_INIT } } }
 
-typedef struct ev_pipe_backend
+typedef union ev_pipe_backend
 {
-    ev_nonblock_stream_t        stream;             /**< Stream */
+    int                         _useless;           /**< For static initializer */
+
+    struct
+    {
+        ev_nonblock_stream_t    stream;             /**< Stream */
+    }data_mode;
+
+    struct
+    {
+        ev_nonblock_io_t        io;                 /**< IO object */
+
+        struct
+        {
+            unsigned            wio_pending : 1;    /**< Write pending */
+            unsigned            rio_pending : 1;    /**< Read pending */
+            unsigned            no_cmsg_cloexec : 1;/**< No MSG_CMSG_CLOEXEC */
+        }mask;
+
+        struct
+        {
+            struct
+            {
+                size_t          head_read_size;     /**< Head read size */
+                size_t          data_remain_size;   /**< Data remain to read */
+
+                size_t          buf_idx;            /**< Buffer index to fill */
+                size_t          buf_pos;            /**< Buffer position to fill */
+
+                ev_read_t*      reading;            /**< Currernt handling request */
+            }curr;
+
+            ev_list_t           rqueue;             /**< #ev_read_t */
+            uint8_t             buffer[sizeof(ev_ipc_frame_hdr_t)];
+        }rio;
+
+        struct
+        {
+            struct
+            {
+                size_t          head_send_capacity; /**< Head send capacity */
+                size_t          head_send_size;     /**< Head send size */
+
+                size_t          buf_idx;            /**< Buffer index to send */
+                size_t          buf_pos;            /**< Buffer position to send */
+
+                ev_write_t*     writing;            /**< Currernt handling request */
+            }curr;
+
+            ev_list_t           wqueue;             /**< #ev_write_t */
+            uint8_t             buffer[sizeof(ev_ipc_frame_hdr_t)];
+        }wio;
+    }ipc_mode;
 }ev_pipe_backend_t;
-#define EV_PIPE_BACKEND_INIT    { EV_NONBLOCK_STREAM_INIT }
+#define EV_PIPE_BACKEND_INIT    { 0 }
 
 #ifdef __cplusplus
 }

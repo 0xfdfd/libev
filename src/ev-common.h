@@ -146,6 +146,17 @@ API_LOCAL void ev__todo_queue(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb);
  */
 API_LOCAL void ev__todo_cancel(ev_loop_t* loop, ev_todo_t* token);
 
+/**
+ * @brief Check IPC frame header
+ * @param[in] buffer    Buffer to check
+ * @param[in] size      Buffer size
+ * @return              bool
+ */
+API_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size);
+
+API_LOCAL void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr,
+    uint8_t flags, uint16_t exsz, uint32_t dtsz);
+
 #ifdef __cplusplus
 }
 #endif

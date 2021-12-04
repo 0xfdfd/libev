@@ -5,6 +5,7 @@ project(ev)
 add_library(${PROJECT_NAME}
     "src/ev-common.c"
     "src/list.c"
+    "src/log.c"
     "src/map.c"
     "src/map_low.c"
     "src/timer.c")

@@ -571,3 +571,30 @@ const char* ev_strerror(int err)
     }
     return "Unknown error";
 }
+
+int ev__ipc_check_frame_hdr(const void* buffer, size_t size)
+{
+    const ev_ipc_frame_hdr_t* hdr = buffer;
+    if (size < sizeof(ev_ipc_frame_hdr_t))
+    {
+        return 0;
+    }
+
+    if (hdr->hdr_magic != EV_IPC_FRAME_HDR_MAGIC)
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr, uint8_t flags, uint16_t exsz, uint32_t dtsz)
+{
+    hdr->hdr_magic = EV_IPC_FRAME_HDR_MAGIC;
+    hdr->hdr_flags = flags;
+    hdr->hdr_version = 0;
+    hdr->hdr_exsz = exsz;
+
+    hdr->hdr_dtsz = dtsz;
+    hdr->reserved = 0;
+}

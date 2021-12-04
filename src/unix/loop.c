@@ -17,8 +17,6 @@
 #endif
 #define EV__CMSG_FD_SIZE (EV__CMSG_FD_COUNT * sizeof(int))
 
-typedef char ev_ipc_msghdr[CMSG_SPACE(sizeof(int))];
-
 ev_loop_unix_ctx_t g_ev_loop_unix_ctx;
 
 static void _ev_init_hwtime(void)
@@ -74,57 +72,31 @@ static int _ev_poll_once(ev_loop_t* loop, struct epoll_event* events, int maxeve
     return nfds;
 }
 
-static ssize_t _ev_stream_writev(int fd, struct iovec* iov, int iovcnt)
+ssize_t ev__writev_unix(int fd, ev_buf_t* iov, int iovcnt)
 {
     ssize_t write_size;
     do
     {
-        write_size = writev(fd, iov, iovcnt);
+        write_size = writev(fd, (struct iovec*)iov, iovcnt);
     } while (write_size == -1 && errno == EINTR);
 
-    return write_size;
-}
-
-static ssize_t _ev_stream_sendmsg(int fd, int fd_to_send, struct iovec* iov, int iovcnt)
-{
-    struct msghdr msg;
-    struct cmsghdr* cmsg;
-
-    ev_ipc_msghdr msg_ctrl_hdr;
-    memset(&msg_ctrl_hdr, 0, sizeof(msg_ctrl_hdr));
-
-    msg.msg_name = NULL;
-    msg.msg_namelen = 0;
-    msg.msg_iov = iov;
-    msg.msg_iovlen = iovcnt;
-    msg.msg_flags = 0;
-
-    msg.msg_control = msg_ctrl_hdr;
-    msg.msg_controllen = sizeof(msg_ctrl_hdr);
-
-    cmsg = CMSG_FIRSTHDR(&msg);
-    cmsg->cmsg_level = SOL_SOCKET;
-    cmsg->cmsg_type = SCM_RIGHTS;
-    cmsg->cmsg_len = CMSG_LEN(sizeof(fd_to_send));
-
-    /* silence aliasing warning */
+    if (write_size >= 0)
     {
-        void* pv = CMSG_DATA(cmsg);
-        int* pi = pv;
-        *pi = fd_to_send;
+        return write_size;
     }
 
-    ssize_t n;
-    do
-        n = sendmsg(fd, &msg, 0);
-    while (n == -1 && errno == EINTR);
+    int err = errno;
+    if (err == EAGAIN || err == EWOULDBLOCK)
+    {
+        return 0;
+    }
 
-    return n;
+    return ev__translate_sys_error(err);
 }
 
 static int _ev_stream_do_write_once(ev_nonblock_stream_t* stream, ev_write_t* req)
 {
-    struct iovec* iov = (struct iovec*)(req->data.bufs + req->backend.idx);
+    ev_buf_t* iov = req->data.bufs + req->backend.idx;
     int iovcnt = req->data.nbuf - req->backend.idx;
     if (iovcnt > g_ev_loop_unix_ctx.iovmax)
     {
@@ -132,23 +104,14 @@ static int _ev_stream_do_write_once(ev_nonblock_stream_t* stream, ev_write_t* re
     }
 
     ssize_t write_size;
-    if (stream->flags.ipc && req->handle.role != EV_ROLE_UNKNOWN)
-    {
-        write_size = _ev_stream_sendmsg(stream->io.data.fd, req->handle.u.os_socket, iov, iovcnt);
-        req->handle.role = EV_ROLE_UNKNOWN;
-    }
-    else
-    {
-        write_size = _ev_stream_writev(stream->io.data.fd, iov, iovcnt);
-    }
+    write_size = ev__writev_unix(stream->io.data.fd, iov, iovcnt);
 
     if (write_size < 0)
     {
-        return (errno == EAGAIN || errno == EWOULDBLOCK) ?
-            EV_EAGAIN : ev__translate_sys_error(errno);
+        return write_size;
     }
 
-    req->backend.len += write_size;
+    req->data.size += write_size;
     while (write_size > 0)
     {
         if ((size_t)write_size < req->data.bufs[req->backend.idx].size)
@@ -177,7 +140,7 @@ static void _ev_stream_do_write(ev_nonblock_stream_t* stream)
         req = container_of(it, ev_write_t, node);
         if ((ret = _ev_stream_do_write_once(stream, req)) == EV_SUCCESS)
         {
-            stream->callbacks.w_cb(stream, req, req->backend.len, EV_SUCCESS);
+            stream->callbacks.w_cb(stream, req, req->data.size, EV_SUCCESS);
             continue;
         }
 
@@ -197,90 +160,38 @@ err:
     while ((it = ev_list_pop_front(&stream->pending.w_queue)) != NULL)
     {
         req = container_of(it, ev_write_t, node);
-        stream->callbacks.w_cb(stream, req, req->backend.len, ret);
+        stream->callbacks.w_cb(stream, req, req->data.size, ret);
     }
 }
 
-static ssize_t _ev_stream_readv(int fd, struct iovec* iov, int iovcnt)
+ssize_t ev__readv_unix(int fd, ev_buf_t* iov, int iovcnt)
 {
     ssize_t read_size;
     do
     {
-        read_size = readv(fd, iov, iovcnt);
+        read_size = readv(fd, (struct iovec*)iov, iovcnt);
     } while (read_size == -1 && errno == EINTR);
-    return read_size;
-}
 
-static ssize_t _ev_stream_recvmsg(ev_nonblock_stream_t* stream, struct msghdr* msg)
-{
-    struct cmsghdr* cmsg;
-    ssize_t rc;
-    int* pfd;
-    int* end;
-    int fd = stream->io.data.fd;
-#if defined(__linux__)
-    if (!stream->flags.no_cmsg_cloexec)
+    if (read_size > 0)
     {
-        rc = recvmsg(fd, msg, MSG_CMSG_CLOEXEC);
-        if (rc != -1)
-        {
-            return rc;
-        }
-        if (errno != EINVAL)
-        {
-            return ev__translate_sys_error(errno);
-        }
-        rc = recvmsg(fd, msg, 0);
-        if (rc == -1)
-        {
-            return ev__translate_sys_error(errno);
-        }
-        stream->flags.no_cmsg_cloexec = 1;
+        return read_size;
     }
-    else
+    else if (read_size == 0)
     {
-        rc = recvmsg(fd, msg, 0);
+        return EV_EOF;
     }
-#else
-    rc = recvmsg(fd, msg, 0);
-#endif
-    if (rc == -1)
-    {
-        return ev__translate_sys_error(errno);
-    }
-    if (msg->msg_controllen == 0)
-    {
-        return rc;
-    }
-    for (cmsg = CMSG_FIRSTHDR(msg); cmsg != NULL; cmsg = CMSG_NXTHDR(msg, cmsg))
-    {
-        if (cmsg->cmsg_type == SCM_RIGHTS)
-        {
-            for (pfd = (int*)CMSG_DATA(cmsg),
-                end = (int*)((char*)cmsg + cmsg->cmsg_len);
-                pfd < end;
-                pfd += 1)
-            {
-                ev__cloexec(*pfd, 1);
-            }
-        }
-    }
-    return rc;
-}
 
-static void _ev_stream_do_read_parser_msghdr(ev_read_t* req, struct msghdr* msg)
-{
-    struct cmsghdr* cmsg = CMSG_FIRSTHDR(msg);
-    void* pv = CMSG_DATA(cmsg);
-    int* pi = pv;
-    req->handle.os_socket = *pi;
+    int err = errno;
+    if (err == EAGAIN || err == EWOULDBLOCK)
+    {
+        return 0;
+    }
 
-    assert(CMSG_NXTHDR(msg, cmsg) == NULL);
+    return ev__translate_sys_error(err);
 }
 
 static int _ev_stream_do_read_once(ev_nonblock_stream_t* stream, ev_read_t* req, size_t* size)
 {
-    struct iovec* iov = (struct iovec*)req->data.bufs;
     int iovcnt = req->data.nbuf;
     if (iovcnt > g_ev_loop_unix_ctx.iovmax)
     {
@@ -288,45 +199,13 @@ static int _ev_stream_do_read_once(ev_nonblock_stream_t* stream, ev_read_t* req,
     }
 
     ssize_t read_size;
-    if (stream->flags.ipc)
+    read_size = ev__readv_unix(stream->io.data.fd, req->data.bufs, iovcnt);
+    if (read_size >= 0)
     {
-        struct msghdr msg;
-        ev_ipc_msghdr cmsg_space;
-
-        /* ipc uses recvmsg */
-        msg.msg_flags = 0;
-        msg.msg_iov = iov;
-        msg.msg_iovlen = iovcnt;
-        msg.msg_name = NULL;
-        msg.msg_namelen = 0;
-        /* Set up to receive a descriptor even if one isn't in the message */
-        msg.msg_controllen = sizeof(cmsg_space);
-        msg.msg_control = cmsg_space;
-
-        read_size = _ev_stream_recvmsg(stream, &msg);
-        if (read_size > 0)
-        {
-            _ev_stream_do_read_parser_msghdr(req, &msg);
-        }
+        *size = read_size;
+        return EV_SUCCESS;
     }
-    else
-    {
-        read_size = _ev_stream_readv(stream->io.data.fd, iov, iovcnt);
-    }
-
-    if (read_size == 0)
-    {/* Peer close */
-        return EV_EOF;
-    }
-
-    if (read_size < 0)
-    {
-        return (errno == EAGAIN || errno == EWOULDBLOCK) ?
-            EV_EAGAIN : ev__translate_sys_error(errno);
-    }
-
-    *size = read_size;
-    return EV_SUCCESS;
+    return read_size;
 }
 
 static void _ev_stream_do_read(ev_nonblock_stream_t* stream)
@@ -336,9 +215,12 @@ static void _ev_stream_do_read(ev_nonblock_stream_t* stream)
     ev_read_t* req = container_of(it, ev_read_t, node);
 
     size_t r_size = 0;
-    if ((ret = _ev_stream_do_read_once(stream, req, &r_size)) == EV_SUCCESS)
+    ret = _ev_stream_do_read_once(stream, req, &r_size);
+    req->data.size += r_size;
+
+    if (ret == EV_SUCCESS)
     {
-        stream->callbacks.r_cb(stream, req, r_size, EV_SUCCESS);
+        stream->callbacks.r_cb(stream, req, req->data.size, EV_SUCCESS);
         return;
     }
 
@@ -373,7 +255,7 @@ static void _ev_stream_cleanup_w(ev_nonblock_stream_t* stream, int errcode)
     while ((it = ev_list_pop_front(&stream->pending.w_queue)) != NULL)
     {
         ev_write_t* req = container_of(it, ev_write_t, node);
-        stream->callbacks.w_cb(stream, req, req->backend.len, errcode);
+        stream->callbacks.w_cb(stream, req, req->data.size, errcode);
     }
 }
 
@@ -462,7 +344,7 @@ int ev__cloexec(int fd, int set)
 #else
     int flags;
 
-    int r = ev__getfd(fd);
+    int r = ev__fcntl_getfd_unix(fd);
     if (r == -1)
     {
         return errno;
@@ -523,7 +405,7 @@ int ev__nonblock(int fd, int set)
 #else
     int flags;
 
-    int r = ev__getfl(fd);
+    int r = ev__fcntl_getfl_unix(fd);
     if (r == -1)
     {
         return ev__translate_sys_error(errno);
@@ -558,7 +440,7 @@ int ev__nonblock(int fd, int set)
 #endif
 }
 
-int ev__getfl(int fd)
+int ev__fcntl_getfl_unix(int fd)
 {
     int mode;
     do
@@ -568,7 +450,7 @@ int ev__getfl(int fd)
     return mode;
 }
 
-int ev__getfd(int fd)
+int ev__fcntl_getfd_unix(int fd)
 {
     int flags;
 
@@ -806,7 +688,6 @@ void ev__nonblock_stream_init(ev_loop_t* loop, ev_nonblock_stream_t* stream,
     stream->flags.io_abort = 0;
     stream->flags.io_reg_r = 0;
     stream->flags.io_reg_w = 0;
-    stream->flags.no_cmsg_cloexec = 0;
 
     ev__nonblock_io_init(&stream->io, fd, _ev_nonblock_stream_on_io);
 
@@ -899,10 +780,31 @@ void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned evts)
 void ev__write_init_unix(ev_write_t* req)
 {
     req->backend.idx = 0;
-    req->backend.len = 0;
 }
 
 void ev__read_init_unix(ev_read_t* req)
 {
     (void)req;
+}
+
+ssize_t ev__write_unix(int fd, void* buffer, size_t size)
+{
+    ssize_t send_size;
+    do
+    {
+        send_size = write(fd, buffer, size);
+    } while (send_size == -1 && errno == EINTR);
+
+    if (send_size >= 0)
+    {
+        return send_size;
+    }
+
+    int err = errno;
+    if (err == EAGAIN || err == EWOULDBLOCK)
+    {
+        return 0;
+    }
+
+    return ev__translate_sys_error(err);
 }

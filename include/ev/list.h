@@ -10,11 +10,12 @@
  */
 #ifndef __EV_LIST_H__
 #define __EV_LIST_H__
+
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stddef.h>
 
 /**
  * @defgroup EV_UTILS_LIST List

@@ -1,8 +1,5 @@
 #ifndef __EV_WIN_H__
 #define __EV_WIN_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #ifndef _WIN32_WINNT
 #   define _WIN32_WINNT   0x0600
@@ -14,6 +11,10 @@ extern "C" {
 #include <windows.h>
 #include "ev/ipc-protocol.h"
 #include "ev/map.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef HANDLE ev_os_pipe_t;
 #define EV_OS_PIPE_INVALID      INVALID_HANDLE_VALUE
@@ -211,14 +212,21 @@ typedef union ev_pipe_backend
         {
             struct
             {
-                unsigned        r_pending : 1;      /**< There is a IOCP request pending */
+                unsigned        rio_pending : 1;    /**< There is a IOCP request pending */
             }mask;
+
+            struct
+            {
+                ev_read_t*      reading;            /**< Request for read */
+                DWORD           buf_idx;            /**< Buffer for read */
+                DWORD           buf_pos;            /**< Available position */
+            }reading;
+
+            ev_list_t           pending;            /**< Buffer list to be filled */
+
             int                 r_err;              /**< Error code if read failure */
             DWORD               remain_size;        /**< How many data need to read (bytes) */
-            ev_list_t           pending;            /**< Buffer list to be filled */
-            ev_read_t*          reading;            /**< Request for read */
-            DWORD               buf_idx;            /**< Buffer for read */
-            DWORD               buf_pos;            /**< Available position */
+
             ev_iocp_t           io;                 /**< IOCP read backend */
             uint8_t             buffer[EV_PIPE_BACKEND_BUFFER_SIZE];
         }rio;
@@ -227,13 +235,19 @@ typedef union ev_pipe_backend
         {
             struct
             {
-                unsigned        w_pending : 1;      /**< There is a IOCP request pending */
+                unsigned        iocp_pending : 1;   /**< There is a IOCP request pending */
             }mask;
-            int                 w_err;              /**< Error code if write failure */
-            ev_iocp_t           io;                 /**< IOCP write backend */
-            ev_write_t*         sending;            /**< The write request sending */
-            size_t              buf_idx;            /**< The buffer index need to send */
+
+            struct
+            {
+                ev_write_t*     w_req;              /**< The write request sending */
+                size_t          donecnt;            /**< Success send counter */
+            }sending;
+
             ev_list_t           pending;            /**< FIFO queue of write request */
+
+            int                 w_err;              /**< Error code if write failure */
+            ev_iocp_t           io;                 /**< IOCP write backend, with #ev_write_t */
             uint8_t             buffer[EV_PIPE_BACKEND_BUFFER_SIZE];
         }wio;
 

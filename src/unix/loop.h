@@ -123,12 +123,30 @@ API_LOCAL int ev__nonblock(int fd, int set);
 /**
  * @brief Return the file access mode and the file status flags
  */
-API_LOCAL int ev__getfl(int fd);
+API_LOCAL int ev__fcntl_getfl_unix(int fd);
 
 /**
  * @brief Return the file descriptor flags.
  */
-API_LOCAL int ev__getfd(int fd);
+API_LOCAL int ev__fcntl_getfd_unix(int fd);
+
+/**
+ * @brief readv wrap
+ * @return 0: try again; >0: read size; <0 errno
+ */
+API_LOCAL ssize_t ev__readv_unix(int fd, ev_buf_t* iov, int iovcnt);
+
+/**
+ * @brief readv wrap
+ * @return 0: try again; >0: write size; <0 errno
+ */
+API_LOCAL ssize_t ev__writev_unix(int fd, ev_buf_t* iov, int iovcnt);
+
+/**
+ * @brief write
+ * @return 0: try again; >0: write size; <0 errno
+ */
+API_LOCAL ssize_t ev__write_unix(int fd, void* buffer, size_t size);
 
 #ifdef __cplusplus
 }
