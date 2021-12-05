@@ -25,7 +25,7 @@ struct test_19f1
     char        data2[1024];
 };
 
-static struct test_19f1 g_test_19f1;
+struct test_19f1 g_test_19f1;
 
 TEST_FIXTURE_SETUP(pipe)
 {
@@ -85,7 +85,7 @@ static void _on_pipe_read_done(ev_read_t* req, size_t size, int stat)
     g_test_19f1.cnt_rcb++;
 }
 
-TEST_F(pipe, ipc_transfer_tcp_in_same_process)
+TEST_F(pipe, ipc_mode_tcp_handle)
 {
     ev_buf_t buf;
 

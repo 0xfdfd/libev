@@ -31,7 +31,7 @@ struct test_221d
     w_pack_t    w_pack[TEST_PACK_NUM_221D];
 };
 
-static struct test_221d g_test_221d;
+struct test_221d g_test_221d;
 
 static void _on_write_callback(ev_write_t* req, size_t size, int stat)
 {

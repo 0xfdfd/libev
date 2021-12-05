@@ -1,25 +1,41 @@
 #include "ev.h"
 #include "test.h"
+#include <string.h>
 
-static ev_loop_t    s_loop = EV_LOOP_INIT;
-static ev_async_t   s_async;
-static int          f_called = 0;
+struct test_5b9c
+{
+    ev_loop_t    s_loop;
+    ev_async_t   s_async;
+    int          f_called;
+};
+
+struct test_5b9c g_test_5b9c;
 
 static void _test_on_async(ev_async_t* handle)
 {
-    f_called = 1;
+    ASSERT_EQ_PTR(handle, &g_test_5b9c.s_async);
+    g_test_5b9c.f_called = 1;
     ev_async_exit(handle, NULL);
 }
 
-TEST(async, async)
+TEST_FIXTURE_SETUP(async)
 {
-    ASSERT_EQ_D32(ev_loop_init(&s_loop), 0);
-    ASSERT_EQ_D32(ev_async_init(&s_loop, &s_async, _test_on_async), 0);
+    memset(&g_test_5b9c, 0, sizeof(g_test_5b9c));
+    ASSERT_EQ_D32(ev_loop_init(&g_test_5b9c.s_loop), 0);
+    ASSERT_EQ_D32(ev_async_init(&g_test_5b9c.s_loop, &g_test_5b9c.s_async, _test_on_async), 0);
+}
 
-    ev_async_weakup(&s_async);
-    ev_async_weakup(&s_async);
-    ev_async_weakup(&s_async);
-    ASSERT_EQ_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
+TEST_FIXTURE_TEAREDOWN(async)
+{
+    ASSERT_EQ_D32(ev_loop_run(&g_test_5b9c.s_loop, EV_LOOP_MODE_DEFAULT), 0);
+    ev_loop_exit(&g_test_5b9c.s_loop);
+}
 
-    ev_loop_exit(&s_loop);
+TEST_F(async, async)
+{
+    ev_async_weakup(&g_test_5b9c.s_async);
+    ev_async_weakup(&g_test_5b9c.s_async);
+    ev_async_weakup(&g_test_5b9c.s_async);
+    ASSERT_EQ_D32(ev_loop_run(&g_test_5b9c.s_loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_D32(g_test_5b9c.f_called, 1);
 }

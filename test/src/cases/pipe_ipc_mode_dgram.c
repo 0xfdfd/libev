@@ -42,7 +42,7 @@ struct test_a548
     size_t                  r_req_cnt;
 };
 
-static struct test_a548 g_test_a548;
+struct test_a548 g_test_a548;
 
 TEST_FIXTURE_SETUP(pipe)
 {

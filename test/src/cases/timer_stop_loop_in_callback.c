@@ -1,24 +1,38 @@
 #include "ev.h"
 #include "test.h"
+#include <string.h>
 
-static ev_loop_t    s_loop;
-static ev_timer_t   s_timer;
+struct test_0b72
+{
+    ev_loop_t    s_loop;
+    ev_timer_t   s_timer;
+};
+
+struct test_0b72 g_test_0b72;
 
 static void _on_timer(ev_timer_t* timer)
 {
-    (void)timer;
-    ev_loop_stop(&s_loop);
+    ASSERT_EQ_PTR(timer, &g_test_0b72.s_timer);
+    ev_loop_stop(&g_test_0b72.s_loop);
 }
 
-TEST(timer, stop_loop)
+TEST_FIXTURE_SETUP(timer)
 {
-    ASSERT_EQ_D32(ev_loop_init(&s_loop), 0);
-    ASSERT_EQ_D32(ev_timer_init(&s_loop, &s_timer), 0);
-    ASSERT_EQ_D32(ev_timer_start(&s_timer, _on_timer, 1, 1), 0);
-    ASSERT_NE_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
+    memset(&g_test_0b72, 0, sizeof(g_test_0b72));
+    ASSERT_EQ_D32(ev_loop_init(&g_test_0b72.s_loop), 0);
+    ASSERT_EQ_D32(ev_timer_init(&g_test_0b72.s_loop, &g_test_0b72.s_timer), 0);
+}
 
-    ev_timer_exit(&s_timer, NULL);
-    ASSERT_EQ_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
+TEST_FIXTURE_TEAREDOWN(timer)
+{
+    ASSERT_EQ_D32(ev_loop_exit(&g_test_0b72.s_loop), 0);
+}
 
-    ASSERT_EQ_D32(ev_loop_exit(&s_loop), 0);
+TEST_F(timer, stop_loop)
+{
+    ASSERT_EQ_D32(ev_timer_start(&g_test_0b72.s_timer, _on_timer, 1, 1), 0);
+    ASSERT_NE_D32(ev_loop_run(&g_test_0b72.s_loop, EV_LOOP_MODE_DEFAULT), 0);
+
+    ev_timer_exit(&g_test_0b72.s_timer, NULL);
+    ASSERT_EQ_D32(ev_loop_run(&g_test_0b72.s_loop, EV_LOOP_MODE_DEFAULT), 0);
 }

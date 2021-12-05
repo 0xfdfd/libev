@@ -9,37 +9,50 @@
 #include "ev.h"
 #include "test.h"
 
-static ev_loop_t    s_loop;
-static ev_tcp_t     s_sock;
-static int          s_flag_socket_close = 0;
+struct test_ec8c
+{
+    ev_loop_t    s_loop;
+    ev_tcp_t     s_sock;
+    int          s_flag_socket_close;
+};
+
+struct test_ec8c g_test_ec8c;
 
 static void _on_close_socket(ev_tcp_t* sock)
 {
     (void)sock;
-    s_flag_socket_close = 1;
+    g_test_ec8c.s_flag_socket_close = 1;
 }
 
-TEST(tcp, bind)
+TEST_FIXTURE_SETUP(tcp)
 {
-    ASSERT_EQ_D32(ev_loop_init(&s_loop), 0);
-    ASSERT_EQ_D32(ev_tcp_init(&s_loop, &s_sock), 0);
+    g_test_ec8c.s_flag_socket_close = 0;
+    ASSERT_EQ_D32(ev_loop_init(&g_test_ec8c.s_loop), 0);
+    ASSERT_EQ_D32(ev_tcp_init(&g_test_ec8c.s_loop, &g_test_ec8c.s_sock), 0);
+}
 
+TEST_FIXTURE_TEAREDOWN(tcp)
+{
+    ASSERT_EQ_D32(ev_loop_exit(&g_test_ec8c.s_loop), 0);
+}
+
+TEST_F(tcp, bind)
+{
     struct sockaddr_in addr;
     ASSERT_EQ_D32(ev_ipv4_addr("127.0.0.1", 0, &addr), 0);
 
     /* 1st bind should success */
-    ASSERT_EQ_D32(ev_tcp_bind(&s_sock, (struct sockaddr*)&addr, sizeof(addr)), 0);
+    ASSERT_EQ_D32(ev_tcp_bind(&g_test_ec8c.s_sock, (struct sockaddr*)&addr, sizeof(addr)), 0);
     /* 1st bind should failure */
-    ASSERT_NE_D32(ev_tcp_bind(&s_sock, (struct sockaddr*)&addr, sizeof(addr)), 0);
+    ASSERT_NE_D32(ev_tcp_bind(&g_test_ec8c.s_sock, (struct sockaddr*)&addr, sizeof(addr)), 0);
 
     /* 1st listen should success */
-    ASSERT_EQ_D32(ev_tcp_listen(&s_sock, 1), 0);
+    ASSERT_EQ_D32(ev_tcp_listen(&g_test_ec8c.s_sock, 1), 0);
     /* 2st listen should failure */
-    ASSERT_NE_D32(ev_tcp_listen(&s_sock, 1), 0);
+    ASSERT_NE_D32(ev_tcp_listen(&g_test_ec8c.s_sock, 1), 0);
 
-    ev_tcp_exit(&s_sock, _on_close_socket);
-    ASSERT_EQ_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
+    ev_tcp_exit(&g_test_ec8c.s_sock, _on_close_socket);
+    ASSERT_EQ_D32(ev_loop_run(&g_test_ec8c.s_loop, EV_LOOP_MODE_DEFAULT), 0);
 
-    ASSERT_EQ_D32(s_flag_socket_close, 1);
-    ev_loop_exit(&s_loop);
+    ASSERT_EQ_D32(g_test_ec8c.s_flag_socket_close, 1);
 }

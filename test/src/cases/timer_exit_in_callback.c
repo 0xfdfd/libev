@@ -1,29 +1,44 @@
 #include "ev.h"
 #include "test.h"
+#include <string.h>
 
-static ev_loop_t    s_loop;
-static ev_timer_t   s_timer;
-static int flag_timer_exit = 0;
+struct test_6f93
+{
+    ev_loop_t   s_loop;
+    ev_timer_t  s_timer;
+    int         flag_timer_exit;
+};
+
+struct test_6f93 g_test_6f93;
 
 static void _on_timer_exit(ev_timer_t* timer)
 {
-    (void)timer;
-    flag_timer_exit = 1;
+    ASSERT_EQ_PTR(timer, &g_test_6f93.s_timer);
+    g_test_6f93.flag_timer_exit = 1;
 }
 
 static void _on_timer(ev_timer_t* timer)
 {
+    ASSERT_EQ_PTR(timer, &g_test_6f93.s_timer);
     ev_timer_exit(timer, _on_timer_exit);
 }
 
-TEST(timer, exit_in_callback)
+TEST_FIXTURE_SETUP(timer)
 {
-    ASSERT_EQ_D32(ev_loop_init(&s_loop), 0);
-    ASSERT_EQ_D32(ev_timer_init(&s_loop, &s_timer), 0);
-    ASSERT_EQ_D32(ev_timer_start(&s_timer, _on_timer, 1, 1), 0);
+    memset(&g_test_6f93, 0, sizeof(g_test_6f93));
+    ASSERT_EQ_D32(ev_loop_init(&g_test_6f93.s_loop), 0);
+    ASSERT_EQ_D32(ev_timer_init(&g_test_6f93.s_loop, &g_test_6f93.s_timer), 0);
+}
 
-    ASSERT_EQ_D32(ev_loop_run(&s_loop, EV_LOOP_MODE_DEFAULT), 0);
+TEST_FIXTURE_TEAREDOWN(timer)
+{
+    ASSERT_EQ_D32(ev_loop_exit(&g_test_6f93.s_loop), 0);
+}
 
-    ASSERT_EQ_D32(flag_timer_exit, 1);
-    ev_loop_exit(&s_loop);
+TEST_F(timer, exit_in_callback)
+{
+    ASSERT_EQ_D32(ev_timer_start(&g_test_6f93.s_timer, _on_timer, 1, 1), 0);
+
+    ASSERT_EQ_D32(ev_loop_run(&g_test_6f93.s_loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_D32(g_test_6f93.flag_timer_exit, 1);
 }
