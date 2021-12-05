@@ -3,19 +3,22 @@
 #include "utils/random.h"
 #include <string.h>
 
-typedef struct r_pack
-{
-    ev_read_t   read_req;
-    ev_buf_t    buf;
-    uint8_t     buffer[33 * 1024 * 1024];
-}r_pack_t;
+#define TEST_PACK_NUM_221D      8
+#define TEST_BUFFER_SIZE_221D   (32 * 1024 * 1024)
 
 typedef struct w_pack
 {
     ev_write_t  write_req;
     ev_buf_t    buf;
-    uint8_t     buffer[32 * 1024 * 1024];
+    uint8_t     buffer[TEST_BUFFER_SIZE_221D];
 }w_pack_t;
+
+typedef struct r_pack
+{
+    ev_read_t   read_req;
+    ev_buf_t    buf;
+    uint8_t     buffer[TEST_BUFFER_SIZE_221D * (TEST_PACK_NUM_221D + 1)];
+}r_pack_t;
 
 struct test_221d
 {
@@ -25,18 +28,21 @@ struct test_221d
     ev_pipe_t   pipe_r;  /**< Receive handle */
 
     r_pack_t    r_pack;
-    w_pack_t    w_pack;
+    w_pack_t    w_pack[TEST_PACK_NUM_221D];
 };
 
 static struct test_221d g_test_221d;
 
 static void _on_write_callback(ev_write_t* req, size_t size, int stat)
 {
-    ASSERT_EQ_PTR(req, &g_test_221d.w_pack.write_req);
-    ASSERT_EQ_U64(size, sizeof(g_test_221d.w_pack.buffer));
+    (void)req;
     ASSERT_EQ_D32(stat, EV_SUCCESS);
+    ASSERT_EQ_U64(size, TEST_BUFFER_SIZE_221D);
 
-    ev_pipe_exit(&g_test_221d.pipe_w, NULL);
+    if (req == &g_test_221d.w_pack[TEST_PACK_NUM_221D - 1].write_req)
+    {
+        ev_pipe_exit(&g_test_221d.pipe_w, NULL);
+    }
 }
 
 static void _on_read_callback(ev_read_t* req, size_t size, int stat)
@@ -56,7 +62,11 @@ static void _on_read_callback(ev_read_t* req, size_t size, int stat)
 
 TEST_FIXTURE_SETUP(pipe)
 {
-    test_random(g_test_221d.w_pack.buffer, sizeof(g_test_221d.w_pack.buffer));
+    size_t i;
+    for (i = 0; i < TEST_PACK_NUM_221D; i++)
+    {
+        test_random(g_test_221d.w_pack[i].buffer, sizeof(g_test_221d.w_pack[i].buffer));
+    }
 
     ASSERT_EQ_D32(ev_loop_init(&g_test_221d.loop), 0);
     ASSERT_EQ_D32(ev_pipe_init(&g_test_221d.loop, &g_test_221d.pipe_r, 0), 0);
@@ -78,17 +88,22 @@ TEST_FIXTURE_TEAREDOWN(pipe)
 
 TEST_F(pipe, data_mode)
 {
-    g_test_221d.w_pack.buf = ev_buf_make(g_test_221d.w_pack.buffer, sizeof(g_test_221d.w_pack.buffer));
-    ASSERT_EQ_D32(ev_write_init(&g_test_221d.w_pack.write_req, &g_test_221d.w_pack.buf, 1, _on_write_callback), 0);
-    ASSERT_EQ_D32(ev_pipe_write(&g_test_221d.pipe_w, &g_test_221d.w_pack.write_req), 0);
+    size_t i;
+    for (i = 0; i < TEST_PACK_NUM_221D; i++)
+    {
+        g_test_221d.w_pack[i].buf = ev_buf_make(g_test_221d.w_pack[i].buffer, sizeof(g_test_221d.w_pack[i].buffer));
+        ASSERT_EQ_D32(ev_write_init(&g_test_221d.w_pack[i].write_req, &g_test_221d.w_pack[i].buf, 1, _on_write_callback), 0);
+        ASSERT_EQ_D32(ev_pipe_write(&g_test_221d.pipe_w, &g_test_221d.w_pack[i].write_req), 0);
+    }
 
     g_test_221d.r_pack.buf = ev_buf_make(g_test_221d.r_pack.buffer, sizeof(g_test_221d.r_pack.buffer));
     ASSERT_EQ_D32(ev_read_init(&g_test_221d.r_pack.read_req, &g_test_221d.r_pack.buf, 1, _on_read_callback), 0);
     ASSERT_EQ_D32(ev_pipe_read(&g_test_221d.pipe_r, &g_test_221d.r_pack.read_req), 0);
 
     ASSERT_EQ_D32(ev_loop_run(&g_test_221d.loop, EV_LOOP_MODE_DEFAULT), 0);
+    for(i = 0; i < TEST_PACK_NUM_221D; i++)
     {
-        int ret = memcmp(g_test_221d.w_pack.buffer, g_test_221d.r_pack.buffer, sizeof(g_test_221d.w_pack.buffer));
+        int ret = memcmp(g_test_221d.w_pack[i].buffer, (uint8_t*)g_test_221d.r_pack.buffer + TEST_BUFFER_SIZE_221D, sizeof(g_test_221d.w_pack[i].buffer));
         ASSERT_EQ_D32(ret, 0);
     }
 }
