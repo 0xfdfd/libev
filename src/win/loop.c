@@ -394,12 +394,7 @@ void ev__write_init_win(ev_write_t* req, void* owner, int stat,
 {
     req->backend.owner = owner;
     req->backend.stat = stat;
-
-    size_t i;
-    for (i = 0; i < req->data.nbuf; i++)
-    {
-        ev__iocp_init(&req->backend.io[i], iocp_cb, iocp_arg);
-    }
+    ev__iocp_init(&req->backend.io, iocp_cb, iocp_arg);
 }
 
 void ev__read_init_win(ev_read_t* req, void* owner, int stat,

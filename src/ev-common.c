@@ -405,9 +405,6 @@ int ev_write_init_ext(ev_write_t* req, ev_write_cb callback,
     if (nbuf <= ARRAY_SIZE(req->data.bufsml))
     {
         req->data.bufs = req->data.bufsml;
-#if defined(_MSC_VER)
-        req->backend.io = req->backend.iosml;
-#endif
         goto fin;
     }
 
@@ -417,9 +414,6 @@ int ev_write_init_ext(ev_write_t* req, ev_write_cb callback,
     }
 
     req->data.bufs = iov_bufs;
-#if defined(_MSC_VER)
-    req->backend.io = (ev_iocp_t*)(req->data.bufs + nbuf);
-#endif
 
 fin:
     memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);

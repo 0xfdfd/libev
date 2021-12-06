@@ -661,7 +661,7 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req)
     ev__handle_active(&sock->base);
 
     ret = WSASend(sock->sock, (WSABUF*)req->data.bufs, (DWORD)req->data.nbuf,
-        NULL, 0, &req->backend.io[0].overlapped, NULL);
+        NULL, 0, &req->backend.io.overlapped, NULL);
     if (ret == 0)
     {
         /*

@@ -71,14 +71,12 @@ typedef struct ev_async_backend
 typedef struct ev_write_backend
 {
     void*                       owner;              /**< Owner */
-    ev_iocp_t*                  io;                 /**< IOCP list */
     int                         stat;               /**< Write result */
-    ev_iocp_t                   iosml[EV_IOV_MAX];  /**< IOCP backend */
+    ev_iocp_t                   io;                 /**< IOCP backend */
 }ev_write_backend_t;
 #define EV_WRITE_BACKEND_INIT   \
     {\
-        NULL, NULL, 0,\
-        { EV_INIT_REPEAT(EV_IOV_MAX, EV_IOCP_INIT), }\
+        NULL, 0, EV_IOCP_INIT\
     }
 
 typedef struct ev_read_backend
