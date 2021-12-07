@@ -4,12 +4,12 @@
 
 struct test_5b9c
 {
-    ev_loop_t    s_loop;
-    ev_async_t   s_async;
-    int          f_called;
+    ev_loop_t       s_loop;
+    ev_async_t      s_async;
+    int             f_called;
 };
 
-struct test_5b9c g_test_5b9c;
+struct test_5b9c    g_test_5b9c;
 
 static void _test_on_async(ev_async_t* handle)
 {

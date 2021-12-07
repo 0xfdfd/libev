@@ -4,11 +4,11 @@
 
 struct test_0b72
 {
-    ev_loop_t    s_loop;
-    ev_timer_t   s_timer;
+    ev_loop_t       s_loop;
+    ev_timer_t      s_timer;
 };
 
-struct test_0b72 g_test_0b72;
+struct test_0b72    g_test_0b72;
 
 static void _on_timer(ev_timer_t* timer)
 {

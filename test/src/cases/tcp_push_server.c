@@ -10,20 +10,6 @@
 #include "test.h"
 #include "utils/random.h"
 
-typedef struct test_write_pack
-{
-    ev_write_t      w_req;
-    ev_buf_t        buf;
-    char            send_buf[4 * 1024 * 1024];
-}test_write_pack_t;
-
-typedef struct test_read_pack
-{
-    ev_read_t       r_req;
-    ev_buf_t        buf;
-    char            recv_buf[6 * 1024 * 1024];
-}test_read_pack_t;
-
 struct test_6d69
 {
     ev_loop_t           s_loop;
@@ -34,8 +20,20 @@ struct test_6d69
     int                 s_cnt_server_close;
     int                 s_cnt_conn_close;
     int                 s_cnt_client_close;
-    test_write_pack_t   s_write_pack;
-    test_read_pack_t    s_read_pack;
+
+    struct
+    {
+        ev_write_t      w_req;
+        ev_buf_t        buf;
+        char            send_buf[4 * 1024 * 1024];
+    }s_write_pack;
+
+    struct
+    {
+        ev_read_t       r_req;
+        ev_buf_t        buf;
+        char            recv_buf[6 * 1024 * 1024];
+    }s_read_pack;
 };
 
 struct test_6d69 g_test_6d69;

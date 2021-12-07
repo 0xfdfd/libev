@@ -6,26 +6,26 @@
 
 struct test_19f1
 {
-    ev_loop_t   loop;   /**< Runtime loop */
+    ev_loop_t       loop;   /**< Runtime loop */
 
-    ev_pipe_t   s_pipe; /**< Server pipe */
-    ev_pipe_t   c_pipe; /**< Client pipe */
+    ev_pipe_t       s_pipe; /**< Server pipe */
+    ev_pipe_t       c_pipe; /**< Client pipe */
 
-    ev_tcp_t    s_tcp;  /**< Session, will be transfer to peer */
-    ev_tcp_t    c_tcp;  /**< Client */
-    ev_tcp_t    d_tcp;  /**< Peer socket to receive handle */
+    ev_tcp_t        s_tcp;  /**< Session, will be transfer to peer */
+    ev_tcp_t        c_tcp;  /**< Client */
+    ev_tcp_t        d_tcp;  /**< Peer socket to receive handle */
 
-    ev_write_t  w_req;  /**< Write request */
-    ev_read_t   r_req;  /**< Read request */
+    ev_write_t      w_req;  /**< Write request */
+    ev_read_t       r_req;  /**< Read request */
 
-    unsigned    cnt_wcb;
-    unsigned    cnt_rcb;
+    unsigned        cnt_wcb;
+    unsigned        cnt_rcb;
 
-    char        data1[1024];
-    char        data2[1024];
+    char            data1[1024];
+    char            data2[1024];
 };
 
-struct test_19f1 g_test_19f1;
+struct test_19f1    g_test_19f1;
 
 TEST_FIXTURE_SETUP(pipe)
 {
@@ -39,13 +39,6 @@ TEST_FIXTURE_SETUP(pipe)
 
     ev_os_pipe_t fds[2] = { EV_OS_PIPE_INVALID, EV_OS_PIPE_INVALID };
     ASSERT_EQ_D32(ev_pipe_make(fds), 0);
-#if defined(_WIN32)
-    ASSERT_NE_PTR(fds[0], EV_OS_PIPE_INVALID);
-    ASSERT_NE_PTR(fds[1], EV_OS_PIPE_INVALID);
-#else
-    ASSERT_NE_D32(fds[0], EV_OS_PIPE_INVALID);
-    ASSERT_NE_D32(fds[1], EV_OS_PIPE_INVALID);
-#endif
 
     ASSERT_EQ_D32(ev_pipe_open(&g_test_19f1.s_pipe, fds[0]), 0);
     ASSERT_EQ_D32(ev_pipe_open(&g_test_19f1.c_pipe, fds[1]), 0);

@@ -4,14 +4,14 @@
 
 struct test_3615
 {
-    ev_loop_t   s_loop;
-    ev_timer_t  s_timer;
+    ev_loop_t       s_loop;
+    ev_timer_t      s_timer;
 
-    int         f_on_timer;
-    int         f_on_timer_close;
+    int             f_on_timer;
+    int             f_on_timer_close;
 };
 
-struct test_3615 g_test_3615;
+struct test_3615    g_test_3615;
 
 static void _on_timer(ev_timer_t* timer)
 {

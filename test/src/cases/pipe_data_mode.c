@@ -6,32 +6,29 @@
 #define TEST_PACK_NUM_221D      8
 #define TEST_BUFFER_SIZE_221D   (32 * 1024 * 1024)
 
-typedef struct w_pack
-{
-    ev_write_t  write_req;
-    ev_buf_t    buf;
-    uint8_t     buffer[TEST_BUFFER_SIZE_221D];
-}w_pack_t;
-
-typedef struct r_pack
-{
-    ev_read_t   read_req;
-    ev_buf_t    buf;
-    uint8_t     buffer[TEST_BUFFER_SIZE_221D * (TEST_PACK_NUM_221D + 1)];
-}r_pack_t;
-
 struct test_221d
 {
-    ev_loop_t   loop;
+    ev_loop_t       loop;
 
-    ev_pipe_t   pipe_w;  /**< Write handle */
-    ev_pipe_t   pipe_r;  /**< Receive handle */
+    ev_pipe_t       pipe_w;  /**< Write handle */
+    ev_pipe_t       pipe_r;  /**< Receive handle */
 
-    r_pack_t    r_pack;
-    w_pack_t    w_pack[TEST_PACK_NUM_221D];
+    struct
+    {
+        ev_read_t   read_req;
+        ev_buf_t    buf;
+        uint8_t     buffer[TEST_BUFFER_SIZE_221D * (TEST_PACK_NUM_221D + 1)];
+    }r_pack;
+
+    struct
+    {
+        ev_write_t  write_req;
+        ev_buf_t    buf;
+        uint8_t     buffer[TEST_BUFFER_SIZE_221D];
+    }w_pack[TEST_PACK_NUM_221D];
 };
 
-struct test_221d g_test_221d;
+struct test_221d    g_test_221d;
 
 static void _on_write_callback(ev_write_t* req, size_t size, int stat)
 {

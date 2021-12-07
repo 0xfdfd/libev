@@ -4,12 +4,12 @@
 
 struct test_09d8
 {
-    ev_loop_t    s_loop;
-    ev_tcp_t     s_socket;
-    char         s_buffer[64];
+    ev_loop_t       s_loop;
+    ev_tcp_t        s_socket;
+    char            s_buffer[64];
 };
 
-struct test_09d8 g_test_09d8;
+struct test_09d8    g_test_09d8;
 
 TEST_FIXTURE_SETUP(misc)
 {

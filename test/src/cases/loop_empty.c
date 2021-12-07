@@ -3,10 +3,10 @@
 
 struct test_a850
 {
-    ev_loop_t    s_loop;
+    ev_loop_t       s_loop;
 };
 
-struct test_a850 g_test_a850;
+struct test_a850    g_test_a850;
 
 TEST_FIXTURE_SETUP(loop)
 {
