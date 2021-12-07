@@ -28,13 +28,31 @@ target_include_directories(ev_test
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
+        ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
     target_compile_options(ev_test PRIVATE /W4 /WX)
 else ()
     target_compile_options(ev_test PRIVATE -Wall -Wextra -Werror)
+endif ()
+
+function(EV_SETUP_EXPORT_PGO name)
+    get_target_property(TEMP ${name} LINK_FLAGS)
+    if(TEMP STREQUAL "TEMP-NOTFOUND")
+        SET(TEMP "") # Set to empty string
+    else()
+        SET(TEMP "${TEMP} ") # A space to cleanly separate from existing content
+    endif()
+    # Append our values
+    SET(TEMP "${TEMP}-fprofile-generate" )
+    set_target_properties(${name} PROPERTIES LINK_FLAGS ${TEMP} )
+endfunction()
+
+if (EV_PGO_EXPORT)
+    if (CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "GNU")
+        EV_SETUP_EXPORT_PGO(ev_test)
+    elseif (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+    endif ()
 endif ()
 
 target_link_libraries(ev_test PRIVATE ev cutest)

@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.2)
 project(ev)
 
+option(EV_PGO_EXPORT "Export Profile Guided Optimization" OFF)
+option(EV_PGO_IMPORT "Import Profile Guided Optimization" OFF)
+
 # add source files
 add_library(${PROJECT_NAME}
     "src/ev-common.c"
@@ -32,19 +35,16 @@ endif()
 find_package(Threads REQUIRED)
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
-        Threads::Threads
-)
+        Threads::Threads)
 if(WIN32)
     target_link_libraries(${PROJECT_NAME}
         PRIVATE
             Ws2_32
-            Mswsock
-    )
+            Mswsock)
 else()
     target_link_libraries(${PROJECT_NAME}
         PRIVATE
-            rt
-    )
+            rt)
 endif()
 
 # define target include search paths
@@ -53,14 +53,32 @@ target_include_directories(${PROJECT_NAME}
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
+        ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # add warning check
 if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
     target_compile_options(${PROJECT_NAME} PRIVATE /W4 /WX)
 else ()
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror)
+endif ()
+
+if (EV_PGO_IMPORT)
+    if (CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(${PROJECT_NAME}
+            PRIVATE
+                -fprofile-use=$<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    elseif (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+    endif ()
+elseif (EV_PGO_EXPORT)
+    if (CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(${PROJECT_NAME}
+            PRIVATE
+                -fprofile-generate=$<TARGET_FILE_DIR:${PROJECT_NAME}>)
+        target_link_libraries(${PROJECT_NAME}
+            PRIVATE
+                gcov)
+    elseif (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+    endif ()
 endif ()
 
 # build test
