@@ -95,7 +95,7 @@ void ev_shm_exit(ev_shm_t* shm)
     }
 
     int ret = munmap(shm->addr, shm->size);
-    assert(ret == 0);
+    assert(ret == 0); (void)ret;
 
     close(shm->backend.map_file);
 }
