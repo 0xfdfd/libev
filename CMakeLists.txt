@@ -19,6 +19,7 @@ if(WIN32)
             "src/win/loop.c"
             "src/win/once.c"
             "src/win/pipe.c"
+            "src/win/shmem.c"
             "src/win/tcp.c"
             "src/win/winapi.c")
 else()
@@ -28,6 +29,7 @@ else()
             "src/unix/loop.c"
             "src/unix/once.c"
             "src/unix/pipe.c"
+            "src/unix/shmem.c"
             "src/unix/tcp.c")
 endif()
 

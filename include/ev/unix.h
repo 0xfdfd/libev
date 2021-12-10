@@ -230,6 +230,18 @@ typedef union ev_pipe_backend
 }ev_pipe_backend_t;
 #define EV_PIPE_BACKEND_INIT    { 0 }
 
+typedef struct ev_shm_backend
+{
+    char                        name[256];
+    int                         map_file;
+
+    struct
+    {
+        unsigned                is_open : 1;
+    }mask;
+}ev_shm_backend_t;
+#define EV_SHM_BACKEND_INIT     { 0 }
+
 #ifdef __cplusplus
 }
 #endif

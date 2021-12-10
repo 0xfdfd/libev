@@ -254,6 +254,12 @@ typedef union ev_pipe_backend
 }ev_pipe_backend_t;
 #define EV_PIPE_BACKEND_INIT    { 0 }
 
+typedef struct ev_shm_backend
+{
+    HANDLE                      map_file;           /**< Shared memory file */
+}ev_shm_backend_t;
+#define EV_SHM_BACKEND_INIT     { NULL }
+
 #ifdef __cplusplus
 }
 #endif

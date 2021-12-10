@@ -46,6 +46,15 @@ typedef struct ev_tcp ev_tcp_t;
 struct ev_pipe;
 typedef struct ev_pipe ev_pipe_t;
 
+struct ev_shm;
+typedef struct ev_shm ev_shm_t;
+
+struct ev_shmv;
+typedef struct ev_shmv ev_shmv_t;
+
+struct ev_shmv_token;
+typedef struct ev_shmv_token ev_shmv_token_t;
+
 struct ev_write;
 typedef struct ev_write ev_write_t;
 
@@ -449,6 +458,14 @@ struct ev_read
         },\
         EV_READ_BACKEND_INIT\
     }
+
+struct ev_shm
+{
+    void*                   addr;       /**< Shared memory address */
+    size_t                  size;       /**< Shared memory size */
+    ev_shm_backend_t        backend;    /**< Backend */
+};
+#define EV_SHM_INIT         { NULL, 0, EV_SHM_BACKEND_INIT }
 
 /**
  * @defgroup EV_LOOP Event loop
@@ -974,6 +991,29 @@ void ev_buf_make_v(ev_buf_t bufs[], size_t nbuf, va_list ap);
  * @return          Describe string
  */
 const char* ev_strerror(int err);
+
+/**
+ * @brief Create a new shared memory
+ * @param[out] shm  Shared memory token
+ * @param[in] key   Shared memory key
+ * @param[in] size  Shared memory size
+ * @return          #ev_errno_t
+ */
+int ev_shm_init(ev_shm_t* shm, const char* key, size_t size);
+
+/**
+ * @brief Open a existing shared memory
+ * @param[out] shm  Shared memory token
+ * @param[in] key   Shared memory key
+ * @return          #ev_errno_t
+ */
+int ev_shm_open(ev_shm_t* shm, const char* key);
+
+/**
+ * @brief Close shared memory
+ * @param[in] shm   Shared memory token
+ */
+void ev_shm_exit(ev_shm_t* shm);
 
 /**
  * @} EV_UTILS
