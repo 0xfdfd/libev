@@ -307,7 +307,7 @@ static void _ev_init_once_unix(void)
     _ev_init_iovmax();
 }
 
-void ev__loop_update_time(ev_loop_t* loop)
+uint64_t ev__clocktime(void)
 {
     struct timespec t;
     if (clock_gettime(g_ev_loop_unix_ctx.hwtime_clock_id, &t) != 0)
@@ -315,7 +315,7 @@ void ev__loop_update_time(ev_loop_t* loop)
         BREAK_ABORT();
     }
 
-    loop->hwtime = t.tv_sec * 1000 + t.tv_nsec / 1000 / 1000;
+    return t.tv_sec * 1000 + t.tv_nsec / 1000 / 1000;
 }
 
 int ev__cloexec(int fd, int set)

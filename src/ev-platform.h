@@ -12,7 +12,7 @@ extern "C" {
 
 #include "ev.h"
 
-#if defined(__GNUC__) || defined(__clang__)
+#if (defined(__GNUC__) || defined(__clang__)) && !defined(_WIN32)
 #   define API_LOCAL    __attribute__((visibility ("hidden")))
 #   define container_of(ptr, type, member) \
         ({ \
@@ -67,12 +67,6 @@ API_LOCAL int ev__loop_init_backend(ev_loop_t* loop);
 API_LOCAL void ev__loop_exit_backend(ev_loop_t* loop);
 
 /**
- * @brief Update loop time
- * @param[in] loop  loop handler
- */
-API_LOCAL void ev__loop_update_time(ev_loop_t* loop);
-
-/**
  * @brief Wait for IO event and process
  * @param[in] loop  loop handler
  * @param[in] timeout   timeout in milliseconds
@@ -85,6 +79,12 @@ API_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout);
  * @return              #ev_errno_t
  */
 API_LOCAL int ev__translate_sys_error(int syserr);
+
+/**
+ * @brief Get clocktime
+ * @return      Clock time
+ */
+API_LOCAL uint64_t ev__clocktime(void);
 
 #ifdef __cplusplus
 }

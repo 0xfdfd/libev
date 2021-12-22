@@ -11,6 +11,7 @@ add_library(${PROJECT_NAME}
     "src/log.c"
     "src/map.c"
     "src/map_low.c"
+    "src/thread_pool.c"
     "src/timer.c")
 if(WIN32)
     target_sources(${PROJECT_NAME}
@@ -21,6 +22,7 @@ if(WIN32)
             "src/win/pipe.c"
             "src/win/shmem.c"
             "src/win/tcp.c"
+            "src/win/thread.c"
             "src/win/winapi.c")
 else()
     target_sources(${PROJECT_NAME}
@@ -30,7 +32,8 @@ else()
             "src/unix/once.c"
             "src/unix/pipe.c"
             "src/unix/shmem.c"
-            "src/unix/tcp.c")
+            "src/unix/tcp.c"
+            "src/unix/thread.c")
 endif()
 
 # add library dependencies

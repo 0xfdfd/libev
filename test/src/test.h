@@ -4,6 +4,7 @@
 extern "C" {
 #endif
 
+#include "ev.h"
 #include "cutest.h"
 #if defined(_MSC_VER)
 #   include <windows.h>
@@ -25,13 +26,13 @@ extern "C" {
         cutest_timestamp_t t_start;\
         cutest_timestamp_get(&t_start);\
         int ret;\
-        while ((ret = test_thread_wait(&token)) > 0) {\
+        while ((ret = test_thread_wait(&token)) == EV_ETIMEDOUT) {\
             cutest_timestamp_t t_current, t_diff;\
             cutest_timestamp_get(&t_current);\
             cutest_timestamp_dif(&t_current, &t_start, &t_diff);\
             uint64_t spend_time_ms = t_diff.sec * 1000 + t_diff.usec / 1000;\
             ASSERT_LE_U64(spend_time_ms, timeout_ms);\
-            test_thread_sleep(1);\
+            ev_thread_sleep(1, NULL);\
         }\
         ASSERT_EQ_D32(ret, 0, "task not finished");\
     }\
@@ -55,21 +56,15 @@ typedef void (*fn_execute)(void);
 
 typedef struct test_execute_token
 {
-#if defined(_MSC_VER)
-    HANDLE      thr_handle;
-#else
-    pthread_t   thr_handle;
-#endif
+    ev_os_thread_t  thr;
 }test_execute_token_t;
 
 int test_thread_execute(test_execute_token_t* token, fn_execute callback);
 
 /**
- * @return 0: thread finish, -1:error, 1: not finish
+ * @return EV_SUCCESS / EV_ETIMEDOUT
  */
 int test_thread_wait(test_execute_token_t* token);
-
-void test_thread_sleep(unsigned ms);
 
 #ifdef __cplusplus
 }

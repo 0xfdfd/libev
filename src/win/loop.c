@@ -83,15 +83,16 @@ static void _ev_init_once_win(void)
     _ev_time_init_win();
 }
 
-void ev__loop_update_time(ev_loop_t* loop)
+uint64_t ev__clocktime(void)
 {
-    loop->hwtime = _ev_hrtime_win(1000);
+    return _ev_hrtime_win(1000);
 }
 
 int ev__translate_sys_error(int err)
 {
     switch (err)
     {
+    case 0:                                 return EV_SUCCESS;
     case ERROR_NOACCESS:                    return EV_EACCES;
     case WSAEACCES:                         return EV_EACCES;
     case ERROR_ELEVATION_REQUIRED:          return EV_EACCES;

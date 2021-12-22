@@ -134,6 +134,11 @@ static void _ev_to_close(ev_todo_t* todo)
     handle->data.close_cb(handle);
 }
 
+void ev__loop_update_time(ev_loop_t* loop)
+{
+    loop->hwtime = ev__clocktime();
+}
+
 int ev_loop_init(ev_loop_t* loop)
 {
     _ev_loop_init(loop);

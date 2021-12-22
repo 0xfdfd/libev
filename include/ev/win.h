@@ -22,6 +22,9 @@ typedef HANDLE ev_os_pipe_t;
 typedef SOCKET ev_os_socket_t;
 #define EV_OS_SOCKET_INVALID    INVALID_SOCKET
 
+typedef HANDLE ev_os_thread_t;
+#define EV_OS_THREAD_INVALID    NULL
+
 /**
  * @brief Buffer
  * @internal Must share the same layout with WSABUF

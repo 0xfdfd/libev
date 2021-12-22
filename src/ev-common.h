@@ -12,6 +12,14 @@ extern "C" {
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #define EV_MIN(a, b)    ((a) < (b) ? (a) : (b))
 
+/**
+ * @brief Align \p size to \p align, who's value is larger or equal to \p size
+ *   and can be divided with no remainder by \p align.
+ * @note \p align must equal to 2^n
+ */
+#define ALIGN_SIZE(size, align) \
+    (((uintptr_t)(size) + ((uintptr_t)(align) - 1)) & ~((uintptr_t)(align) - 1))
+
 #define ENSURE_LAYOUT(TYPE_A, TYPE_B, FIELD_A_1, FIELD_B_1, FIELD_A_2, FIELD_B_2)   \
     assert(sizeof(TYPE_A) == sizeof(TYPE_B));\
     assert(offsetof(TYPE_A, FIELD_A_1) == offsetof(TYPE_B, FIELD_B_1));\
@@ -124,6 +132,12 @@ API_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size);
  */
 API_LOCAL void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr,
     uint8_t flags, uint16_t exsz, uint32_t dtsz);
+
+/**
+ * @brief Update loop time
+ * @param[in] loop  loop handler
+ */
+API_LOCAL void ev__loop_update_time(ev_loop_t* loop);
 
 #ifdef __cplusplus
 }
