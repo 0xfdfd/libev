@@ -5,6 +5,11 @@ extern "C" {
 #endif
 
 /**
+ * @defgroup EV_Mutex Mutex
+ * @{
+ */
+
+/**
  * @brief Initialize the mutex.
  * @param[out] handle   Mutex handle
  * @param[in] recursive Force recursive mutex. Set to non-zero to force create a
@@ -15,7 +20,7 @@ extern "C" {
 int ev_mutex_init(ev_os_mutex_t* handle, int recursive);
 
 /**
- * @brief destroy the mutex object referenced by \p handle
+ * @brief Destroy the mutex object referenced by \p handle
  * @param[in] handle    Mutex object
  */
 void ev_mutex_exit(ev_os_mutex_t* handle);
@@ -40,6 +45,10 @@ void ev_mutex_leave(ev_os_mutex_t* handle);
  *                      #EV_SUCCESS: a lock on the mutex object referenced by \p handle is acquired.
  */
 int ev_mutex_try_enter(ev_os_mutex_t* handle);
+
+/**
+ * @} EV_Mutex
+ */
 
 #ifdef __cplusplus
 }

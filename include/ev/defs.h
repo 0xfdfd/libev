@@ -66,9 +66,6 @@ typedef struct ev_tcp ev_tcp_t;
 struct ev_pipe;
 typedef struct ev_pipe ev_pipe_t;
 
-struct ev_shm;
-typedef struct ev_shm ev_shm_t;
-
 struct ev_shmv;
 typedef struct ev_shmv ev_shmv_t;
 
