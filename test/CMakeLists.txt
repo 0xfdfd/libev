@@ -8,6 +8,7 @@ add_executable(ev_test
     "src/cases/buf.c"
     "src/cases/ipv4_addr.c"
     "src/cases/loop_empty.c"
+    "src/cases/mutex.c"
     "src/cases/once.c"
     "src/cases/pipe_data_mode.c"
     "src/cases/pipe_ipc_mode_dgram.c"

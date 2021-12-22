@@ -13,14 +13,16 @@
 extern "C" {
 #endif
 
-typedef int ev_os_pipe_t;
+typedef int                     ev_os_pipe_t;
 #define EV_OS_PIPE_INVALID      (-1)
 
-typedef int ev_os_socket_t;
+typedef int                     ev_os_socket_t;
 #define EV_OS_SOCKET_INVALID    (-1)
 
-typedef pthread_t ev_os_thread_t;
+typedef pthread_t               ev_os_thread_t;
 #define EV_OS_THREAD_INVALID    (-1)
+
+typedef pthread_mutex_t         ev_os_mutex_t;
 
 struct ev_nonblock_stream;
 typedef struct ev_nonblock_stream ev_nonblock_stream_t;

@@ -18,6 +18,7 @@ if(WIN32)
         PRIVATE
             "src/win/async.c"
             "src/win/loop.c"
+            "src/win/mutex.c"
             "src/win/once.c"
             "src/win/pipe.c"
             "src/win/shmem.c"
@@ -29,6 +30,7 @@ else()
         PRIVATE
             "src/unix/async.c"
             "src/unix/loop.c"
+            "src/unix/mutex.c"
             "src/unix/once.c"
             "src/unix/pipe.c"
             "src/unix/shmem.c"

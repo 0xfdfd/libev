@@ -9,17 +9,15 @@
 #include "ev/defs.h"
 #include "ev/list.h"
 #include "ev/todo.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-
 #if defined(_WIN32)
 #   include "ev/win.h"
 #else
 #   include "ev/unix.h"
+#endif
+#include "ev/mutex.h"
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 /**
