@@ -21,6 +21,7 @@ if(WIN32)
             "src/win/mutex.c"
             "src/win/once.c"
             "src/win/pipe.c"
+            "src/win/sem.c"
             "src/win/shmem.c"
             "src/win/tcp.c"
             "src/win/thread.c"
@@ -33,6 +34,7 @@ else()
             "src/unix/mutex.c"
             "src/unix/once.c"
             "src/unix/pipe.c"
+            "src/unix/sem.c"
             "src/unix/shmem.c"
             "src/unix/tcp.c"
             "src/unix/thread.c")

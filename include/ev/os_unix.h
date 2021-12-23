@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include <sys/epoll.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,6 +21,7 @@ typedef pthread_t               ev_os_thread_t;
 #define EV_OS_THREAD_INVALID    (-1)
 
 typedef pthread_mutex_t         ev_os_mutex_t;
+typedef sem_t                   ev_os_sem_t;
 
 #ifdef __cplusplus
 }

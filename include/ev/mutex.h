@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 /**
- * @defgroup EV_Mutex Mutex
+ * @defgroup EV_MUTEX Mutex
  * @{
  */
 
@@ -60,7 +60,7 @@ void ev_mutex_leave(ev_mutex_t* handle);
 int ev_mutex_try_enter(ev_mutex_t* handle);
 
 /**
- * @} EV_Mutex
+ * @} EV_MUTEX
  */
 
 #ifdef __cplusplus

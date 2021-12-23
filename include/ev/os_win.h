@@ -20,6 +20,7 @@ typedef HANDLE                  ev_os_thread_t;
 #define EV_OS_THREAD_INVALID    NULL
 
 typedef CRITICAL_SECTION        ev_os_mutex_t;
+typedef HANDLE                  ev_os_sem_t;
 
 #ifdef __cplusplus
 }

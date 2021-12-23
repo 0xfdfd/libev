@@ -10,6 +10,7 @@
 #include "ev/list.h"
 #include "ev/todo.h"
 #include "ev/mutex.h"
+#include "ev/sem.h"
 #include "ev/thread.h"
 #include "ev/shmem.h"
 #include "ev/loop.h"
