@@ -9,15 +9,12 @@
 #include "ev/defs.h"
 #include "ev/list.h"
 #include "ev/todo.h"
-#if defined(_WIN32)
-#   include "ev/win.h"
-#else
-#   include "ev/unix.h"
-#endif
 #include "ev/mutex.h"
 #include "ev/thread.h"
 #include "ev/shmem.h"
 #include "ev/loop.h"
+#include "ev/timer.h"
+#include "ev/async.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -80,81 +77,6 @@ enum ev_errno
     EV_UNKNOWN          = -1001,                /**< Unknown error */
     EV_EOF              = -1002,                /**< End of file */
 };
-
-enum ev_role
-{
-    EV_ROLE_UNKNOWN         = 0,                /**< Unknown type */
-
-    EV_ROLE_EV_TIMER        = 1,                /**< Type of #ev_timer_t */
-    EV_ROLE_EV_ASYNC        = 2,                /**< Type of #ev_async_t */
-    EV_ROLE_EV_PIPE         = 3,                /**< Type of #ev_pipe_t */
-    EV_ROLE_EV_TCP          = 4,                /**< Type of #ev_tcp_t */
-    EV_ROLE_EV__RANGE_BEG   = EV_ROLE_EV_TIMER,
-    EV_ROLE_EV__RANGE_END   = EV_ROLE_EV_TCP,
-
-    EV_ROLE_OS_SOCKET       = 100,              /**< OS socket */
-    EV_ROLE_OS__RANGE_BEG   = EV_ROLE_OS_SOCKET,
-    EV_ROLE_OS__RANGE_END   = EV_ROLE_OS_SOCKET,
-};
-
-struct ev_handle
-{
-    ev_list_node_t          node;               /**< Node for #ev_loop_t::handles */
-
-    struct
-    {
-        ev_loop_t*          loop;               /**< The event loop belong to */
-
-        ev_role_t           role;               /**< The type of this object */
-        unsigned            flags;              /**< Handle flags */
-
-        ev_close_cb         close_cb;           /**< Close callback */
-        ev_todo_t           close_queue;        /**< Close queue token */
-    }data;
-};
-#define EV_HANDLE_INIT      \
-    {\
-        EV_LIST_NODE_INIT,      /* .node */\
-        {/* .data */\
-            NULL,               /* .loop */\
-            EV_ROLE_UNKNOWN,    /* .role */\
-            0,                  /* .flags */\
-            NULL,               /* .close_cb */\
-            EV_TODO_INIT        /* .close_queue */\
-        }\
-    }
-
-struct ev_timer
-{
-    ev_handle_t             base;               /**< Base object */
-    ev_map_node_t           node;               /**< (#ev_loop_t::timer::heap) */
-
-    ev_timer_cb             close_cb;           /**< Close callback */
-
-    struct
-    {
-        uint64_t            active;             /**< Active time */
-    }data;
-
-    struct
-    {
-        ev_timer_cb         cb;                 /**< User callback */
-        uint64_t            timeout;            /**< Timeout */
-        uint64_t            repeat;             /**< Repeat */
-    }attr;
-};
-#define EV_TIMER_INIT       { EV_HANDLE_INIT, EV_MAP_NODE_INIT, NULL, { 0 }, { NULL, 0, 0 } }
-
-struct ev_async
-{
-    ev_handle_t             base;               /**< Base object */
-
-    ev_async_cb             active_cb;          /**< Active callback */
-    ev_async_cb             close_cb;           /**< Close callback */
-
-    ev_async_backend_t      backend;            /**< Platform related implementation */
-};
-#define EV_ASYNC_INIT       { EV_HANDLE_INIT, NULL, NULL, EV_ASYNC_BACKEND_INIT }
 
 struct ev_tcp
 {
@@ -256,89 +178,6 @@ struct ev_read
         },\
         EV_READ_BACKEND_INIT\
     }
-
-/**
- * @defgroup EV_TIMER Timer
- * @{
- */
-
-/**
- * @brief Initialize the handle.
- * @param[in] loop      A pointer to the event loop
- * @param[out] handle   The structure to initialize
- * @return              #ev_errno_t
- */
-int ev_timer_init(ev_loop_t* loop, ev_timer_t* handle);
-
-/**
- * @brief Destroy the timer
- * @warning The timer structure cannot be freed until close_cb is called.
- * @param[in] handle    Timer handle
- * @param[in] close_cb  Close callback
- */
-void ev_timer_exit(ev_timer_t* handle, ev_timer_cb close_cb);
-
-/**
- * @brief Start the timer. timeout and repeat are in milliseconds.
- *
- * If timeout is zero, the callback fires on the next event loop iteration. If
- * repeat is non-zero, the callback fires first after timeout milliseconds and
- * then repeatedly after repeat milliseconds.
- *
- * @param[in] handle    Timer handle
- * @param[in] cb        Active callback
- * @param[in] timeout   The first callback timeout
- * @param[in] repeat    Repeat timeout
- * @return              #ev_errno_t
- */
-int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_t repeat);
-
-/**
- * @brief Stop the timer.
- *
- * the callback will not be called anymore.
- *
- * @param[in] handle    Timer handle
- */
-void ev_timer_stop(ev_timer_t* handle);
-
-/**
- * @} EV_TIMER
- */
-
-/**
- * @defgroup EV_ASYNC Async
- * @{
- */
-
-/**
- * @brief Initialize the handle.
- *
- * A NULL callback is allowed.
- * 
- * @param[in] loop      Event loop
- * @param[out] handle   A pointer to the structure
- * @param[in] cb        Active callback
- * @return              #ev_errno_t
- */
-int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb);
-
-/**
- * @brief Destroy the structure.
- * @param[in] handle    Async handle
- * @param[in] close_cb  Close callback
- */
-void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb);
-
-/**
- * @brief Wake up the event loop and call the async handle's callback.
- * @param[in] handle    Async handle
- */
-void ev_async_weakup(ev_async_t* handle);
-
-/**
- * @} EV_ASYNC
- */
 
 /**
  * @defgroup EV_TCP TCP

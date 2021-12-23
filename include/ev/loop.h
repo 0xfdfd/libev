@@ -2,6 +2,7 @@
 #define __EV_LOOP_H__
 
 #include "ev/defs.h"
+#include "ev/backend.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,7 +13,7 @@ extern "C" {
  * @{
  */
 
-enum ev_loop_mode
+typedef enum ev_loop_mode
 {
     /**
      * @brief Runs the event loop until there are no more active and referenced
@@ -41,6 +42,22 @@ enum ev_loop_mode
      * sometime in the future).
      */
     EV_LOOP_MODE_NOWAIT,
+}ev_loop_mode_t;
+
+enum ev_role
+{
+    EV_ROLE_UNKNOWN         = 0,                /**< Unknown type */
+
+    EV_ROLE_EV_TIMER        = 1,                /**< Type of #ev_timer_t */
+    EV_ROLE_EV_ASYNC        = 2,                /**< Type of #ev_async_t */
+    EV_ROLE_EV_PIPE         = 3,                /**< Type of #ev_pipe_t */
+    EV_ROLE_EV_TCP          = 4,                /**< Type of #ev_tcp_t */
+    EV_ROLE_EV__RANGE_BEG   = EV_ROLE_EV_TIMER,
+    EV_ROLE_EV__RANGE_END   = EV_ROLE_EV_TCP,
+
+    EV_ROLE_OS_SOCKET       = 100,              /**< OS socket */
+    EV_ROLE_OS__RANGE_BEG   = EV_ROLE_OS_SOCKET,
+    EV_ROLE_OS__RANGE_END   = EV_ROLE_OS_SOCKET,
 };
 
 struct ev_loop
@@ -78,6 +95,39 @@ struct ev_loop
         { EV_MAP_INIT(NULL, NULL) },            /* .timer */\
         { 0 },                                  /* .mask */\
         EV_LOOP_PLT_INIT,                       /* .backend */\
+    }
+
+/**
+ * @brief Called when a object is closed
+ * @param[in] handle    A base handle
+ */
+typedef void(*ev_close_cb)(ev_handle_t* handle);
+
+struct ev_handle
+{
+    ev_list_node_t          node;               /**< Node for #ev_loop_t::handles */
+
+    struct
+    {
+        ev_loop_t*          loop;               /**< The event loop belong to */
+
+        ev_role_t           role;               /**< The type of this object */
+        unsigned            flags;              /**< Handle flags */
+
+        ev_close_cb         close_cb;           /**< Close callback */
+        ev_todo_t           close_queue;        /**< Close queue token */
+    }data;
+};
+#define EV_HANDLE_INIT      \
+    {\
+        EV_LIST_NODE_INIT,      /* .node */\
+        {/* .data */\
+            NULL,               /* .loop */\
+            EV_ROLE_UNKNOWN,    /* .role */\
+            0,                  /* .flags */\
+            NULL,               /* .close_cb */\
+            EV_TODO_INIT        /* .close_queue */\
+        }\
     }
 
 /**

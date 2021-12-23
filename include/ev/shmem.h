@@ -1,5 +1,8 @@
 #ifndef __EV_SHARED_MEMORY_H__
 #define __EV_SHARED_MEMORY_H__
+
+#include "ev/backend.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

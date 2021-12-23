@@ -1,5 +1,8 @@
 #ifndef __EV_MUTEX_H__
 #define __EV_MUTEX_H__
+
+#include "ev/backend.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

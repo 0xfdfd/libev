@@ -36,9 +36,6 @@ extern "C" {
 enum ev_errno;
 typedef enum ev_errno ev_errno_t;
 
-enum ev_loop_mode;
-typedef enum ev_loop_mode ev_loop_mode_t;
-
 enum ev_role;
 typedef enum ev_role ev_role_t;
 
@@ -82,29 +79,11 @@ struct ev_buf;
 typedef struct ev_buf ev_buf_t;
 
 /**
- * @brief Called when a object is closed
- * @param[in] handle    A base handle
- */
-typedef void(*ev_close_cb)(ev_handle_t* handle);
-
-/**
  * @brief An application-defined callback function.
  *
  * Specify a pointer to this function when calling the #ev_once_execute function.
  */
 typedef void(*ev_once_cb)(void);
-
-/**
- * @brief Type definition for callback passed to #ev_timer_start().
- * @param[in] handle    A pointer to #ev_timer_t structure
- */
-typedef void(*ev_timer_cb)(ev_timer_t* timer);
-
-/**
- * @brief Type definition for callback passed to #ev_async_init().
- * @param[in] handle    A pointer to #ev_async_t structure
- */
-typedef void(*ev_async_cb)(ev_async_t* async);
 
 /**
  * @brief Callback for #ev_pipe_t
