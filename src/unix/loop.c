@@ -473,16 +473,6 @@ int ev__loop_init_backend(ev_loop_t* loop)
     int err = EV_SUCCESS;
     ev_map_init(&loop->backend.io, _ev_cmp_io_unix, NULL);
 
-    if ((loop->backend.pollfd = epoll_create1(EPOLL_CLOEXEC)) != -1)
-    {
-        return EV_SUCCESS;
-    }
-
-    if (errno != ENOSYS && errno != EINVAL)
-    {
-        return ev__translate_sys_error(errno);
-    }
-
     if ((loop->backend.pollfd = epoll_create(256)) == -1)
     {
         return ev__translate_sys_error(errno);

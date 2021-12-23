@@ -72,18 +72,33 @@ static void _ev_loop_on_async_unix(ev_nonblock_io_t* io, unsigned evts)
 
 static void _ev_async_wakeup_loop(ev_loop_t* loop)
 {
-    uint64_t val = 1;
+    static const uint64_t val = 1;
     ssize_t write_size;
     do
     {
         write_size = write(loop->backend.async.fd, &val, sizeof(val));
     } while (write_size < 0 && errno == EINTR);
+
+    if (write_size == sizeof(val))
+    {
+        return;
+    }
+
+    int err = errno;
+    if (write_size == -1)
+    {
+        if (err == EV_EAGAIN || err == EWOULDBLOCK)
+        {
+            return;
+        }
+    }
+    abort();
 }
 
 int ev__async_init_loop(ev_loop_t* loop)
 {
-    loop->backend.async.fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK | EFD_SEMAPHORE);
-    if (loop->backend.async.fd == -1)
+    loop->backend.async.fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+    if (loop->backend.async.fd < 0)
     {
         int err = errno;
         return ev__translate_sys_error(err);
@@ -97,6 +112,7 @@ int ev__async_init_loop(ev_loop_t* loop)
 
 void ev__async_exit_loop(ev_loop_t* loop)
 {
+    ev__nonblock_io_del(loop, &loop->backend.async.io, EPOLLIN);
     if (loop->backend.async.fd != -1)
     {
         close(loop->backend.async.fd);
