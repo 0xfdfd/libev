@@ -7,7 +7,8 @@
 #include <limits.h>
 #include "ev-platform.h"
 #include "ev.h"
-#include "loop.h"
+#include "unix/loop.h"
+#include "unix/async.h"
 
 #if defined(__PASE__)
 /* on IBMi PASE the control message length can not exceed 256. */
@@ -469,6 +470,7 @@ int ev__loop_init_backend(ev_loop_t* loop)
     static ev_once_t once = EV_ONCE_INIT;
     ev_once_execute(&once, _ev_init_once_unix);
 
+    int err = EV_SUCCESS;
     ev_map_init(&loop->backend.io, _ev_cmp_io_unix, NULL);
 
     if ((loop->backend.pollfd = epoll_create1(EPOLL_CLOEXEC)) != -1)
@@ -478,29 +480,41 @@ int ev__loop_init_backend(ev_loop_t* loop)
 
     if (errno != ENOSYS && errno != EINVAL)
     {
-        return errno;
+        return ev__translate_sys_error(errno);
     }
 
     if ((loop->backend.pollfd = epoll_create(256)) == -1)
     {
-        return errno;
+        return ev__translate_sys_error(errno);
     }
 
-    int ret;
-    if ((ret = ev__cloexec(loop->backend.pollfd, 1)) != 0)
+    if ((err = ev__cloexec(loop->backend.pollfd, 1)) != 0)
     {
-        close(loop->backend.pollfd);
-        loop->backend.pollfd = -1;
-        return ret;
+        goto err_cloexec;
+    }
+
+    if ((err = ev__async_init_loop(loop)) != EV_SUCCESS)
+    {
+        goto err_cloexec;
     }
 
     return EV_SUCCESS;
+
+err_cloexec:
+    close(loop->backend.pollfd);
+    loop->backend.pollfd = -1;
+    return err;
 }
 
 void ev__loop_exit_backend(ev_loop_t* loop)
 {
-    close(loop->backend.pollfd);
-    loop->backend.pollfd = -1;
+    ev__async_exit_loop(loop);
+
+    if (loop->backend.pollfd != -1)
+    {
+        close(loop->backend.pollfd);
+        loop->backend.pollfd = -1;
+    }
 }
 
 void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb)

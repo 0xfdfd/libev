@@ -50,9 +50,10 @@ void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb);
 
 /**
  * @brief Wake up the event loop and call the async handle's callback.
+ * @note MT-Safe
  * @param[in] handle    Async handle
  */
-void ev_async_weakup(ev_async_t* handle);
+void ev_async_wakeup(ev_async_t* handle);
 
 /**
  * @} EV_ASYNC

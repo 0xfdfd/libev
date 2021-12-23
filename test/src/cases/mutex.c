@@ -2,7 +2,7 @@
 
 struct test_3b3b
 {
-    ev_os_mutex_t   mutex_r;
+    ev_mutex_t  mutex_r;
 };
 
 struct test_3b3b g_test_3b3b;

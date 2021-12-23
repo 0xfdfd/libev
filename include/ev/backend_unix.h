@@ -1,28 +1,15 @@
-#ifndef __EV_UNIX_H__
-#define __EV_UNIX_H__
+#ifndef __EV_BACKEND_UNIX_H__
+#define __EV_BACKEND_UNIX_H__
 
-#include <errno.h>
-#include <pthread.h>
-#include <netinet/in.h>
-#include <sys/epoll.h>
+#include "ev/os_unix.h"
 #include "ev/map.h"
 #include "ev/list.h"
 #include "ev/ipc-protocol.h"
+#include "ev/mutex.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef int                     ev_os_pipe_t;
-#define EV_OS_PIPE_INVALID      (-1)
-
-typedef int                     ev_os_socket_t;
-#define EV_OS_SOCKET_INVALID    (-1)
-
-typedef pthread_t               ev_os_thread_t;
-#define EV_OS_THREAD_INVALID    (-1)
-
-typedef pthread_mutex_t         ev_os_mutex_t;
 
 struct ev_nonblock_stream;
 typedef struct ev_nonblock_stream ev_nonblock_stream_t;
@@ -60,31 +47,6 @@ struct ev_once
 };
 #define EV_ONCE_INIT            { PTHREAD_ONCE_INIT }
 
-typedef struct ev_loop_plt
-{
-    int                         pollfd;             /**< Multiplexing */
-    ev_map_t                    io;                 /**< #ev_io_t */
-}ev_loop_plt_t;
-#define EV_LOOP_PLT_INIT        { -1, EV_MAP_INIT(NULL, NULL) }
-
-typedef struct ev_write_backend
-{
-    size_t                      idx;                /**< Write buffer index */
-}ev_write_backend_t;
-#define EV_WRITE_BACKEND_INIT   { 0 }
-
-typedef struct ev_read_backend
-{
-    int                         useless[0];         /**< Useless field */
-}ev_read_backend_t;
-#define EV_READ_BACKEND_INIT    { }
-
-/**
- * @brief Can be used by #ev_write_backend_t and #ev_read_backend_t
- */
-#define EV_IOV_BUF_SIZE_INTERNAL(nbuf)   \
-    (sizeof(ev_buf_t) * (nbuf))
-
 struct ev_nonblock_io;
 typedef struct ev_nonblock_io ev_nonblock_io_t;
 
@@ -108,12 +70,53 @@ struct ev_nonblock_io
 };
 #define EV_NONBLOCK_IO_INIT     { EV_MAP_NODE_INIT, { 0, 0, 0, NULL } }
 
+typedef struct ev_loop_plt
+{
+    int                         pollfd;             /**< Multiplexing */
+    ev_map_t                    io;                 /**< #ev_io_t */
+
+    struct
+    {
+        int                     fd;                 /**< Wakeup fd */
+        ev_nonblock_io_t        io;                 /**< Wakeup IO */
+        ev_list_t               queue;              /**< Async handle queue */
+    }async;
+}ev_loop_plt_t;
+#define EV_LOOP_PLT_INIT        \
+    {\
+        -1,\
+        EV_MAP_INIT(NULL, NULL),\
+        {\
+            -1,\
+            EV_NONBLOCK_IO_INIT,\
+        }\
+    }
+
+typedef struct ev_write_backend
+{
+    size_t                      idx;                /**< Write buffer index */
+}ev_write_backend_t;
+#define EV_WRITE_BACKEND_INIT   { 0 }
+
+typedef struct ev_read_backend
+{
+    int                         useless[0];         /**< Useless field */
+}ev_read_backend_t;
+#define EV_READ_BACKEND_INIT    { }
+
+/**
+ * @brief Can be used by #ev_write_backend_t and #ev_read_backend_t
+ */
+#define EV_IOV_BUF_SIZE_INTERNAL(nbuf)   \
+    (sizeof(ev_buf_t) * (nbuf))
+
 typedef struct ev_async_backend
 {
-    ev_nonblock_io_t            io_read;            /**< Read request */
-    int                         fd_write;           /**< File descriptor for write */
+    ev_list_node_t              node;               /**< #ev_loop_plt_t::async::queue */
+    ev_mutex_t                  mutex;              /**< Mutex for #ev_async_backend_t::pending */
+    int                         pending;            /**< Pending mask */
 }ev_async_backend_t;
-#define EV_ASYNC_BACKEND_INIT   { EV_NONBLOCK_IO_INIT, -1 }
+#define EV_ASYNC_BACKEND_INIT   { EV_NONBLOCK_IO_INIT, { 0 }, 0 }
 
 struct ev_nonblock_stream
 {

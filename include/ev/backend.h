@@ -2,9 +2,9 @@
 #define __EV_BACKEND_H__
 
 #if defined(_WIN32)
-#   include "ev/win.h"
+#   include "ev/backend_win.h"
 #else
-#   include "ev/unix.h"
+#   include "ev/backend_unix.h"
 #endif
 
 #endif

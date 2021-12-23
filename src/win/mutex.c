@@ -1,30 +1,30 @@
 #include "ev-common.h"
 
-int ev_mutex_init(ev_os_mutex_t* handle, int recursive)
+int ev_mutex_init(ev_mutex_t* handle, int recursive)
 {
     (void)recursive;
-    InitializeCriticalSection(handle);
+    InitializeCriticalSection(&handle->u.r);
     return 0;
 }
 
-void ev_mutex_exit(ev_os_mutex_t* handle)
+void ev_mutex_exit(ev_mutex_t* handle)
 {
-    DeleteCriticalSection(handle);
+    DeleteCriticalSection(&handle->u.r);
 }
 
-void ev_mutex_enter(ev_os_mutex_t* handle)
+void ev_mutex_enter(ev_mutex_t* handle)
 {
-    EnterCriticalSection(handle);
+    EnterCriticalSection(&handle->u.r);
 }
 
-void ev_mutex_leave(ev_os_mutex_t* handle)
+void ev_mutex_leave(ev_mutex_t* handle)
 {
-    LeaveCriticalSection(handle);
+    LeaveCriticalSection(&handle->u.r);
 }
 
-int ev_mutex_try_enter(ev_os_mutex_t* handle)
+int ev_mutex_try_enter(ev_mutex_t* handle)
 {
-    if (TryEnterCriticalSection(handle))
+    if (TryEnterCriticalSection(&handle->u.r))
     {
         return EV_SUCCESS;
     }

@@ -33,9 +33,9 @@ TEST_FIXTURE_TEAREDOWN(async)
 
 TEST_F(async, async)
 {
-    ev_async_weakup(&g_test_5b9c.s_async);
-    ev_async_weakup(&g_test_5b9c.s_async);
-    ev_async_weakup(&g_test_5b9c.s_async);
+    ev_async_wakeup(&g_test_5b9c.s_async);
+    ev_async_wakeup(&g_test_5b9c.s_async);
+    ev_async_wakeup(&g_test_5b9c.s_async);
     ASSERT_EQ_D32(ev_loop_run(&g_test_5b9c.s_loop, EV_LOOP_MODE_DEFAULT), 0);
     ASSERT_EQ_D32(g_test_5b9c.f_called, 1);
 }

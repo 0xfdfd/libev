@@ -172,6 +172,13 @@ void ev_loop_stop(ev_loop_t* loop);
 int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode);
 
 /**
+ * @brief Wakeup event loop as fast as possible.
+ * @note MT-Safe
+ * @param[in] loop      Event loop
+ */
+void ev_loop_wakeup(ev_loop_t* loop);
+
+/**
  * @} EV_EVENT_LOOP
  */
 

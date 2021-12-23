@@ -20,6 +20,8 @@ extern "C" {
 #define ALIGN_SIZE(size, align) \
     (((uintptr_t)(size) + ((uintptr_t)(align) - 1)) & ~((uintptr_t)(align) - 1))
 
+#define ACCESS_ONCE(TYPE, var)  (*(volatile TYPE*) &(var))
+
 #define ENSURE_LAYOUT(TYPE_A, TYPE_B, FIELD_A_1, FIELD_B_1, FIELD_A_2, FIELD_B_2)   \
     assert(sizeof(TYPE_A) == sizeof(TYPE_B));\
     assert(offsetof(TYPE_A, FIELD_A_1) == offsetof(TYPE_B, FIELD_B_1));\

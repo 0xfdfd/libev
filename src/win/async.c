@@ -46,7 +46,7 @@ void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
     ev__handle_exit(&handle->base);
 }
 
-void ev_async_weakup(ev_async_t* handle)
+void ev_async_wakeup(ev_async_t* handle)
 {
     ev_loop_t* loop = handle->base.data.loop;
 

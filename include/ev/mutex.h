@@ -1,7 +1,7 @@
 #ifndef __EV_MUTEX_H__
 #define __EV_MUTEX_H__
 
-#include "ev/backend.h"
+#include "ev/os.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,6 +12,16 @@ extern "C" {
  * @{
  */
 
+typedef struct ev_mutex
+{
+    union
+    {
+        int             i;  /**< For static initialize */
+        ev_os_mutex_t   r;  /**< Real mutex */
+    }u;
+}ev_mutex_t;
+#define EV_MUTEX_INIT   { { 0 } }
+
 /**
  * @brief Initialize the mutex.
  * @param[out] handle   Mutex handle
@@ -20,25 +30,25 @@ extern "C" {
  *   recursive mutex, it is implementation depend.
  * @return              #ev_errno_t
  */
-int ev_mutex_init(ev_os_mutex_t* handle, int recursive);
+int ev_mutex_init(ev_mutex_t* handle, int recursive);
 
 /**
  * @brief Destroy the mutex object referenced by \p handle
  * @param[in] handle    Mutex object
  */
-void ev_mutex_exit(ev_os_mutex_t* handle);
+void ev_mutex_exit(ev_mutex_t* handle);
 
 /**
  * @brief The mutex object referenced by \p handle shall be locked.
  * @param[in] handle    Mutex object
  */
-void ev_mutex_enter(ev_os_mutex_t* handle);
+void ev_mutex_enter(ev_mutex_t* handle);
 
 /**
  * @brief Release the mutex object referenced by \p handle.
  * @param[in] handle    Mutex object
  */
-void ev_mutex_leave(ev_os_mutex_t* handle);
+void ev_mutex_leave(ev_mutex_t* handle);
 
 /**
  * @brief If the mutex object referenced by \p handle is currently locked, the
@@ -47,7 +57,7 @@ void ev_mutex_leave(ev_os_mutex_t* handle);
  * @return              #EV_EBUSY: The \p handle could not be acquired because it was already locked.
  *                      #EV_SUCCESS: a lock on the mutex object referenced by \p handle is acquired.
  */
-int ev_mutex_try_enter(ev_os_mutex_t* handle);
+int ev_mutex_try_enter(ev_mutex_t* handle);
 
 /**
  * @} EV_Mutex

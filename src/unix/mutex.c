@@ -54,39 +54,39 @@ static int _ev_mutex_init_recursive_unix(ev_os_mutex_t* handle)
     return ev__translate_sys_error(err);
 }
 
-int ev_mutex_init(ev_os_mutex_t* handle, int recursive)
+int ev_mutex_init(ev_mutex_t* handle, int recursive)
 {
     return recursive ?
-        _ev_mutex_init_recursive_unix(handle) : _ev_mutex_init_unix(handle);
+        _ev_mutex_init_recursive_unix(&handle->u.r) : _ev_mutex_init_unix(&handle->u.r);
 }
 
-void ev_mutex_exit(ev_os_mutex_t* handle)
+void ev_mutex_exit(ev_mutex_t* handle)
 {
-    if (pthread_mutex_destroy(handle))
+    if (pthread_mutex_destroy(&handle->u.r))
     {
         abort();
     }
 }
 
-void ev_mutex_enter(ev_os_mutex_t* handle)
+void ev_mutex_enter(ev_mutex_t* handle)
 {
-    if (pthread_mutex_lock(handle))
+    if (pthread_mutex_lock(&handle->u.r))
     {
         abort();
     }
 }
 
-void ev_mutex_leave(ev_os_mutex_t* handle)
+void ev_mutex_leave(ev_mutex_t* handle)
 {
-    if (pthread_mutex_unlock(handle))
+    if (pthread_mutex_unlock(&handle->u.r))
     {
         abort();
     }
 }
 
-int ev_mutex_try_enter(ev_os_mutex_t* handle)
+int ev_mutex_try_enter(ev_mutex_t* handle)
 {
-    int err = pthread_mutex_trylock(handle);
+    int err = pthread_mutex_trylock(&handle->u.r);
     if (!err)
     {
         return EV_SUCCESS;
