@@ -36,12 +36,6 @@ extern "C" {
 enum ev_errno;
 typedef enum ev_errno ev_errno_t;
 
-enum ev_role;
-typedef enum ev_role ev_role_t;
-
-struct ev_handle;
-typedef struct ev_handle ev_handle_t;
-
 struct ev_loop;
 typedef struct ev_loop ev_loop_t;
 
@@ -50,9 +44,6 @@ typedef struct ev_timer ev_timer_t;
 
 struct ev_once;
 typedef struct ev_once ev_once_t;
-
-struct ev_todo;
-typedef struct ev_todo ev_todo_t;
 
 struct ev_async;
 typedef struct ev_async ev_async_t;
@@ -127,12 +118,6 @@ typedef void(*ev_write_cb)(ev_write_t* req, size_t size, int stat);
  * @param[in] stat      Read result
  */
 typedef void(*ev_read_cb)(ev_read_t* req, size_t size, int stat);
-
-/**
- * @brief Thread callback
- * @param[in] arg       User data
- */
-typedef void (*ev_thread_cb)(void* arg);
 
 #ifdef __cplusplus
 }

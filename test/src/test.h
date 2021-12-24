@@ -49,8 +49,14 @@ extern "C" {
         ((type *) ((char *) (ptr) - offsetof(type, member)))
 #endif
 
-#define ALIGN_ADDR(addr, align)	\
-	(((uintptr_t)(addr) + ((uintptr_t)(align) - 1)) & ~((uintptr_t)(align) - 1))
+#ifndef ALIGN_ADDR
+#define ALIGN_ADDR(addr, align) \
+    (((uintptr_t)(addr) + ((uintptr_t)(align) - 1)) & ~((uintptr_t)(align) - 1))
+#endif
+
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#endif
 
 typedef void (*fn_execute)(void);
 

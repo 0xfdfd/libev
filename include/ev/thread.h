@@ -12,6 +12,14 @@ extern "C" {
  * @{
  */
 
+#define EV_THREAD_WAIT_INFINITE ((unsigned)-1)
+
+/**
+ * @brief Thread callback
+ * @param[in] arg       User data
+ */
+typedef void (*ev_thread_cb)(void* arg);
+
 typedef struct ev_thread_opt
 {
     struct
@@ -35,7 +43,7 @@ int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt, ev_thread_cb
  * @brief Exit thread
  * @warning Cannot be called in thread body.
  * @param[in] thr       Thread handle
- * @param[in] timeout   Timeout in milliseconds.
+ * @param[in] timeout   Timeout in milliseconds. #EV_THREAD_WAIT_INFINITE to wait infinite.
  * @return              #EV_ETIMEDOUT if timed out before thread terminated,
  *                      #EV_SUCCESS if thread terminated.
  */

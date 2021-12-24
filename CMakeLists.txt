@@ -11,12 +11,11 @@ add_library(${PROJECT_NAME}
     "src/log.c"
     "src/map.c"
     "src/map_low.c"
-    "src/thread_pool.c"
+    "src/threadpool.c"
     "src/timer.c")
 if(WIN32)
     target_sources(${PROJECT_NAME}
         PRIVATE
-            "src/win/async.c"
             "src/win/loop.c"
             "src/win/mutex.c"
             "src/win/once.c"
@@ -29,7 +28,6 @@ if(WIN32)
 else()
     target_sources(${PROJECT_NAME}
         PRIVATE
-            "src/unix/async.c"
             "src/unix/loop.c"
             "src/unix/mutex.c"
             "src/unix/once.c"

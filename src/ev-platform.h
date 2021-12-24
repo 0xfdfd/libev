@@ -54,11 +54,18 @@ extern "C" {
 #endif
 
 /**
- * @brief Initialize backend
- * @param[in] loop  loop handler
- * @return          #ev_errno_t
+ * @brief Loop wakeup callback
+ * @param[in] loop  Event loop
  */
-API_LOCAL int ev__loop_init_backend(ev_loop_t* loop);
+typedef void (*ev_loop_on_wakeup_cb)(ev_loop_t* loop);
+
+/**
+ * @brief Initialize backend
+ * @param[in] loop      loop handler
+ * @param[in] wakeup_cb Wakeup callback
+ * @return              #ev_errno_t
+ */
+API_LOCAL int ev__loop_init_backend(ev_loop_t* loop, ev_loop_on_wakeup_cb wakeup_cb);
 
 /**
  * @brief Destroy backend
@@ -85,6 +92,13 @@ API_LOCAL int ev__translate_sys_error(int syserr);
  * @return      Clock time
  */
 API_LOCAL uint64_t ev__clocktime(void);
+
+/**
+ * @brief Wakeup event loop
+ * @note MT-Safe
+ * @param[in] loop  Event loop
+ */
+API_LOCAL void ev__loop_wakeup(ev_loop_t* loop);
 
 #ifdef __cplusplus
 }

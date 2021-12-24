@@ -1,6 +1,7 @@
 #ifndef __EV_TIMER_H__
 #define __EV_TIMER_H__
 
+#include "ev/handle.h"
 #include "ev/loop.h"
 
 #ifdef __cplusplus

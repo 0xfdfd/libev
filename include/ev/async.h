@@ -1,7 +1,7 @@
 #ifndef __EV_ASYNC_H__
 #define __EV_ASYNC_H__
 
-#include "ev/loop.h"
+#include "ev/defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,11 +21,16 @@ typedef void(*ev_async_cb)(ev_async_t* async);
 struct ev_async
 {
     ev_handle_t             base;               /**< Base object */
+    ev_cycle_list_node_t    node;               /**< #ev_loop_t::wakeup::async::queue */
 
-    ev_async_cb             active_cb;          /**< Active callback */
-    ev_async_cb             close_cb;           /**< Close callback */
+    struct
+    {
+        ev_async_cb         active_cb;          /**< Active callback */
+        ev_async_cb         close_cb;           /**< Close callback */
 
-    ev_async_backend_t      backend;            /**< Platform related implementation */
+        ev_mutex_t          mutex;              /**< Mutex for #ev_async_backend_t::pending */
+        int                 pending;            /**< Pending mask */
+    }data;
 };
 #define EV_ASYNC_INIT       { EV_HANDLE_INIT, NULL, NULL, EV_ASYNC_BACKEND_INIT }
 

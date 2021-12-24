@@ -30,12 +30,6 @@ struct ev_once
 };
 #define EV_ONCE_INIT            { INIT_ONCE_STATIC_INIT }
 
-typedef struct ev_loop_plt
-{
-    HANDLE                      iocp;               /**< IOCP handle */
-}ev_loop_plt_t;
-#define EV_LOOP_PLT_INIT        { NULL }
-
 struct ev_iocp;
 typedef struct ev_iocp ev_iocp_t;
 
@@ -53,11 +47,15 @@ struct ev_iocp
 };
 #define EV_IOCP_INIT            { NULL, NULL, { 0, 0, { { 0, 0 } }, NULL } }
 
-typedef struct ev_async_backend
+typedef struct ev_loop_plt
 {
-    ev_iocp_t                   iocp;               /**< IOCP request */
-}ev_async_backend_t;
-#define EV_ASYNC_BACKEND_INIT   { EV_IOCP_INIT }
+    HANDLE                      iocp;               /**< IOCP handle */
+    struct
+    {
+        ev_iocp_t               io;                 /**< Wakeup token */
+    }wakeup;
+}ev_loop_plt_t;
+#define EV_LOOP_PLT_INIT        { NULL }
 
 typedef struct ev_write_backend
 {

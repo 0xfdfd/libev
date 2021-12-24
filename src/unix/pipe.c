@@ -588,8 +588,10 @@ static void _ev_pipe_abort_unix(ev_pipe_t* pipe, int stat)
     }
 }
 
-static void _ev_pipe_on_ipc_mode_io_unix(ev_nonblock_io_t* io, unsigned evts)
+static void _ev_pipe_on_ipc_mode_io_unix(ev_nonblock_io_t* io, unsigned evts, void* arg)
 {
+    (void)arg;
+
     int ret = EV_SUCCESS;
     ev_pipe_t* pipe = container_of(io, ev_pipe_t, backend.ipc_mode.io);
 
@@ -617,7 +619,7 @@ err:
 
 static void _ev_pipe_init_as_ipc_mode_unix(ev_pipe_t* pipe)
 {
-    ev__nonblock_io_init(&pipe->backend.ipc_mode.io, pipe->pipfd, _ev_pipe_on_ipc_mode_io_unix);
+    ev__nonblock_io_init(&pipe->backend.ipc_mode.io, pipe->pipfd, _ev_pipe_on_ipc_mode_io_unix, NULL);
     memset(&pipe->backend.ipc_mode.mask, 0, sizeof(pipe->backend.ipc_mode.mask));
 
     _ev_pipe_ipc_mode_reset_rio_curr_cnt(pipe);

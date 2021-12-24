@@ -27,16 +27,37 @@ static int _ev_cmp_timer(const ev_map_node_t* key1, const ev_map_node_t* key2, v
     return t1->data.active < t2->data.active ? -1 : 1;
 }
 
-static void _ev_loop_init(ev_loop_t* loop)
+static int _ev_loop_init_weakup(ev_loop_t* loop)
 {
-    loop->hwtime = 0;
-    ev_list_init(&loop->handles.idle_list);
-    ev_list_init(&loop->handles.active_list);
+    int ret;
+    if ((ret = ev_mutex_init(&loop->wakeup.async.mutex, 0)) != EV_SUCCESS)
+    {
+        return ret;
+    }
+    if ((ret = ev_mutex_init(&loop->wakeup.work.mutex, 0)) != EV_SUCCESS)
+    {
+        ev_mutex_exit(&loop->wakeup.async.mutex);
+        return ret;
+    }
+
+    ev_cycle_list_init(&loop->wakeup.async.queue);
+    ev_list_init(&loop->wakeup.work.queue);
+
+    return EV_SUCCESS;
+}
+
+static int _ev_loop_init(ev_loop_t* loop)
+{
+    memset(loop, 0, sizeof(*loop));
+
+    int ret = _ev_loop_init_weakup(loop);
+    if (ret != EV_SUCCESS)
+    {
+        return ret;
+    }
 
     ev_map_init(&loop->timer.heap, _ev_cmp_timer, NULL);
-    ev_list_init(&loop->todo.pending);
-
-    memset(&loop->mask, 0, sizeof(loop->mask));
+    return EV_SUCCESS;
 }
 
 /**
@@ -79,7 +100,6 @@ static void _ev_loop_active_todo(ev_loop_t* loop)
     while ((it = ev_list_pop_front(&loop->todo.pending)) != NULL)
     {
         ev_todo_t* todo = container_of(it, ev_todo_t, node);
-        todo->mask.queued = 0;
         todo->cb(todo);
     }
 }
@@ -89,7 +109,7 @@ static uint32_t _ev_backend_timeout_timer(ev_loop_t* loop)
     ev_map_node_t* it = ev_map_begin(&loop->timer.heap);
     if (it == NULL)
     {
-        return 0;
+        return (uint32_t)-1;
     }
 
     ev_timer_t* timer = container_of(it, ev_timer_t, node);
@@ -101,26 +121,28 @@ static uint32_t _ev_backend_timeout_timer(ev_loop_t* loop)
     return dif > UINT32_MAX ? UINT32_MAX : (uint32_t)dif;
 }
 
+/**
+ * @brief Calculate wait timeout
+ * 
+ * Calculate timeout as small as posibile.
+ * 
+ * @param[in] loop  Event loop
+ * @return          Timeout in milliseconds
+ */
 static uint32_t _ev_backend_timeout(ev_loop_t* loop)
 {
-    uint32_t ret;
     if (loop->mask.b_stop)
     {
         return 0;
     }
 
+    /* todo queue must be process now */
     if (ev_list_size(&loop->todo.pending) != 0)
     {
         return 0;
     }
 
-    if ((ret = _ev_backend_timeout_timer(loop)) != 0)
-    {
-        return ret;
-    }
-
-    /* If has active handle, set timeout to max value */
-    return ev_list_size(&loop->handles.active_list) ? (uint32_t)-1 : 0;
+    return _ev_backend_timeout_timer(loop);
 }
 
 static void _ev_to_close(ev_todo_t* todo)
@@ -134,46 +156,135 @@ static void _ev_to_close(ev_todo_t* todo)
     handle->data.close_cb(handle);
 }
 
+static size_t _ev_calculate_read_capacity(const ev_read_t* req)
+{
+    size_t total = 0;
+
+    size_t i;
+    for (i = 0; i < req->data.nbuf; i++)
+    {
+        total += req->data.bufs[i].size;
+    }
+
+    return total;
+}
+
+static size_t _ev_calculate_write_size(const ev_write_t* req)
+{
+    size_t total = 0;
+
+    size_t i;
+    for (i = 0; i < req->data.nbuf; i++)
+    {
+        total += req->data.bufs[i].size;
+    }
+    return total;
+}
+
+static void _ev_async_on_close(ev_handle_t* handle)
+{
+    ev_async_t* async = container_of(handle, ev_async_t, base);
+
+    if (async->data.close_cb != NULL)
+    {
+        async->data.close_cb(async);
+    }
+}
+
+static void _ev_loop_handle_async(ev_loop_t* loop)
+{
+    for (;;)
+    {
+        ev_async_t* async;
+        ev_mutex_enter(&loop->wakeup.async.mutex);
+        {
+            ev_cycle_list_node_t* it = ev_cycle_list_pop_front(&loop->wakeup.async.queue);
+            async = it != NULL ? container_of(it, ev_async_t, node) : NULL;
+        }
+        ev_mutex_leave(&loop->wakeup.async.mutex);
+
+        if (async == NULL)
+        {
+            break;
+        }
+
+        ev_mutex_enter(&async->data.mutex);
+        {
+            async->data.pending = 0;
+        }
+        ev_mutex_leave(&async->data.mutex);
+
+        async->data.active_cb(async);
+    }
+}
+
+static void _ev_loop_handle_work(ev_loop_t* loop)
+{
+    for (;;)
+    {
+        ev_todo_t* todo;
+        ev_mutex_enter(&loop->wakeup.work.mutex);
+        {
+            ev_list_node_t* it = ev_list_begin(&loop->wakeup.work.queue);
+            todo = it != NULL ? container_of(it, ev_todo_t, node) : NULL;
+        }
+        ev_mutex_leave(&loop->wakeup.work.mutex);
+
+        if (todo == NULL)
+        {
+            break;
+        }
+
+        todo->cb(todo);
+    }
+}
+
+static void _ev_loop_on_wakeup(ev_loop_t* loop)
+{
+    if (ev_cycle_list_begin(&loop->wakeup.async.queue) != NULL)
+    {
+        _ev_loop_handle_async(loop);
+    }
+    if (ev_list_size(&loop->wakeup.work.queue) != 0)
+    {
+        _ev_loop_handle_work(loop);
+    }
+}
+
 void ev__loop_update_time(ev_loop_t* loop)
 {
     loop->hwtime = ev__clocktime();
 }
 
-int ev_loop_init(ev_loop_t* loop)
+int ev__ipc_check_frame_hdr(const void* buffer, size_t size)
 {
-    _ev_loop_init(loop);
-
-    int ret = ev__loop_init_backend(loop);
-    if (ret < 0)
+    const ev_ipc_frame_hdr_t* hdr = buffer;
+    if (size < sizeof(ev_ipc_frame_hdr_t))
     {
-        return ret;
+        return 0;
     }
 
-    ev__loop_update_time(loop);
-    return EV_SUCCESS;
-}
-
-int ev_loop_exit(ev_loop_t* loop)
-{
-    if (ev_list_size(&loop->handles.active_list)
-        || ev_list_size(&loop->todo.pending)
-        || ev_map_size(&loop->timer.heap))
+    if (hdr->hdr_magic != EV_IPC_FRAME_HDR_MAGIC)
     {
-        return EV_EBUSY;
+        return 0;
     }
 
-    ev__loop_exit_backend(loop);
-    return EV_SUCCESS;
+    return 1;
 }
 
-void ev_loop_stop(ev_loop_t* loop)
+void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr, uint8_t flags, uint16_t exsz, uint32_t dtsz)
 {
-    loop->mask.b_stop = 1;
+    hdr->hdr_magic = EV_IPC_FRAME_HDR_MAGIC;
+    hdr->hdr_flags = flags;
+    hdr->hdr_version = 0;
+    hdr->hdr_exsz = exsz;
+
+    hdr->hdr_dtsz = dtsz;
+    hdr->reserved = 0;
 }
 
 void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t role, ev_close_cb close_cb)
 {
-    assert(close_cb != NULL);
     ev_list_push_back(&loop->handles.idle_list, &handle->node);
 
     handle->data.loop = loop;
@@ -181,7 +292,6 @@ void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t role, ev_cl
     handle->data.flags = 0;
 
     handle->data.close_cb = close_cb;
-    ev__todo_init(&handle->data.close_queue);
 }
 
 void ev__handle_exit(ev_handle_t* handle)
@@ -191,8 +301,16 @@ void ev__handle_exit(ev_handle_t* handle)
     /* Stop if necessary */
     ev__handle_deactive(handle);
 
-    handle->data.flags |= EV_HANDLE_CLOSING;
-    ev__todo_queue(handle->data.loop, &handle->data.close_queue, _ev_to_close);
+    if (handle->data.close_cb != NULL)
+    {
+        handle->data.flags |= EV_HANDLE_CLOSING;
+        ev__todo_queue(handle->data.loop, &handle->data.close_queue, _ev_to_close);
+    }
+    else
+    {
+        handle->data.flags |= EV_HANDLE_CLOSED;
+        ev_list_erase(&handle->data.loop->handles.idle_list, &handle->node);
+    }
 }
 
 void ev__handle_active(ev_handle_t* handle)
@@ -231,28 +349,45 @@ int ev__handle_is_closing(ev_handle_t* handle)
     return handle->data.flags & (EV_HANDLE_CLOSING | EV_HANDLE_CLOSED);
 }
 
-void ev__todo_init(ev_todo_t* token)
-{
-    token->mask.queued = 0;
-    token->cb = NULL;
-}
-
 void ev__todo_queue(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb)
 {
-    assert(!token->mask.queued);
-
-    ev_list_push_back(&loop->todo.pending, &token->node);
-    token->mask.queued = 1;
     token->cb = cb;
+    ev_list_push_back(&loop->todo.pending, &token->node);
 }
 
-void ev__todo_cancel(ev_loop_t* loop, ev_todo_t* token)
+int ev_loop_init(ev_loop_t* loop)
 {
-    assert(!token->mask.queued);
+    int ret;
+    if ((ret = _ev_loop_init(loop)) != EV_SUCCESS)
+    {
+        return ret;
+    }
 
-    ev_list_erase(&loop->todo.pending, &token->node);
-    token->mask.queued = 0;
-    token->cb = NULL;
+    if ((ret = ev__loop_init_backend(loop, _ev_loop_on_wakeup)) != EV_SUCCESS)
+    {
+        return ret;
+    }
+
+    ev__loop_update_time(loop);
+    return EV_SUCCESS;
+}
+
+int ev_loop_exit(ev_loop_t* loop)
+{
+    if (ev_list_size(&loop->handles.active_list)
+        || ev_list_size(&loop->todo.pending)
+        || ev_map_size(&loop->timer.heap))
+    {
+        return EV_EBUSY;
+    }
+
+    ev__loop_exit_backend(loop);
+    return EV_SUCCESS;
+}
+
+void ev_loop_stop(ev_loop_t* loop)
+{
+    loop->mask.b_stop = 1;
 }
 
 int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
@@ -368,18 +503,6 @@ int ev_write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb)
     return ev_write_init_ext(req, cb, bufs, nbuf, NULL, 0, EV_ROLE_UNKNOWN, NULL, 0);
 }
 
-static size_t _ev_calculate_write_size(const ev_write_t* req)
-{
-    size_t total = 0;
-
-    size_t i;
-    for (i = 0; i < req->data.nbuf; i++)
-    {
-        total += req->data.bufs[i].size;
-    }
-    return total;
-}
-
 int ev_write_init_ext(ev_write_t* req, ev_write_cb callback,
     ev_buf_t* bufs, size_t nbuf,
     void* iov_bufs, size_t iov_size,
@@ -430,19 +553,6 @@ fin:
 int ev_read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb)
 {
     return ev_read_init_ext(req, cb, bufs, nbuf, NULL, 0);
-}
-
-static size_t _ev_calculate_read_capacity(const ev_read_t* req)
-{
-    size_t total = 0;
-
-    size_t i;
-    for (i = 0; i < req->data.nbuf; i++)
-    {
-        total += req->data.bufs[i].size;
-    }
-
-    return total;
 }
 
 int ev_read_init_ext(ev_read_t* req, ev_read_cb callback,
@@ -571,29 +681,76 @@ const char* ev_strerror(int err)
     return "Unknown error";
 }
 
-int ev__ipc_check_frame_hdr(const void* buffer, size_t size)
+int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
 {
-    const ev_ipc_frame_hdr_t* hdr = buffer;
-    if (size < sizeof(ev_ipc_frame_hdr_t))
+    int ret;
+    if ((ret = ev_mutex_init(&handle->data.mutex, 0)) != EV_SUCCESS)
     {
-        return 0;
+        return ret;
     }
 
-    if (hdr->hdr_magic != EV_IPC_FRAME_HDR_MAGIC)
-    {
-        return 0;
-    }
+    handle->data.active_cb = cb;
+    handle->data.close_cb = NULL;
+    handle->data.pending = 0;
+    ev_cycle_list_init(&handle->node);
+    ev__handle_init(loop, &handle->base, EV_ROLE_EV_ASYNC, _ev_async_on_close);
+    ev__handle_active(&handle->base);
 
-    return 1;
+    return EV_SUCCESS;
 }
 
-void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr, uint8_t flags, uint16_t exsz, uint32_t dtsz)
+void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
 {
-    hdr->hdr_magic = EV_IPC_FRAME_HDR_MAGIC;
-    hdr->hdr_flags = flags;
-    hdr->hdr_version = 0;
-    hdr->hdr_exsz = exsz;
+    ev_loop_t* loop = handle->base.data.loop;
+    assert(!ev__handle_is_closing(&handle->base));
 
-    hdr->hdr_dtsz = dtsz;
-    hdr->reserved = 0;
+    handle->data.close_cb = close_cb;
+
+    ev_mutex_enter(&loop->wakeup.async.mutex);
+    {
+        ev_cycle_list_erase(&handle->node);
+    }
+    ev_mutex_leave(&loop->wakeup.async.mutex);
+
+    ev_mutex_exit(&handle->data.mutex);
+    ev__handle_exit(&handle->base);
+}
+
+void ev_async_wakeup(ev_async_t* handle)
+{
+    ev_loop_t* loop = handle->base.data.loop;
+
+    int pending;
+    ev_mutex_enter(&handle->data.mutex);
+    {
+        pending = handle->data.pending;
+        handle->data.pending = 1;
+    }
+    ev_mutex_leave(&handle->data.mutex);
+
+    if (pending)
+    {
+        return;
+    }
+
+    ev_mutex_enter(&loop->wakeup.async.mutex);
+    {
+        ev_cycle_list_push_back(&loop->wakeup.async.queue, &handle->node);
+    }
+    ev_mutex_leave(&loop->wakeup.async.mutex);
+
+    ev__loop_wakeup(loop);
+}
+
+void ev__loop_submit(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb)
+{
+    token->cb = cb;
+
+    ev_mutex_enter(&loop->wakeup.work.mutex);
+    {
+        ev_list_push_back(&loop->wakeup.work.queue, &token->node);
+    }
+    ev_mutex_leave(&loop->wakeup.work.mutex);
+
+    ev__loop_wakeup(loop);
 }

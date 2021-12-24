@@ -83,7 +83,7 @@ err_fin:
 int ev_thread_exit(ev_os_thread_t* thr, unsigned timeout)
 {
     int ret = EBUSY;
-    if (timeout == (unsigned)-1)
+    if (timeout == EV_THREAD_WAIT_INFINITE)
     {
         int err = pthread_join(*thr, NULL);
         return ev__translate_sys_error(err);

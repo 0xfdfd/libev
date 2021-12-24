@@ -55,7 +55,7 @@ typedef struct ev_nonblock_io ev_nonblock_io_t;
  * @param[in] io    IO object
  * @param[in] evts  IO events
  */
-typedef void(*ev_nonblock_io_cb)(ev_nonblock_io_t* io, unsigned evts);
+typedef void(*ev_nonblock_io_cb)(ev_nonblock_io_t* io, unsigned evts, void* arg);
 
 struct ev_nonblock_io
 {
@@ -66,9 +66,10 @@ struct ev_nonblock_io
         unsigned                c_events;           /**< Current events */
         unsigned                n_events;           /**< Next events */
         ev_nonblock_io_cb       cb;                 /**< IO active callback */
+        void*                   arg;                /**< User data */
     }data;
 };
-#define EV_NONBLOCK_IO_INIT     { EV_MAP_NODE_INIT, { 0, 0, 0, NULL } }
+#define EV_NONBLOCK_IO_INIT     { EV_MAP_NODE_INIT, { 0, 0, 0, NULL, NULL } }
 
 typedef struct ev_loop_plt
 {
@@ -79,8 +80,7 @@ typedef struct ev_loop_plt
     {
         int                     fd;                 /**< Wakeup fd */
         ev_nonblock_io_t        io;                 /**< Wakeup IO */
-        ev_list_t               queue;              /**< Async handle queue */
-    }async;
+    }wakeup;
 }ev_loop_plt_t;
 #define EV_LOOP_PLT_INIT        \
     {\
@@ -109,14 +109,6 @@ typedef struct ev_read_backend
  */
 #define EV_IOV_BUF_SIZE_INTERNAL(nbuf)   \
     (sizeof(ev_buf_t) * (nbuf))
-
-typedef struct ev_async_backend
-{
-    ev_list_node_t              node;               /**< #ev_loop_plt_t::async::queue */
-    ev_mutex_t                  mutex;              /**< Mutex for #ev_async_backend_t::pending */
-    int                         pending;            /**< Pending mask */
-}ev_async_backend_t;
-#define EV_ASYNC_BACKEND_INIT   { EV_NONBLOCK_IO_INIT, { 0 }, 0 }
 
 struct ev_nonblock_stream
 {

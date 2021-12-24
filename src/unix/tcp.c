@@ -168,18 +168,18 @@ static void _ev_tcp_on_accept(ev_tcp_t* acpt)
     }
 }
 
-static void _ev_tcp_on_server_event(ev_nonblock_io_t* io, unsigned evts)
+static void _ev_tcp_on_server_event(ev_nonblock_io_t* io, unsigned evts, void* arg)
 {
-    (void)evts;
+    (void)evts; (void)arg;
     ev_tcp_t* sock = container_of(io, ev_tcp_t, backend.u.listen.io);
 
     _ev_tcp_on_accept(sock);
     _ev_tcp_smart_deactive(sock);
 }
 
-static void _ev_tcp_on_client_event(ev_nonblock_io_t* io, unsigned evts)
+static void _ev_tcp_on_client_event(ev_nonblock_io_t* io, unsigned evts, void* arg)
 {
-    (void)evts;
+    (void)evts; (void)arg;
     ev_tcp_t* sock = container_of(io, ev_tcp_t, backend.u.client.io);
 
     _ev_tcp_on_connect(sock);
@@ -212,11 +212,11 @@ static int _ev_tcp_setup_fd(ev_tcp_t* sock, int domain, int is_server, int* new_
     tmp_new_fd = 1;
     if (is_server)
     {
-        ev__nonblock_io_init(&sock->backend.u.listen.io, sock->sock, _ev_tcp_on_server_event);
+        ev__nonblock_io_init(&sock->backend.u.listen.io, sock->sock, _ev_tcp_on_server_event, NULL);
     }
     else
     {
-        ev__nonblock_io_init(&sock->backend.u.client.io, sock->sock, _ev_tcp_on_client_event);
+        ev__nonblock_io_init(&sock->backend.u.client.io, sock->sock, _ev_tcp_on_client_event, NULL);
     }
 
     goto fin;

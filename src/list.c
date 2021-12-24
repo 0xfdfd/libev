@@ -104,26 +104,29 @@ void ev_list_erase(ev_list_t* handler, ev_list_node_t* node)
     {
         handler->head = NULL;
         handler->tail = NULL;
-        return;
+        goto fin;
     }
 
     if (handler->head == node)
     {
         node->p_after->p_before = NULL;
         handler->head = node->p_after;
-        return;
+        goto fin;
     }
 
     if (handler->tail == node)
     {
         node->p_before->p_after = NULL;
         handler->tail = node->p_before;
-        return;
+        goto fin;
     }
 
     node->p_before->p_after = node->p_after;
     node->p_after->p_before = node->p_before;
-    return;
+
+fin:
+    node->p_after = NULL;
+    node->p_before = NULL;
 }
 
 ev_list_node_t* ev_list_pop_front(ev_list_t* handler)
@@ -153,4 +156,78 @@ ev_list_node_t* ev_list_pop_back(ev_list_t* handler)
 size_t ev_list_size(const ev_list_t* handler)
 {
     return handler->size;
+}
+
+#define CLIST_NEXT(node)        ((node)->p_next)
+#define CLIST_PREV(node)        ((node)->p_prev)
+#define CLIST_PREV_NEXT(node)   (CLIST_NEXT(CLIST_PREV(node)))
+#define CLIST_NEXT_PREV(node)   (CLIST_PREV(CLIST_NEXT(node)))
+
+void ev_cycle_list_init(ev_cycle_list_node_t* head)
+{
+    head->p_next = head;
+    head->p_prev = head;
+}
+
+void ev_cycle_list_push_back(ev_cycle_list_node_t* head, ev_cycle_list_node_t* node)
+{
+    CLIST_NEXT(node) = head;
+    CLIST_PREV(node) = CLIST_PREV(head);
+    CLIST_PREV_NEXT(node) = node;
+    CLIST_PREV(head) = node;
+}
+
+void ev_cycle_list_push_front(ev_cycle_list_node_t* head, ev_cycle_list_node_t* node)
+{
+    CLIST_NEXT(node) = CLIST_NEXT(head);
+    CLIST_PREV(node) = head;
+    CLIST_NEXT_PREV(node) = node;
+    CLIST_NEXT(head) = node;
+}
+
+void ev_cycle_list_erase(ev_cycle_list_node_t* node)
+{
+    CLIST_PREV_NEXT(node) = CLIST_NEXT(node);
+    CLIST_NEXT_PREV(node) = CLIST_PREV(node);
+}
+
+ev_cycle_list_node_t* ev_cycle_list_pop_front(ev_cycle_list_node_t* head)
+{
+    ev_cycle_list_node_t* node = ev_cycle_list_begin(head);
+    if (node == NULL)
+    {
+        return NULL;
+    }
+
+    ev_cycle_list_erase(node);
+    return node;
+}
+
+ev_cycle_list_node_t* ev_cycle_list_pop_back(ev_cycle_list_node_t* head)
+{
+    ev_cycle_list_node_t* node = CLIST_PREV(head);
+    if (node == head)
+    {
+        return NULL;
+    }
+
+    ev_cycle_list_erase(node);
+    return node;
+}
+
+ev_cycle_list_node_t* ev_cycle_list_begin(ev_cycle_list_node_t* head)
+{
+    ev_cycle_list_node_t* node = CLIST_NEXT(head);
+    return node == head ? NULL : node;
+}
+
+ev_cycle_list_node_t* ev_cycle_list_next(ev_cycle_list_node_t* node)
+{
+    ev_cycle_list_node_t* next = CLIST_NEXT(node);
+    return next == node ? NULL : next;
+}
+
+int ev_cycle_list_empty(const ev_cycle_list_node_t* node)
+{
+    return CLIST_NEXT(node) == node;
 }

@@ -97,25 +97,12 @@ API_LOCAL int ev__handle_is_active(ev_handle_t* handle);
 API_LOCAL int ev__handle_is_closing(ev_handle_t* handle);
 
 /**
- * @brief Initialize todo token
- * @param[out] token    Todo token
- */
-API_LOCAL void ev__todo_init(ev_todo_t* token);
-
-/**
  * @brief Add a pending task
  * @param[in] loop      Event loop
  * @param[in] token     A pointer to the pending token
  * @param[in] cb        A callback when the pending task is active
  */
 API_LOCAL void ev__todo_queue(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb);
-
-/**
- * @brief Cancel a pending task
- * @param[in] loop      Event loop
- * @param[in] token     A pending token
- */
-API_LOCAL void ev__todo_cancel(ev_loop_t* loop, ev_todo_t* token);
 
 /**
  * @brief Check IPC frame header
@@ -140,6 +127,15 @@ API_LOCAL void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr,
  * @param[in] loop  loop handler
  */
 API_LOCAL void ev__loop_update_time(ev_loop_t* loop);
+
+/**
+ * @brief Submit token to called in event loop
+ * @note MT-Safe
+ * @param[in] loop  Event loop
+ * @param[in] token Todo token
+ * @param[in] cb    Callback
+ */
+API_LOCAL void ev__loop_submit(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb);
 
 #ifdef __cplusplus
 }

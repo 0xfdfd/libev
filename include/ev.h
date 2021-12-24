@@ -16,6 +16,7 @@
 #include "ev/loop.h"
 #include "ev/timer.h"
 #include "ev/async.h"
+#include "ev/threadpool.h"
 
 #ifdef __cplusplus
 extern "C" {

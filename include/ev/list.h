@@ -59,6 +59,7 @@ typedef struct ev_list
 
 /**
  * @brief Initialize Double Linked List.
+ * @note It is guarantee that memset() to zero have the same affect.
  * @param[out] handler  Pointer to list
  */
 void ev_list_init(ev_list_t* handler);
@@ -127,7 +128,7 @@ ev_list_node_t* ev_list_pop_front(ev_list_t* handler);
 ev_list_node_t* ev_list_pop_back(ev_list_t* handler);
 
 /**
- * @brief Get the last node.
+ * @brief Get the first node.
  * @param[in] handler   Pointer to list
  * @return              The first node
  */
@@ -156,6 +157,86 @@ ev_list_node_t* ev_list_prev(const ev_list_node_t* node);
 
 /**
  * @} EV_UTILS/EV_UTILS_LIST
+ */
+
+/**
+ * @defgroup EV_UTILS_QLIST QList
+ * @ingroup EV_UTILS
+ * @{
+ */
+
+typedef struct ev_cycle_list_node
+{
+    struct ev_cycle_list_node*  p_prev;
+    struct ev_cycle_list_node*  p_next;
+}ev_cycle_list_node_t;
+#define EV_CYCLE_LIST_NODE_INVALID  { NULL, NULL }
+
+/**
+ * @brief Initialize circular linked list
+ * @param[out] head     List handle
+ */
+void ev_cycle_list_init(ev_cycle_list_node_t* head);
+
+/**
+ * @brief Insert a node to the tail of the list.
+ * @warning the node must not exist in any list.
+ * @param[in,out] head  Pointer to list
+ * @param[in,out] node  Pointer to a new node
+ */
+void ev_cycle_list_push_back(ev_cycle_list_node_t* head, ev_cycle_list_node_t* node);
+
+/**
+ * @brief Insert a node to the head of the list.
+ * @warning the node must not exist in any list.
+ * @param[in,out] head      Pointer to list
+ * @param[in,out] node      Pointer to a new node
+ */
+void ev_cycle_list_push_front(ev_cycle_list_node_t* head, ev_cycle_list_node_t* node);
+
+/**
+ * @brief Delete a exist node
+ * @param[in,out] node      The node you want to delete
+ */
+void ev_cycle_list_erase(ev_cycle_list_node_t* node);
+
+/**
+ * @brief Check whether list is empty
+ * @param[in] node          Any node in list
+ * @return                  bool
+ */
+int ev_cycle_list_empty(const ev_cycle_list_node_t* node);
+
+/**
+ * @brief Get the first node and remove it from the list.
+ * @param[in,out] head      Pointer to list
+ * @return                  The first node
+ */
+ev_cycle_list_node_t* ev_cycle_list_pop_front(ev_cycle_list_node_t* head);
+
+/**
+ * @brief Get the last node and remove it from the list.
+ * @param[in,out] handler   Pointer to list
+ * @return                  The last node
+ */
+ev_cycle_list_node_t* ev_cycle_list_pop_back(ev_cycle_list_node_t* head);
+
+/**
+ * @brief Get the first node.
+ * @param[in] handler   Pointer to list
+ * @return              The first node
+ */
+ev_cycle_list_node_t* ev_cycle_list_begin(ev_cycle_list_node_t* head);
+
+/**
+* @brief Get next node.
+* @param[in] node   Current node
+* @return           The next node
+*/
+ev_cycle_list_node_t* ev_cycle_list_next(ev_cycle_list_node_t* node);
+
+/**
+ * @} EV_UTILS_QLIST
  */
 
 #ifdef __cplusplus

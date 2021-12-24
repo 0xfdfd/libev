@@ -26,8 +26,9 @@ extern ev_loop_unix_ctx_t g_ev_loop_unix_ctx;
  * @param[out] io   A pointer to the structure
  * @param[in] fd    File descriptor
  * @param[in] cb    IO active callback
+ * @param[in] arg   User data
  */
-API_LOCAL void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb);
+API_LOCAL void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb, void* arg);
 
 /**
  * @brief Add events to IO structure

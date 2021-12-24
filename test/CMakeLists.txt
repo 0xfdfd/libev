@@ -19,6 +19,7 @@ add_executable(ev_test
     "src/cases/tcp_listen.c"
     "src/cases/tcp_push_server.c"
     "src/cases/tcp_static_initializer.c"
+    "src/cases/threadpool.c"
     "src/cases/timer_exit_in_callback.c"
     "src/cases/timer_normal.c"
     "src/cases/timer_stop_loop_in_callback.c"

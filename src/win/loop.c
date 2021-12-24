@@ -83,6 +83,27 @@ static void _ev_init_once_win(void)
     _ev_time_init_win();
 }
 
+static void _ev_async_on_wakeup_win(ev_iocp_t* iocp, size_t transferred, void* arg)
+{
+    (void)transferred;
+
+    ev_loop_t* loop = container_of(iocp, ev_loop_t, backend.wakeup.io);
+    ev_loop_on_wakeup_cb wakeup_cb = (ev_loop_on_wakeup_cb)arg;
+
+    wakeup_cb(loop);
+}
+
+/**
+ * @brief Initialize #ev_loop_t::backend::wakeup
+ * @param[out] loop     Event loop
+ * @return              #ev_errno_t
+ */
+static int _ev_loop_wakeup_init_loop_win(ev_loop_t* loop, ev_loop_on_wakeup_cb wakeup_cb)
+{
+    ev__iocp_init(&loop->backend.wakeup.io, _ev_async_on_wakeup_win, (void*)wakeup_cb);
+    return EV_SUCCESS;
+}
+
 uint64_t ev__clocktime(void)
 {
     return _ev_hrtime_win(1000);
@@ -252,20 +273,31 @@ void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg)
 
 void ev__loop_exit_backend(ev_loop_t* loop)
 {
-    CloseHandle(loop->backend.iocp);
-    loop->backend.iocp = NULL;
+    if (loop->backend.iocp != NULL)
+    {
+        CloseHandle(loop->backend.iocp);
+        loop->backend.iocp = NULL;
+    }
 }
 
-int ev__loop_init_backend(ev_loop_t* loop)
+int ev__loop_init_backend(ev_loop_t* loop, ev_loop_on_wakeup_cb wakeup_cb)
 {
     static ev_once_t once = EV_ONCE_INIT;
     ev_once_execute(&once, _ev_init_once_win);
 
+    int ret = _ev_loop_wakeup_init_loop_win(loop, wakeup_cb);
+    if (ret != EV_SUCCESS)
+    {
+        return ret;
+    }
+
     loop->backend.iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 1);
     if (loop->backend.iocp == NULL)
     {
-        return ev__translate_sys_error(GetLastError());
+        int err = GetLastError();
+        return ev__translate_sys_error(err);
     }
+
     return EV_SUCCESS;
 }
 
@@ -408,5 +440,13 @@ void ev__read_init_win(ev_read_t* req, void* owner, int stat,
     for (i = 0; i < req->data.nbuf; i++)
     {
         ev__iocp_init(&req->backend.io[i], iocp_cb, iocp_arg);
+    }
+}
+
+void ev__loop_wakeup(ev_loop_t* loop)
+{
+    if (!PostQueuedCompletionStatus(loop->backend.iocp, 0, 0, &loop->backend.wakeup.io.overlapped))
+    {
+        abort();
     }
 }

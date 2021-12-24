@@ -1,5 +1,6 @@
 #include <sys/ioctl.h>
 #include <sys/uio.h>
+#include <sys/eventfd.h>
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
@@ -8,7 +9,6 @@
 #include "ev-platform.h"
 #include "ev.h"
 #include "unix/loop.h"
-#include "unix/async.h"
 
 #if defined(__PASE__)
 /* on IBMi PASE the control message length can not exceed 256. */
@@ -67,7 +67,7 @@ static int _ev_poll_once(ev_loop_t* loop, struct epoll_event* events, int maxeve
     for (i = 0; i < nfds; i++)
     {
         ev_nonblock_io_t* io = _ev_find_io(loop, events[i].data.fd);
-        io->data.cb(io, events[i].events);
+        io->data.cb(io, events[i].events, io->data.arg);
     }
 
     return nfds;
@@ -260,8 +260,9 @@ static void _ev_stream_cleanup_w(ev_nonblock_stream_t* stream, int errcode)
     }
 }
 
-static void _ev_nonblock_stream_on_io(ev_nonblock_io_t* io, unsigned evts)
+static void _ev_nonblock_stream_on_io(ev_nonblock_io_t* io, unsigned evts, void* arg)
 {
+    (void)arg;
     ev_nonblock_stream_t* stream = container_of(io, ev_nonblock_stream_t, io);
 
     if (evts & EPOLLOUT)
@@ -306,6 +307,73 @@ static void _ev_init_once_unix(void)
 {
     _ev_init_hwtime();
     _ev_init_iovmax();
+}
+
+static void _ev_wakeup_clear_eventfd(ev_loop_t* loop)
+{
+    uint64_t cnt = 0;
+
+    for (;;)
+    {
+        ssize_t read_size = read(loop->backend.wakeup.fd, &cnt, sizeof(cnt));
+        if (read_size >= 0)
+        {
+            continue;
+        }
+
+        int err = errno;
+        if (err == EINTR)
+        {
+            continue;
+        }
+
+        break;
+    }
+}
+
+static void _ev_loop_on_wakeup_unix(ev_nonblock_io_t* io, unsigned evts, void* arg)
+{
+    (void)evts;
+    ev_loop_t* loop = container_of(io, ev_loop_t, backend.wakeup.io);
+    ev_loop_on_wakeup_cb wakeup_cb = arg;
+
+    _ev_wakeup_clear_eventfd(loop);
+    wakeup_cb(loop);
+}
+
+/**
+ * @brief Initialize #ev_loop_t::backend::wakeup
+ * @param[out] loop     Event loop
+ * @return              #ev_errno_t
+ */
+static int _ev_wakeup_init_loop_unix(ev_loop_t* loop, ev_loop_on_wakeup_cb wakeup_cb)
+{
+    int err;
+    loop->backend.wakeup.fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+    if (loop->backend.wakeup.fd < 0)
+    {
+        err = errno;
+        return ev__translate_sys_error(err);
+    }
+
+    ev__nonblock_io_init(&loop->backend.wakeup.io, loop->backend.wakeup.fd, _ev_loop_on_wakeup_unix, wakeup_cb);
+    ev__nonblock_io_add(loop, &loop->backend.wakeup.io, EPOLLIN);
+
+    return EV_SUCCESS;
+}
+
+/**
+ * @brief Destroy #ev_loop_t::backend::wakeup
+ * @param[in] loop  Event loop
+ */
+static void _ev_wakeup_exit_loop_unix(ev_loop_t* loop)
+{
+    ev__nonblock_io_del(loop, &loop->backend.wakeup.io, EPOLLIN);
+    if (loop->backend.wakeup.fd != -1)
+    {
+        close(loop->backend.wakeup.fd);
+        loop->backend.wakeup.fd = -1;
+    }
 }
 
 uint64_t ev__clocktime(void)
@@ -463,7 +531,7 @@ int ev__fcntl_getfd_unix(int fd)
     return flags;
 }
 
-int ev__loop_init_backend(ev_loop_t* loop)
+int ev__loop_init_backend(ev_loop_t* loop, ev_loop_on_wakeup_cb wakeup_cb)
 {
     ENSURE_LAYOUT(ev_buf_t, struct iovec, data, iov_base, size, iov_len);
 
@@ -483,7 +551,7 @@ int ev__loop_init_backend(ev_loop_t* loop)
         goto err_cloexec;
     }
 
-    if ((err = ev__async_init_loop(loop)) != EV_SUCCESS)
+    if ((err = _ev_wakeup_init_loop_unix(loop, wakeup_cb)) != EV_SUCCESS)
     {
         goto err_cloexec;
     }
@@ -498,7 +566,7 @@ err_cloexec:
 
 void ev__loop_exit_backend(ev_loop_t* loop)
 {
-    ev__async_exit_loop(loop);
+    _ev_wakeup_exit_loop_unix(loop);
 
     if (loop->backend.pollfd != -1)
     {
@@ -507,12 +575,13 @@ void ev__loop_exit_backend(ev_loop_t* loop)
     }
 }
 
-void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb)
+void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb, void* arg)
 {
     io->data.fd = fd;
     io->data.c_events = 0;
     io->data.n_events = 0;
     io->data.cb = cb;
+    io->data.arg = arg;
 }
 
 void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
@@ -692,7 +761,7 @@ void ev__nonblock_stream_init(ev_loop_t* loop, ev_nonblock_stream_t* stream,
     stream->flags.io_reg_r = 0;
     stream->flags.io_reg_w = 0;
 
-    ev__nonblock_io_init(&stream->io, fd, _ev_nonblock_stream_on_io);
+    ev__nonblock_io_init(&stream->io, fd, _ev_nonblock_stream_on_io, NULL);
 
     ev_list_init(&stream->pending.w_queue);
     ev_list_init(&stream->pending.r_queue);
@@ -810,4 +879,29 @@ ssize_t ev__write_unix(int fd, void* buffer, size_t size)
     }
 
     return ev__translate_sys_error(err);
+}
+
+void ev__loop_wakeup(ev_loop_t* loop)
+{
+    static const uint64_t val = 1;
+    ssize_t write_size;
+    do
+    {
+        write_size = write(loop->backend.wakeup.fd, &val, sizeof(val));
+    } while (write_size < 0 && errno == EINTR);
+
+    if (write_size == sizeof(val))
+    {
+        return;
+    }
+
+    int err = errno;
+    if (write_size == -1)
+    {
+        if (err == EV_EAGAIN || err == EWOULDBLOCK)
+        {
+            return;
+        }
+    }
+    abort();
 }
