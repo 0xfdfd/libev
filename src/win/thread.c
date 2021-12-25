@@ -1,4 +1,5 @@
 #include "ev-common.h"
+#include <process.h>
 
 typedef struct ev_thread_helper_win
 {
@@ -17,7 +18,7 @@ static size_t _ev_thread_calculate_stack_size_win(const ev_thread_opt_t* opt)
     return opt->stack_size;
 }
 
-static DWORD WINAPI _ev_thread_proxy_proc_win(LPVOID lpThreadParameter)
+static unsigned __stdcall _ev_thread_proxy_proc_win(void* lpThreadParameter)
 {
     ev_thread_helper_win_t* p_helper = lpThreadParameter;
     ev_thread_helper_win_t helper = *p_helper;
@@ -46,7 +47,8 @@ int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
     }
 
     size_t stack_size = _ev_thread_calculate_stack_size_win(opt);
-    HANDLE thr_ret = CreateThread(NULL, stack_size, _ev_thread_proxy_proc_win, &helper, 0, NULL);
+    HANDLE thr_ret = (HANDLE)_beginthreadex(NULL, (unsigned)stack_size,
+        _ev_thread_proxy_proc_win, &helper, 0, NULL);
     if (thr_ret == NULL)
     {
         err = GetLastError();
