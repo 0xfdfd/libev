@@ -32,7 +32,17 @@ struct ev_async
         int                 pending;            /**< Pending mask */
     }data;
 };
-#define EV_ASYNC_INIT       { EV_HANDLE_INIT, NULL, NULL, EV_ASYNC_BACKEND_INIT }
+#define EV_ASYNC_INVALID    \
+    {\
+        EV_HANDLE_INVALID,\
+        EV_CYCLE_LIST_NODE_INVALID,\
+        {\
+            NULL,\
+            NULL,\
+            EV_MUTEX_INVALID,\
+            0,\
+        }\
+    }
 
 /**
  * @brief Initialize the handle.

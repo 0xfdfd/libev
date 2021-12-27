@@ -38,7 +38,24 @@ struct ev_timer
         uint64_t            repeat;             /**< Repeat */
     }attr;
 };
-#define EV_TIMER_INIT       { EV_HANDLE_INIT, EV_MAP_NODE_INIT, NULL, { 0 }, { NULL, 0, 0 } }
+
+/**
+ * @brief Initialize #ev_timer_t to an invalid value.
+ */
+#define EV_TIMER_INVALID    \
+    {\
+        EV_HANDLE_INVALID,\
+        EV_MAP_NODE_INIT,\
+        NULL,\
+        {\
+            0\
+        },\
+        {\
+            NULL,\
+            0,\
+            0,\
+        }\
+    }
 
 /**
  * @brief Initialize the handle.

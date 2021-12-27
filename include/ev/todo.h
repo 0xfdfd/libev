@@ -21,7 +21,15 @@ struct ev_todo
     ev_list_node_t          node;           /**< List node */
     ev_todo_cb              cb;             /**< Callback */
 };
-#define EV_TODO_INIT        { EV_LIST_NODE_INIT, NULL }
+
+/**
+ * @brief Initialize #ev_todo_t to an invalid value.
+ */
+#define EV_TODO_INVALID     \
+    {\
+        EV_LIST_NODE_INVALID,\
+        NULL,\
+    }
 
 #ifdef __cplusplus
 }

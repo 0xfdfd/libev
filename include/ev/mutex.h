@@ -20,7 +20,17 @@ typedef struct ev_mutex
         ev_os_mutex_t   r;  /**< Real mutex */
     }u;
 }ev_mutex_t;
-#define EV_MUTEX_INIT   { { 0 } }
+
+/**
+ * @brief Initialize #ev_mutex_t to an invalid value.
+ * @see ev_mutex_init()
+ */
+#define EV_MUTEX_INVALID    \
+    {\
+        {\
+            0\
+        }\
+    }
 
 /**
  * @brief Initialize the mutex.

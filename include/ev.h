@@ -80,6 +80,9 @@ enum ev_errno
     EV_EOF              = -1002,                /**< End of file */
 };
 
+/**
+ * @brief TCP socket.
+ */
 struct ev_tcp
 {
     ev_handle_t             base;               /**< Base object */
@@ -88,8 +91,21 @@ struct ev_tcp
     ev_os_socket_t          sock;               /**< Socket handle */
     ev_tcp_backend_t        backend;            /**< Platform related implementation */
 };
-#define EV_TCP_INIT         { EV_HANDLE_INIT, NULL, EV_OS_SOCKET_INVALID, EV_TCP_BACKEND_INIT }
+/**
+ * @brief Initialize #ev_tcp_t to an invalid value.
+ * @see ev_tcp_init()
+ */
+#define EV_TCP_INVALID      \
+    {\
+        EV_HANDLE_INVALID,\
+        NULL,\
+        EV_OS_SOCKET_INVALID,\
+        EV_TCP_BACKEND_INIT,\
+    }
 
+/**
+ * @brief PIPE
+ */
 struct ev_pipe
 {
     ev_handle_t             base;               /**< Base object */
@@ -98,7 +114,17 @@ struct ev_pipe
     ev_os_pipe_t            pipfd;              /**< Pipe handle */
     ev_pipe_backend_t       backend;            /**< Platform related implementation */
 };
-#define EV_PIPE_INIT        { EV_HANDLE_INIT, NULL, EV_OS_PIPE_INVALID, EV_PIPE_BACKEND_INIT }
+/**
+ * @brief Initialize #ev_pipe_t to an invalid value.
+ * @see ev_pipe_init()
+ */
+#define EV_PIPE_INVALID     \
+    {\
+        EV_HANDLE_INVALID,\
+        NULL,\
+        EV_OS_PIPE_INVALID,\
+        EV_PIPE_BACKEND_INIT,\
+    }
 
 /**
  * @brief Write request
@@ -125,9 +151,9 @@ struct ev_write
     }handle;
     ev_write_backend_t      backend;            /**< Back-end */
 };
-#define EV_WRITE_INIT       \
+#define EV_WRITE_INVALID    \
     {\
-        EV_LIST_NODE_INIT,                                          /* .node */\
+        EV_LIST_NODE_INVALID,                                          /* .node */\
         {/* .data */\
             NULL,                                                   /* .data.cb */\
             NULL,                                                   /* .data.bufs */\
@@ -164,9 +190,9 @@ struct ev_read
     }handle;
     ev_read_backend_t       backend;            /**< Back-end */
 };
-#define EV_READ_INIT        \
+#define EV_READ_INVALID     \
     {\
-        EV_LIST_NODE_INIT,/* .node */\
+        EV_LIST_NODE_INVALID,/* .node */\
         {/* .data */\
             NULL,                                                   /* .data.cb */\
             NULL,                                                   /* .data.bufs */\

@@ -12,6 +12,9 @@ extern "C" {
  * @{
  */
 
+/**
+ * @brief Infinite timeout.
+ */
 #define EV_THREAD_WAIT_INFINITE ((unsigned)-1)
 
 /**

@@ -69,7 +69,17 @@ struct ev_nonblock_io
         void*                   arg;                /**< User data */
     }data;
 };
-#define EV_NONBLOCK_IO_INIT     { EV_MAP_NODE_INIT, { 0, 0, 0, NULL, NULL } }
+#define EV_NONBLOCK_IO_INVALID  \
+    {\
+        EV_MAP_NODE_INIT,\
+        {\
+            0,\
+            0,\
+            0,\
+            NULL,\
+            NULL,\
+        }\
+    }
 
 typedef struct ev_loop_plt
 {
@@ -88,7 +98,7 @@ typedef struct ev_loop_plt
         EV_MAP_INIT(NULL, NULL),\
         {\
             -1,\
-            EV_NONBLOCK_IO_INIT,\
+            EV_NONBLOCK_IO_INVALID,\
         }\
     }
 
@@ -139,8 +149,8 @@ struct ev_nonblock_stream
     {\
         NULL,                           /* .loop */\
         { 0, 0, 0, 0, 0 },              /* .flags */\
-        EV_NONBLOCK_IO_INIT,            /* .io */\
-        { EV_LIST_INIT, EV_LIST_INIT }, /* .pending */\
+        EV_NONBLOCK_IO_INVALID,            /* .io */\
+        { EV_LIST_INVALID, EV_LIST_INVALID }, /* .pending */\
         { NULL, NULL }                  /* .callbacks */\
     }
 
@@ -171,7 +181,7 @@ typedef struct ev_tcp_backend
         }client;
     }u;
 }ev_tcp_backend_t;
-#define EV_TCP_BACKEND_INIT     { { { EV_NONBLOCK_IO_INIT, EV_LIST_INIT } } }
+#define EV_TCP_BACKEND_INIT     { { { EV_NONBLOCK_IO_INVALID, EV_LIST_INVALID } } }
 
 typedef union ev_pipe_backend
 {

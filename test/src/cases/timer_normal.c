@@ -59,3 +59,9 @@ TEST_F(timer, normal)
     ASSERT_EQ_D32(g_test_3615.f_on_timer, 1);
     ASSERT_EQ_D32(g_test_3615.f_on_timer_close, 1);
 }
+
+TEST_F(timer, static_initializer)
+{
+    static ev_timer_t tmp = EV_TIMER_INVALID;
+    (void)tmp;
+}

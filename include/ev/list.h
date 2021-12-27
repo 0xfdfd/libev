@@ -27,18 +27,18 @@ extern "C" {
  * @brief Static initializer for #ev_list_t
  * @see ev_list_t
  */
-#define EV_LIST_INIT        { NULL, NULL, 0 }
+#define EV_LIST_INVALID         { NULL, NULL, 0 }
 
 /**
  * @brief Static initializer for #ev_list_node_t
  * @see ev_list_node_t
  */
-#define EV_LIST_NODE_INIT   { NULL, NULL }
+#define EV_LIST_NODE_INVALID    { NULL, NULL }
 
 /**
  * @brief The list node.
  * This node must put in your struct.
- * @see EV_LIST_NODE_INIT
+ * @see EV_LIST_NODE_INVALID
  */
 typedef struct ev_list_node
 {
@@ -48,7 +48,7 @@ typedef struct ev_list_node
 
 /**
  * @brief Double Linked List
- * @see EV_LIST_INIT
+ * @see EV_LIST_INVALID
  */
 typedef struct ev_list
 {
@@ -167,10 +167,14 @@ ev_list_node_t* ev_list_prev(const ev_list_node_t* node);
 
 typedef struct ev_cycle_list_node
 {
-    struct ev_cycle_list_node*  p_prev;
-    struct ev_cycle_list_node*  p_next;
+    struct ev_cycle_list_node*      p_prev;
+    struct ev_cycle_list_node*      p_next;
 }ev_cycle_list_node_t;
-#define EV_CYCLE_LIST_NODE_INVALID  { NULL, NULL }
+#define EV_CYCLE_LIST_NODE_INVALID  \
+    {\
+        NULL,\
+        NULL,\
+    }
 
 /**
  * @brief Initialize circular linked list

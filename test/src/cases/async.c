@@ -39,3 +39,9 @@ TEST_F(async, async)
     ASSERT_EQ_D32(ev_loop_run(&g_test_5b9c.s_loop, EV_LOOP_MODE_DEFAULT), 0);
     ASSERT_EQ_D32(g_test_5b9c.f_called, 1);
 }
+
+TEST_F(async, static_initializer)
+{
+    static ev_async_t tmp = EV_ASYNC_INVALID;
+    (void)tmp;
+}

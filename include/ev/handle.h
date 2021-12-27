@@ -51,15 +51,19 @@ struct ev_handle
         ev_todo_t           close_queue;        /**< Close queue token */
     }data;
 };
-#define EV_HANDLE_INIT      \
+
+/**
+ * @brief Initialize #ev_handle_t to an invalid value.
+ */
+#define EV_HANDLE_INVALID       \
     {\
-        EV_LIST_NODE_INIT,      /* .node */\
+        EV_LIST_NODE_INVALID,   /* .node */\
         {/* .data */\
             NULL,               /* .loop */\
             EV_ROLE_UNKNOWN,    /* .role */\
             0,                  /* .flags */\
             NULL,               /* .close_cb */\
-            EV_TODO_INIT        /* .close_queue */\
+            EV_TODO_INVALID     /* .close_queue */\
         }\
     }
 
