@@ -42,9 +42,6 @@ typedef struct ev_once ev_once_t;
 struct ev_tcp;
 typedef struct ev_tcp ev_tcp_t;
 
-struct ev_pipe;
-typedef struct ev_pipe ev_pipe_t;
-
 struct ev_shmv;
 typedef struct ev_shmv ev_shmv_t;
 
@@ -66,12 +63,6 @@ typedef struct ev_buf ev_buf_t;
  * Specify a pointer to this function when calling the #ev_once_execute function.
  */
 typedef void(*ev_once_cb)(void);
-
-/**
- * @brief Callback for #ev_pipe_t
- * @param[in] handle      A pipe
- */
-typedef void(*ev_pipe_cb)(ev_pipe_t* handle);
 
 /**
  * @brief Close callback for #ev_tcp_t
