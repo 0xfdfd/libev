@@ -33,9 +33,6 @@ extern "C" {
 #define EV_INIT_REPEAT_15(...)   EV_INIT_REPEAT_14(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
 #define EV_INIT_REPEAT_16(...)   EV_INIT_REPEAT_15(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
 
-enum ev_errno;
-typedef enum ev_errno ev_errno_t;
-
 struct ev_loop;
 typedef struct ev_loop ev_loop_t;
 
