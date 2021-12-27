@@ -40,7 +40,7 @@ TEST_F(async, async)
     ASSERT_EQ_D32(g_test_5b9c.f_called, 1);
 }
 
-TEST_F(async, static_initializer)
+TEST(async, static_initializer)
 {
     static ev_async_t tmp = EV_ASYNC_INVALID;
     (void)tmp;
