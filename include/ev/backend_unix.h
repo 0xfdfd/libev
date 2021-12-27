@@ -6,6 +6,7 @@
 #include "ev/list.h"
 #include "ev/ipc-protocol.h"
 #include "ev/mutex.h"
+#include "ev/tcp_forward.h"
 
 #ifdef __cplusplus
 extern "C" {

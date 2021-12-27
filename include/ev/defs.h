@@ -39,9 +39,6 @@ typedef struct ev_loop ev_loop_t;
 struct ev_once;
 typedef struct ev_once ev_once_t;
 
-struct ev_tcp;
-typedef struct ev_tcp ev_tcp_t;
-
 struct ev_shmv;
 typedef struct ev_shmv ev_shmv_t;
 
@@ -63,27 +60,6 @@ typedef struct ev_buf ev_buf_t;
  * Specify a pointer to this function when calling the #ev_once_execute function.
  */
 typedef void(*ev_once_cb)(void);
-
-/**
- * @brief Close callback for #ev_tcp_t
- * @param[in] sock      A closed socket
- */
-typedef void(*ev_tcp_close_cb)(ev_tcp_t* sock);
-
-/**
- * @brief Accept callback
- * @param[in] lisn      Listen socket
- * @param[in] conn      Accepted socket
- * @param[in] stat      #ev_errno_t
- */
-typedef void(*ev_accept_cb)(ev_tcp_t* lisn, ev_tcp_t* conn, int stat);
-
-/**
- * @brief Connect callback
- * @param[in] sock      Connect socket
- * @param[in] stat      #ev_errno_t
- */
-typedef void(*ev_connect_cb)(ev_tcp_t* sock, int stat);
 
 /**
  * @brief Write callback

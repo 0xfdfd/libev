@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 /**
- * @defgroup EV_TCP TCP
+ * @ingroup EV_TCP
  * @{
  */
 

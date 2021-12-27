@@ -8,6 +8,7 @@
 #include "ev/os_win.h"
 #include "ev/ipc-protocol.h"
 #include "ev/map.h"
+#include "ev/tcp_forward.h"
 
 #ifdef __cplusplus
 extern "C" {
