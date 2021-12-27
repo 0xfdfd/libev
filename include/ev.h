@@ -543,13 +543,6 @@ void ev_buf_make_n(ev_buf_t bufs[], size_t nbuf, ...);
 void ev_buf_make_v(ev_buf_t bufs[], size_t nbuf, va_list ap);
 
 /**
- * @brief Describe the error code
- * @param[in] err   Error code
- * @return          Describe string
- */
-const char* ev_strerror(int err);
-
-/**
  * @} EV_UTILS
  */
 

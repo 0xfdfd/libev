@@ -5,6 +5,11 @@ extern "C" {
 #endif
 
 /**
+ * @defgroup EV_ERRNO Error number
+ * @{
+ */
+
+/**
  * @brief Error number
  */
 typedef enum ev_errno
@@ -57,6 +62,17 @@ typedef enum ev_errno
     EV_UNKNOWN          = -1001,                /**< Unknown error */
     EV_EOF              = -1002,                /**< End of file */
 }ev_errno_t;
+
+/**
+ * @brief Describe the error code
+ * @param[in] err   Error code
+ * @return          Describe string
+ */
+const char* ev_strerror(int err);
+
+/**
+ * @} EV_ERRNO
+ */
 
 #ifdef __cplusplus
 }
