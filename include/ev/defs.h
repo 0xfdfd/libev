@@ -36,14 +36,8 @@ extern "C" {
 struct ev_loop;
 typedef struct ev_loop ev_loop_t;
 
-struct ev_timer;
-typedef struct ev_timer ev_timer_t;
-
 struct ev_once;
 typedef struct ev_once ev_once_t;
-
-struct ev_async;
-typedef struct ev_async ev_async_t;
 
 struct ev_tcp;
 typedef struct ev_tcp ev_tcp_t;

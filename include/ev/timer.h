@@ -13,6 +13,9 @@ extern "C" {
  * @{
  */
 
+struct ev_timer;
+typedef struct ev_timer ev_timer_t;
+
 /**
  * @brief Type definition for callback passed to #ev_timer_start().
  * @param[in] handle    A pointer to #ev_timer_t structure

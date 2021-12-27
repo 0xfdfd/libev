@@ -12,6 +12,9 @@ extern "C" {
  * @{
  */
 
+struct ev_async;
+typedef struct ev_async ev_async_t;
+
 /**
  * @brief Type definition for callback passed to #ev_async_init().
  * @param[in] handle    A pointer to #ev_async_t structure
