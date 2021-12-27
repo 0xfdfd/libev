@@ -97,14 +97,6 @@ API_LOCAL int ev__handle_is_active(ev_handle_t* handle);
 API_LOCAL int ev__handle_is_closing(ev_handle_t* handle);
 
 /**
- * @brief Add a pending task
- * @param[in] loop      Event loop
- * @param[in] token     A pointer to the pending token
- * @param[in] cb        A callback when the pending task is active
- */
-API_LOCAL void ev__todo_queue(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb);
-
-/**
  * @brief Check IPC frame header
  * @param[in] buffer    Buffer to check
  * @param[in] size      Buffer size
@@ -129,13 +121,24 @@ API_LOCAL void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr,
 API_LOCAL void ev__loop_update_time(ev_loop_t* loop);
 
 /**
- * @brief Submit token to called in event loop
+ * @brief Submit task to event loop without multi-thread support.
+ * @note If need multi-thread support, use #ev__loop_submit_task_mt().
+ * @param[in] loop      Event loop
+ * @param[in] token     A pointer to the pending token
+ * @param[in] cb        A callback when the pending task is active
+ */
+API_LOCAL void ev__loop_submit_task(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb);
+
+/**
+ * @brief Submit task to event loop with multi-thread support.
  * @note MT-Safe
+ * @note Use this function in threads that \p loop not running. If the thread
+ *   has \p loop running, use #ev__loop_submit_task().
  * @param[in] loop  Event loop
  * @param[in] token Todo token
  * @param[in] cb    Callback
  */
-API_LOCAL void ev__loop_submit(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb);
+API_LOCAL void ev__loop_submit_task_mt(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb);
 
 #ifdef __cplusplus
 }

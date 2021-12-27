@@ -304,7 +304,7 @@ void ev__handle_exit(ev_handle_t* handle)
     if (handle->data.close_cb != NULL)
     {
         handle->data.flags |= EV_HANDLE_CLOSING;
-        ev__todo_queue(handle->data.loop, &handle->data.close_queue, _ev_to_close);
+        ev__loop_submit_task(handle->data.loop, &handle->data.close_queue, _ev_to_close);
     }
     else
     {
@@ -349,7 +349,7 @@ int ev__handle_is_closing(ev_handle_t* handle)
     return handle->data.flags & (EV_HANDLE_CLOSING | EV_HANDLE_CLOSED);
 }
 
-void ev__todo_queue(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb)
+void ev__loop_submit_task(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb)
 {
     token->cb = cb;
     ev_list_push_back(&loop->todo.pending, &token->node);
@@ -742,7 +742,7 @@ void ev_async_wakeup(ev_async_t* handle)
     ev__loop_wakeup(loop);
 }
 
-void ev__loop_submit(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb)
+void ev__loop_submit_task_mt(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb)
 {
     token->cb = cb;
 

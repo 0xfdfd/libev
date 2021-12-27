@@ -429,7 +429,7 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
     if ((ret = connect(sock->sock, addr, size)) == 0)
     {/* Connect success immediately */
         sock->backend.u.client.stat = EV_SUCCESS;
-        ev__todo_queue(loop, &sock->backend.u.client.token, _ev_tcp_to_connect);
+        ev__loop_submit_task(loop, &sock->backend.u.client.token, _ev_tcp_to_connect);
         return EV_SUCCESS;
     }
 
