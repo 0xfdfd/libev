@@ -116,6 +116,7 @@ typedef struct ev_read_backend
 #define EV_READ_BACKEND_INIT    { }
 
 #define EV_UDP_WRITE_BACKEND
+#define EV_UDP_READ_BACKEND
 
 /**
  * @brief Can be used by #ev_write_backend_t and #ev_read_backend_t

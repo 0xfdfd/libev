@@ -699,7 +699,7 @@ void ev_pipe_exit(ev_pipe_t* pipe, ev_pipe_cb cb)
 {
     pipe->close_cb = cb;
     _ev_pipe_abort_unix(pipe, EV_ECANCELED);
-    ev__handle_exit(&pipe->base);
+    ev__handle_exit(&pipe->base, 0);
 }
 
 int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)

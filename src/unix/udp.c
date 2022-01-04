@@ -649,7 +649,7 @@ void ev_udp_exit(ev_udp_t* udp, ev_udp_cb close_cb)
 {
     _ev_udp_close_unix(udp);
     udp->close_cb = close_cb;
-    ev__handle_exit(&udp->base);
+    ev__handle_exit(&udp->base, 0);
 }
 
 int ev_udp_bind(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags)
