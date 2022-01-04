@@ -115,6 +115,8 @@ typedef struct ev_read_backend
 }ev_read_backend_t;
 #define EV_READ_BACKEND_INIT    { }
 
+#define EV_UDP_WRITE_BACKEND
+
 /**
  * @brief Can be used by #ev_write_backend_t and #ev_read_backend_t
  */
@@ -183,6 +185,11 @@ typedef struct ev_tcp_backend
     }u;
 }ev_tcp_backend_t;
 #define EV_TCP_BACKEND_INIT     { { { EV_NONBLOCK_IO_INVALID, EV_LIST_INVALID } } }
+
+typedef struct ev_udp_backend
+{
+    ev_nonblock_io_t            io;                 /**< Backend IO */
+}ev_udp_backend_t;
 
 typedef union ev_pipe_backend
 {

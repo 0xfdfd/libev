@@ -1178,7 +1178,7 @@ void ev_pipe_exit(ev_pipe_t* pipe, ev_pipe_cb cb)
     _ev_pipe_close(pipe);
 
     pipe->close_cb = cb;
-    ev__handle_exit(&pipe->base);
+    ev__handle_exit(&pipe->base, 0);
 }
 
 int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)

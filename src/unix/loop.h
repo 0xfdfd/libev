@@ -122,6 +122,12 @@ API_LOCAL int ev__cloexec(int fd, int set);
 API_LOCAL int ev__nonblock(int fd, int set);
 
 /**
+ * @brief Set reuse
+ * @return          #ev_errno_t
+ */
+API_LOCAL int ev__reuse_unix(int fd);
+
+/**
  * @brief Return the file access mode and the file status flags
  */
 API_LOCAL int ev__fcntl_getfl_unix(int fd);
@@ -148,6 +154,19 @@ API_LOCAL ssize_t ev__writev_unix(int fd, ev_buf_t* iov, int iovcnt);
  * @return 0: try again; >0: write size; <0 errno
  */
 API_LOCAL ssize_t ev__write_unix(int fd, void* buffer, size_t size);
+
+/**
+ * @brief Write \p req to \p fd
+ * @param[in] fd    File to write
+ * @param[in] req   Write request
+ * @param[in] do_write  Write function
+ * @param[in] arg       User defined data
+ * @return              + #EV_SUCCESS: \p req send finish
+ *                      + #EV_EAGAIN: \p req not send finish, need to try again
+ *                      + other value: error
+ */
+API_LOCAL int ev__send_unix(int fd, ev_write_t* req,
+    ssize_t(*do_write)(int fd, struct iovec* iov, int iovcnt, void* arg), void* arg);
 
 #ifdef __cplusplus
 }

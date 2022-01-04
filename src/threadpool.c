@@ -3,7 +3,7 @@
 static void _ev_threadpool_on_loop(ev_todo_t* todo)
 {
     ev_threadpool_work_t* work = container_of(todo, ev_threadpool_work_t, token);
-    ev__handle_exit(&work->base);
+    ev__handle_exit(&work->base, 0);
     work->data.done_cb(work, work->data.status);
 }
 

@@ -41,14 +41,20 @@ typedef enum ev_handle_flag
     EV_HANDLE_CLOSED        = 0x01 << 0x01,     /**< 2. Handle is closed */
     EV_HANDLE_ACTIVE        = 0x01 << 0x02,     /**< 4. Handle is busy */
 
-    /* EV_ROLE_TCP */
+    /* #EV_ROLE_EV_TCP */
     EV_TCP_LISTING          = 0x01 << 0x08,     /**< 256. This is a listen socket and is listening */
     EV_TCP_ACCEPTING        = 0x01 << 0x09,     /**< 512. This is a socket waiting for accept */
     EV_TCP_STREAMING        = 0x01 << 0x0A,     /**< 1024. This is a socket waiting for read or write */
     EV_TCP_CONNECTING       = 0x01 << 0x0B,     /**< 2048. This is a connect and waiting for connect complete */
     EV_TCP_BOUND            = 0x01 << 0x0C,     /**< 4096. Socket is bond to address */
 
-    /* EV_ROLE_PIPE */
+    /* #EV_ROLE_EV_UDP */
+    EV_UDP_IPV6             = 0x01 << 0x08,     /**< 256. This socket have IPv6 ability */
+    EV_UDP_CONNECTED        = 0x01 << 0x09,     /**< 512. This socket is connected */
+    EV_UDP_BOUND            = 0x01 << 0x0A,     /**< 1024. Socket is bond to address */
+    EV_UDP_BYPASS_IOCP      = 0x01 << 0x0B,     /**< 2048. FILE_SKIP_SET_EVENT_ON_HANDLE | FILE_SKIP_COMPLETION_PORT_ON_SUCCESS */
+
+    /* #EV_ROLE_EV_PIPE */
     EV_PIPE_IPC             = 0x01 << 0x08,     /**< 256. This pipe is support IPC */
     EV_PIPE_STREAMING       = 0x01 << 0x09,     /**< 512. This pipe is initialized by #ev_stream_t */
 }ev_handle_flag_t;
@@ -67,8 +73,9 @@ API_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t r
  * @note The handle will not closed until close_cb was called, which was given
  *   by #ev__handle_init()
  * @param[in] handle    handler
+ * @param[in] force     Force exit, without async callback
  */
-API_LOCAL void ev__handle_exit(ev_handle_t* handle);
+API_LOCAL void ev__handle_exit(ev_handle_t* handle, int force);
 
 /**
  * @brief Set handle as active
@@ -139,6 +146,13 @@ API_LOCAL void ev__loop_submit_task(ev_loop_t* loop, ev_todo_t* token, ev_todo_c
  * @param[in] cb    Callback
  */
 API_LOCAL void ev__loop_submit_task_mt(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb);
+
+/**
+ * @brief Get minimal length of specific \p addr type.
+ * @param[in] addr  A valid sockaddr buffer
+ * @return          A valid minimal length, or (socklen_t)-1 if error.
+ */
+API_LOCAL socklen_t ev__get_addr_len(const struct sockaddr* addr);
 
 #ifdef __cplusplus
 }

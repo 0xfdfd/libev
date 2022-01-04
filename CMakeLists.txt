@@ -12,7 +12,8 @@ add_library(${PROJECT_NAME}
     "src/map.c"
     "src/map_low.c"
     "src/threadpool.c"
-    "src/timer.c")
+    "src/timer.c"
+    "src/udp.c")
 if(WIN32)
     target_sources(${PROJECT_NAME}
         PRIVATE
@@ -23,6 +24,7 @@ if(WIN32)
             "src/win/sem.c"
             "src/win/shmem.c"
             "src/win/tcp.c"
+            "src/win/udp.c"
             "src/win/thread.c"
             "src/win/winapi.c")
 else()
@@ -35,7 +37,8 @@ else()
             "src/unix/sem.c"
             "src/unix/shmem.c"
             "src/unix/tcp.c"
-            "src/unix/thread.c")
+            "src/unix/thread.c"
+            "src/unix/udp.c")
 endif()
 
 # add library dependencies

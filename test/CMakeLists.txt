@@ -23,6 +23,8 @@ add_executable(ev_test
     "src/cases/timer_exit_in_callback.c"
     "src/cases/timer_normal.c"
     "src/cases/timer_stop_loop_in_callback.c"
+    "src/cases/udp_bind.c"
+    "src/cases/udp_connect.c"
     "src/test.c"
     "src/main.c")
 

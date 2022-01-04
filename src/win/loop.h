@@ -19,6 +19,7 @@ typedef struct ev_loop_win_ctx
     {
         struct sockaddr_in      addr_any_ip4;       /**< 0.0.0.0:0 */
         struct sockaddr_in6     addr_any_ip6;       /**< :::0 */
+        char                    zero_[1];           /**< A zero length buffer */
     }net;
 
     fn_NtQueryInformationFile   NtQueryInformationFile;
@@ -58,6 +59,10 @@ API_LOCAL void ev__read_init_win(ev_read_t* req, void* owner, int stat,
     ev_iocp_cb iocp_cb, void* iocp_arg);
 
 API_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status);
+
+API_LOCAL int ev__reuse_win(SOCKET sock, int opt);
+
+API_LOCAL int ev__ipv6only_win(SOCKET sock, int opt);
 
 #ifdef __cplusplus
 }

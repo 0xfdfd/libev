@@ -4,7 +4,7 @@
 
 ev_loop_win_ctx_t g_ev_loop_win_ctx;
 
-static void _ev_tcp_init(void)
+static void _ev_net_init_win(void)
 {
     int ret; (void)ret;
     WSADATA wsa_data;
@@ -13,11 +13,11 @@ static void _ev_tcp_init(void)
         assert(ret == 0);
     }
 
+    g_ev_loop_win_ctx.net.zero_[0] = '\0';
     if ((ret = ev_ipv4_addr("0.0.0.0", 0, &g_ev_loop_win_ctx.net.addr_any_ip4)) != EV_SUCCESS)
     {
         assert(ret == EV_SUCCESS);
     }
-
     if ((ret = ev_ipv6_addr("::", 0, &g_ev_loop_win_ctx.net.addr_any_ip6)) != EV_SUCCESS)
     {
         assert(ret == EV_SUCCESS);
@@ -78,7 +78,7 @@ static void _ev_pool_win_handle_req(OVERLAPPED_ENTRY* overlappeds, ULONG count)
 
 static void _ev_init_once_win(void)
 {
-    _ev_tcp_init();
+    _ev_net_init_win();
     ev__winapi_init();
     _ev_time_init_win();
 }
@@ -449,4 +449,33 @@ void ev__loop_wakeup(ev_loop_t* loop)
     {
         abort();
     }
+}
+
+int ev__reuse_win(SOCKET sock, int opt)
+{
+    DWORD optval = !!opt;
+    int optlen = sizeof(optval);
+
+    int err;
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&optval, optlen) != 0)
+    {
+        err = WSAGetLastError();
+        return ev__translate_sys_error(err);
+    }
+
+    return EV_SUCCESS;
+}
+
+int ev__ipv6only_win(SOCKET sock, int opt)
+{
+    DWORD optval = !!opt;
+    int optlen = sizeof(optval);
+
+    if (setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&optval, optlen) != 0)
+    {
+        int err = WSAGetLastError();
+        return ev__translate_sys_error(err);
+    }
+
+    return EV_SUCCESS;
 }

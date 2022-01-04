@@ -38,7 +38,7 @@ typedef struct ev_thread_opt
  * @param[in] opt   Option
  * @param[in] cb    Thread body
  * @param[in] arg   User data
- * @return          #ev_errnot_t
+ * @return          #ev_errno_t
  */
 int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt, ev_thread_cb cb, void* arg);
 

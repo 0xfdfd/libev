@@ -95,39 +95,15 @@ ssize_t ev__writev_unix(int fd, ev_buf_t* iov, int iovcnt)
     return ev__translate_sys_error(err);
 }
 
+static ssize_t _ev_stream_do_write_writev_unix(int fd, struct iovec* iov, int iovcnt, void* arg)
+{
+    (void)arg;
+    return ev__writev_unix(fd, (ev_buf_t*)iov, iovcnt);
+}
+
 static int _ev_stream_do_write_once(ev_nonblock_stream_t* stream, ev_write_t* req)
 {
-    ev_buf_t* iov = req->data.bufs + req->backend.idx;
-    int iovcnt = req->data.nbuf - req->backend.idx;
-    if (iovcnt > g_ev_loop_unix_ctx.iovmax)
-    {
-        iovcnt = g_ev_loop_unix_ctx.iovmax;
-    }
-
-    ssize_t write_size;
-    write_size = ev__writev_unix(stream->io.data.fd, iov, iovcnt);
-
-    if (write_size < 0)
-    {
-        return write_size;
-    }
-
-    req->data.size += write_size;
-    while (write_size > 0)
-    {
-        if ((size_t)write_size < req->data.bufs[req->backend.idx].size)
-        {
-            req->data.bufs[req->backend.idx].data =
-                (void*)((uint8_t*)(req->data.bufs[req->backend.idx].data) + write_size);
-            req->data.bufs[req->backend.idx].size -= write_size;
-            break;
-        }
-
-        write_size -= req->data.bufs[req->backend.idx].size;
-        req->backend.idx++;
-    }
-
-    return req->backend.idx < req->data.nbuf ? EV_EAGAIN : EV_SUCCESS;
+    return ev__send_unix(stream->io.data.fd, req, _ev_stream_do_write_writev_unix, NULL);
 }
 
 static void _ev_stream_do_write(ev_nonblock_stream_t* stream)
@@ -509,6 +485,51 @@ int ev__nonblock(int fd, int set)
 #endif
 }
 
+int ev__reuse_unix(int fd)
+{
+    int yes;
+    yes = 1;
+
+#if defined(SO_REUSEPORT) && defined(__MVS__)
+    struct sockaddr_in sockfd;
+    unsigned int sockfd_len = sizeof(sockfd);
+    if (getsockname(fd, (struct sockaddr*)&sockfd, &sockfd_len) == -1)
+    {
+        goto err;
+    }
+    if (sockfd.sin_family == AF_UNIX)
+    {
+        if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)))
+        {
+            goto err;
+        }
+    }
+    else
+    {
+        if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes)))
+        {
+            goto err;
+        }
+    }
+#elif defined(SO_REUSEPORT) && !defined(__linux__)
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes)))
+    {
+        goto err;
+    }
+#else
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)))
+    {
+        goto err;
+    }
+#endif
+
+    return 0;
+
+err:
+    yes = errno;
+    return ev__translate_sys_error(yes);
+}
+
 int ev__fcntl_getfl_unix(int fd)
 {
     int mode;
@@ -745,6 +766,9 @@ int ev__translate_sys_error(int syserr)
     case ENOTSUP:           return EV_ENOTSUP;
     case EPROTONOSUPPORT:   return EV_EPROTONOSUPPORT;
     case ETIMEDOUT:         return EV_ETIMEDOUT;
+#if EWOULDBLOCK != EAGAIN
+    case EWOULDBLOCK:       return EV_EAGAIN;
+#endif
     /* Unknown */
     default:                break;
     }
@@ -904,4 +928,42 @@ void ev__loop_wakeup(ev_loop_t* loop)
         }
     }
     abort();
+}
+
+int ev__send_unix(int fd, ev_write_t* req,
+    ssize_t(*do_write)(int fd, struct iovec* iov, int iovcnt, void* arg), void* arg)
+{
+    ev_buf_t* iov = req->data.bufs + req->backend.idx;
+    int iovcnt = req->data.nbuf - req->backend.idx;
+    if (iovcnt > g_ev_loop_unix_ctx.iovmax)
+    {
+        iovcnt = g_ev_loop_unix_ctx.iovmax;
+    }
+
+    ssize_t write_size = do_write(fd, (struct iovec*)iov, iovcnt, arg);
+    if (write_size < 0)
+    {
+        if (write_size == EV_ENOBUFS)
+        {
+            write_size = EV_EAGAIN;
+        }
+        return write_size;
+    }
+
+    req->data.size += write_size;
+    while (write_size > 0)
+    {
+        if ((size_t)write_size < req->data.bufs[req->backend.idx].size)
+        {
+            req->data.bufs[req->backend.idx].data =
+                (void*)((uint8_t*)(req->data.bufs[req->backend.idx].data) + write_size);
+            req->data.bufs[req->backend.idx].size -= write_size;
+            break;
+        }
+
+        write_size -= req->data.bufs[req->backend.idx].size;
+        req->backend.idx++;
+    }
+
+    return req->backend.idx < req->data.nbuf ? EV_EAGAIN : EV_SUCCESS;
 }

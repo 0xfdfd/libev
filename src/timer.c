@@ -23,7 +23,7 @@ void ev_timer_exit(ev_timer_t* handle, ev_timer_cb close_cb)
     handle->close_cb = close_cb;
 
     ev_timer_stop(handle);
-    ev__handle_exit(&handle->base);
+    ev__handle_exit(&handle->base, 0);
 }
 
 int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_t repeat)

@@ -136,6 +136,34 @@ typedef struct ev_tcp_backend
 }ev_tcp_backend_t;
 #define EV_TCP_BACKEND_INIT     { 0, EV_IOCP_INIT, EV_TODO_INVALID, { 0 }, { { EV_LIST_INVALID, EV_LIST_INVALID } } }
 
+typedef int (WSAAPI* ev_wsarecvfrom_fn)(
+    SOCKET socket,
+    LPWSABUF buffers,
+    DWORD buffer_count,
+    LPDWORD bytes,
+    LPDWORD flags,
+    struct sockaddr* addr,
+    LPINT addr_len,
+    LPWSAOVERLAPPED overlapped,
+    LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine);
+
+#define EV_UDP_WRITE_BACKEND  \
+    struct {\
+        ev_iocp_t   io;\
+        ev_todo_t   token;\
+    } backend;
+
+#define EV_UDP_READ_BACKEND \
+    struct {\
+        ev_iocp_t   io;\
+        ev_todo_t   token;\
+    } backend;
+
+typedef struct ev_udp_backend
+{
+    ev_wsarecvfrom_fn           fn_wsarecvfrom;   /**< WSARecvFrom() */
+}ev_udp_backend_t;
+
 typedef enum ev_pipe_win_ipc_info_type
 {
     EV_PIPE_WIN_IPC_INFO_TYPE_STATUS,               /**< #ev_pipe_win_ipc_info_t::data::as_status */

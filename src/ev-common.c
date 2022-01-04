@@ -3,6 +3,11 @@
 #include "ev-common.h"
 #include "ev.h"
 
+#if !defined(_WIN32)
+#   include <net/if.h>
+#   include <sys/un.h>
+#endif
+
 typedef struct ev_strerror_pair
 {
     int             errn;   /**< Error number */
@@ -251,6 +256,34 @@ static void _ev_loop_on_wakeup(ev_loop_t* loop)
     }
 }
 
+static void _ev_set_scope_id(struct sockaddr_in6* addr, const char* ip)
+{
+    const char* zone_index = strchr(ip, '%');
+    if (zone_index == NULL)
+    {
+        return;
+    }
+
+    char address_part[40];
+    size_t address_part_size = zone_index - ip;
+    if (address_part_size >= sizeof(address_part))
+    {
+        address_part_size = sizeof(address_part) - 1;
+    }
+
+    memcpy(address_part, ip, address_part_size);
+    address_part[address_part_size] = '\0';
+    ip = address_part;
+
+    zone_index++; /* skip '%' */
+    /* NOTE: unknown interface (id=0) is silently ignored */
+#ifdef _WIN32
+    addr->sin6_scope_id = atoi(zone_index);
+#else
+    addr->sin6_scope_id = if_nametoindex(zone_index);
+#endif
+}
+
 void ev__loop_update_time(ev_loop_t* loop)
 {
     loop->hwtime = ev__clocktime();
@@ -294,14 +327,14 @@ void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t role, ev_cl
     handle->data.close_cb = close_cb;
 }
 
-void ev__handle_exit(ev_handle_t* handle)
+void ev__handle_exit(ev_handle_t* handle, int force)
 {
     assert(!ev__handle_is_closing(handle));
 
     /* Stop if necessary */
     ev__handle_deactive(handle);
 
-    if (handle->data.close_cb != NULL)
+    if (handle->data.close_cb != NULL && force == 0)
     {
         handle->data.flags |= EV_HANDLE_CLOSING;
         ev__loop_submit_task(handle->data.loop, &handle->data.close_queue, _ev_to_close);
@@ -462,6 +495,7 @@ int ev_ipv6_addr(const char* ip, int port, struct sockaddr_in6* addr)
 
     addr->sin6_family = AF_INET6;
     addr->sin6_port = htons((uint16_t)port);
+    _ev_set_scope_id(addr, ip);
 
     return inet_pton(AF_INET6, ip, &addr->sin6_addr) ? EV_SUCCESS : EV_EINVAL;
 }
@@ -713,7 +747,7 @@ void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
     ev_mutex_leave(&loop->wakeup.async.mutex);
 
     ev_mutex_exit(&handle->data.mutex);
-    ev__handle_exit(&handle->base);
+    ev__handle_exit(&handle->base, 0);
 }
 
 void ev_async_wakeup(ev_async_t* handle)
@@ -753,4 +787,24 @@ void ev__loop_submit_task_mt(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb)
     ev_mutex_leave(&loop->wakeup.work.mutex);
 
     ev__loop_wakeup(loop);
+}
+
+socklen_t ev__get_addr_len(const struct sockaddr* addr)
+{
+    if (addr->sa_family == AF_INET)
+    {
+        return sizeof(struct sockaddr_in);
+    }
+    if (addr->sa_family == AF_INET6)
+    {
+        return sizeof(struct sockaddr_in6);
+    }
+#if defined(AF_UNIX) && !defined(_WIN32)
+    if (addr->sa_family == AF_UNIX)
+    {
+        return sizeof(struct sockaddr_un);
+    }
+#endif
+
+    return (socklen_t)-1;
 }

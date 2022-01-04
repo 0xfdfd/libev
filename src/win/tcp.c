@@ -444,7 +444,7 @@ void ev_tcp_exit(ev_tcp_t* sock, ev_tcp_close_cb cb)
      */
 
     /* Ready to close socket */
-    ev__handle_exit(&sock->base);
+    ev__handle_exit(&sock->base, 0);
 }
 
 int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen)
