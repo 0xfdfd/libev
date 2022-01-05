@@ -48,8 +48,7 @@ struct ev_udp
 typedef struct ev_udp_write
 {
     ev_write_t              req;                /**< Base request */
-    struct sockaddr_storage addr;               /**< Peer address */
-    EV_UDP_WRITE_BACKEND                        /**< Backend */
+    ev_udp_write_backend_t  backend;            /**< Backend */
 }ev_udp_write_t;
 
 typedef struct ev_udp_read

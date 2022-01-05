@@ -115,7 +115,11 @@ typedef struct ev_read_backend
 }ev_read_backend_t;
 #define EV_READ_BACKEND_INIT    { }
 
-#define EV_UDP_WRITE_BACKEND
+typedef struct ev_udp_write_backend
+{
+    struct sockaddr_storage     peer_addr;          /**< Peer address */
+}ev_udp_write_backend_t;
+
 #define EV_UDP_READ_BACKEND
 
 /**

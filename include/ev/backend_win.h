@@ -147,11 +147,11 @@ typedef int (WSAAPI* ev_wsarecvfrom_fn)(
     LPWSAOVERLAPPED overlapped,
     LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine);
 
-#define EV_UDP_WRITE_BACKEND  \
-    struct {\
-        ev_iocp_t   io;\
-        ev_todo_t   token;\
-    } backend;
+typedef struct ev_udp_write_backend
+{
+    ev_iocp_t   io;                                 /**< IOCP handle */
+    ev_todo_t   token;                              /**< Todo token */
+}ev_udp_write_backend_t;
 
 #define EV_UDP_READ_BACKEND \
     struct {\
@@ -161,7 +161,7 @@ typedef int (WSAAPI* ev_wsarecvfrom_fn)(
 
 typedef struct ev_udp_backend
 {
-    ev_wsarecvfrom_fn           fn_wsarecvfrom;   /**< WSARecvFrom() */
+    ev_wsarecvfrom_fn           fn_wsarecvfrom;     /**< WSARecvFrom() */
 }ev_udp_backend_t;
 
 typedef enum ev_pipe_win_ipc_info_type

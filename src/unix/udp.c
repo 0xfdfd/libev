@@ -139,15 +139,15 @@ static int _ev_udp_do_sendmsg_unix(ev_udp_t* udp, ev_udp_write_t* req)
     struct msghdr hdr;
     memset(&hdr, 0, sizeof(hdr));
 
-    if (req->addr.ss_family == AF_UNSPEC)
+    if (req->backend.peer_addr.ss_family == AF_UNSPEC)
     {
         hdr.msg_name = NULL;
         hdr.msg_namelen = 0;
     }
     else
     {
-        hdr.msg_name = &req->addr;
-        hdr.msg_namelen = ev__get_addr_len((struct sockaddr*)&req->addr);
+        hdr.msg_name = &req->backend.peer_addr;
+        hdr.msg_namelen = ev__get_addr_len((struct sockaddr*)&req->backend.peer_addr);
     }
 
     return ev__send_unix(udp->sock, &req->req, _ev_udp_sendmsg_unix, &hdr);
@@ -937,7 +937,7 @@ int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr)
     int ret;
     if (addr == NULL)
     {
-        req->addr.ss_family = AF_UNSPEC;
+        req->backend.peer_addr.ss_family = AF_UNSPEC;
     }
     else
     {
@@ -952,7 +952,7 @@ int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr)
             return EV_EINVAL;
         }
 
-        memcpy(&req->addr, addr, len);
+        memcpy(&req->backend.peer_addr, addr, len);
     }
 
     ev_list_push_back(&udp->send_list, &req->req.node);
