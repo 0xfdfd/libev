@@ -8,23 +8,23 @@
 
 struct test_221d
 {
-    ev_loop_t       loop;
+    ev_loop_t               loop;
 
-    ev_pipe_t       pipe_w;  /**< Write handle */
-    ev_pipe_t       pipe_r;  /**< Receive handle */
+    ev_pipe_t               pipe_w;  /**< Write handle */
+    ev_pipe_t               pipe_r;  /**< Receive handle */
 
     struct
     {
-        ev_read_t   read_req;
-        ev_buf_t    buf;
-        uint8_t     buffer[TEST_BUFFER_SIZE_221D * (TEST_PACK_NUM_221D + 1)];
+        ev_read_t           read_req;
+        ev_buf_t            buf;
+        uint8_t             buffer[TEST_BUFFER_SIZE_221D * (TEST_PACK_NUM_221D + 1)];
     }r_pack;
 
     struct
     {
-        ev_write_t  write_req;
-        ev_buf_t    buf;
-        uint8_t     buffer[TEST_BUFFER_SIZE_221D];
+        ev_pipe_write_req_t write_req;
+        ev_buf_t            buf;
+        uint8_t             buffer[TEST_BUFFER_SIZE_221D];
     }w_pack[TEST_PACK_NUM_221D];
 };
 
@@ -36,7 +36,7 @@ static void _on_write_callback(ev_write_t* req, size_t size, int stat)
     ASSERT_EQ_D32(stat, EV_SUCCESS);
     ASSERT_EQ_U64(size, TEST_BUFFER_SIZE_221D);
 
-    if (req == &g_test_221d.w_pack[TEST_PACK_NUM_221D - 1].write_req)
+    if (req == &g_test_221d.w_pack[TEST_PACK_NUM_221D - 1].write_req.base)
     {
         ev_pipe_exit(&g_test_221d.pipe_w, NULL);
     }
@@ -89,7 +89,7 @@ TEST_F(pipe, data_mode)
     for (i = 0; i < TEST_PACK_NUM_221D; i++)
     {
         g_test_221d.w_pack[i].buf = ev_buf_make(g_test_221d.w_pack[i].buffer, sizeof(g_test_221d.w_pack[i].buffer));
-        ASSERT_EQ_D32(ev_write_init(&g_test_221d.w_pack[i].write_req, &g_test_221d.w_pack[i].buf, 1, _on_write_callback), 0);
+        ASSERT_EQ_D32(ev_pipe_write_init(&g_test_221d.w_pack[i].write_req, &g_test_221d.w_pack[i].buf, 1, _on_write_callback), 0);
         ASSERT_EQ_D32(ev_pipe_write(&g_test_221d.pipe_w, &g_test_221d.w_pack[i].write_req), 0);
     }
 

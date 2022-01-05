@@ -9,7 +9,7 @@
 
 struct wdata_pack_a548
 {
-    ev_write_t              req;
+    ev_pipe_write_req_t     req;
     struct
     {
         size_t              size;
@@ -81,7 +81,7 @@ static void _on_test_a548_write_done(ev_write_t* req, size_t size, int stat)
     g_test_a548.w_req_cnt++;
 
     ASSERT_EQ_D32(stat, EV_SUCCESS);
-    struct wdata_pack_a548* w_pack = container_of(req, struct wdata_pack_a548, req);
+    struct wdata_pack_a548* w_pack = container_of(req, struct wdata_pack_a548, req.base);
 
     ASSERT_EQ_SIZE(size, sizeof(w_pack->data2) + sizeof(w_pack->data1));
 }
@@ -108,7 +108,7 @@ TEST_F(pipe, ipc_mode_dgram)
 
         bufs[0] = ev_buf_make(&g_test_a548.w_req[i].data1, sizeof(g_test_a548.w_req[i].data1));
         bufs[1] = ev_buf_make(g_test_a548.w_req[i].data2, sizeof(g_test_a548.w_req[i].data2));
-        ASSERT_EQ_D32(ev_write_init(&g_test_a548.w_req[i].req, bufs, 2, _on_test_a548_write_done), 0);
+        ASSERT_EQ_D32(ev_pipe_write_init(&g_test_a548.w_req[i].req, bufs, 2, _on_test_a548_write_done), 0);
 
         bufs[0] = ev_buf_make(&g_test_a548.r_req[i].data1, sizeof(g_test_a548.r_req[i].data1));
         bufs[1] = ev_buf_make(g_test_a548.r_req[i].data2, sizeof(g_test_a548.r_req[i].data2));

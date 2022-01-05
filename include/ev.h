@@ -118,12 +118,6 @@ int ev_write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb);
  *     \p iov_size can be calculated by #EV_IOV_BUF_SIZE(). \p take the ownership
  *     of \p iov_bufs, so you cannot modify or free \p iov_bufs until \p callback
  *     is called.
- *
- *   + Need to transfer a handle to peer.<br>
- *     In this case you should set the type of handle via \p handle_role and pass
- *     the address of the handle via \p handle_addr. \p req does not take the ownership
- *     of the handle, but the handle should not be closed or destroy until \p callback
- *     is called.
  * 
  * @param[out] req          A write request to be initialized
  * @param[in] callback      Write complete callback
@@ -131,15 +125,11 @@ int ev_write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb);
  * @param[in] nbuf          Buffer list size
  * @param[in] iov_bufs      The buffer to store IOV request
  * @param[in] iov_size      The size of \p iov_bufs in bytes
- * @param[in] handle_role   The type of handle to send
- * @param[in] handle_addr   The address of handle to send
- * @param[in] handle_size   The size of handle to send
  * @return                  #ev_errno_t
  */
 int ev_write_init_ext(ev_write_t* req, ev_write_cb callback,
     ev_buf_t* bufs, size_t nbuf,
-    void* iov_bufs, size_t iov_size,
-    ev_role_t handle_role, void* handle_addr, size_t handle_size);
+    void* iov_bufs, size_t iov_size);
 
 /**
  * @brief Initialize #ev_read_t

@@ -76,10 +76,10 @@ static void _ev_pipe_cancel_all_r(ev_pipe_t* pipe, int stat)
 
 static void _ev_pipe_cancel_all_w_data_mode(ev_pipe_t* pipe, int stat)
 {
-    ev_write_t* req;
+    ev_pipe_write_req_t* req;
     if ((req = pipe->backend.data_mode.wio.w_half) != NULL)
     {
-        req->data.cb(req, req->data.size, stat);
+        req->base.data.cb(&req->base, req->base.data.size, stat);
         pipe->backend.data_mode.wio.w_half = NULL;
     }
     pipe->backend.data_mode.wio.w_half_idx = 0;
@@ -87,17 +87,17 @@ static void _ev_pipe_cancel_all_w_data_mode(ev_pipe_t* pipe, int stat)
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&pipe->backend.data_mode.wio.w_pending)) != NULL)
     {
-        req = container_of(it, ev_write_t, node);
-        req->data.cb(req, req->data.size, stat);
+        req = container_of(it, ev_pipe_write_req_t, base.node);
+        req->base.data.cb(&req->base, req->base.data.size, stat);
     }
 }
 
 static void _ev_pipe_cancel_all_w_ipc_mode(ev_pipe_t* pipe, int stat)
 {
-    ev_write_t* req;
+    ev_pipe_write_req_t* req;
     if ((req = pipe->backend.ipc_mode.wio.sending.w_req) != NULL)
     {
-        req->data.cb(req, req->data.size, stat);
+        req->base.data.cb(&req->base, req->base.data.size, stat);
         pipe->backend.ipc_mode.wio.sending.w_req = NULL;
     }
     pipe->backend.ipc_mode.wio.sending.donecnt = 0;
@@ -105,8 +105,8 @@ static void _ev_pipe_cancel_all_w_ipc_mode(ev_pipe_t* pipe, int stat)
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&pipe->backend.ipc_mode.wio.pending)) != NULL)
     {
-        req = container_of(it, ev_write_t, node);
-        req->data.cb(req, req->data.size, stat);
+        req = container_of(it, ev_pipe_write_req_t, base.node);
+        req->base.data.cb(&req->base, req->base.data.size, stat);
     }
 }
 
@@ -389,20 +389,20 @@ static int _ev_pipe_write_file_iocp(HANDLE file, const void* buffer, size_t size
 
 static int _ev_pipe_io_wio_submit_half(ev_pipe_t* pipe, struct ev_pipe_backend_data_mode_wio* wio)
 {
-    ev_write_t* half_req = pipe->backend.data_mode.wio.w_half;
+    ev_pipe_write_req_t* half_req = pipe->backend.data_mode.wio.w_half;
     size_t half_idx = pipe->backend.data_mode.wio.w_half_idx;
 
     wio->w_req = half_req;
     wio->w_buf_idx = half_idx;
 
-    int result = _ev_pipe_write_file_iocp(pipe->pipfd, half_req->data.bufs[half_idx].data,
-        half_req->data.bufs[half_idx].size, &wio->io.overlapped);
+    int result = _ev_pipe_write_file_iocp(pipe->pipfd, half_req->base.data.bufs[half_idx].data,
+        half_req->base.data.bufs[half_idx].size, &wio->io.overlapped);
     pipe->backend.data_mode.wio.w_half_idx++;
 
     /* move half record to doing list */
-    if (pipe->backend.data_mode.wio.w_half_idx == half_req->data.nbuf)
+    if (pipe->backend.data_mode.wio.w_half_idx == half_req->base.data.nbuf)
     {
-        ev_list_push_back(&pipe->backend.data_mode.wio.w_doing, &half_req->node);
+        ev_list_push_back(&pipe->backend.data_mode.wio.w_doing, &half_req->base.node);
         pipe->backend.data_mode.wio.w_half = NULL;
         pipe->backend.data_mode.wio.w_half_idx = 0;
     }
@@ -420,17 +420,17 @@ static int _ev_pipe_io_wio_submit_pending(ev_pipe_t* pipe, struct ev_pipe_backen
     {
         return 1;
     }
-    ev_write_t* wreq = container_of(it, ev_write_t, node);
+    ev_pipe_write_req_t* wreq = container_of(it, ev_pipe_write_req_t, base.node);
 
     wio->w_req = wreq;
     wio->w_buf_idx = 0;
 
-    int result = _ev_pipe_write_file_iocp(pipe->pipfd, wreq->data.bufs[0].data,
-        wreq->data.bufs[0].size, &wio->io.overlapped);
+    int result = _ev_pipe_write_file_iocp(pipe->pipfd, wreq->base.data.bufs[0].data,
+        wreq->base.data.bufs[0].size, &wio->io.overlapped);
 
-    if (wreq->data.nbuf == 1)
+    if (wreq->base.data.nbuf == 1)
     {
-        ev_list_push_back(&pipe->backend.data_mode.wio.w_doing, &wreq->node);
+        ev_list_push_back(&pipe->backend.data_mode.wio.w_doing, &wreq->base.node);
     }
     else
     {
@@ -460,11 +460,11 @@ static void _ev_pipe_on_data_mode_write(ev_iocp_t* iocp, size_t transferred, voi
     struct ev_pipe_backend_data_mode_wio* wio = container_of(iocp, struct ev_pipe_backend_data_mode_wio, io);
 
     /* wio will be override, we need to backup value */
-    ev_write_t* curr_req = wio->w_req;
+    ev_pipe_write_req_t* curr_req = wio->w_req;
     size_t curr_buf_idx = wio->w_buf_idx;
 
     /* update send size */
-    curr_req->data.size += transferred;
+    curr_req->base.data.size += transferred;
 
     /* override wio with next write request */
     int submit_ret = _ev_pipe_io_wio_submit_next(pipe, wio);
@@ -474,12 +474,12 @@ static void _ev_pipe_on_data_mode_write(ev_iocp_t* iocp, size_t transferred, voi
     }
 
     /* The last buffer */
-    if (curr_buf_idx == curr_req->data.nbuf - 1)
+    if (curr_buf_idx == curr_req->base.data.nbuf - 1)
     {
         int stat = NT_SUCCESS(iocp->overlapped.Internal) ? EV_SUCCESS :
             ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal));
-        ev_list_erase(&pipe->backend.data_mode.wio.w_doing, &curr_req->node);
-        curr_req->data.cb(curr_req, curr_req->data.size, stat);
+        ev_list_erase(&pipe->backend.data_mode.wio.w_doing, &curr_req->base.node);
+        curr_req->base.data.cb(&curr_req->base, curr_req->base.data.size, stat);
     }
 
     /* If submit error, abort any pending actions */
@@ -778,7 +778,7 @@ static void _ev_pipe_init_ipc_frame_hdr(uint8_t* buffer, size_t bufsize, uint8_t
 /**
  * @brief Send IPC data
  */
-static int _ev_pipe_ipc_mode_write_data(ev_pipe_t* pipe, ev_write_t* req)
+static int _ev_pipe_ipc_mode_write_data(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
 {
     uint8_t flags = 0;
     ev_pipe_win_ipc_info_t ipc_info;
@@ -811,7 +811,7 @@ static int _ev_pipe_ipc_mode_write_data(ev_pipe_t* pipe, ev_write_t* req)
     }
 
     _ev_pipe_init_ipc_frame_hdr(pipe->backend.ipc_mode.wio.buffer,
-        sizeof(pipe->backend.ipc_mode.wio.buffer), flags, (uint32_t)req->data.capacity);
+        sizeof(pipe->backend.ipc_mode.wio.buffer), flags, (uint32_t)req->base.data.capacity);
     hdr_size += sizeof(ev_ipc_frame_hdr_t);
 
     int ret = _ev_pipe_write_file_iocp(pipe->pipfd, pipe->backend.ipc_mode.wio.buffer,
@@ -835,7 +835,7 @@ static int _ev_pipe_ipc_mode_send_next(ev_pipe_t* pipe)
         return EV_SUCCESS;
     }
 
-    ev_write_t* next_req = container_of(it, ev_write_t, node);
+    ev_pipe_write_req_t* next_req = container_of(it, ev_pipe_write_req_t, base.node);
     int ret = _ev_pipe_ipc_mode_write_data(pipe, next_req);
     if (ret != EV_SUCCESS)
     {
@@ -859,17 +859,17 @@ static int _ev_pipe_on_ipc_mode_write_process(ev_pipe_t* pipe, size_t transferre
     }
     else
     {
-        pipe->backend.ipc_mode.wio.sending.w_req->data.size += transferred;
+        pipe->backend.ipc_mode.wio.sending.w_req->base.data.size += transferred;
 
-        if (pipe->backend.ipc_mode.wio.sending.donecnt > pipe->backend.ipc_mode.wio.sending.w_req->data.nbuf)
+        if (pipe->backend.ipc_mode.wio.sending.donecnt > pipe->backend.ipc_mode.wio.sending.w_req->base.data.nbuf)
         {
             goto finish_request;
         }
     }
 
     size_t send_buf_idx = pipe->backend.ipc_mode.wio.sending.donecnt - 1;
-    ev_write_t* req = pipe->backend.ipc_mode.wio.sending.w_req;
-    ev_buf_t* buf = &req->data.bufs[send_buf_idx];
+    ev_pipe_write_req_t* req = pipe->backend.ipc_mode.wio.sending.w_req;
+    ev_buf_t* buf = &req->base.data.bufs[send_buf_idx];
 
     int ret = _ev_pipe_write_file_iocp(pipe->pipfd, buf->data, buf->size,
         &pipe->backend.ipc_mode.wio.io.overlapped);
@@ -880,7 +880,7 @@ finish_request:
     pipe->backend.ipc_mode.wio.sending.w_req = NULL;
     pipe->backend.ipc_mode.wio.sending.donecnt = 0;
 
-    req->data.cb(req, req->data.size, EV_SUCCESS);
+    req->base.data.cb(&req->base, req->base.data.size, EV_SUCCESS);
 
     if ((ret = _ev_pipe_ipc_mode_send_next(pipe)) != EV_SUCCESS)
     {
@@ -1004,24 +1004,24 @@ static size_t _ev_pipe_revert_w_idx(ev_pipe_t* pipe)
  * In DATA mode, every #ev_pipe_backend_t::w_io::iocp can be used to provide maximum
  * performance.
  */
-static int _ev_pipe_data_mode_write(ev_pipe_t* pipe, ev_write_t* req)
+static int _ev_pipe_data_mode_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
 {
     int result;
     int flag_failure = 0;
     DWORD err = 0;
 
-    ev__write_init_win(req, pipe, EV_EINPROGRESS, NULL, NULL);
+    ev__write_init_win(&req->base, pipe, EV_EINPROGRESS, NULL, NULL);
 
     size_t available_iocp_cnt = ARRAY_SIZE(pipe->backend.data_mode.wio.iocp) -
         pipe->backend.data_mode.wio.w_io_cnt;
     if (available_iocp_cnt == 0)
     {
-        ev_list_push_back(&pipe->backend.data_mode.wio.w_pending, &req->node);
+        ev_list_push_back(&pipe->backend.data_mode.wio.w_pending, &req->base.node);
         return EV_SUCCESS;
     }
 
     size_t idx;
-    size_t nbuf = EV_MIN(available_iocp_cnt, req->data.nbuf);
+    size_t nbuf = EV_MIN(available_iocp_cnt, req->base.data.nbuf);
     for (idx = 0; idx < nbuf; idx++)
     {
         size_t pos = _ev_pipe_get_and_forward_w_idx(pipe);
@@ -1031,8 +1031,8 @@ static int _ev_pipe_data_mode_write(ev_pipe_t* pipe, ev_write_t* req)
         pipe->backend.data_mode.wio.iocp[pos].w_req = req;
         pipe->backend.data_mode.wio.iocp[pos].w_buf_idx = idx;
 
-        result = _ev_pipe_write_file_iocp(pipe->pipfd, req->data.bufs[idx].data,
-            req->data.bufs[idx].size, &pipe->backend.data_mode.wio.iocp[pos].io.overlapped);
+        result = _ev_pipe_write_file_iocp(pipe->pipfd, req->base.data.bufs[idx].data,
+            req->base.data.bufs[idx].size, &pipe->backend.data_mode.wio.iocp[pos].io.overlapped);
         /* write success */
         if (result == EV_SUCCESS)
         {
@@ -1056,14 +1056,14 @@ static int _ev_pipe_data_mode_write(ev_pipe_t* pipe, ev_write_t* req)
         return ev__translate_sys_error(err);
     }
 
-    if (nbuf < req->data.nbuf)
+    if (nbuf < req->base.data.nbuf)
     {
         pipe->backend.data_mode.wio.w_half = req;
         pipe->backend.data_mode.wio.w_half_idx = nbuf;
     }
     else
     {
-        ev_list_push_back(&pipe->backend.data_mode.wio.w_doing, &req->node);
+        ev_list_push_back(&pipe->backend.data_mode.wio.w_doing, &req->base.node);
     }
 
     ev__handle_active(&pipe->base);
@@ -1075,10 +1075,10 @@ static int _ev_pipe_data_mode_write(ev_pipe_t* pipe, ev_write_t* req)
  *
  * In IPC mode, we only use #ev_pipe_backend_t::w_io::iocp[0] for simplify implementation.
  */
-static int _ev_pipe_ipc_mode_write(ev_pipe_t* pipe, ev_write_t* req)
+static int _ev_pipe_ipc_mode_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
 {
     /* Check total send size, limited by IPC protocol */
-    if (req->data.capacity > UINT32_MAX)
+    if (req->base.data.capacity > UINT32_MAX)
     {
         return EV_E2BIG;
     }
@@ -1087,7 +1087,7 @@ static int _ev_pipe_ipc_mode_write(ev_pipe_t* pipe, ev_write_t* req)
     if (pipe->backend.ipc_mode.wio.mask.iocp_pending
         || pipe->backend.ipc_mode.wio.sending.w_req != NULL)
     {
-        ev_list_push_back(&pipe->backend.ipc_mode.wio.pending, &req->node);
+        ev_list_push_back(&pipe->backend.ipc_mode.wio.pending, &req->base.node);
         return EV_SUCCESS;
     }
 
@@ -1248,7 +1248,7 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
     return EV_SUCCESS;
 }
 
-int ev_pipe_write(ev_pipe_t* pipe, ev_write_t* req)
+int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
 {
     if (pipe->pipfd == EV_OS_PIPE_INVALID)
     {

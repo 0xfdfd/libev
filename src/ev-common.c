@@ -534,35 +534,15 @@ int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t le
 
 int ev_write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb)
 {
-    return ev_write_init_ext(req, cb, bufs, nbuf, NULL, 0, EV_ROLE_UNKNOWN, NULL, 0);
+    return ev_write_init_ext(req, cb, bufs, nbuf, NULL, 0);
 }
 
 int ev_write_init_ext(ev_write_t* req, ev_write_cb callback,
     ev_buf_t* bufs, size_t nbuf,
-    void* iov_bufs, size_t iov_size,
-    ev_role_t handle_role, void* handle_addr, size_t handle_size)
+    void* iov_bufs, size_t iov_size)
 {
     req->data.cb = callback;
     req->data.nbuf = nbuf;
-    req->handle.role = handle_role;
-    switch (handle_role)
-    {
-        /* no handle need to send */
-    case EV_ROLE_UNKNOWN:
-        break;
-
-    case EV_ROLE_EV_TCP:
-        if (handle_size != sizeof(ev_tcp_t))
-        {
-            return EV_EINVAL;
-        }
-        req->handle.u.os_socket = ((ev_tcp_t*)handle_addr)->sock;
-        break;
-
-        /* not support other type */
-    default:
-        return EV_EINVAL;
-    }
 
     if (nbuf <= ARRAY_SIZE(req->data.bufsml))
     {

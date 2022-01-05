@@ -6,26 +6,35 @@
 
 struct test_19f1
 {
-    ev_loop_t       loop;   /**< Runtime loop */
+    ev_loop_t               loop;   /**< Runtime loop */
 
-    ev_pipe_t       s_pipe; /**< Server pipe */
-    ev_pipe_t       c_pipe; /**< Client pipe */
+    ev_pipe_t               s_pipe; /**< Server pipe */
+    ev_pipe_t               c_pipe; /**< Client pipe */
 
-    ev_tcp_t        s_tcp;  /**< Session, will be transfer to peer */
-    ev_tcp_t        c_tcp;  /**< Client */
-    ev_tcp_t        d_tcp;  /**< Peer socket to receive handle */
+    ev_tcp_t                s_tcp;  /**< Session, will be transfer to peer */
+    ev_tcp_t                c_tcp;  /**< Client */
+    ev_tcp_t                d_tcp;  /**< Peer socket to receive handle */
 
-    ev_write_t      w_req;  /**< Write request */
-    ev_read_t       r_req;  /**< Read request */
+    ev_read_t               r_req;  /**< Read request */
 
-    unsigned        cnt_wcb;
-    unsigned        cnt_rcb;
+    struct
+    {
+        ev_write_t          w_req;
+    }tcp;
 
-    char            data1[1024];
-    char            data2[1024];
+    struct
+    {
+        ev_pipe_write_req_t w_req;  /**< Write request */
+    }pipe;
+
+    unsigned                cnt_wcb;
+    unsigned                cnt_rcb;
+
+    char                    data1[1024];
+    char                    data2[1024];
 };
 
-struct test_19f1    g_test_19f1;
+struct test_19f1            g_test_19f1;
 
 TEST_FIXTURE_SETUP(pipe)
 {
@@ -62,7 +71,16 @@ TEST_FIXTURE_TEAREDOWN(pipe)
 
 static void _on_pipe_write_done(ev_write_t* req, size_t size, int stat)
 {
-    ASSERT_EQ_PTR(req, &g_test_19f1.w_req);
+    ASSERT_EQ_PTR(req, &g_test_19f1.pipe.w_req);
+    ASSERT_EQ_D32(stat, EV_SUCCESS);
+    ASSERT_EQ_SIZE(size, sizeof(g_test_19f1.data1));
+
+    g_test_19f1.cnt_wcb++;
+}
+
+static void _on_tcp_write_done_19f1(ev_write_t* req, size_t size, int stat)
+{
+    ASSERT_EQ_PTR(req, &g_test_19f1.tcp.w_req);
     ASSERT_EQ_D32(stat, EV_SUCCESS);
     ASSERT_EQ_SIZE(size, sizeof(g_test_19f1.data1));
 
@@ -84,9 +102,9 @@ TEST_F(pipe, ipc_mode_tcp_handle)
 
     /* send data and handle */
     buf = ev_buf_make(g_test_19f1.data1, sizeof(g_test_19f1.data1));
-    ASSERT_EQ_D32(ev_write_init_ext(&g_test_19f1.w_req, _on_pipe_write_done,
+    ASSERT_EQ_D32(ev_pipe_write_init_ext(&g_test_19f1.pipe.w_req, _on_pipe_write_done,
         &buf, 1, NULL, 0, EV_ROLE_EV_TCP, &g_test_19f1.s_tcp, sizeof(g_test_19f1.s_tcp)), 0);
-    ASSERT_EQ_D32(ev_pipe_write(&g_test_19f1.s_pipe, &g_test_19f1.w_req), 0);
+    ASSERT_EQ_D32(ev_pipe_write(&g_test_19f1.s_pipe, &g_test_19f1.pipe.w_req), 0);
 
     /* recv data and handle */
     buf = ev_buf_make(g_test_19f1.data2, sizeof(g_test_19f1.data2));
@@ -104,8 +122,8 @@ TEST_F(pipe, ipc_mode_tcp_handle)
 
     /* now we are able to send data via d_tcp */
     buf = ev_buf_make(g_test_19f1.data1, sizeof(g_test_19f1.data1));
-    ASSERT_EQ_D32(ev_write_init(&g_test_19f1.w_req, &buf, 1, _on_pipe_write_done), 0);
-    ASSERT_EQ_D32(ev_tcp_write(&g_test_19f1.d_tcp, &g_test_19f1.w_req), 0);
+    ASSERT_EQ_D32(ev_write_init(&g_test_19f1.tcp.w_req, &buf, 1, _on_tcp_write_done_19f1), 0);
+    ASSERT_EQ_D32(ev_tcp_write(&g_test_19f1.d_tcp, &g_test_19f1.tcp.w_req), 0);
 
     buf = ev_buf_make(g_test_19f1.data2, sizeof(g_test_19f1.data2));
     ASSERT_EQ_D32(ev_read_init(&g_test_19f1.r_req, &buf, 1, _on_pipe_read_done), 0);

@@ -7,6 +7,7 @@
 #include "ev/ipc-protocol.h"
 #include "ev/mutex.h"
 #include "ev/tcp_forward.h"
+#include "ev/pipe_forward.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -198,56 +199,56 @@ typedef struct ev_udp_backend
 
 typedef union ev_pipe_backend
 {
-    int                         _useless;           /**< For static initializer */
+    int                                 _useless;           /**< For static initializer */
 
     struct
     {
-        ev_nonblock_stream_t    stream;             /**< Stream */
+        ev_nonblock_stream_t            stream;             /**< Stream */
     }data_mode;
 
     struct
     {
-        ev_nonblock_io_t        io;                 /**< IO object */
+        ev_nonblock_io_t                io;                 /**< IO object */
 
         struct
         {
-            unsigned            wio_pending : 1;    /**< Write pending */
-            unsigned            rio_pending : 1;    /**< Read pending */
-            unsigned            no_cmsg_cloexec : 1;/**< No MSG_CMSG_CLOEXEC */
+            unsigned                    wio_pending : 1;    /**< Write pending */
+            unsigned                    rio_pending : 1;    /**< Read pending */
+            unsigned                    no_cmsg_cloexec : 1;/**< No MSG_CMSG_CLOEXEC */
         }mask;
 
         struct
         {
             struct
             {
-                size_t          head_read_size;     /**< Head read size */
-                size_t          data_remain_size;   /**< Data remain to read */
+                size_t                  head_read_size;     /**< Head read size */
+                size_t                  data_remain_size;   /**< Data remain to read */
 
-                size_t          buf_idx;            /**< Buffer index to fill */
-                size_t          buf_pos;            /**< Buffer position to fill */
+                size_t                  buf_idx;            /**< Buffer index to fill */
+                size_t                  buf_pos;            /**< Buffer position to fill */
 
-                ev_read_t*      reading;            /**< Currernt handling request */
+                ev_read_t*              reading;            /**< Currernt handling request */
             }curr;
 
-            ev_list_t           rqueue;             /**< #ev_read_t */
-            uint8_t             buffer[sizeof(ev_ipc_frame_hdr_t)];
+            ev_list_t                   rqueue;             /**< #ev_read_t */
+            uint8_t                     buffer[sizeof(ev_ipc_frame_hdr_t)];
         }rio;
 
         struct
         {
             struct
             {
-                size_t          head_send_capacity; /**< Head send capacity */
-                size_t          head_send_size;     /**< Head send size */
+                size_t                  head_send_capacity; /**< Head send capacity */
+                size_t                  head_send_size;     /**< Head send size */
 
-                size_t          buf_idx;            /**< Buffer index to send */
-                size_t          buf_pos;            /**< Buffer position to send */
+                size_t                  buf_idx;            /**< Buffer index to send */
+                size_t                  buf_pos;            /**< Buffer position to send */
 
-                ev_write_t*     writing;            /**< Currernt handling request */
+                ev_pipe_write_req_t*    writing;            /**< Currernt handling request */
             }curr;
 
-            ev_list_t           wqueue;             /**< #ev_write_t */
-            uint8_t             buffer[sizeof(ev_ipc_frame_hdr_t)];
+            ev_list_t                   wqueue;             /**< #ev_write_t */
+            uint8_t                     buffer[sizeof(ev_ipc_frame_hdr_t)];
         }wio;
     }ipc_mode;
 }ev_pipe_backend_t;

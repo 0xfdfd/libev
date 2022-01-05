@@ -9,6 +9,7 @@
 #include "ev/ipc-protocol.h"
 #include "ev/map.h"
 #include "ev/tcp_forward.h"
+#include "ev/pipe_forward.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -186,34 +187,34 @@ typedef struct ev_pipe_win_ipc_info
 
 typedef union ev_pipe_backend
 {
-    int                         _useless;           /**< For static initializer */
+    int                                 _useless;           /**< For static initializer */
 
     struct
     {
         struct
         {
-            ev_iocp_t           io;                 /**< IOCP backend */
-            ev_list_t           r_pending;          /**< Request queue to be read */
-            ev_read_t*          r_doing;            /**< Request queue in reading */
+            ev_iocp_t                   io;                 /**< IOCP backend */
+            ev_list_t                   r_pending;          /**< Request queue to be read */
+            ev_read_t*                  r_doing;            /**< Request queue in reading */
         }rio;
 
         struct
         {
             struct ev_pipe_backend_data_mode_wio
             {
-                size_t          idx;                /**< Index. Must not change. */
-                ev_iocp_t       io;                 /**< IOCP backend */
-                ev_write_t*     w_req;              /**< The write request mapping for IOCP */
-                size_t          w_buf_idx;          /**< The write buffer mapping for IOCP */
+                size_t                  idx;                /**< Index. Must not change. */
+                ev_iocp_t               io;                 /**< IOCP backend */
+                ev_pipe_write_req_t*    w_req;              /**< The write request mapping for IOCP */
+                size_t                  w_buf_idx;          /**< The write buffer mapping for IOCP */
             }iocp[EV_IOV_MAX];
 
-            unsigned            w_io_idx;           /**< Usable index */
-            unsigned            w_io_cnt;           /**< Busy count */
+            unsigned                    w_io_idx;           /**< Usable index */
+            unsigned                    w_io_cnt;           /**< Busy count */
 
-            ev_list_t           w_pending;          /**< Request queue to be write */
-            ev_list_t           w_doing;            /**< Request queue in writing */
-            ev_write_t*         w_half;
-            size_t              w_half_idx;
+            ev_list_t                   w_pending;          /**< Request queue to be write */
+            ev_list_t                   w_doing;            /**< Request queue in writing */
+            ev_pipe_write_req_t*        w_half;
+            size_t                      w_half_idx;
         }wio;
     }data_mode;
 
@@ -222,49 +223,49 @@ typedef union ev_pipe_backend
 #define EV_PIPE_BACKEND_BUFFER_SIZE    \
     (sizeof(ev_ipc_frame_hdr_t) + sizeof(ev_pipe_win_ipc_info_t))
 
-        DWORD                   peer_pid;           /**< Peer process ID */
+        DWORD                           peer_pid;           /**< Peer process ID */
 
         struct
         {
             struct
             {
-                unsigned        rio_pending : 1;    /**< There is a IOCP request pending */
+                unsigned                rio_pending : 1;    /**< There is a IOCP request pending */
             }mask;
 
             struct
             {
-                ev_read_t*      reading;            /**< Request for read */
-                DWORD           buf_idx;            /**< Buffer for read */
-                DWORD           buf_pos;            /**< Available position */
+                ev_read_t*              reading;            /**< Request for read */
+                DWORD                   buf_idx;            /**< Buffer for read */
+                DWORD                   buf_pos;            /**< Available position */
             }reading;
 
-            ev_list_t           pending;            /**< Buffer list to be filled */
+            ev_list_t                   pending;            /**< Buffer list to be filled */
 
-            int                 r_err;              /**< Error code if read failure */
-            DWORD               remain_size;        /**< How many data need to read (bytes) */
+            int                         r_err;              /**< Error code if read failure */
+            DWORD                       remain_size;        /**< How many data need to read (bytes) */
 
-            ev_iocp_t           io;                 /**< IOCP read backend */
-            uint8_t             buffer[EV_PIPE_BACKEND_BUFFER_SIZE];
+            ev_iocp_t                   io;                 /**< IOCP read backend */
+            uint8_t                     buffer[EV_PIPE_BACKEND_BUFFER_SIZE];
         }rio;
 
         struct
         {
             struct
             {
-                unsigned        iocp_pending : 1;   /**< There is a IOCP request pending */
+                unsigned                iocp_pending : 1;   /**< There is a IOCP request pending */
             }mask;
 
             struct
             {
-                ev_write_t*     w_req;              /**< The write request sending */
-                size_t          donecnt;            /**< Success send counter */
+                ev_pipe_write_req_t*    w_req;              /**< The write request sending */
+                size_t                  donecnt;            /**< Success send counter */
             }sending;
 
-            ev_list_t           pending;            /**< FIFO queue of write request */
+            ev_list_t                   pending;            /**< FIFO queue of write request */
 
-            int                 w_err;              /**< Error code if write failure */
-            ev_iocp_t           io;                 /**< IOCP write backend, with #ev_write_t */
-            uint8_t             buffer[EV_PIPE_BACKEND_BUFFER_SIZE];
+            int                         w_err;              /**< Error code if write failure */
+            ev_iocp_t                   io;                 /**< IOCP write backend, with #ev_write_t */
+            uint8_t                     buffer[EV_PIPE_BACKEND_BUFFER_SIZE];
         }wio;
 
 #undef EV_PIPE_BACKEND_BUFFER_SIZE

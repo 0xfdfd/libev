@@ -61,14 +61,6 @@ struct ev_write
         size_t              capacity;           /**< Total bytes need to send */
         ev_buf_t            bufsml[EV_IOV_MAX]; /**< Bound buffer list */
     }data;
-    struct
-    {
-        ev_role_t           role;               /**< The type of handle to send */
-        union
-        {
-            ev_os_socket_t  os_socket;          /**< A EV handle instance */
-        }u;
-    }handle;
     ev_write_backend_t      backend;            /**< Back-end */
 };
 #define EV_WRITE_INVALID    \
@@ -81,10 +73,6 @@ struct ev_write
             0,                                                      /* .data.size */\
             0,                                                      /* .data.capacity */\
             { EV_INIT_REPEAT(EV_IOV_MAX, EV_BUF_INIT(NULL, 0)), }   /* .data.bufsml */\
-        },\
-        {/* .handle */\
-            EV_ROLE_UNKNOWN,                                        /* .handle.role */\
-            { EV_OS_SOCKET_INVALID }                                /* .handle.u.os_socket */\
         },\
         EV_WRITE_BACKEND_INIT                                       /* .backend */\
     }
