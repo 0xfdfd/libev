@@ -7,10 +7,15 @@
 extern "C" {
 #endif
 
+/**
+ * @defgroup EV_UDP UDP
+ * @{
+ */
+
 typedef enum ev_udp_membership 
 {
-    EV_UDP_LEAVE_GROUP = 0,
-    EV_UDP_JOIN_GROUP
+    EV_UDP_LEAVE_GROUP  = 0,    /**< Leave multicast group */
+    EV_UDP_ENTER_GROUP  = 1,    /**< Join multicast group */
 } ev_udp_membership_t;
 
 struct ev_udp;
@@ -24,8 +29,8 @@ typedef void (*ev_udp_cb)(ev_udp_t* udp);
 
 typedef enum ev_udp_flags
 {
-    EV_UDP_IPV6_ONLY    = 1,
-    EV_UDP_REUSEADDR    = 2,
+    EV_UDP_IPV6_ONLY    = 1,    /**< Do not bound to IPv4 address */
+    EV_UDP_REUSEADDR    = 2,    /**< Reuse address. Only the last one can receive message. */
 }ev_udp_flags_t;
 
 struct ev_udp
@@ -198,8 +203,8 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl);
 /**
  * @brief Send data over the UDP socket.
  *
- * If the socket has not previously been bound with uv_udp_bind() it will be bound
- * to 0.0.0.0 (the ¡°all interfaces¡± IPv4 address) and a random port number.
+ * If the socket has not previously been bound with #ev_udp_bind() it will be bound
+ * to 0.0.0.0 (the "all interfaces" IPv4 address) and a random port number.
  *
  * @param[in] udp   A UDP handle
  * @param[in] req   Write request token
@@ -209,7 +214,7 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl);
 int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr);
 
 /**
- * @brief Same as #ev_udp_send(), but won¡¯t queue a send request if it can¡¯t be
+ * @brief Same as #ev_udp_send(), but won't queue a send request if it can't be
  *   completed immediately.
  * @param[in] udp   A UDP handle
  * @param[in] req   Write request token
@@ -223,6 +228,10 @@ int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* a
  * @param[in] udp   A UDP handle
  */
 int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req);
+
+/**
+ * @} EV_UDP
+ */
 
 #ifdef __cplusplus
 }

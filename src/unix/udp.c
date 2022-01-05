@@ -407,7 +407,7 @@ static int _ev_udp_setmembership4_unix(ev_udp_t* udp, struct sockaddr_in* multic
         return ret;
     }
 
-    int optname = membership == EV_UDP_JOIN_GROUP ? IP_ADD_MEMBERSHIP : IP_DROP_MEMBERSHIP;
+    int optname = membership == EV_UDP_ENTER_GROUP ? IP_ADD_MEMBERSHIP : IP_DROP_MEMBERSHIP;
     if (setsockopt(udp->sock, IPPROTO_IP, optname, &mreq, sizeof(mreq)) != 0)
     {
         ret = errno;
@@ -443,7 +443,7 @@ static int _ev_udp_setmembership6_unix(ev_udp_t* udp, struct sockaddr_in6* multi
     struct ipv6_mreq mreq;
     _ev_udp_convert_interface_addr6_unix(&mreq, multicast_addr, interface_addr);
 
-    int optname = membership == EV_UDP_JOIN_GROUP ? IPV6_ADD_MEMBERSHIP : IPV6_DROP_MEMBERSHIP;
+    int optname = membership == EV_UDP_ENTER_GROUP ? IPV6_ADD_MEMBERSHIP : IPV6_DROP_MEMBERSHIP;
     if (setsockopt(udp->sock, IPPROTO_IPV6, optname, &mreq, sizeof(mreq)) != 0)
     {
         ret = errno;
@@ -494,7 +494,7 @@ static int _ev_udp_set_source_membership4_unix(ev_udp_t* udp, const struct socka
         return ret;
     }
 
-    int optname = membership == EV_UDP_JOIN_GROUP ? IP_ADD_SOURCE_MEMBERSHIP : IP_DROP_SOURCE_MEMBERSHIP;
+    int optname = membership == EV_UDP_ENTER_GROUP ? IP_ADD_SOURCE_MEMBERSHIP : IP_DROP_SOURCE_MEMBERSHIP;
     if (setsockopt(udp->sock, IPPROTO_IP, optname, &mreq, sizeof(mreq)) != 0)
     {
         ret = errno;
@@ -548,7 +548,7 @@ static int _ev_udp_set_source_membership6_unix(ev_udp_t* udp, const struct socka
         return ret;
     }
 
-    int optname = membership == EV_UDP_JOIN_GROUP ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP;
+    int optname = membership == EV_UDP_ENTER_GROUP ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP;
     if (setsockopt(udp->sock, IPPROTO_IPV6, optname, &mreq, sizeof(mreq)) != 0)
     {
         ret = errno;
@@ -736,7 +736,7 @@ int ev_udp_set_membership(ev_udp_t* udp, const char* multicast_addr,
     int ret;
     struct sockaddr_storage addr;
 
-    if (membership != EV_UDP_LEAVE_GROUP && membership != EV_UDP_JOIN_GROUP)
+    if (membership != EV_UDP_LEAVE_GROUP && membership != EV_UDP_ENTER_GROUP)
     {
         return EV_EINVAL;
     }
@@ -777,7 +777,7 @@ int ev_udp_set_source_membership(ev_udp_t* udp, const char* multicast_addr,
     struct sockaddr_storage mcast_addr;
     struct sockaddr_storage src_addr;
 
-    if (membership != EV_UDP_LEAVE_GROUP && membership != EV_UDP_JOIN_GROUP)
+    if (membership != EV_UDP_LEAVE_GROUP && membership != EV_UDP_ENTER_GROUP)
     {
         return EV_EINVAL;
     }
