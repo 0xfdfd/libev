@@ -100,9 +100,12 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
  * 
  * @param[in] sock  Socket handle
  * @param[in] req   Write request
+ * @param[in] bufs  Buffer list
+ * @param[in] nbuf  Buffer number
+ * @param[in] cb    Send result callback
  * @return          #ev_errno_t
  */
-int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req);
+int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb);
 
 /**
  * @brief Read data
@@ -118,9 +121,12 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req);
  * 
  * @param[in] sock  Socket handle
  * @param[in] req   Read request
+ *  * @param[in] bufs  Buffer list
+ * @param[in] nbuf  Buffer number
+ * @param[in] cb    Read result callback
  * @return          #ev_errno_t
  */
-int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req);
+int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb);
 
 /**
  * @brief Get the current address to which the socket is bound.

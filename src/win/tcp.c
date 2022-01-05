@@ -644,10 +644,15 @@ err:
     return ret;
 }
 
-int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req)
+int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb)
 {
     int ret;
     ENSURE_LAYOUT(ev_buf_t, WSABUF, size, len, data, buf);
+
+    if ((ret = ev_write_init(req, bufs, nbuf, cb)) != EV_SUCCESS)
+    {
+        return ret;
+    }
 
     if (!(sock->base.data.flags & EV_TCP_STREAMING))
     {
@@ -680,10 +685,15 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req)
     return EV_SUCCESS;
 }
 
-int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req)
+int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb)
 {
     int ret;
     ENSURE_LAYOUT(ev_buf_t, WSABUF, size, len, data, buf);
+
+    if ((ret = ev_read_init(req, bufs, nbuf, cb)) != EV_SUCCESS)
+    {
+        return ret;
+    }
 
     if (!(sock->base.data.flags & EV_TCP_STREAMING))
     {

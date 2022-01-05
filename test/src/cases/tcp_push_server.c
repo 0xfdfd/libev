@@ -50,13 +50,13 @@ static void _on_close_conn_socket(ev_tcp_t* sock)
     g_test_6d69.s_cnt_conn_close++;
 }
 
-static void _on_close_client_socket(ev_tcp_t* sock)
+static void _on_close_client_socket_6d69(ev_tcp_t* sock)
 {
     ASSERT_EQ_PTR(sock, &g_test_6d69.s_client);
     g_test_6d69.s_cnt_client_close++;
 }
 
-static void _on_send_finish(ev_write_t* req, size_t size, int stat)
+static void _on_send_finish_6d69(ev_write_t* req, size_t size, int stat)
 {
     (void)req; (void)size;
     ASSERT_EQ_D32(stat, EV_SUCCESS);
@@ -65,41 +65,43 @@ static void _on_send_finish(ev_write_t* req, size_t size, int stat)
     ev_tcp_exit(&g_test_6d69.s_conn, _on_close_conn_socket);
 }
 
-static void _on_accept(ev_tcp_t* from, ev_tcp_t* to, int stat)
+static void _on_accept_6d69(ev_tcp_t* from, ev_tcp_t* to, int stat)
 {
     ASSERT_EQ_PTR(&g_test_6d69.s_server, from);
     ASSERT_EQ_PTR(&g_test_6d69.s_conn, to);
     ASSERT_EQ_D32(stat, EV_SUCCESS);
 
     ev_tcp_exit(&g_test_6d69.s_server, _on_close_server_socket);
-    ASSERT_EQ_D32(ev_write_init(&g_test_6d69.s_write_pack.w_req, &g_test_6d69.s_write_pack.buf, 1, _on_send_finish), 0);
-    ASSERT_EQ_D32(ev_tcp_write(to, &g_test_6d69.s_write_pack.w_req), 0);
+    ASSERT_EQ_D32(ev_tcp_write(to, &g_test_6d69.s_write_pack.w_req,
+        &g_test_6d69.s_write_pack.buf, 1, _on_send_finish_6d69), 0);
 }
 
-static void _on_read(ev_read_t* req, size_t size, int stat)
+static void _on_read_6d69(ev_read_t* req, size_t size, int stat)
 {
     (void)req;
     if (stat == EV_EOF)
     {
-        int ret = memcmp(g_test_6d69.s_write_pack.send_buf, g_test_6d69.s_read_pack.recv_buf, sizeof(g_test_6d69.s_write_pack.send_buf));
+        int ret = memcmp(g_test_6d69.s_write_pack.send_buf,
+            g_test_6d69.s_read_pack.recv_buf, sizeof(g_test_6d69.s_write_pack.send_buf));
         ASSERT_EQ_D32(ret, 0);
         return;
     }
 
     ASSERT_EQ_D32(stat, EV_SUCCESS);
 
-    g_test_6d69.s_read_pack.buf = ev_buf_make((char*)g_test_6d69.s_read_pack.buf.data + size, g_test_6d69.s_read_pack.buf.size - size);
-    ASSERT_EQ_D32(ev_read_init(&g_test_6d69.s_read_pack.r_req, &g_test_6d69.s_read_pack.buf, 1, _on_read), 0);
-    ASSERT_EQ_D32(ev_tcp_read(&g_test_6d69.s_client, &g_test_6d69.s_read_pack.r_req), 0);
+    g_test_6d69.s_read_pack.buf = ev_buf_make((char*)g_test_6d69.s_read_pack.buf.data + size,
+        g_test_6d69.s_read_pack.buf.size - size);
+    ASSERT_EQ_D32(ev_tcp_read(&g_test_6d69.s_client, &g_test_6d69.s_read_pack.r_req,
+        &g_test_6d69.s_read_pack.buf, 1, _on_read_6d69), 0);
 }
 
-static void _on_connect(ev_tcp_t* sock, int stat)
+static void _on_connect_6d69(ev_tcp_t* sock, int stat)
 {
     ASSERT_EQ_PTR(sock, &g_test_6d69.s_client);
     ASSERT_EQ_D32(stat, EV_SUCCESS);
 
-    ASSERT_EQ_D32(ev_read_init(&g_test_6d69.s_read_pack.r_req, &g_test_6d69.s_read_pack.buf, 1, _on_read), 0);
-    ASSERT_EQ_D32(ev_tcp_read(&g_test_6d69.s_client, &g_test_6d69.s_read_pack.r_req), 0);
+    ASSERT_EQ_D32(ev_tcp_read(&g_test_6d69.s_client, &g_test_6d69.s_read_pack.r_req,
+        &g_test_6d69.s_read_pack.buf, 1, _on_read_6d69), 0);
 }
 
 TEST_FIXTURE_SETUP(tcp)
@@ -117,7 +119,7 @@ TEST_FIXTURE_SETUP(tcp)
 
 TEST_FIXTURE_TEAREDOWN(tcp)
 {
-    ev_tcp_exit(&g_test_6d69.s_client, _on_close_client_socket);
+    ev_tcp_exit(&g_test_6d69.s_client, _on_close_client_socket_6d69);
     ASSERT_EQ_D32(ev_loop_run(&g_test_6d69.s_loop, EV_LOOP_MODE_DEFAULT), 0);
 
     ASSERT_EQ_D32(g_test_6d69.s_cnt_server_close, 1);
@@ -137,7 +139,7 @@ TEST_F(tcp, push_server)
     ASSERT_EQ_D32(ev_ipv4_addr("127.0.0.1", 0, &addr), 0);
     ASSERT_EQ_D32(ev_tcp_bind(&g_test_6d69.s_server, (struct sockaddr*)&addr, sizeof(addr)), 0);
     ASSERT_EQ_D32(ev_tcp_listen(&g_test_6d69.s_server, 1), 0);
-    ASSERT_EQ_D32(ev_tcp_accept(&g_test_6d69.s_server, &g_test_6d69.s_conn, _on_accept), 0);
+    ASSERT_EQ_D32(ev_tcp_accept(&g_test_6d69.s_server, &g_test_6d69.s_conn, _on_accept_6d69), 0);
 
     /* Get listen port */
     size_t len = sizeof(addr);
@@ -146,7 +148,8 @@ TEST_F(tcp, push_server)
 
     /* Connect to listen socket */
     ASSERT_EQ_D32(ev_ipv4_addr("127.0.0.1", g_test_6d69.s_listen_port, &addr), 0);
-    ASSERT_EQ_D32(ev_tcp_connect(&g_test_6d69.s_client, (struct sockaddr*)&addr, sizeof(addr), _on_connect), 0,
+    ASSERT_EQ_D32(ev_tcp_connect(&g_test_6d69.s_client, (struct sockaddr*)&addr,
+        sizeof(addr), _on_connect_6d69), 0,
         "%s", ev_strerror(_1));
 
     ASSERT_EQ_D32(ev_loop_run(&g_test_6d69.s_loop, EV_LOOP_MODE_DEFAULT), 0);

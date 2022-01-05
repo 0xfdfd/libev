@@ -350,8 +350,14 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
     return EV_SUCCESS;
 }
 
-int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req)
+int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb)
 {
+    int ret = ev_write_init(req, bufs, nbuf, cb);
+    if (ret != EV_SUCCESS)
+    {
+        return ret;
+    }
+
     if (sock->base.data.flags & (EV_TCP_LISTING | EV_TCP_ACCEPTING | EV_TCP_CONNECTING))
     {
         return EV_EINVAL;
@@ -364,11 +370,17 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req)
     return ev__nonblock_stream_write(&sock->backend.u.stream, req);
 }
 
-int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req)
+int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb)
 {
     if (sock->base.data.flags & (EV_TCP_LISTING | EV_TCP_ACCEPTING | EV_TCP_CONNECTING))
     {
         return EV_EINVAL;
+    }
+
+    int ret = ev_read_init(req, bufs, nbuf, cb);
+    if (ret != EV_SUCCESS)
+    {
+        return ret;
     }
 
     ev__read_init_unix(req);
