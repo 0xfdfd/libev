@@ -76,22 +76,22 @@ TEST_FIXTURE_TEAREDOWN(pipe)
     ASSERT_EQ_D32(ev_loop_exit(&g_test_a548.loop), 0);
 }
 
-static void _on_test_a548_write_done(ev_write_t* req, size_t size, int stat)
+static void _on_test_write_done_a548(ev_pipe_write_req_t* req, size_t size, int stat)
 {
     g_test_a548.w_req_cnt++;
 
     ASSERT_EQ_D32(stat, EV_SUCCESS);
-    struct wdata_pack_a548* w_pack = container_of(req, struct wdata_pack_a548, req.base);
+    struct wdata_pack_a548* w_pack = container_of(req, struct wdata_pack_a548, req);
 
     ASSERT_EQ_SIZE(size, sizeof(w_pack->data2) + sizeof(w_pack->data1));
 }
 
-static void _on_test_a548_read_done(ev_read_t* req, size_t size, int stat)
+static void _on_test_read_done_a548(ev_pipe_read_req_t* req, size_t size, int stat)
 {
     g_test_a548.r_req_cnt++;
 
     ASSERT_EQ_D32(stat, EV_SUCCESS);
-    struct rdata_pack_a548* r_pack = container_of(req, struct rdata_pack_a548, req.base);
+    struct rdata_pack_a548* r_pack = container_of(req, struct rdata_pack_a548, req);
 
     ASSERT_GT_SIZE(size, sizeof(r_pack->data1));
     size_t body_size = size - sizeof(r_pack->data1);
@@ -109,12 +109,12 @@ TEST_F(pipe, ipc_mode_dgram)
         bufs[0] = ev_buf_make(&g_test_a548.w_req[i].data1, sizeof(g_test_a548.w_req[i].data1));
         bufs[1] = ev_buf_make(g_test_a548.w_req[i].data2, sizeof(g_test_a548.w_req[i].data2));
         ASSERT_EQ_D32(ev_pipe_write(&g_test_a548.c_pipe, &g_test_a548.w_req[i].req,
-            bufs, 2, _on_test_a548_write_done), 0);
+            bufs, 2, _on_test_write_done_a548), 0);
 
         bufs[0] = ev_buf_make(&g_test_a548.r_req[i].data1, sizeof(g_test_a548.r_req[i].data1));
         bufs[1] = ev_buf_make(g_test_a548.r_req[i].data2, sizeof(g_test_a548.r_req[i].data2));
         ASSERT_EQ_D32(ev_pipe_read(&g_test_a548.s_pipe, &g_test_a548.r_req[i].req,
-            bufs, 2, _on_test_a548_read_done), 0);
+            bufs, 2, _on_test_read_done_a548), 0);
     }
 
     ASSERT_EQ_D32(ev_loop_run(&g_test_a548.loop, EV_LOOP_MODE_DEFAULT), 0);

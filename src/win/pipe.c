@@ -1,7 +1,7 @@
 #include "win/loop.h"
 #include "win/tcp.h"
 #include "ev-common.h"
-#include "pipe.h"
+#include "pipe-common.h"
 #include <stdio.h>
 
 static char s_ev_zero[] = "";
@@ -1253,7 +1253,7 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
     ev_buf_t* bufs, size_t nbuf,
     ev_role_t handle_role, void* handle_addr, size_t handle_size,
     ev_buf_t* iov_bufs, size_t iov_size,
-    ev_write_cb cb)
+    ev_pipe_write_cb cb)
 {
     if (pipe->pipfd == EV_OS_PIPE_INVALID)
     {
@@ -1285,7 +1285,7 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
 }
 
 int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
-    size_t nbuf, ev_read_cb cb)
+    size_t nbuf, ev_pipe_read_cb cb)
 {
     if (pipe->pipfd == EV_OS_PIPE_INVALID)
     {

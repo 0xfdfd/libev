@@ -11,7 +11,7 @@ add_library(${PROJECT_NAME}
     "src/log.c"
     "src/map.c"
     "src/map_low.c"
-    "src/pipe.c"
+    "src/pipe-common.c"
     "src/threadpool.c"
     "src/timer.c"
     "src/udp.c")

@@ -69,7 +69,7 @@ TEST_FIXTURE_TEAREDOWN(pipe)
     ASSERT_EQ_D32(ev_loop_exit(&g_test_19f1.loop), 0);
 }
 
-static void _on_pipe_write_done(ev_write_t* req, size_t size, int stat)
+static void _on_pipe_write_done_19f1(ev_pipe_write_req_t* req, size_t size, int stat)
 {
     ASSERT_EQ_PTR(req, &g_test_19f1.pipe.w_req);
     ASSERT_EQ_D32(stat, EV_SUCCESS);
@@ -87,7 +87,7 @@ static void _on_tcp_write_done_19f1(ev_tcp_write_req_t* req, size_t size, int st
     g_test_19f1.cnt_wcb++;
 }
 
-static void _on_pipe_read_done(ev_read_t* req, size_t size, int stat)
+static void _on_pipe_read_done_19f1(ev_pipe_read_req_t* req, size_t size, int stat)
 {
     (void)size;
     ASSERT_EQ_PTR(req, &g_test_19f1.pipe.r_req);
@@ -113,12 +113,12 @@ TEST_F(pipe, ipc_mode_tcp_handle)
     buf = ev_buf_make(g_test_19f1.data1, sizeof(g_test_19f1.data1));
     ASSERT_EQ_D32(ev_pipe_write_ex(&g_test_19f1.s_pipe, &g_test_19f1.pipe.w_req,
         &buf, 1, EV_ROLE_EV_TCP, &g_test_19f1.s_tcp, sizeof(g_test_19f1.s_tcp),
-        NULL, 0, _on_pipe_write_done), 0);
+        NULL, 0, _on_pipe_write_done_19f1), 0);
 
     /* recv data and handle */
     buf = ev_buf_make(g_test_19f1.data2, sizeof(g_test_19f1.data2));
     ASSERT_EQ_D32(ev_pipe_read(&g_test_19f1.c_pipe, &g_test_19f1.pipe.r_req,
-        &buf, 1, _on_pipe_read_done), 0);
+        &buf, 1, _on_pipe_read_done_19f1), 0);
 
     /* communicate */
     ASSERT_EQ_D32(ev_loop_run(&g_test_19f1.loop, EV_LOOP_MODE_DEFAULT), 0);

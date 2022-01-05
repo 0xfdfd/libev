@@ -39,6 +39,7 @@ struct ev_pipe
 struct ev_pipe_write_req
 {
     ev_write_t              base;               /**< Base object */
+    ev_pipe_write_cb        ucb;                /**< User callback */
     struct
     {
         ev_role_t           role;               /**< The type of handle to send */
@@ -51,10 +52,11 @@ struct ev_pipe_write_req
 
 struct ev_pipe_read_req
 {
-    ev_read_t               base;
+    ev_read_t               base;               /**< Base object */
+    ev_pipe_read_cb         ucb;                /**< User callback */
     struct
     {
-        ev_os_socket_t      os_socket;
+        ev_os_socket_t      os_socket;          /**< Socket handler */
     }handle;
 };
 
@@ -102,7 +104,7 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle);
  * @return          #ev_errno_t
  */
 int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req, ev_buf_t* bufs,
-    size_t nbuf, ev_write_cb cb);
+    size_t nbuf, ev_pipe_write_cb cb);
 
 /**
  * @brief Like #ev_pipe_write(), with following difference:
@@ -126,7 +128,7 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
     ev_buf_t* bufs, size_t nbuf,
     ev_role_t handle_role, void* handle_addr, size_t handle_size,
     ev_buf_t* iov_bufs, size_t iov_size,
-    ev_write_cb cb);
+    ev_pipe_write_cb cb);
 
 /**
  * @brief Read data
@@ -148,7 +150,7 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
  * @return          #ev_errno_t
  */
 int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
-    size_t nbuf, ev_read_cb cb);
+    size_t nbuf, ev_pipe_read_cb cb);
 
 /**
  * @return
