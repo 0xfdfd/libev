@@ -1,6 +1,7 @@
 #include "win/loop.h"
 #include "win/tcp.h"
 #include "ev-common.h"
+#include "pipe.h"
 #include <stdio.h>
 
 static char s_ev_zero[] = "";
@@ -1248,14 +1249,24 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
     return EV_SUCCESS;
 }
 
-int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
+int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
+    ev_buf_t* bufs, size_t nbuf,
+    ev_role_t handle_role, void* handle_addr, size_t handle_size,
+    ev_buf_t* iov_bufs, size_t iov_size,
+    ev_write_cb cb)
 {
     if (pipe->pipfd == EV_OS_PIPE_INVALID)
     {
         return EV_EBADF;
     }
 
-    int ret;
+    int ret = ev__pipe_write_init_ext(req, cb, bufs, nbuf, iov_bufs, iov_size,
+        handle_role, handle_addr, handle_size);
+    if (ret != EV_SUCCESS)
+    {
+        return ret;
+    }
+
     if (pipe->base.data.flags & EV_PIPE_IPC)
     {
         ret = _ev_pipe_ipc_mode_write(pipe, req);
@@ -1264,7 +1275,7 @@ int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
     {
         ret = _ev_pipe_data_mode_write(pipe, req);
     }
-    
+
     if (ret == EV_SUCCESS)
     {
         ev__handle_active(&pipe->base);
@@ -1273,16 +1284,22 @@ int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
     return ret;
 }
 
-int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req)
+int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
+    size_t nbuf, ev_read_cb cb)
 {
     if (pipe->pipfd == EV_OS_PIPE_INVALID)
     {
         return EV_EBADF;
     }
 
+    int ret = ev__pipe_read_init(req, bufs, nbuf, cb);
+    if (ret != EV_SUCCESS)
+    {
+        return ret;
+    }
+
     ev__read_init_win(&req->base, pipe, EV_EINPROGRESS, NULL, NULL);
 
-    int ret;
     if (pipe->base.data.flags & EV_PIPE_IPC)
     {
         ret = _ev_pipe_read_ipc_mode(pipe, req);

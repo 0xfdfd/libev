@@ -1,6 +1,13 @@
 #include "ev-common.h"
+#include "pipe.h"
 
-int ev_pipe_read_init(ev_pipe_read_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb)
+int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req, ev_buf_t* bufs,
+    size_t nbuf, ev_write_cb cb)
+{
+    return ev_pipe_write_ex(pipe, req, bufs, nbuf, EV_ROLE_UNKNOWN, NULL, 0, NULL, 0, cb);
+}
+
+int ev__pipe_read_init(ev_pipe_read_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb)
 {
     int ret;
     if ((ret = ev_read_init(&req->base, bufs, nbuf, cb)) != EV_SUCCESS)
@@ -12,12 +19,12 @@ int ev_pipe_read_init(ev_pipe_read_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_r
     return EV_SUCCESS;
 }
 
-int ev_pipe_write_init(ev_pipe_write_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb)
+int ev__pipe_write_init(ev_pipe_write_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb)
 {
-    return ev_pipe_write_init_ext(req, cb, bufs, nbuf, NULL, 0, EV_ROLE_UNKNOWN, NULL, 0);
+    return ev__pipe_write_init_ext(req, cb, bufs, nbuf, NULL, 0, EV_ROLE_UNKNOWN, NULL, 0);
 }
 
-int ev_pipe_write_init_ext(ev_pipe_write_req_t* req, ev_write_cb callback,
+int ev__pipe_write_init_ext(ev_pipe_write_req_t* req, ev_write_cb callback,
     ev_buf_t* bufs, size_t nbuf,
     void* iov_bufs, size_t iov_size,
     ev_role_t handle_role, void* handle_addr, size_t handle_size)

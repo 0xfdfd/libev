@@ -108,20 +108,13 @@ TEST_F(pipe, ipc_mode_dgram)
 
         bufs[0] = ev_buf_make(&g_test_a548.w_req[i].data1, sizeof(g_test_a548.w_req[i].data1));
         bufs[1] = ev_buf_make(g_test_a548.w_req[i].data2, sizeof(g_test_a548.w_req[i].data2));
-        ASSERT_EQ_D32(ev_pipe_write_init(&g_test_a548.w_req[i].req, bufs, 2, _on_test_a548_write_done), 0);
+        ASSERT_EQ_D32(ev_pipe_write(&g_test_a548.c_pipe, &g_test_a548.w_req[i].req,
+            bufs, 2, _on_test_a548_write_done), 0);
 
         bufs[0] = ev_buf_make(&g_test_a548.r_req[i].data1, sizeof(g_test_a548.r_req[i].data1));
         bufs[1] = ev_buf_make(g_test_a548.r_req[i].data2, sizeof(g_test_a548.r_req[i].data2));
-        ASSERT_EQ_D32(ev_pipe_read_init(&g_test_a548.r_req[i].req, bufs, 2, _on_test_a548_read_done), 0);
-    }
-
-    for (i = 0; i < TEST_PACK_NUM_A548; i++)
-    {
-        ASSERT_EQ_D32(ev_pipe_write(&g_test_a548.c_pipe, &g_test_a548.w_req[i].req), 0);
-    }
-    for (i = 0; i < TEST_PACK_NUM_A548; i++)
-    {
-        ASSERT_EQ_D32(ev_pipe_read(&g_test_a548.s_pipe, &g_test_a548.r_req[i].req), 0);
+        ASSERT_EQ_D32(ev_pipe_read(&g_test_a548.s_pipe, &g_test_a548.r_req[i].req,
+            bufs, 2, _on_test_a548_read_done), 0);
     }
 
     ASSERT_EQ_D32(ev_loop_run(&g_test_a548.loop, EV_LOOP_MODE_DEFAULT), 0);
