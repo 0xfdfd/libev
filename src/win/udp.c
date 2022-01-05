@@ -796,9 +796,15 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
     return EV_SUCCESS;
 }
 
-int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr)
+int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
+    const struct sockaddr* addr, ev_write_cb cb)
 {
     int ret, err;
+
+    if ((ret = ev_write_init(&req->req, bufs, nbuf, cb)) != EV_SUCCESS)
+    {
+        return ret;
+    }
 
     if (!(udp->base.data.flags & EV_UDP_BOUND))
     {
@@ -845,17 +851,18 @@ int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr)
     return ev__translate_sys_error(err);
 }
 
-int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr)
+int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
+    const struct sockaddr* addr, ev_write_cb cb)
 {
     if (ev_list_size(&udp->send_list) != 0)
     {
         return EV_EAGAIN;
     }
 
-    return ev_udp_send(udp, req, addr);
+    return ev_udp_send(udp, req, bufs, nbuf, addr, cb);
 }
 
-int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
+int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb)
 {
     WSABUF buf;
     buf.buf = g_ev_loop_win_ctx.net.zero_;
@@ -864,12 +871,18 @@ int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
     DWORD bytes;
     DWORD flags = MSG_PEEK;
 
+    int ret = ev_read_init(&req->req, bufs, nbuf, cb);
+    if (ret != EV_SUCCESS)
+    {
+        return ret;
+    }
+
     req->req.backend.owner = udp;
     req->req.backend.stat = EV_EINPROGRESS;
     ev__iocp_init(&req->backend.io, _ev_udp_on_recv_iocp_win, udp);
     ev_list_push_back(&udp->recv_list, &req->req.node);
 
-    int ret = WSARecv(udp->sock, &buf, 1, &bytes, &flags, &req->backend.io.overlapped, NULL);
+    ret = WSARecv(udp->sock, &buf, 1, &bytes, &flags, &req->backend.io.overlapped, NULL);
     if (ret == 0 && (udp->base.data.flags & EV_UDP_BYPASS_IOCP))
     {
         ev__loop_submit_task(udp->base.data.loop, &req->backend.token, _ev_udp_on_recv_bypass_iocp_win);

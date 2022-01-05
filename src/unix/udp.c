@@ -932,9 +932,15 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
     return _ev_udp_set_ttl_unix(udp, ttl, IP_TTL, IPV6_UNICAST_HOPS);
 }
 
-int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr)
+int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
+    const struct sockaddr* addr, ev_write_cb cb)
 {
-    int ret;
+    int ret = ev_write_init(&req->req, bufs, nbuf, cb);
+    if (ret != EV_SUCCESS)
+    {
+        return ret;
+    }
+
     if (addr == NULL)
     {
         req->backend.peer_addr.ss_family = AF_UNSPEC;
@@ -967,21 +973,28 @@ int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr)
     return EV_SUCCESS;
 }
 
-int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr)
+int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
+    const struct sockaddr* addr, ev_write_cb cb)
 {
     if (ev_list_size(&udp->send_list) != 0)
     {
         return EV_EAGAIN;
     }
 
-    return ev_udp_send(udp, req, addr);
+    return ev_udp_send(udp, req, bufs, nbuf, addr, cb);
 }
 
-int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
+int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb)
 {
     if (udp->sock == EV_OS_SOCKET_INVALID)
     {
         return EV_EPIPE;
+    }
+
+    int ret = ev_read_init(&req->req, bufs, nbuf, cb);
+    if (ret != EV_SUCCESS)
+    {
+        return ret;
     }
 
     ev_list_push_back(&udp->recv_list, &req->req.node);

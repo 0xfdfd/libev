@@ -207,10 +207,14 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl);
  *
  * @param[in] udp   A UDP handle
  * @param[in] req   Write request token
+ * @param[in] bufs  Buffer list
+ * @param[in] nbuf  Buffer number
  * @param[in] addr  Peer address
+ * @param[in] cb    Send result callback
  * @return          #ev_errno_t
  */
-int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr);
+int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
+    const struct sockaddr* addr, ev_write_cb cb);
 
 /**
  * @brief Same as #ev_udp_send(), but won't queue a send request if it can't be
@@ -220,13 +224,19 @@ int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr)
  * @param[in] addr  Peer address
  * @return          #ev_errno_t
  */
-int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr);
+int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
+    const struct sockaddr* addr, ev_write_cb cb);
 
 /**
  * @brief Queue a read request.
  * @param[in] udp   A UDP handle
+ * @param[in] req   Read request token
+ * @param[in] bufs  Receive buffer
+ * @param[in] nbuf  Buffer number
+ * @param[in] cb    Receive callback
+ * @return          #ev_errno_t
  */
-int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req);
+int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb);
 
 /**
  * @} EV_UDP

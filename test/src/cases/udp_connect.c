@@ -72,15 +72,15 @@ TEST_F(udp, connect)
     /* Send data */
     {
         ev_buf_t buf = ev_buf_make(g_test_5295.w_buf, sizeof(g_test_5295.w_buf));
-        ASSERT_EQ_D32(ev_write_init(&g_test_5295.w_req.req, &buf, 1, _on_test_write_done_5295), 0);
-        ASSERT_EQ_D32(ev_udp_send(&g_test_5295.client, &g_test_5295.w_req, NULL), 0);
+        ASSERT_EQ_D32(ev_udp_send(&g_test_5295.client, &g_test_5295.w_req, &buf, 1,
+            NULL, _on_test_write_done_5295), 0);
     }
 
     /* Recv data */
     {
         ev_buf_t buf = ev_buf_make(&g_test_5295.r_buf, sizeof(g_test_5295.r_buf));
-        ASSERT_EQ_D32(ev_read_init(&g_test_5295.r_req.req, &buf, 1, _on_test_read_done_5295), 0);
-        ASSERT_EQ_D32(ev_udp_recv(&g_test_5295.server, &g_test_5295.r_req), 0);
+        ASSERT_EQ_D32(ev_udp_recv(&g_test_5295.server, &g_test_5295.r_req, &buf, 1,
+            _on_test_read_done_5295), 0);
     }
 
     ASSERT_EQ_D32(ev_loop_run(&g_test_5295.loop, EV_LOOP_MODE_DEFAULT), 0);
