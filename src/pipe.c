@@ -1,5 +1,17 @@
 #include "ev-common.h"
 
+int ev_pipe_read_init(ev_pipe_read_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb)
+{
+    int ret;
+    if ((ret = ev_read_init(&req->base, bufs, nbuf, cb)) != EV_SUCCESS)
+    {
+        return ret;
+    }
+
+    req->handle.os_socket = EV_OS_SOCKET_INVALID;
+    return EV_SUCCESS;
+}
+
 int ev_pipe_write_init(ev_pipe_write_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb)
 {
     return ev_pipe_write_init_ext(req, cb, bufs, nbuf, NULL, 0, EV_ROLE_UNKNOWN, NULL, 0);

@@ -15,6 +15,9 @@ typedef struct ev_pipe ev_pipe_t;
 struct ev_pipe_write_req;
 typedef struct ev_pipe_write_req ev_pipe_write_req_t;
 
+struct ev_pipe_read_req;
+typedef struct ev_pipe_read_req ev_pipe_read_req_t;
+
 /**
  * @brief Callback for #ev_pipe_t
  * @param[in] handle      A pipe

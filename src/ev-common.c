@@ -575,7 +575,6 @@ int ev_read_init_ext(ev_read_t* req, ev_read_cb callback,
 {
     req->data.cb = callback;
     req->data.nbuf = nbuf;
-    req->handle.os_socket = EV_OS_SOCKET_INVALID;
 
     if (nbuf <= ARRAY_SIZE(req->data.bufsml))
     {

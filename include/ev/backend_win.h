@@ -195,7 +195,7 @@ typedef union ev_pipe_backend
         {
             ev_iocp_t                   io;                 /**< IOCP backend */
             ev_list_t                   r_pending;          /**< Request queue to be read */
-            ev_read_t*                  r_doing;            /**< Request queue in reading */
+            ev_pipe_read_req_t*         r_doing;            /**< Request queue in reading */
         }rio;
 
         struct
@@ -234,7 +234,7 @@ typedef union ev_pipe_backend
 
             struct
             {
-                ev_read_t*              reading;            /**< Request for read */
+                ev_pipe_read_req_t*     reading;            /**< Request for read */
                 DWORD                   buf_idx;            /**< Buffer for read */
                 DWORD                   buf_pos;            /**< Available position */
             }reading;

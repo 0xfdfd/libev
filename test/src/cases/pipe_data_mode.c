@@ -15,7 +15,7 @@ struct test_221d
 
     struct
     {
-        ev_read_t           read_req;
+        ev_pipe_read_req_t  read_req;
         ev_buf_t            buf;
         uint8_t             buffer[TEST_BUFFER_SIZE_221D * (TEST_PACK_NUM_221D + 1)];
     }r_pack;
@@ -53,7 +53,7 @@ static void _on_read_callback(ev_read_t* req, size_t size, int stat)
     ASSERT_EQ_D32(stat, EV_SUCCESS);
 
     g_test_221d.r_pack.buf = ev_buf_make((char*)g_test_221d.r_pack.buf.data + size, g_test_221d.r_pack.buf.size - size);
-    ASSERT_EQ_D32(ev_read_init(&g_test_221d.r_pack.read_req, &g_test_221d.r_pack.buf, 1, _on_read_callback), 0);
+    ASSERT_EQ_D32(ev_pipe_read_init(&g_test_221d.r_pack.read_req, &g_test_221d.r_pack.buf, 1, _on_read_callback), 0);
     ASSERT_EQ_D32(ev_pipe_read(&g_test_221d.pipe_r, &g_test_221d.r_pack.read_req), 0);
 }
 
@@ -94,7 +94,7 @@ TEST_F(pipe, data_mode)
     }
 
     g_test_221d.r_pack.buf = ev_buf_make(g_test_221d.r_pack.buffer, sizeof(g_test_221d.r_pack.buffer));
-    ASSERT_EQ_D32(ev_read_init(&g_test_221d.r_pack.read_req, &g_test_221d.r_pack.buf, 1, _on_read_callback), 0);
+    ASSERT_EQ_D32(ev_pipe_read_init(&g_test_221d.r_pack.read_req, &g_test_221d.r_pack.buf, 1, _on_read_callback), 0);
     ASSERT_EQ_D32(ev_pipe_read(&g_test_221d.pipe_r, &g_test_221d.r_pack.read_req), 0);
 
     ASSERT_EQ_D32(ev_loop_run(&g_test_221d.loop, EV_LOOP_MODE_DEFAULT), 0);

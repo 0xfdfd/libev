@@ -227,7 +227,7 @@ typedef union ev_pipe_backend
                 size_t                  buf_idx;            /**< Buffer index to fill */
                 size_t                  buf_pos;            /**< Buffer position to fill */
 
-                ev_read_t*              reading;            /**< Currernt handling request */
+                ev_pipe_read_req_t*     reading;            /**< Current handling request */
             }curr;
 
             ev_list_t                   rqueue;             /**< #ev_read_t */

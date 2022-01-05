@@ -15,15 +15,15 @@ struct test_19f1
     ev_tcp_t                c_tcp;  /**< Client */
     ev_tcp_t                d_tcp;  /**< Peer socket to receive handle */
 
-    ev_read_t               r_req;  /**< Read request */
-
     struct
     {
+        ev_read_t           r_req;
         ev_write_t          w_req;
     }tcp;
 
     struct
     {
+        ev_pipe_read_req_t  r_req;  /**< Read request */
         ev_pipe_write_req_t w_req;  /**< Write request */
     }pipe;
 
@@ -90,7 +90,16 @@ static void _on_tcp_write_done_19f1(ev_write_t* req, size_t size, int stat)
 static void _on_pipe_read_done(ev_read_t* req, size_t size, int stat)
 {
     (void)size;
-    ASSERT_EQ_PTR(req, &g_test_19f1.r_req);
+    ASSERT_EQ_PTR(req, &g_test_19f1.pipe.r_req);
+    ASSERT_EQ_D32(stat, EV_SUCCESS);
+
+    g_test_19f1.cnt_rcb++;
+}
+
+static void _on_tcp_read_done_19f1(ev_read_t* req, size_t size, int stat)
+{
+    (void)size;
+    ASSERT_EQ_PTR(req, &g_test_19f1.tcp.r_req);
     ASSERT_EQ_D32(stat, EV_SUCCESS);
 
     g_test_19f1.cnt_rcb++;
@@ -108,8 +117,8 @@ TEST_F(pipe, ipc_mode_tcp_handle)
 
     /* recv data and handle */
     buf = ev_buf_make(g_test_19f1.data2, sizeof(g_test_19f1.data2));
-    ASSERT_EQ_D32(ev_read_init(&g_test_19f1.r_req, &buf, 1, _on_pipe_read_done), 0);
-    ASSERT_EQ_D32(ev_pipe_read(&g_test_19f1.c_pipe, &g_test_19f1.r_req), 0);
+    ASSERT_EQ_D32(ev_pipe_read_init(&g_test_19f1.pipe.r_req, &buf, 1, _on_pipe_read_done), 0);
+    ASSERT_EQ_D32(ev_pipe_read(&g_test_19f1.c_pipe, &g_test_19f1.pipe.r_req), 0);
 
     /* communicate */
     ASSERT_EQ_D32(ev_loop_run(&g_test_19f1.loop, EV_LOOP_MODE_DEFAULT), 0);
@@ -117,7 +126,7 @@ TEST_F(pipe, ipc_mode_tcp_handle)
     ASSERT_EQ_U32(g_test_19f1.cnt_rcb, 1);
 
     /* accept handle */
-    ASSERT_EQ_D32(ev_pipe_accept(&g_test_19f1.c_pipe, &g_test_19f1.r_req,
+    ASSERT_EQ_D32(ev_pipe_accept(&g_test_19f1.c_pipe, &g_test_19f1.pipe.r_req,
         EV_ROLE_EV_TCP, &g_test_19f1.d_tcp, sizeof(g_test_19f1.d_tcp)), 0);
 
     /* now we are able to send data via d_tcp */
@@ -126,8 +135,8 @@ TEST_F(pipe, ipc_mode_tcp_handle)
     ASSERT_EQ_D32(ev_tcp_write(&g_test_19f1.d_tcp, &g_test_19f1.tcp.w_req), 0);
 
     buf = ev_buf_make(g_test_19f1.data2, sizeof(g_test_19f1.data2));
-    ASSERT_EQ_D32(ev_read_init(&g_test_19f1.r_req, &buf, 1, _on_pipe_read_done), 0);
-    ASSERT_EQ_D32(ev_tcp_read(&g_test_19f1.c_tcp, &g_test_19f1.r_req), 0);
+    ASSERT_EQ_D32(ev_read_init(&g_test_19f1.tcp.r_req, &buf, 1, _on_tcp_read_done_19f1), 0);
+    ASSERT_EQ_D32(ev_tcp_read(&g_test_19f1.c_tcp, &g_test_19f1.tcp.r_req), 0);
 
     /* communicate */
     ASSERT_EQ_D32(ev_loop_run(&g_test_19f1.loop, EV_LOOP_MODE_DEFAULT), 0);

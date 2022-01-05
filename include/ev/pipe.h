@@ -49,6 +49,15 @@ struct ev_pipe_write_req
     }handle;
 };
 
+struct ev_pipe_read_req
+{
+    ev_read_t               base;
+    struct
+    {
+        ev_os_socket_t      os_socket;
+    }handle;
+};
+
 /**
  * @brief Initialize a pipe handle.
  * @param[in] loop      Event loop
@@ -107,7 +116,7 @@ int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req);
  * @param[in] req   Read request
  * @return          #ev_errno_t
  */
-int ev_pipe_read(ev_pipe_t* pipe, ev_read_t* req);
+int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req);
 
 /**
  * @return
@@ -117,7 +126,7 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_read_t* req);
  *   + #EV_ENOENT: \p req does not receive a handle.
  *   + #EV_ENOMEM: \p handle_size is too small.
  */
-int ev_pipe_accept(ev_pipe_t* pipe, ev_read_t* req,
+int ev_pipe_accept(ev_pipe_t* pipe, ev_pipe_read_req_t* req,
     ev_role_t handle_role, void* handle_addr, size_t handle_size);
 
 /**
@@ -126,6 +135,16 @@ int ev_pipe_accept(ev_pipe_t* pipe, ev_read_t* req,
  * @return          #ev_errno_t
  */
 int ev_pipe_make(ev_os_pipe_t fds[2]);
+
+/**
+ * @brief Initialize #ev_pipe_read_req_t
+ * @param[out] req  A read request to be initialized
+ * @param[in] bufs  Buffer list
+ * @param[in] nbuf  Buffer list size, can not larger than #EV_IOV_MAX.
+ * @param[in] cb    Read complete callback
+ * @return          #ev_errno_t
+ */
+int ev_pipe_read_init(ev_pipe_read_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb);
 
 /**
  * @brief Initialize #ev_pipe_write_req_t

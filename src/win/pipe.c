@@ -28,10 +28,10 @@ static HANDLE _ev_pipe_make_c(const char* name)
 
 static void _ev_pipe_cancel_all_r_ipc_mode(ev_pipe_t* pipe, int stat)
 {
-    ev_read_t* req;
+    ev_pipe_read_req_t* req;
     if ((req = pipe->backend.ipc_mode.rio.reading.reading) != NULL)
     {
-        req->data.cb(req, req->data.size, stat);
+        req->base.data.cb(&req->base, req->base.data.size, stat);
         pipe->backend.ipc_mode.rio.reading.reading = NULL;
     }
     pipe->backend.ipc_mode.rio.reading.buf_idx = 0;
@@ -40,25 +40,25 @@ static void _ev_pipe_cancel_all_r_ipc_mode(ev_pipe_t* pipe, int stat)
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&pipe->backend.ipc_mode.rio.pending)) != NULL)
     {
-        req = container_of(it, ev_read_t, node);
-        req->data.cb(req, req->data.size, stat);
+        req = container_of(it, ev_pipe_read_req_t, base.node);
+        req->base.data.cb(&req->base, req->base.data.size, stat);
     }
 }
 
 static void _ev_pipe_cancel_all_r_data_mode(ev_pipe_t* pipe, int stat)
 {
-    ev_read_t* req;
+    ev_pipe_read_req_t* req;
     if ((req = pipe->backend.data_mode.rio.r_doing) != NULL)
     {
-        req->data.cb(req, req->data.size, stat);
+        req->base.data.cb(&req->base, req->base.data.size, stat);
         pipe->backend.data_mode.rio.r_doing = NULL;
     }
 
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&pipe->backend.data_mode.rio.r_pending)) != NULL)
     {
-        req = container_of(it, ev_read_t, node);
-        req->data.cb(req, req->data.size, stat);
+        req = container_of(it, ev_pipe_read_req_t, base.node);
+        req->base.data.cb(&req->base, req->base.data.size, stat);
     }
 }
 
@@ -172,15 +172,15 @@ static void _ev_pipe_smart_deactive_win(ev_pipe_t* pipe)
     ev__handle_deactive(&pipe->base);
 }
 
-static int _ev_pipe_read_into_req(HANDLE file, ev_read_t* req, size_t minimum_size,
+static int _ev_pipe_read_into_req(HANDLE file, ev_pipe_read_req_t* req, size_t minimum_size,
     size_t bufidx, size_t bufpos, size_t* dbufidx, size_t* dbufpos, size_t* total)
 {
     int ret = EV_SUCCESS;
     size_t total_size = 0;
 
-    while (bufidx < req->data.nbuf && total_size < minimum_size)
+    while (bufidx < req->base.data.nbuf && total_size < minimum_size)
     {
-        ev_buf_t* buf = &req->data.bufs[bufidx];
+        ev_buf_t* buf = &req->base.data.bufs[bufidx];
         void* buffer = (uint8_t*)buf->data + bufpos;
         size_t buffersize = buf->size - bufpos;
 
@@ -255,7 +255,7 @@ static int _ev_pipe_data_mode_want_read(ev_pipe_t* pipe)
     return EV_SUCCESS;
 }
 
-static void _ev_pipe_data_mode_callback_and_mount_next_win(ev_pipe_t* pipe, ev_read_t* req)
+static void _ev_pipe_data_mode_callback_and_mount_next_win(ev_pipe_t* pipe, ev_pipe_read_req_t* req)
 {
     ev_list_node_t* it = ev_list_pop_front(&pipe->backend.data_mode.rio.r_pending);
     if (it == NULL)
@@ -264,17 +264,17 @@ static void _ev_pipe_data_mode_callback_and_mount_next_win(ev_pipe_t* pipe, ev_r
     }
     else
     {
-        pipe->backend.data_mode.rio.r_doing = container_of(it, ev_read_t, node);
+        pipe->backend.data_mode.rio.r_doing = container_of(it, ev_pipe_read_req_t, base.node);
     }
 
-    req->data.cb(req, req->data.size, EV_SUCCESS);
+    req->base.data.cb(&req->base, req->base.data.size, EV_SUCCESS);
 }
 
 static int _ev_pipe_on_data_mode_read_recv(ev_pipe_t* pipe)
 {
     int ret = EV_SUCCESS;
 
-    ev_read_t* req;
+    ev_pipe_read_req_t* req;
 
     size_t bufidx = 0;
     size_t bufpos = 0;
@@ -306,14 +306,14 @@ static int _ev_pipe_on_data_mode_read_recv(ev_pipe_t* pipe)
         size_t total = 0;
         ret = _ev_pipe_read_into_req(pipe->pipfd, req, avail, bufidx, bufpos,
             &bufidx, &bufpos, &total);
-        req->data.size += total;
+        req->base.data.size += total;
 
         if (ret != EV_SUCCESS)
         {
             return ret;
         }
 
-        if (req->data.size < req->data.capacity)
+        if (req->base.data.size < req->base.data.capacity)
         {
             continue;
         }
@@ -537,7 +537,7 @@ static int _ev_pipe_read_exactly(HANDLE file, void* buffer, size_t size)
     return EV_SUCCESS;
 }
 
-static ev_read_t* _ev_pipe_on_ipc_mode_read_mount_next(ev_pipe_t* pipe)
+static ev_pipe_read_req_t* _ev_pipe_on_ipc_mode_read_mount_next(ev_pipe_t* pipe)
 {
     pipe->backend.ipc_mode.rio.reading.buf_idx = 0;
     pipe->backend.ipc_mode.rio.reading.buf_pos = 0;
@@ -549,7 +549,7 @@ static ev_read_t* _ev_pipe_on_ipc_mode_read_mount_next(ev_pipe_t* pipe)
     }
     else
     {
-        pipe->backend.ipc_mode.rio.reading.reading = container_of(it, ev_read_t, node);
+        pipe->backend.ipc_mode.rio.reading.reading = container_of(it, ev_pipe_read_req_t, base.node);
     }
 
     return pipe->backend.ipc_mode.rio.reading.reading;
@@ -566,7 +566,7 @@ static int _ev_pipe_on_ipc_mode_read_information(ev_pipe_t* pipe, ev_ipc_frame_h
     int ret = _ev_pipe_read_exactly(pipe->pipfd, buffer, buffer_size);
     assert(ret == EV_SUCCESS); (void)ret;
 
-    ev_read_t* req;
+    ev_pipe_read_req_t* req;
     ev_pipe_win_ipc_info_t* ipc_info = buffer;
 
     switch (ipc_info->type)
@@ -604,7 +604,7 @@ static int _ev_pipe_on_ipc_mode_read_remain(ev_pipe_t* pipe)
     while (pipe->backend.ipc_mode.rio.remain_size > 0
         && PeekNamedPipe(pipe->pipfd, NULL, 0, NULL, &avail, NULL) && avail > 0)
     {
-        ev_read_t* req = pipe->backend.ipc_mode.rio.reading.reading;
+        ev_pipe_read_req_t* req = pipe->backend.ipc_mode.rio.reading.reading;
         if (req == NULL)
         {
             req = _ev_pipe_on_ipc_mode_read_mount_next(pipe);
@@ -615,7 +615,7 @@ static int _ev_pipe_on_ipc_mode_read_remain(ev_pipe_t* pipe)
         }
 
         size_t buf_idx = pipe->backend.ipc_mode.rio.reading.buf_idx;
-        ev_buf_t* buf = &req->data.bufs[buf_idx];
+        ev_buf_t* buf = &req->base.data.bufs[buf_idx];
         void* buffer = (uint8_t*)buf->data + pipe->backend.ipc_mode.rio.reading.buf_pos;
 
         DWORD buffer_size = buf->size - pipe->backend.ipc_mode.rio.reading.buf_pos;
@@ -630,13 +630,13 @@ static int _ev_pipe_on_ipc_mode_read_remain(ev_pipe_t* pipe)
         }
         pipe->backend.ipc_mode.rio.remain_size -= read_size;
         pipe->backend.ipc_mode.rio.reading.buf_pos += read_size;
-        req->data.size += read_size;
+        req->base.data.size += read_size;
 
         /* Read the whole frame */
         if (pipe->backend.ipc_mode.rio.remain_size == 0)
         {
             pipe->backend.ipc_mode.rio.reading.reading = NULL;
-            req->data.cb(req, req->data.size, EV_SUCCESS);
+            req->base.data.cb(&req->base, req->base.data.size, EV_SUCCESS);
             continue;
         }
 
@@ -649,14 +649,14 @@ static int _ev_pipe_on_ipc_mode_read_remain(ev_pipe_t* pipe)
         /* Move to next buffer */
         pipe->backend.ipc_mode.rio.reading.buf_pos = 0;
         pipe->backend.ipc_mode.rio.reading.buf_idx++;
-        if (pipe->backend.ipc_mode.rio.reading.buf_idx < req->data.nbuf)
+        if (pipe->backend.ipc_mode.rio.reading.buf_idx < req->base.data.nbuf)
         {
             continue;
         }
 
         /* Buffer is full, need to notify user */
         pipe->backend.ipc_mode.rio.reading.reading = NULL;
-        req->data.cb(req, req->data.size, EV_SUCCESS);
+        req->base.data.cb(&req->base, req->base.data.size, EV_SUCCESS);
     }
 
     return EV_SUCCESS;
@@ -1094,18 +1094,18 @@ static int _ev_pipe_ipc_mode_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
     return _ev_pipe_ipc_mode_write_data(pipe, req);
 }
 
-static int _ev_pipe_read_ipc_mode(ev_pipe_t* pipe, ev_read_t* req)
+static int _ev_pipe_read_ipc_mode(ev_pipe_t* pipe, ev_pipe_read_req_t* req)
 {
-    ev_list_push_back(&pipe->backend.ipc_mode.rio.pending, &req->node);
+    ev_list_push_back(&pipe->backend.ipc_mode.rio.pending, &req->base.node);
 
     return _ev_pipe_ipc_mode_want_read(pipe);
 }
 
-static int _ev_pipe_read_data_mode(ev_pipe_t* pipe, ev_read_t* req)
+static int _ev_pipe_read_data_mode(ev_pipe_t* pipe, ev_pipe_read_req_t* req)
 {
     if (pipe->backend.data_mode.rio.r_doing != NULL)
     {
-        ev_list_push_back(&pipe->backend.data_mode.rio.r_pending, &req->node);
+        ev_list_push_back(&pipe->backend.data_mode.rio.r_pending, &req->base.node);
         return EV_SUCCESS;
     }
 
@@ -1273,14 +1273,14 @@ int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
     return ret;
 }
 
-int ev_pipe_read(ev_pipe_t* pipe, ev_read_t* req)
+int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req)
 {
     if (pipe->pipfd == EV_OS_PIPE_INVALID)
     {
         return EV_EBADF;
     }
 
-    ev__read_init_win(req, pipe, EV_EINPROGRESS, NULL, NULL);
+    ev__read_init_win(&req->base, pipe, EV_EINPROGRESS, NULL, NULL);
 
     int ret;
     if (pipe->base.data.flags & EV_PIPE_IPC)
@@ -1300,7 +1300,7 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_read_t* req)
     return ret;
 }
 
-int ev_pipe_accept(ev_pipe_t* pipe, ev_read_t* req,
+int ev_pipe_accept(ev_pipe_t* pipe, ev_pipe_read_req_t* req,
     ev_role_t handle_role, void* handle_addr, size_t handle_size)
 {
     (void)pipe;
