@@ -109,7 +109,7 @@ typedef struct ev_tcp_backend
         }listen;
         struct
         {
-            ev_accept_cb        cb;                 /**< Accept callback */
+            ev_tcp_accept_cb    cb;                 /**< Accept callback */
             ev_list_node_t      node;               /**< (#ev_tcp_t::backend::u::listen) Accept queue node */
             ev_tcp_t*           listen;             /**< Listen socket */
             int                 stat;               /**< Accept result */
@@ -122,7 +122,7 @@ typedef struct ev_tcp_backend
         }accept;
         struct
         {
-            ev_connect_cb       cb;                 /**< Callback */
+            ev_tcp_connect_cb   cb;                 /**< Callback */
             LPFN_CONNECTEX      fn_connectex;       /**< ConnectEx */
             int                 stat;               /**< Connect result */
         }client;

@@ -35,6 +35,18 @@ struct ev_tcp
         EV_TCP_BACKEND_INIT,\
     }
 
+struct ev_tcp_read_req
+{
+    ev_read_t               base;               /**< Base object */
+    ev_tcp_read_cb          user_callback;      /**< User callback */
+};
+
+struct ev_tcp_write_req
+{
+    ev_write_t              base;               /**< Base object */
+    ev_tcp_write_cb         user_callback;      /**< User callback */
+};
+
 /**
  * @brief Initialize a tcp socket
  * @param[in] loop      Event loop
@@ -74,7 +86,7 @@ int ev_tcp_listen(ev_tcp_t* sock, int backlog);
  * @param[in] cb    Accept callback
  * @return          #ev_errno_t
  */
-int ev_tcp_accept(ev_tcp_t* acpt, ev_tcp_t* conn, ev_accept_cb cb);
+int ev_tcp_accept(ev_tcp_t* acpt, ev_tcp_t* conn, ev_tcp_accept_cb cb);
 
 /**
  * @brief Connect to address
@@ -84,7 +96,7 @@ int ev_tcp_accept(ev_tcp_t* acpt, ev_tcp_t* conn, ev_accept_cb cb);
  * @param[in] cb    Connect callback
  * @return          #ev_errno_t
  */
-int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connect_cb cb);
+int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_tcp_connect_cb cb);
 
 /**
  * @brief Write data
@@ -105,7 +117,8 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connec
  * @param[in] cb    Send result callback
  * @return          #ev_errno_t
  */
-int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb);
+int ev_tcp_write(ev_tcp_t* sock, ev_tcp_write_req_t* req,
+    ev_buf_t* bufs, size_t nbuf, ev_tcp_write_cb cb);
 
 /**
  * @brief Read data
@@ -126,7 +139,8 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t* bufs, size_t nbuf, e
  * @param[in] cb    Read result callback
  * @return          #ev_errno_t
  */
-int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb);
+int ev_tcp_read(ev_tcp_t* sock, ev_tcp_read_req_t* req,
+    ev_buf_t* bufs, size_t nbuf, ev_tcp_read_cb cb);
 
 /**
  * @brief Get the current address to which the socket is bound.

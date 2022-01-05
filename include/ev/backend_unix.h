@@ -175,7 +175,7 @@ typedef struct ev_tcp_backend
 
         struct
         {
-            ev_accept_cb        cb;                 /**< Accept callback */
+            ev_tcp_accept_cb    cb;                 /**< Accept callback */
             ev_list_node_t      accept_node;        /**< Accept queue node */
         }accept;
 
@@ -184,7 +184,7 @@ typedef struct ev_tcp_backend
         struct
         {
             ev_nonblock_io_t    io;                 /**< IO object */
-            ev_connect_cb       cb;                 /**< Connect callback */
+            ev_tcp_connect_cb   cb;                 /**< Connect callback */
             ev_todo_t           token;              /**< Todo token */
             int                 stat;               /**< Connect result */
         }client;

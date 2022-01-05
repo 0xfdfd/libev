@@ -12,27 +12,27 @@
 
 struct test_6d69
 {
-    ev_loop_t           s_loop;
-    ev_tcp_t            s_server;
-    ev_tcp_t            s_conn;
-    ev_tcp_t            s_client;
-    int                 s_listen_port;
-    int                 s_cnt_server_close;
-    int                 s_cnt_conn_close;
-    int                 s_cnt_client_close;
+    ev_loop_t               s_loop;
+    ev_tcp_t                s_server;
+    ev_tcp_t                s_conn;
+    ev_tcp_t                s_client;
+    int                     s_listen_port;
+    int                     s_cnt_server_close;
+    int                     s_cnt_conn_close;
+    int                     s_cnt_client_close;
 
     struct
     {
-        ev_write_t      w_req;
-        ev_buf_t        buf;
-        char            send_buf[4 * 1024 * 1024];
+        ev_tcp_write_req_t  w_req;
+        ev_buf_t            buf;
+        char                send_buf[4 * 1024 * 1024];
     }s_write_pack;
 
     struct
     {
-        ev_read_t       r_req;
-        ev_buf_t        buf;
-        char            recv_buf[6 * 1024 * 1024];
+        ev_tcp_read_req_t   r_req;
+        ev_buf_t            buf;
+        char                recv_buf[6 * 1024 * 1024];
     }s_read_pack;
 };
 
@@ -56,7 +56,7 @@ static void _on_close_client_socket_6d69(ev_tcp_t* sock)
     g_test_6d69.s_cnt_client_close++;
 }
 
-static void _on_send_finish_6d69(ev_write_t* req, size_t size, int stat)
+static void _on_send_finish_6d69(ev_tcp_write_req_t* req, size_t size, int stat)
 {
     (void)req; (void)size;
     ASSERT_EQ_D32(stat, EV_SUCCESS);
@@ -76,7 +76,7 @@ static void _on_accept_6d69(ev_tcp_t* from, ev_tcp_t* to, int stat)
         &g_test_6d69.s_write_pack.buf, 1, _on_send_finish_6d69), 0);
 }
 
-static void _on_read_6d69(ev_read_t* req, size_t size, int stat)
+static void _on_read_6d69(ev_tcp_read_req_t* req, size_t size, int stat)
 {
     (void)req;
     if (stat == EV_EOF)

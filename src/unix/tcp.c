@@ -255,6 +255,18 @@ static void _ev_tcp_setup_stream_once(ev_tcp_t* sock)
     sock->base.data.flags |= EV_TCP_STREAMING;
 }
 
+static void _ev_tcp_proxy_write_unix(ev_write_t* req, size_t size, int stat)
+{
+    ev_tcp_write_req_t* real_req = container_of(req, ev_tcp_write_req_t, base);
+    real_req->user_callback(real_req, size, stat);
+}
+
+static void _ev_tcp_proxy_read_unix(ev_read_t* req, size_t size, int stat)
+{
+    ev_tcp_read_req_t* real_req = container_of(req, ev_tcp_read_req_t, base);
+    real_req->user_callback(real_req, size, stat);
+}
+
 int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* sock)
 {
     ev__handle_init(loop, &sock->base, EV_ROLE_EV_TCP, _ev_tcp_on_close);
@@ -331,7 +343,7 @@ int ev_tcp_listen(ev_tcp_t* tcp, int backlog)
     return EV_SUCCESS;
 }
 
-int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
+int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_tcp_accept_cb cb)
 {
     if (conn->base.data.flags & EV_TCP_ACCEPTING)
     {
@@ -350,9 +362,10 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_accept_cb cb)
     return EV_SUCCESS;
 }
 
-int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb)
+int ev_tcp_write(ev_tcp_t* sock, ev_tcp_write_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_tcp_write_cb cb)
 {
-    int ret = ev_write_init(req, bufs, nbuf, cb);
+    req->user_callback = cb;
+    int ret = ev_write_init(&req->base, bufs, nbuf, _ev_tcp_proxy_write_unix);
     if (ret != EV_SUCCESS)
     {
         return ret;
@@ -363,31 +376,32 @@ int ev_tcp_write(ev_tcp_t* sock, ev_write_t* req, ev_buf_t* bufs, size_t nbuf, e
         return EV_EINVAL;
     }
 
-    ev__write_init_unix(req);
+    ev__write_init_unix(&req->base);
     _ev_tcp_setup_stream_once(sock);
 
     ev__handle_active(&sock->base);
-    return ev__nonblock_stream_write(&sock->backend.u.stream, req);
+    return ev__nonblock_stream_write(&sock->backend.u.stream, &req->base);
 }
 
-int ev_tcp_read(ev_tcp_t* sock, ev_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb)
+int ev_tcp_read(ev_tcp_t* sock, ev_tcp_read_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_tcp_read_cb cb)
 {
     if (sock->base.data.flags & (EV_TCP_LISTING | EV_TCP_ACCEPTING | EV_TCP_CONNECTING))
     {
         return EV_EINVAL;
     }
 
-    int ret = ev_read_init(req, bufs, nbuf, cb);
+    req->user_callback = cb;
+    int ret = ev_read_init(&req->base, bufs, nbuf, _ev_tcp_proxy_read_unix);
     if (ret != EV_SUCCESS)
     {
         return ret;
     }
 
-    ev__read_init_unix(req);
+    ev__read_init_unix(&req->base);
     _ev_tcp_setup_stream_once(sock);
 
     ev__handle_active(&sock->base);
-    return ev__nonblock_stream_read(&sock->backend.u.stream, req);
+    return ev__nonblock_stream_read(&sock->backend.u.stream, &req->base);
 }
 
 int ev_tcp_getsockname(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
@@ -416,7 +430,7 @@ int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
     return EV_SUCCESS;
 }
 
-int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_connect_cb cb)
+int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_tcp_connect_cb cb)
 {
     int ret;
     ev_loop_t* loop = sock->base.data.loop;

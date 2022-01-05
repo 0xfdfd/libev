@@ -17,8 +17,8 @@ struct test_19f1
 
     struct
     {
-        ev_read_t           r_req;
-        ev_write_t          w_req;
+        ev_tcp_read_req_t   r_req;
+        ev_tcp_write_req_t  w_req;
     }tcp;
 
     struct
@@ -78,7 +78,7 @@ static void _on_pipe_write_done(ev_write_t* req, size_t size, int stat)
     g_test_19f1.cnt_wcb++;
 }
 
-static void _on_tcp_write_done_19f1(ev_write_t* req, size_t size, int stat)
+static void _on_tcp_write_done_19f1(ev_tcp_write_req_t* req, size_t size, int stat)
 {
     ASSERT_EQ_PTR(req, &g_test_19f1.tcp.w_req);
     ASSERT_EQ_D32(stat, EV_SUCCESS);
@@ -96,7 +96,7 @@ static void _on_pipe_read_done(ev_read_t* req, size_t size, int stat)
     g_test_19f1.cnt_rcb++;
 }
 
-static void _on_tcp_read_done_19f1(ev_read_t* req, size_t size, int stat)
+static void _on_tcp_read_done_19f1(ev_tcp_read_req_t* req, size_t size, int stat)
 {
     (void)size;
     ASSERT_EQ_PTR(req, &g_test_19f1.tcp.r_req);
