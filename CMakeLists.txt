@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 3.2)
 project(ev)
 
+# add custom cmake files
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/third_party/cmake-modules")
+
 option(EV_PGO_EXPORT "Export Profile Guided Optimization" OFF)
 option(EV_PGO_IMPORT "Import Profile Guided Optimization" OFF)
+option(EV_ENABLE_COVERAGE "Enable code coverage. GCC/Clang only" OFF)
 
 # add source files
 add_library(${PROJECT_NAME}
@@ -73,6 +77,7 @@ else ()
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror)
 endif ()
 
+# PGO
 if (EV_PGO_IMPORT)
     if (CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "GNU")
         target_compile_options(${PROJECT_NAME}
@@ -90,6 +95,12 @@ elseif (EV_PGO_EXPORT)
                 gcov)
     elseif (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
     endif ()
+endif ()
+
+if (EV_ENABLE_COVERAGE AND CMAKE_C_COMPILER_ID MATCHES "(GNU|Clang)")
+    include(CodeCoverage)
+    target_compile_options(${PROJECT_NAME} PRIVATE -fprofile-arcs -ftest-coverage)
+    set(EV_HAVE_COVERAGE true)
 endif ()
 
 # build test

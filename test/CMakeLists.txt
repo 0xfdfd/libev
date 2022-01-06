@@ -63,6 +63,13 @@ endif ()
 target_link_libraries(ev_test PRIVATE ev cutest)
 add_test(ev_test ev_test)
 
+if(EV_HAVE_COVERAGE)
+    setup_target_for_coverage_lcov(
+        NAME coverage
+        EXECUTABLE $<TARGET_FILE:ev_test>
+    )
+endif()
+
 add_custom_target(ev_test_valgrind
     COMMAND valgrind
             --trace-children=yes
