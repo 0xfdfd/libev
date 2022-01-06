@@ -163,6 +163,7 @@ int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
     }
 
     ev__handle_init(loop, &work->base, EV_ROLE_EV_WORK, NULL);
+    ev__handle_active(&work->base);
     work->data.pool = pool;
     work->data.loop = loop;
     work->data.status = EV_ELOOP;

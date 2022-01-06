@@ -230,7 +230,7 @@ static void _ev_loop_handle_work(ev_loop_t* loop)
         ev_todo_t* todo;
         ev_mutex_enter(&loop->wakeup.work.mutex);
         {
-            ev_list_node_t* it = ev_list_begin(&loop->wakeup.work.queue);
+            ev_list_node_t* it = ev_list_pop_front(&loop->wakeup.work.queue);
             todo = it != NULL ? container_of(it, ev_todo_t, node) : NULL;
         }
         ev_mutex_leave(&loop->wakeup.work.mutex);
