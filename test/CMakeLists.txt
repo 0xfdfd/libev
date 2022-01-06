@@ -26,6 +26,7 @@ add_executable(ev_test
     "src/cases/udp_bind.c"
     "src/cases/udp_connect.c"
     "src/cases/udp_multicast_interface.c"
+    "src/cases/udp_ttl.c"
     "src/test.c"
     "src/main.c")
 
