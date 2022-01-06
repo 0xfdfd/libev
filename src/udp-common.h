@@ -1,5 +1,5 @@
-#ifndef __EV_UDP_INTERNAL_H__
-#define __EV_UDP_INTERNAL_H__
+#ifndef __EV_UDP_COMMON_INTERNAL_H__
+#define __EV_UDP_COMMON_INTERNAL_H__
 
 #include "ev-common.h"
 

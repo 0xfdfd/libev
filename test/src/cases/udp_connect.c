@@ -36,16 +36,16 @@ TEST_FIXTURE_TEAREDOWN(udp)
     ASSERT_EQ_D32(ev_loop_exit(&g_test_5295.loop), 0);
 }
 
-static void _on_test_write_done_5295(ev_write_t* req, size_t size, int stat)
+static void _on_test_write_done_5295(ev_udp_write_t* req, size_t size, int stat)
 {
-    ASSERT_EQ_PTR(&g_test_5295.w_req.req, req);
+    ASSERT_EQ_PTR(&g_test_5295.w_req, req);
     ASSERT_EQ_SIZE(size, sizeof(g_test_5295.w_buf));
     ASSERT_EQ_D32(stat, EV_SUCCESS);
 }
 
-static void _on_test_read_done_5295(ev_read_t* req, size_t size, int stat)
+static void _on_test_read_done_5295(ev_udp_read_t* req, size_t size, int stat)
 {
-    ASSERT_EQ_PTR(req, &g_test_5295.r_req.req);
+    ASSERT_EQ_PTR(req, &g_test_5295.r_req);
     ASSERT_EQ_SIZE(size, sizeof(g_test_5295.w_buf));
     ASSERT_EQ_D32(stat, EV_SUCCESS);
 

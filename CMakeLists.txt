@@ -14,7 +14,7 @@ add_library(${PROJECT_NAME}
     "src/pipe-common.c"
     "src/threadpool.c"
     "src/timer.c"
-    "src/udp.c")
+    "src/udp-common.c")
 if(WIN32)
     target_sources(${PROJECT_NAME}
         PRIVATE

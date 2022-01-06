@@ -1,5 +1,5 @@
 #include "unix/loop.h"
-#include "udp.h"
+#include "udp-common.h"
 #include <unistd.h>
 #include <string.h>
 
@@ -18,8 +18,8 @@ static void _ev_udp_cancel_all_w(ev_udp_t* udp, int err)
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&udp->send_list)) != NULL)
     {
-        ev_udp_write_t* req = container_of(it, ev_udp_write_t, req.node);
-        req->req.data.cb(&req->req, req->req.data.size, err);
+        ev_udp_write_t* req = container_of(it, ev_udp_write_t, base.node);
+        req->base.data.cb(&req->base, req->base.data.size, err);
     }
 }
 
@@ -28,8 +28,8 @@ static void _ev_udp_cancel_all_r(ev_udp_t* udp, int err)
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&udp->recv_list)) != NULL)
     {
-        ev_udp_read_t* req = container_of(it, ev_udp_read_t, req.node);
-        req->req.data.cb(&req->req, req->req.data.size, err);
+        ev_udp_read_t* req = container_of(it, ev_udp_read_t, base.node);
+        req->base.data.cb(&req->base, req->base.data.size, err);
     }
 }
 
@@ -150,7 +150,7 @@ static int _ev_udp_do_sendmsg_unix(ev_udp_t* udp, ev_udp_write_t* req)
         hdr.msg_namelen = ev__get_addr_len((struct sockaddr*)&req->backend.peer_addr);
     }
 
-    return ev__send_unix(udp->sock, &req->req, _ev_udp_sendmsg_unix, &hdr);
+    return ev__send_unix(udp->sock, &req->base, _ev_udp_sendmsg_unix, &hdr);
 }
 
 static int _ev_udp_on_io_write_unix(ev_udp_t* udp)
@@ -159,7 +159,7 @@ static int _ev_udp_on_io_write_unix(ev_udp_t* udp)
     ev_list_node_t* it;
     while ((it = ev_list_begin(&udp->send_list)) != NULL)
     {
-        ev_udp_write_t* req = container_of(it, ev_udp_write_t, req.node);
+        ev_udp_write_t* req = container_of(it, ev_udp_write_t, base.node);
 
         if ((ret = _ev_udp_do_sendmsg_unix(udp, req)) != EV_SUCCESS)
         {
@@ -167,7 +167,7 @@ static int _ev_udp_on_io_write_unix(ev_udp_t* udp)
         }
 
         ev_list_erase(&udp->send_list, it);
-        req->req.data.cb(&req->req, req->req.data.size, EV_SUCCESS);
+        req->base.data.cb(&req->base, req->base.data.size, EV_SUCCESS);
     }
 
     if (ret == EV_EAGAIN)
@@ -185,8 +185,8 @@ static int _ev_udp_do_recvmsg_unix(ev_udp_t* udp, ev_udp_read_t* req)
 
     hdr.msg_name = &req->addr;
     hdr.msg_namelen = sizeof(req->addr);
-    hdr.msg_iov = (struct iovec*)req->req.data.bufs;
-    hdr.msg_iovlen = req->req.data.nbuf;
+    hdr.msg_iov = (struct iovec*)req->base.data.bufs;
+    hdr.msg_iovlen = req->base.data.nbuf;
 
     ssize_t read_size;
     do
@@ -204,7 +204,7 @@ static int _ev_udp_do_recvmsg_unix(ev_udp_t* udp, ev_udp_read_t* req)
         return ev__translate_sys_error(err);
     }
 
-    req->req.data.size += read_size;
+    req->base.data.size += read_size;
     return EV_SUCCESS;
 }
 
@@ -214,7 +214,7 @@ static int _ev_udp_on_io_read_unix(ev_udp_t* udp)
     ev_list_node_t* it;
     while ((it = ev_list_begin(&udp->recv_list)) != NULL)
     {
-        ev_udp_read_t* req = container_of(it, ev_udp_read_t, req.node);
+        ev_udp_read_t* req = container_of(it, ev_udp_read_t, base.node);
 
         if ((ret = _ev_udp_do_recvmsg_unix(udp, req)) != EV_SUCCESS)
         {
@@ -222,7 +222,7 @@ static int _ev_udp_on_io_read_unix(ev_udp_t* udp)
         }
 
         ev_list_erase(&udp->recv_list, it);
-        req->req.data.cb(&req->req, req->req.data.size, EV_SUCCESS);
+        req->base.data.cb(&req->base, req->base.data.size, EV_SUCCESS);
     }
 
     if (ret == EV_EAGAIN)
@@ -600,6 +600,18 @@ static int _ev_udp_set_ttl_unix(ev_udp_t* udp, int ttl, int option4, int option6
     return EV_SUCCESS;
 }
 
+static void _ev_udp_proxy_send_unix(ev_write_t* req, size_t size, int stat)
+{
+    ev_udp_write_t* real_req = container_of(req, ev_udp_write_t, base);
+    real_req->usr_cb(real_req, size, stat);
+}
+
+static void _ev_udp_proxy_recv_unix(ev_read_t* req, size_t size, int stat)
+{
+    ev_udp_read_t* real_req = container_of(req, ev_udp_read_t, base);
+    real_req->usr_cb(real_req, size, stat);
+}
+
 int ev_udp_init(ev_loop_t* loop, ev_udp_t* udp, int domain)
 {
     int err;
@@ -933,9 +945,10 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
 }
 
 int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
-    const struct sockaddr* addr, ev_write_cb cb)
+    const struct sockaddr* addr, ev_udp_write_cb cb)
 {
-    int ret = ev_write_init(&req->req, bufs, nbuf, cb);
+    req->usr_cb = cb;
+    int ret = ev_write_init(&req->base, bufs, nbuf, _ev_udp_proxy_send_unix);
     if (ret != EV_SUCCESS)
     {
         return ret;
@@ -961,7 +974,7 @@ int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
         memcpy(&req->backend.peer_addr, addr, len);
     }
 
-    ev_list_push_back(&udp->send_list, &req->req.node);
+    ev_list_push_back(&udp->send_list, &req->base.node);
 
     if (ev_list_size(&udp->send_list) == 1)
     {
@@ -974,7 +987,7 @@ int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
 }
 
 int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
-    const struct sockaddr* addr, ev_write_cb cb)
+    const struct sockaddr* addr, ev_udp_write_cb cb)
 {
     if (ev_list_size(&udp->send_list) != 0)
     {
@@ -984,20 +997,21 @@ int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t n
     return ev_udp_send(udp, req, bufs, nbuf, addr, cb);
 }
 
-int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb)
+int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_udp_recv_cb cb)
 {
     if (udp->sock == EV_OS_SOCKET_INVALID)
     {
         return EV_EPIPE;
     }
 
-    int ret = ev_read_init(&req->req, bufs, nbuf, cb);
+    req->usr_cb = cb;
+    int ret = ev_read_init(&req->base, bufs, nbuf, _ev_udp_proxy_recv_unix);
     if (ret != EV_SUCCESS)
     {
         return ret;
     }
 
-    ev_list_push_back(&udp->recv_list, &req->req.node);
+    ev_list_push_back(&udp->recv_list, &req->base.node);
 
     if (ev_list_size(&udp->recv_list) == 1)
     {

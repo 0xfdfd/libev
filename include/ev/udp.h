@@ -2,6 +2,7 @@
 #define __EV_UDP_H__
 
 #include "ev/request.h"
+#include "ev/udp_forward.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,15 +18,6 @@ typedef enum ev_udp_membership
     EV_UDP_LEAVE_GROUP  = 0,    /**< Leave multicast group */
     EV_UDP_ENTER_GROUP  = 1,    /**< Join multicast group */
 } ev_udp_membership_t;
-
-struct ev_udp;
-typedef struct ev_udp ev_udp_t;
-
-/**
- * @brief Callback for #ev_udp_t
- * @param[in] udp   UDP handle
- */
-typedef void (*ev_udp_cb)(ev_udp_t* udp);
 
 typedef enum ev_udp_flags
 {
@@ -45,30 +37,20 @@ struct ev_udp
     ev_udp_backend_t        backend;            /**< Platform related implementation */
 };
 
-typedef struct ev_udp_write
+struct ev_udp_write
 {
-    ev_write_t              req;                /**< Base request */
+    ev_write_t              base;               /**< Base request */
+    ev_udp_write_cb         usr_cb;             /**< User callback */
     ev_udp_write_backend_t  backend;            /**< Backend */
-}ev_udp_write_t;
+};
 
-typedef struct ev_udp_read
+struct ev_udp_read
 {
-    ev_read_t               req;                /**< Base request */
+    ev_read_t               base;               /**< Base request */
+    ev_udp_recv_cb          usr_cb;             /**< User callback */
     struct sockaddr_storage addr;               /**< Peer address */
     EV_UDP_READ_BACKEND                         /**< Backend */
-}ev_udp_read_t;
-
-typedef struct ev_udp_status
-{
-    uint64_t                send_bytes;         /**< The number of already send bytes */
-    uint64_t                recv_bytes;         /**< The number of already recv bytes */
-
-    uint64_t                send_queue_bytes;   /**< The number of bytes in send queue */
-    uint64_t                recv_queue_bytes;   /**< The number of bytes in recv queue */
-
-    size_t                  send_queue_reqs;    /**< The number of send requests */
-    size_t                  recv_queue_reqs;    /**< The number of recv requests */
-}ev_udp_status_t;
+};
 
 /**
  * @brief Initialize a UDP handle.
@@ -214,7 +196,7 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl);
  * @return          #ev_errno_t
  */
 int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
-    const struct sockaddr* addr, ev_write_cb cb);
+    const struct sockaddr* addr, ev_udp_write_cb cb);
 
 /**
  * @brief Same as #ev_udp_send(), but won't queue a send request if it can't be
@@ -225,7 +207,7 @@ int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
  * @return          #ev_errno_t
  */
 int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
-    const struct sockaddr* addr, ev_write_cb cb);
+    const struct sockaddr* addr, ev_udp_write_cb cb);
 
 /**
  * @brief Queue a read request.
@@ -236,7 +218,8 @@ int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t n
  * @param[in] cb    Receive callback
  * @return          #ev_errno_t
  */
-int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb);
+int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf,
+    ev_udp_recv_cb cb);
 
 /**
  * @} EV_UDP
