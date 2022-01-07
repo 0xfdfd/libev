@@ -17,9 +17,14 @@ typedef struct ev_loop_unix_ctx
 }ev_loop_unix_ctx_t;
 
 /**
- * @brief Global libev runtime
+ * @brief Global runtime
  */
 extern ev_loop_unix_ctx_t g_ev_loop_unix_ctx;
+
+/**
+ * @brief Initialize windows context.
+ */
+API_LOCAL void ev__init_once_unix(void);
 
 /**
  * @brief Initialize io structure

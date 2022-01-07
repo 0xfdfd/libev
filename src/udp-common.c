@@ -36,3 +36,14 @@ int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
 
     return EV_SUCCESS;
 }
+
+int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
+    const struct sockaddr* addr, ev_udp_write_cb cb)
+{
+    if (ev_list_size(&udp->send_list) != 0)
+    {
+        return EV_EAGAIN;
+    }
+
+    return ev_udp_send(udp, req, bufs, nbuf, addr, cb);
+}

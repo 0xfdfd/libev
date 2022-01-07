@@ -76,8 +76,14 @@ static void _ev_pool_win_handle_req(OVERLAPPED_ENTRY* overlappeds, ULONG count)
     }
 }
 
+static void _ev_check_layout_win(void)
+{
+    ENSURE_LAYOUT(ev_buf_t, size, data, WSABUF, len, buf);
+}
+
 static void _ev_init_once_win(void)
 {
+    _ev_check_layout_win();
     _ev_net_init_win();
     ev__winapi_init();
     _ev_time_init_win();

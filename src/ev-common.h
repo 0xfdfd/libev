@@ -22,7 +22,25 @@ extern "C" {
 
 #define ACCESS_ONCE(TYPE, var)  (*(volatile TYPE*) &(var))
 
-#define ENSURE_LAYOUT(TYPE_A, TYPE_B, FIELD_A_1, FIELD_B_1, FIELD_A_2, FIELD_B_2)   \
+/**
+ * @def EV_COUNT_ARG
+ * @brief Count the number of arguments in macro
+ */
+#ifdef _MSC_VER // Microsoft compilers
+#   define EV_COUNT_ARG(...)  _EV_INTERNAL_EXPAND_ARGS_PRIVATE(_EV_INTERNAL_ARGS_AUGMENTER(__VA_ARGS__))
+/**@cond DOXYGEN_INTERNAL*/
+#   define _EV_INTERNAL_ARGS_AUGMENTER(...) unused, __VA_ARGS__
+#   define _EV_INTERNAL_EXPAND_ARGS_PRIVATE(...) EAF_EXPAND(_EV_INTERNAL_GET_ARG_COUNT_PRIVATE(__VA_ARGS__, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0))
+#   define _EV_INTERNAL_GET_ARG_COUNT_PRIVATE(_1_, _2_, _3_, _4_, _5_, _6_, _7_, _8_, _9_, _10_, _11_, _12_, _13_, _14_, _15_, _16_, count, ...) count
+/**@endcond*/
+#else // Non-Microsoft compilers
+#   define EV_COUNT_ARG(...) _EV_INTERNAL_GET_ARG_COUNT_PRIVATE(0, ## __VA_ARGS__, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
+/**@cond DOXYGEN_INTERNAL*/
+#   define _EV_INTERNAL_GET_ARG_COUNT_PRIVATE(_0, _1_, _2_, _3_, _4_, _5_, _6_, _7_, _8_, _9_, _10_, _11_, _12_, _13_, _14_, _15_, _16_, count, ...) count
+/**@endcond*/
+#endif
+
+#define ENSURE_LAYOUT(TYPE_A, FIELD_A_1, FIELD_A_2, TYPE_B, FIELD_B_1, FIELD_B_2)   \
     assert(sizeof(TYPE_A) == sizeof(TYPE_B));\
     assert(offsetof(TYPE_A, FIELD_A_1) == offsetof(TYPE_B, FIELD_B_1));\
     assert(sizeof(((TYPE_A*)0)->FIELD_A_1) == sizeof(((TYPE_B*)0)->FIELD_B_1));\

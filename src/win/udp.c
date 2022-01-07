@@ -864,17 +864,6 @@ int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
     return ev__translate_sys_error(err);
 }
 
-int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
-    const struct sockaddr* addr, ev_udp_write_cb cb)
-{
-    if (ev_list_size(&udp->send_list) != 0)
-    {
-        return EV_EAGAIN;
-    }
-
-    return ev_udp_send(udp, req, bufs, nbuf, addr, cb);
-}
-
 int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf,
     ev_udp_recv_cb cb)
 {

@@ -137,7 +137,8 @@ static int _ev_tcp_get_connectex(ev_tcp_t* sock, LPFN_CONNECTEX* fn)
     DWORD bytes;
     GUID wsaid = WSAID_CONNECTEX;
 
-    ret = WSAIoctl(sock->sock, SIO_GET_EXTENSION_FUNCTION_POINTER, &wsaid, sizeof(wsaid), fn, sizeof(*fn), &bytes, NULL, NULL);
+    ret = WSAIoctl(sock->sock, SIO_GET_EXTENSION_FUNCTION_POINTER,
+        &wsaid, sizeof(wsaid), fn, sizeof(*fn), &bytes, NULL, NULL);
     return ret == SOCKET_ERROR ? EV_UNKNOWN : EV_SUCCESS;
 }
 
@@ -659,7 +660,6 @@ err:
 int ev_tcp_write(ev_tcp_t* sock, ev_tcp_write_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_tcp_write_cb cb)
 {
     int ret;
-    ENSURE_LAYOUT(ev_buf_t, WSABUF, size, len, data, buf);
 
     req->user_callback = cb;
     if ((ret = ev_write_init(&req->base, bufs, nbuf, _ev_tcp_proxy_write_win)) != EV_SUCCESS)
@@ -702,7 +702,6 @@ int ev_tcp_read(ev_tcp_t* sock, ev_tcp_read_req_t* req,
     ev_buf_t* bufs, size_t nbuf, ev_tcp_read_cb cb)
 {
     int ret;
-    ENSURE_LAYOUT(ev_buf_t, WSABUF, size, len, data, buf);
 
     req->user_callback = cb;
     if ((ret = ev_read_init(&req->base, bufs, nbuf, _ev_tcp_proxy_read_win)) != EV_SUCCESS)

@@ -279,8 +279,14 @@ static void _ev_init_iovmax(void)
 #endif
 }
 
+static void _ev_check_layout_unix(void)
+{
+    ENSURE_LAYOUT(ev_buf_t, data, size, struct iovec, iov_base, iov_len);
+}
+
 static void _ev_init_once_unix(void)
 {
+    _ev_check_layout_unix();
     _ev_init_hwtime();
     _ev_init_iovmax();
 }
@@ -552,14 +558,17 @@ int ev__fcntl_getfd_unix(int fd)
     return flags;
 }
 
-int ev__loop_init_backend(ev_loop_t* loop, ev_loop_on_wakeup_cb wakeup_cb)
+void ev__init_once_unix(void)
 {
-    ENSURE_LAYOUT(ev_buf_t, struct iovec, data, iov_base, size, iov_len);
-
     static ev_once_t once = EV_ONCE_INIT;
     ev_once_execute(&once, _ev_init_once_unix);
+}
 
+int ev__loop_init_backend(ev_loop_t* loop, ev_loop_on_wakeup_cb wakeup_cb)
+{
     int err = EV_SUCCESS;
+    ev__init_once_unix();
+
     ev_map_init(&loop->backend.io, _ev_cmp_io_unix, NULL);
 
     if ((loop->backend.pollfd = epoll_create(256)) == -1)
