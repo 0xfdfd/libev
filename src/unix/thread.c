@@ -2,6 +2,8 @@
 #include "ev-common.h"
 #include <semaphore.h>
 #include <pthread.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 
 typedef struct ev_thread_helper_unix
 {
@@ -119,6 +121,11 @@ ev_os_thread_t ev_thread_self(void)
     return pthread_self();
 }
 
+ev_os_tid_t ev_thread_id(void)
+{
+    return syscall(__NR_gettid);
+}
+
 int ev_thread_equal(const ev_os_thread_t* t1, const ev_os_thread_t* t2)
 {
     return pthread_equal(*t1, *t2);
@@ -138,4 +145,37 @@ int ev_thread_sleep(unsigned req, unsigned* rem)
 
     ret = ret != 0 ? errno : EV_SUCCESS;
     return ev__translate_sys_error(ret);
+}
+
+int ev_tls_init(ev_tls_t* tls)
+{
+    int ret = pthread_key_create(&tls->tls, NULL);
+    if (ret == 0)
+    {
+        return EV_SUCCESS;
+    }
+    return ev__translate_sys_error(ret);
+}
+
+void ev_tls_exit(ev_tls_t* tls)
+{
+    int ret = pthread_key_delete(tls->tls);
+    if (ret != 0)
+    {
+        abort();
+    }
+}
+
+void ev_tls_set(ev_tls_t* tls, void* val)
+{
+    int ret = pthread_setspecific(tls->tls, val);
+    if (ret != 0)
+    {
+        abort();
+    }
+}
+
+void* ev_tls_get(ev_tls_t* tls)
+{
+    return pthread_getspecific(tls->tls);
 }

@@ -17,16 +17,26 @@ typedef struct ev_loop_win_ctx
 
     struct
     {
-        struct sockaddr_in      addr_any_ip4;       /**< 0.0.0.0:0 */
-        struct sockaddr_in6     addr_any_ip6;       /**< :::0 */
-        char                    zero_[1];           /**< A zero length buffer */
+        struct sockaddr_in      addr_any_ip4;               /**< 0.0.0.0:0 */
+        struct sockaddr_in6     addr_any_ip6;               /**< :::0 */
+        char                    zero_[1];                   /**< A zero length buffer */
     }net;
+
+    struct
+    {
+        ev_tls_t                thread_key;                 /**< Thread handle */
+    }thread;
 
     fn_NtQueryInformationFile   NtQueryInformationFile;
     fn_RtlNtStatusToDosError    RtlNtStatusToDosError;
 }ev_loop_win_ctx_t;
 
-extern ev_loop_win_ctx_t        g_ev_loop_win_ctx;  /**< Global runtime for Windows */
+extern ev_loop_win_ctx_t        g_ev_loop_win_ctx;          /**< Global runtime for Windows */
+
+/**
+ * @brief Initialize windows context.
+ */
+API_LOCAL void ev__init_once_win(void);
 
 /**
  * @brief Initialize IOCP request

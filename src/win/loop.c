@@ -1,6 +1,6 @@
 #include <assert.h>
-#include "ev-platform.h"
-#include "loop.h"
+#include "win/loop.h"
+#include "win/thread.h"
 
 ev_loop_win_ctx_t g_ev_loop_win_ctx;
 
@@ -81,6 +81,7 @@ static void _ev_init_once_win(void)
     _ev_net_init_win();
     ev__winapi_init();
     _ev_time_init_win();
+    ev__thread_init_win();
 }
 
 static void _ev_async_on_wakeup_win(ev_iocp_t* iocp, size_t transferred, void* arg)
@@ -280,10 +281,15 @@ void ev__loop_exit_backend(ev_loop_t* loop)
     }
 }
 
-int ev__loop_init_backend(ev_loop_t* loop, ev_loop_on_wakeup_cb wakeup_cb)
+void ev__init_once_win(void)
 {
     static ev_once_t once = EV_ONCE_INIT;
     ev_once_execute(&once, _ev_init_once_win);
+}
+
+int ev__loop_init_backend(ev_loop_t* loop, ev_loop_on_wakeup_cb wakeup_cb)
+{
+    ev__init_once_win();
 
     int ret = _ev_loop_wakeup_init_loop_win(loop, wakeup_cb);
     if (ret != EV_SUCCESS)

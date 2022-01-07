@@ -16,9 +16,11 @@ typedef HANDLE                  ev_os_pipe_t;
 typedef SOCKET                  ev_os_socket_t;
 #define EV_OS_SOCKET_INVALID    INVALID_SOCKET
 
-typedef HANDLE                  ev_os_thread_t;
-#define EV_OS_THREAD_INVALID    NULL
+typedef DWORD                   ev_os_tid_t;
+#define EV_OS_TID_INVALID       ((DWORD)(-1))
 
+typedef HANDLE                  ev_os_thread_t;
+typedef DWORD                   ev_os_tls_t;
 typedef CRITICAL_SECTION        ev_os_mutex_t;
 typedef HANDLE                  ev_os_sem_t;
 

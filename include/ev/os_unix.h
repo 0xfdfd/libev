@@ -17,9 +17,11 @@ typedef int                     ev_os_pipe_t;
 typedef int                     ev_os_socket_t;
 #define EV_OS_SOCKET_INVALID    (-1)
 
-typedef pthread_t               ev_os_thread_t;
-#define EV_OS_THREAD_INVALID    (-1)
+typedef pid_t                   ev_os_tid_t;
+#define EV_OS_TID_INVALID       ((pid_t)(-1))
 
+typedef pthread_t               ev_os_thread_t;
+typedef pthread_key_t           ev_os_tls_t;
 typedef pthread_mutex_t         ev_os_mutex_t;
 typedef sem_t                   ev_os_sem_t;
 
