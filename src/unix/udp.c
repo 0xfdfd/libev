@@ -13,7 +13,7 @@ static void _ev_udp_close_unix(ev_udp_t* udp)
     }
 }
 
-static void _ev_udp_cancel_all_w(ev_udp_t* udp, int err)
+static void _ev_udp_cancel_all_w_unix(ev_udp_t* udp, int err)
 {
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&udp->send_list)) != NULL)
@@ -23,7 +23,7 @@ static void _ev_udp_cancel_all_w(ev_udp_t* udp, int err)
     }
 }
 
-static void _ev_udp_cancel_all_r(ev_udp_t* udp, int err)
+static void _ev_udp_cancel_all_r_unix(ev_udp_t* udp, int err)
 {
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&udp->recv_list)) != NULL)
@@ -36,8 +36,8 @@ static void _ev_udp_cancel_all_r(ev_udp_t* udp, int err)
 static void _ev_udp_abort_unix(ev_udp_t* udp, int err)
 {
     _ev_udp_close_unix(udp);
-    _ev_udp_cancel_all_w(udp, err);
-    _ev_udp_cancel_all_r(udp, err);
+    _ev_udp_cancel_all_w_unix(udp, err);
+    _ev_udp_cancel_all_r_unix(udp, err);
 }
 
 static void _ev_udp_on_close_unix(ev_handle_t* handle)
@@ -606,10 +606,17 @@ static void _ev_udp_proxy_send_unix(ev_write_t* req, size_t size, int stat)
     real_req->usr_cb(real_req, size, stat);
 }
 
-static void _ev_udp_proxy_recv_unix(ev_read_t* req, size_t size, int stat)
+int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
 {
-    ev_udp_read_t* real_req = container_of(req, ev_udp_read_t, base);
-    real_req->usr_cb(real_req, size, stat);
+    (void)req;
+    if (ev_list_size(&udp->recv_list) == 1)
+    {
+        ev__nonblock_io_add(udp->base.data.loop, &udp->backend.io, EPOLLIN);
+    }
+
+    ev__handle_active(&udp->base);
+
+    return EV_SUCCESS;
 }
 
 int ev_udp_init(ev_loop_t* loop, ev_udp_t* udp, int domain)
@@ -979,32 +986,6 @@ int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
     if (ev_list_size(&udp->send_list) == 1)
     {
         ev__nonblock_io_add(udp->base.data.loop, &udp->backend.io, EPOLLOUT);
-    }
-
-    ev__handle_active(&udp->base);
-
-    return EV_SUCCESS;
-}
-
-int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_udp_recv_cb cb)
-{
-    if (udp->sock == EV_OS_SOCKET_INVALID)
-    {
-        return EV_EPIPE;
-    }
-
-    req->usr_cb = cb;
-    int ret = ev_read_init(&req->base, bufs, nbuf, _ev_udp_proxy_recv_unix);
-    if (ret != EV_SUCCESS)
-    {
-        return ret;
-    }
-
-    ev_list_push_back(&udp->recv_list, &req->base.node);
-
-    if (ev_list_size(&udp->recv_list) == 1)
-    {
-        ev__nonblock_io_add(udp->base.data.loop, &udp->backend.io, EPOLLIN);
     }
 
     ev__handle_active(&udp->base);

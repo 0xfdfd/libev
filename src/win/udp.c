@@ -393,10 +393,34 @@ static void _ev_udp_proxy_write_win(ev_write_t* req, size_t size, int stat)
     real_req->usr_cb(real_req, size, stat);
 }
 
-static void _ev_udp_proxy_recv_win(ev_read_t* req, size_t size, int stat)
+int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
 {
-    ev_udp_read_t* real_req = container_of(req, ev_udp_read_t, base);
-    real_req->usr_cb(real_req, size, stat);
+    WSABUF buf;
+    buf.buf = g_ev_loop_win_ctx.net.zero_;
+    buf.len = 0;
+
+    DWORD bytes;
+    DWORD flags = MSG_PEEK;
+
+    req->base.backend.owner = udp;
+    req->base.backend.stat = EV_EINPROGRESS;
+    ev__iocp_init(&req->backend.io, _ev_udp_on_recv_iocp_win, udp);
+
+    int ret = WSARecv(udp->sock, &buf, 1, &bytes, &flags, &req->backend.io.overlapped, NULL);
+    if (ret == 0 && (udp->base.data.flags & EV_UDP_BYPASS_IOCP))
+    {
+        ev__loop_submit_task(udp->base.data.loop, &req->backend.token, _ev_udp_on_recv_bypass_iocp_win);
+        return EV_SUCCESS;
+    }
+
+    int err;
+    if (ret == 0 || (err = WSAGetLastError()) == ERROR_IO_PENDING)
+    {
+        return EV_SUCCESS;
+    }
+
+    _ev_udp_smart_deactive_win(udp);
+    return ev__translate_sys_error(err);
 }
 
 int ev_udp_init(ev_loop_t* loop, ev_udp_t* udp, int domain)
@@ -860,46 +884,6 @@ int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
     }
 
     ev_list_erase(&udp->send_list, &req->base.node);
-    _ev_udp_smart_deactive_win(udp);
-    return ev__translate_sys_error(err);
-}
-
-int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf,
-    ev_udp_recv_cb cb)
-{
-    WSABUF buf;
-    buf.buf = g_ev_loop_win_ctx.net.zero_;
-    buf.len = 0;
-
-    DWORD bytes;
-    DWORD flags = MSG_PEEK;
-
-    req->usr_cb = cb;
-    int ret = ev_read_init(&req->base, bufs, nbuf, _ev_udp_proxy_recv_win);
-    if (ret != EV_SUCCESS)
-    {
-        return ret;
-    }
-
-    req->base.backend.owner = udp;
-    req->base.backend.stat = EV_EINPROGRESS;
-    ev__iocp_init(&req->backend.io, _ev_udp_on_recv_iocp_win, udp);
-    ev_list_push_back(&udp->recv_list, &req->base.node);
-
-    ret = WSARecv(udp->sock, &buf, 1, &bytes, &flags, &req->backend.io.overlapped, NULL);
-    if (ret == 0 && (udp->base.data.flags & EV_UDP_BYPASS_IOCP))
-    {
-        ev__loop_submit_task(udp->base.data.loop, &req->backend.token, _ev_udp_on_recv_bypass_iocp_win);
-        return EV_SUCCESS;
-    }
-
-    int err;
-    if (ret == 0 || (err = WSAGetLastError()) == ERROR_IO_PENDING)
-    {
-        return EV_SUCCESS;
-    }
-
-    ev_list_erase(&udp->recv_list, &req->base.node);
     _ev_udp_smart_deactive_win(udp);
     return ev__translate_sys_error(err);
 }
