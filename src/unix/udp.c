@@ -857,44 +857,7 @@ int ev_udp_set_source_membership(ev_udp_t* udp, const char* multicast_addr,
 
 int ev_udp_set_multicast_loop(ev_udp_t* udp, int on)
 {
-    int level;
-    int option;
-    if (udp->base.data.flags & EV_UDP_IPV6)
-    {
-        level = IPPROTO_IPV6;
-        option = IPV6_MULTICAST_LOOP;
-    }
-    else
-    {
-        level = IPPROTO_IP;
-        option = IP_MULTICAST_LOOP;
-    }
-
-    void* optval = &on;
-    socklen_t optlen = sizeof(on);
-
-    /**
-     * On Solaris and derivatives such as SmartOS, the length of socket options
-     * is sizeof(int) for IPV6_MULTICAST_LOOP and sizeof(char) for
-     * IP_MULTICAST_LOOP, so hardcode the size of the option in the IPv6 case,
-     * and use the general uv__setsockopt_maybe_char call otherwise.
-     */
-#if defined(__sun) || defined(_AIX) || defined(__OpenBSD__) || defined(__MVS__) || defined(__QNX__)
-    char char_val = on;
-    if (!(udp->base.data.flags & EV_UDP_IPV6))
-    {
-        optval = &char_val;
-        optlen = sizeof(char_val);
-    }
-#endif
-
-    if (setsockopt(udp->sock, level, option, optval, optlen) != 0)
-    {
-        int ret = errno;
-        return ev__translate_sys_error(ret);
-    }
-
-    return EV_SUCCESS;
+    return _ev_udp_set_ttl_unix(udp, on, IP_MULTICAST_LOOP, IPV6_MULTICAST_LOOP);
 }
 
 int ev_udp_set_multicast_ttl(ev_udp_t* udp, int ttl)
