@@ -600,18 +600,45 @@ static int _ev_udp_set_ttl_unix(ev_udp_t* udp, int ttl, int option4, int option6
     return EV_SUCCESS;
 }
 
-static void _ev_udp_proxy_send_unix(ev_write_t* req, size_t size, int stat)
-{
-    ev_udp_write_t* real_req = container_of(req, ev_udp_write_t, base);
-    real_req->usr_cb(real_req, size, stat);
-}
-
 int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
 {
     (void)req;
     if (ev_list_size(&udp->recv_list) == 1)
     {
         ev__nonblock_io_add(udp->base.data.loop, &udp->backend.io, EPOLLIN);
+    }
+
+    ev__handle_active(&udp->base);
+
+    return EV_SUCCESS;
+}
+
+int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr, socklen_t addrlen)
+{
+    int ret;
+
+    if (addr == NULL)
+    {
+        req->backend.peer_addr.ss_family = AF_UNSPEC;
+    }
+    else
+    {
+        if ((ret = _ev_udp_maybe_deferred_bind_unix(udp, addr->sa_family, 0)) != EV_SUCCESS)
+        {
+            return ret;
+        }
+
+        if (addrlen == (socklen_t)-1)
+        {
+            return EV_EINVAL;
+        }
+
+        memcpy(&req->backend.peer_addr, addr, addrlen);
+    }
+
+    if (ev_list_size(&udp->send_list) == 1)
+    {
+        ev__nonblock_io_add(udp->base.data.loop, &udp->backend.io, EPOLLOUT);
     }
 
     ev__handle_active(&udp->base);
@@ -949,46 +976,4 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
 #endif
 
     return _ev_udp_set_ttl_unix(udp, ttl, IP_TTL, IPV6_UNICAST_HOPS);
-}
-
-int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
-    const struct sockaddr* addr, ev_udp_write_cb cb)
-{
-    req->usr_cb = cb;
-    int ret = ev_write_init(&req->base, bufs, nbuf, _ev_udp_proxy_send_unix);
-    if (ret != EV_SUCCESS)
-    {
-        return ret;
-    }
-
-    if (addr == NULL)
-    {
-        req->backend.peer_addr.ss_family = AF_UNSPEC;
-    }
-    else
-    {
-        if ((ret = _ev_udp_maybe_deferred_bind_unix(udp, addr->sa_family, 0)) != EV_SUCCESS)
-        {
-            return ret;
-        }
-
-        socklen_t len = ev__get_addr_len(addr);
-        if (len == (socklen_t)-1)
-        {
-            return EV_EINVAL;
-        }
-
-        memcpy(&req->backend.peer_addr, addr, len);
-    }
-
-    ev_list_push_back(&udp->send_list, &req->base.node);
-
-    if (ev_list_size(&udp->send_list) == 1)
-    {
-        ev__nonblock_io_add(udp->base.data.loop, &udp->backend.io, EPOLLOUT);
-    }
-
-    ev__handle_active(&udp->base);
-
-    return EV_SUCCESS;
 }

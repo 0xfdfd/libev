@@ -387,12 +387,6 @@ static void _ev_udp_on_recv_bypass_iocp_win(ev_todo_t* todo)
     _ev_udp_do_recv_win(udp, req);
 }
 
-static void _ev_udp_proxy_write_win(ev_write_t* req, size_t size, int stat)
-{
-    ev_udp_write_t* real_req = container_of(req, ev_udp_write_t, base);
-    real_req->usr_cb(real_req, size, stat);
-}
-
 int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
 {
     WSABUF buf;
@@ -416,6 +410,51 @@ int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
     int err;
     if (ret == 0 || (err = WSAGetLastError()) == ERROR_IO_PENDING)
     {
+        return EV_SUCCESS;
+    }
+
+    _ev_udp_smart_deactive_win(udp);
+    return ev__translate_sys_error(err);
+}
+
+int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr, socklen_t addrlen)
+{
+    int ret, err;
+
+    if (!(udp->base.data.flags & EV_UDP_BOUND))
+    {
+        if (addr == NULL)
+        {
+            return EV_EINVAL;
+        }
+
+        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, addr->sa_family)) != EV_SUCCESS)
+        {
+            return ret;
+        }
+    }
+
+    req->base.backend.owner = udp;
+    req->base.backend.stat = EV_EINPROGRESS;
+    ev__iocp_init(&req->backend.io, _ev_udp_on_send_iocp_win, udp);
+
+    DWORD send_bytes;
+
+    ev__handle_active(&udp->base);
+    ret = WSASendTo(udp->sock, (WSABUF*)req->base.data.bufs, (DWORD)req->base.data.nbuf,
+        &send_bytes, 0, addr, addrlen, &req->backend.io.overlapped, NULL);
+
+    if (ret == 0 && (udp->base.data.flags & EV_UDP_BYPASS_IOCP))
+    {
+        req->base.data.size += req->base.data.capacity;
+        req->base.backend.stat = EV_SUCCESS;
+        ev__loop_submit_task(udp->base.data.loop, &req->backend.token, _ev_udp_on_send_bypass_iocp);
+        return EV_SUCCESS;
+    }
+
+    if (ret == 0 || (err = GetLastError()) == ERROR_IO_PENDING)
+    {
+        req->base.backend.stat = EV_EINPROGRESS;
         return EV_SUCCESS;
     }
 
@@ -830,60 +869,4 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
     }
 
     return EV_SUCCESS;
-}
-
-int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
-    const struct sockaddr* addr, ev_udp_write_cb cb)
-{
-    int ret, err;
-
-    req->usr_cb = cb;
-    if ((ret = ev_write_init(&req->base, bufs, nbuf, _ev_udp_proxy_write_win)) != EV_SUCCESS)
-    {
-        return ret;
-    }
-
-    if (!(udp->base.data.flags & EV_UDP_BOUND))
-    {
-        if (addr == NULL)
-        {
-            return EV_EINVAL;
-        }
-
-        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, addr->sa_family)) != EV_SUCCESS)
-        {
-            return ret;
-        }
-    }
-
-    req->base.backend.owner = udp;
-    req->base.backend.stat = EV_EINPROGRESS;
-    ev__iocp_init(&req->backend.io, _ev_udp_on_send_iocp_win, udp);
-
-    ev_list_push_back(&udp->send_list, &req->base.node);
-
-    DWORD send_bytes;
-    socklen_t addrlen = addr != NULL ? ev__get_addr_len(addr) : 0;
-
-    ev__handle_active(&udp->base);
-    ret = WSASendTo(udp->sock, (WSABUF*)req->base.data.bufs, (DWORD)req->base.data.nbuf,
-        &send_bytes, 0, addr, addrlen, &req->backend.io.overlapped, NULL);
-
-    if (ret == 0 && (udp->base.data.flags & EV_UDP_BYPASS_IOCP))
-    {
-        req->base.data.size += req->base.data.capacity;
-        req->base.backend.stat = EV_SUCCESS;
-        ev__loop_submit_task(udp->base.data.loop, &req->backend.token, _ev_udp_on_send_bypass_iocp);
-        return EV_SUCCESS;
-    }
-
-    if (ret == 0 || (err = GetLastError()) == ERROR_IO_PENDING)
-    {
-        req->base.backend.stat = EV_EINPROGRESS;
-        return EV_SUCCESS;
-    }
-
-    ev_list_erase(&udp->send_list, &req->base.node);
-    _ev_udp_smart_deactive_win(udp);
-    return ev__translate_sys_error(err);
 }

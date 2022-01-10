@@ -7,6 +7,12 @@ static void _ev_udp_proxy_recv(ev_read_t* req, size_t size, int stat)
     real_req->usr_cb(real_req, size, stat);
 }
 
+static void _ev_udp_proxy_send_unix(ev_write_t* req, size_t size, int stat)
+{
+    ev_udp_write_t* real_req = container_of(req, ev_udp_write_t, base);
+    real_req->usr_cb(real_req, size, stat);
+}
+
 int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
     const char* interface_addr, int is_ipv6)
 {
@@ -72,6 +78,28 @@ int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf, 
     if ((ret = ev__udp_recv(udp, req)) != EV_SUCCESS)
     {
         ev_list_erase(&udp->recv_list, &req->base.node);
+        return ret;
+    }
+
+    return EV_SUCCESS;
+}
+
+int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
+    const struct sockaddr* addr, ev_udp_write_cb cb)
+{
+    int ret;
+
+    req->usr_cb = cb;
+    if ((ret = ev_write_init(&req->base, bufs, nbuf, _ev_udp_proxy_send_unix)) != EV_SUCCESS)
+    {
+        return ret;
+    }
+    ev_list_push_back(&udp->send_list, &req->base.node);
+
+    socklen_t addrlen = addr != NULL ? ev__get_addr_len(addr) : 0;
+    if ((ret = ev__udp_send(udp, req, addr, addrlen)) != EV_SUCCESS)
+    {
+        ev_list_erase(&udp->send_list, &req->base.node);
         return ret;
     }
 
