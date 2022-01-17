@@ -27,9 +27,24 @@ typedef enum ev_log_level
     EV_LOG_FATAL,
 }ev_log_level_t;
 
+/**
+ * @brief Log
+ * @param[in] level Log level
+ * @param[in] file  File name
+ * @param[in] func  Functon name
+ * @param[in] line  Line number
+ * @param[in] fmt   Log format
+ * @param[in] ...   Argument list
+ */
 API_LOCAL void ev__log(ev_log_level_t level, const char* file, const char* func,
     int line, const char* fmt, ...);
 
+/**
+ * @brief Dump data as hex
+ * @param[in] data  Buffer to dump
+ * @param[in] size  Data size
+ * @param[in] width Line width
+ */
 API_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width);
 
 #ifdef __cplusplus
