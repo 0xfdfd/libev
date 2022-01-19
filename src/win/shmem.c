@@ -60,6 +60,7 @@ int ev_shm_open(ev_shm_t* shm, const char* key)
         CloseHandle(shm->backend.map_file);
         return ev__translate_sys_error(err);
     }
+    shm->size = info.RegionSize;
 
     return EV_SUCCESS;
 }

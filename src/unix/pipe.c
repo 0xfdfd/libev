@@ -676,9 +676,11 @@ static int _ev_pipe_read_ipc_mode_unix(ev_pipe_t* pipe, ev_pipe_read_req_t* req)
 
 int ev_pipe_make(ev_os_pipe_t fds[2])
 {
+    int err;
     if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0, fds) != 0)
     {
-        return ev__translate_sys_error(errno);
+        err = errno;
+        return ev__translate_sys_error(err);
     }
 
     return EV_SUCCESS;

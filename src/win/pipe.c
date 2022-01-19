@@ -558,7 +558,10 @@ static ev_pipe_read_req_t* _ev_pipe_on_ipc_mode_read_mount_next(ev_pipe_t* pipe)
 
 static int _ev_pipe_on_ipc_mode_read_information(ev_pipe_t* pipe, ev_ipc_frame_hdr_t* hdr)
 {
-    assert(hdr->hdr_exsz == sizeof(ev_pipe_win_ipc_info_t)); (void)hdr;
+    if (hdr->hdr_exsz != sizeof(ev_pipe_win_ipc_info_t))
+    {
+        return EV_EPROTO;
+    }
 
     void* buffer = (uint8_t*)pipe->backend.ipc_mode.rio.buffer + sizeof(ev_ipc_frame_hdr_t);
     size_t buffer_size = sizeof(pipe->backend.ipc_mode.rio.buffer) - sizeof(ev_ipc_frame_hdr_t);
@@ -678,7 +681,7 @@ static int _ev_pipe_on_ipc_mode_read_first(ev_pipe_t* pipe)
 
     if (!ev__ipc_check_frame_hdr(buffer, sizeof(ev_ipc_frame_hdr_t)))
     {
-        return EV_EPIPE;
+        return EV_EPROTO;
     }
 
     ev_ipc_frame_hdr_t* hdr = buffer;

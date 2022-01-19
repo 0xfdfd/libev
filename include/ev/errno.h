@@ -55,6 +55,7 @@ typedef enum ev_errno
     EV_ENOTCONN         = -126,                 /**< The socket is not connected (POSIX.1-2001) */
     EV_ENOTSOCK         = -128,                 /**< Not a socket (POSIX.1-2001) */
     EV_ENOTSUP          = -129,                 /**< Operation not supported (POSIX.1-2001) */
+    EV_EPROTO           = -134,                 /**< Protocol error (POSIX.1-2001) */
     EV_EPROTONOSUPPORT  = -135,                 /**< Protocol not supported (POSIX.1-2001) */
     EV_ETIMEDOUT        = -138,                 /**< Operation timed out (POSIX.1-2001) */
 

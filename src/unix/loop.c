@@ -773,6 +773,7 @@ int ev__translate_sys_error(int syserr)
     case ENOTCONN:          return EV_ENOTCONN;
     case ENOTSOCK:          return EV_ENOTSOCK;
     case ENOTSUP:           return EV_ENOTSUP;
+    case EPROTO:            return EV_EPROTO;
     case EPROTONOSUPPORT:   return EV_EPROTONOSUPPORT;
     case ETIMEDOUT:         return EV_ETIMEDOUT;
 #if EWOULDBLOCK != EAGAIN
