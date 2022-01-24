@@ -9,6 +9,7 @@
 #include "ev/errno.h"
 #include "ev/defs.h"
 #include "ev/list.h"
+#include "ev/queue.h"
 #include "ev/todo.h"
 #include "ev/mutex.h"
 #include "ev/sem.h"
