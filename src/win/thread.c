@@ -89,7 +89,7 @@ err_fin:
     return ev__translate_sys_error(err);
 }
 
-int ev_thread_exit(ev_os_thread_t* thr, unsigned timeout)
+int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
 {
     int ret = WaitForSingleObject(*thr, timeout);
     switch (ret)
@@ -127,14 +127,9 @@ int ev_thread_equal(const ev_os_thread_t* t1, const ev_os_thread_t* t2)
     return *t1 == *t2;
 }
 
-int ev_thread_sleep(unsigned req, unsigned* rem)
+void ev_thread_sleep(unsigned long timeout)
 {
-    Sleep(req);
-    if (rem != NULL)
-    {
-        *rem = 0;
-    }
-    return EV_SUCCESS;
+    Sleep(timeout);
 }
 
 int ev_tls_init(ev_tls_t* tls)

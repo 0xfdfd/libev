@@ -82,7 +82,7 @@ err_fin:
     return ev__translate_sys_error(err);
 }
 
-int ev_thread_exit(ev_os_thread_t* thr, unsigned timeout)
+int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
 {
     int ret = EBUSY;
     if (timeout == EV_THREAD_WAIT_INFINITE)
@@ -104,7 +104,7 @@ int ev_thread_exit(ev_os_thread_t* thr, unsigned timeout)
 
         uint64_t t_diff = t_end - t_now;
         unsigned sleep_time = t_diff < 10 ? t_diff : 10;
-        ev_thread_sleep(sleep_time, NULL);
+        ev_thread_sleep(sleep_time);
     }
 
     /* try last time */
@@ -131,20 +131,22 @@ int ev_thread_equal(const ev_os_thread_t* t1, const ev_os_thread_t* t2)
     return pthread_equal(*t1, *t2);
 }
 
-int ev_thread_sleep(unsigned req, unsigned* rem)
+void ev_thread_sleep(unsigned long timeout)
 {
     struct timespec t_req, t_rem;
-    t_req.tv_sec = req / 1000;
-    t_req.tv_nsec = (req - t_req.tv_sec * 1000) * 1000 * 1000;
+    t_req.tv_sec = timeout / 1000;
+    t_req.tv_nsec = (timeout - t_req.tv_sec * 1000) * 1000 * 1000;
 
-    int ret = nanosleep(&t_req, &t_rem);
-    if (rem != NULL)
+    int ret;
+    while((ret = nanosleep(&t_req, &t_rem)) != 0)
     {
-        *rem = t_rem.tv_sec * 1000 + t_rem.tv_nsec / 1000 / 1000;
+        ret = errno;
+        if (ret != EINTR)
+        {
+            abort();
+        }
+        t_req = t_rem;
     }
-
-    ret = ret != 0 ? errno : EV_SUCCESS;
-    return ev__translate_sys_error(ret);
 }
 
 int ev_tls_init(ev_tls_t* tls)

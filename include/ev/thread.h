@@ -15,7 +15,7 @@ extern "C" {
 /**
  * @brief Infinite timeout.
  */
-#define EV_THREAD_WAIT_INFINITE ((unsigned)-1)
+#define EV_THREAD_WAIT_INFINITE ((unsigned long)-1)
 
 /**
  * @brief Thread callback
@@ -55,7 +55,7 @@ int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt, ev_thread_cb
  * @return              #EV_ETIMEDOUT if timed out before thread terminated,
  *                      #EV_SUCCESS if thread terminated.
  */
-int ev_thread_exit(ev_os_thread_t* thr, unsigned timeout);
+int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout);
 
 /**
  * @brief Get self handle
@@ -79,11 +79,9 @@ int ev_thread_equal(const ev_os_thread_t* t1, const ev_os_thread_t* t2);
 
 /**
  * @brief Suspends the execution of the calling thread.
- * @param[in] req   Timeout in milliseconds.
- * @param[out] rem  The remaining time if interrupted by a signal
- * @return          #ev_errno_t
+ * @param[in] timeout   Timeout in milliseconds.
  */
-int ev_thread_sleep(unsigned req, unsigned* rem);
+void ev_thread_sleep(unsigned long timeout);
 
 /**
  * @brief Initialize thread local storage.

@@ -32,7 +32,7 @@ extern "C" {
             cutest_timestamp_dif(&t_current, &t_start, &t_diff);\
             uint64_t spend_time_ms = t_diff.sec * 1000 + t_diff.usec / 1000;\
             ASSERT_LE_U64(spend_time_ms, timeout_ms);\
-            ev_thread_sleep(1, NULL);\
+            ev_thread_sleep(1);\
         }\
         ASSERT_EQ_D32(ret, 0, "task not finished");\
     }\
