@@ -76,14 +76,15 @@ ev_queue_node_t* ev_queue_pop_back(ev_queue_node_t* head);
  * @param[in] handler   Pointer to list
  * @return              The first node
  */
-ev_queue_node_t* ev_queue_begin(ev_queue_node_t* head);
+ev_queue_node_t* ev_queue_head(ev_queue_node_t* head);
 
 /**
 * @brief Get next node.
+* @param[in] head   Queue head
 * @param[in] node   Current node
 * @return           The next node
 */
-ev_queue_node_t* ev_queue_next(ev_queue_node_t* node);
+ev_queue_node_t* ev_queue_next(ev_queue_node_t* head, ev_queue_node_t* node);
 
 /**
  * @} EV_UTILS_QUEUE

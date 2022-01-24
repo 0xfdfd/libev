@@ -99,7 +99,7 @@ void ev_list_erase(ev_list_t* handler, ev_list_node_t* node)
 {
     handler->size--;
 
-    /* Î¨Ò»½Úµã */
+    /* Only one node */
     if (handler->head == node && handler->tail == node)
     {
         handler->head = NULL;

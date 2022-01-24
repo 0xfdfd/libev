@@ -36,7 +36,7 @@ void ev_queue_erase(ev_queue_node_t* node)
 
 ev_queue_node_t* ev_queue_pop_front(ev_queue_node_t* head)
 {
-    ev_queue_node_t* node = ev_queue_begin(head);
+    ev_queue_node_t* node = ev_queue_head(head);
     if (node == NULL)
     {
         return NULL;
@@ -58,16 +58,16 @@ ev_queue_node_t* ev_queue_pop_back(ev_queue_node_t* head)
     return node;
 }
 
-ev_queue_node_t* ev_queue_begin(ev_queue_node_t* head)
+ev_queue_node_t* ev_queue_head(ev_queue_node_t* head)
 {
     ev_queue_node_t* node = EV_QUEUE_NEXT(head);
     return node == head ? NULL : node;
 }
 
-ev_queue_node_t* ev_queue_next(ev_queue_node_t* node)
+ev_queue_node_t* ev_queue_next(ev_queue_node_t* head, ev_queue_node_t* node)
 {
     ev_queue_node_t* next = EV_QUEUE_NEXT(node);
-    return next == node ? NULL : next;
+    return next == head ? NULL : next;
 }
 
 int ev_queue_empty(const ev_queue_node_t* node)

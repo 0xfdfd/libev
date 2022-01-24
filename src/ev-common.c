@@ -246,7 +246,7 @@ static void _ev_loop_handle_work(ev_loop_t* loop)
 
 static void _ev_loop_on_wakeup(ev_loop_t* loop)
 {
-    if (ev_queue_begin(&loop->wakeup.async.queue) != NULL)
+    if (ev_queue_head(&loop->wakeup.async.queue) != NULL)
     {
         _ev_loop_handle_async(loop);
     }
