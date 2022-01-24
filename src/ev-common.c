@@ -45,7 +45,7 @@ static int _ev_loop_init_weakup(ev_loop_t* loop)
         return ret;
     }
 
-    ev_cycle_list_init(&loop->wakeup.async.queue);
+    ev_queue_init(&loop->wakeup.async.queue);
     ev_list_init(&loop->wakeup.work.queue);
 
     return EV_SUCCESS;
@@ -203,7 +203,7 @@ static void _ev_loop_handle_async(ev_loop_t* loop)
         ev_async_t* async;
         ev_mutex_enter(&loop->wakeup.async.mutex);
         {
-            ev_cycle_list_node_t* it = ev_cycle_list_pop_front(&loop->wakeup.async.queue);
+            ev_queue_node_t* it = ev_queue_pop_front(&loop->wakeup.async.queue);
             async = it != NULL ? container_of(it, ev_async_t, node) : NULL;
         }
         ev_mutex_leave(&loop->wakeup.async.mutex);
@@ -246,7 +246,7 @@ static void _ev_loop_handle_work(ev_loop_t* loop)
 
 static void _ev_loop_on_wakeup(ev_loop_t* loop)
 {
-    if (ev_cycle_list_begin(&loop->wakeup.async.queue) != NULL)
+    if (ev_queue_begin(&loop->wakeup.async.queue) != NULL)
     {
         _ev_loop_handle_async(loop);
     }
@@ -705,7 +705,7 @@ int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
     handle->data.active_cb = cb;
     handle->data.close_cb = NULL;
     handle->data.pending = 0;
-    ev_cycle_list_init(&handle->node);
+    ev_queue_init(&handle->node);
     ev__handle_init(loop, &handle->base, EV_ROLE_EV_ASYNC, _ev_async_on_close);
     ev__handle_active(&handle->base);
 
@@ -721,7 +721,7 @@ void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
 
     ev_mutex_enter(&loop->wakeup.async.mutex);
     {
-        ev_cycle_list_erase(&handle->node);
+        ev_queue_erase(&handle->node);
     }
     ev_mutex_leave(&loop->wakeup.async.mutex);
 
@@ -748,7 +748,7 @@ void ev_async_wakeup(ev_async_t* handle)
 
     ev_mutex_enter(&loop->wakeup.async.mutex);
     {
-        ev_cycle_list_push_back(&loop->wakeup.async.queue, &handle->node);
+        ev_queue_push_back(&loop->wakeup.async.queue, &handle->node);
     }
     ev_mutex_leave(&loop->wakeup.async.mutex);
 

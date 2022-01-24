@@ -14,23 +14,23 @@ static void _ev_threadpool_submit_to_loop(ev_threadpool_work_t* work)
 
 static ev_threadpool_work_t* _ev_threadpool_get_work_locked(ev_threadpool_t* pool)
 {
-    ev_cycle_list_node_t* it;
+    ev_queue_node_t* it;
     ev_mutex_enter(&pool->mutex);
     {
-        it = ev_cycle_list_pop_front(&pool->cpu_queue);
+        it = ev_queue_pop_front(&pool->cpu_queue);
         if (it == NULL)
         {
-            it = ev_cycle_list_pop_front(&pool->io_fast_queue);
+            it = ev_queue_pop_front(&pool->io_fast_queue);
         }
         if (it == NULL)
         {
-            it = ev_cycle_list_pop_front(&pool->io_slow_queue);
+            it = ev_queue_pop_front(&pool->io_slow_queue);
         }
 
         /* For #ev_threadpool_cancel() */
         if (it != NULL)
         {
-            ev_cycle_list_init(it);
+            ev_queue_init(it);
         }
     }
     ev_mutex_leave(&pool->mutex);
@@ -88,9 +88,9 @@ int ev_threadpool_init(ev_threadpool_t* pool, const ev_thread_opt_t* opt,
     int ret;
     size_t i, idx;
 
-    ev_cycle_list_init(&pool->cpu_queue);
-    ev_cycle_list_init(&pool->io_fast_queue);
-    ev_cycle_list_init(&pool->io_slow_queue);
+    ev_queue_init(&pool->cpu_queue);
+    ev_queue_init(&pool->io_fast_queue);
+    ev_queue_init(&pool->io_slow_queue);
     pool->threads = storage;
     pool->thrnum = num;
     pool->looping = 1;
@@ -174,15 +174,15 @@ int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
     switch (type)
     {
     case EV_THREADPOOL_WORK_CPU:
-        ev_cycle_list_push_back(&pool->cpu_queue, &work->node);
+        ev_queue_push_back(&pool->cpu_queue, &work->node);
         break;
 
     case EV_THREADPOOL_WORK_IO_FAST:
-        ev_cycle_list_push_back(&pool->io_fast_queue, &work->node);
+        ev_queue_push_back(&pool->io_fast_queue, &work->node);
         break;
 
     default:
-        ev_cycle_list_push_back(&pool->io_slow_queue, &work->node);
+        ev_queue_push_back(&pool->io_slow_queue, &work->node);
         break;
     }
     ev_mutex_leave(&pool->mutex);
@@ -199,10 +199,10 @@ int ev_threadpool_cancel(ev_threadpool_work_t* work)
     int cancelled;
     ev_mutex_enter(&pool->mutex);
     {
-        cancelled = !ev_cycle_list_empty(&work->node);
+        cancelled = !ev_queue_empty(&work->node);
         if (cancelled)
         {
-            ev_cycle_list_erase(&work->node);
+            ev_queue_erase(&work->node);
         }
     }
     ev_mutex_leave(&pool->mutex);

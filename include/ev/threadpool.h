@@ -66,16 +66,16 @@ struct ev_threadpool
 
     int                             looping;        /**< Looping flag */
 
-    ev_cycle_list_node_t            cpu_queue;      /**< work queue for #EV_THREADPOOL_WORK_CPU */
-    ev_cycle_list_node_t            io_fast_queue;  /**< work queue for #EV_THREADPOOL_WORK_IO_FAST */
-    ev_cycle_list_node_t            io_slow_queue;  /**< work queue for #EV_THREADPOOL_WORK_IO_SLOW */
+    ev_queue_node_t            cpu_queue;      /**< work queue for #EV_THREADPOOL_WORK_CPU */
+    ev_queue_node_t            io_fast_queue;  /**< work queue for #EV_THREADPOOL_WORK_IO_FAST */
+    ev_queue_node_t            io_slow_queue;  /**< work queue for #EV_THREADPOOL_WORK_IO_SLOW */
 };
 
 struct ev_threadpool_work
 {
     ev_handle_t                     base;           /**< Base object */
 
-    ev_cycle_list_node_t            node;           /**< List node */
+    ev_queue_node_t            node;           /**< List node */
     ev_todo_t                       token;          /**< Callback token */
     struct
     {

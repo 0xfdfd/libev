@@ -71,7 +71,7 @@ struct ev_loop
         struct
         {
             ev_mutex_t              mutex;
-            ev_cycle_list_node_t    queue;              /**< Async handle queue. #ev_async_t::backend::node */
+            ev_queue_node_t    queue;              /**< Async handle queue. #ev_async_t::backend::node */
         }async;
 
         struct

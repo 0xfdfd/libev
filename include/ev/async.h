@@ -24,7 +24,7 @@ typedef void(*ev_async_cb)(ev_async_t* async);
 struct ev_async
 {
     ev_handle_t             base;               /**< Base object */
-    ev_cycle_list_node_t    node;               /**< #ev_loop_t::wakeup::async::queue */
+    ev_queue_node_t    node;               /**< #ev_loop_t::wakeup::async::queue */
 
     struct
     {
@@ -38,7 +38,7 @@ struct ev_async
 #define EV_ASYNC_INVALID    \
     {\
         EV_HANDLE_INVALID,\
-        EV_CYCLE_LIST_NODE_INVALID,\
+        EV_QUEUE_NODE_INVALID,\
         {\
             NULL,\
             NULL,\
