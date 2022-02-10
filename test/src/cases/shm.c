@@ -20,8 +20,8 @@ TEST_FIXTURE_SETUP(shm)
     ASSERT_EQ_D32(ev_shm_init(&g_test_3b5b.smt_token_1, key, mem_size), 0);
     ASSERT_EQ_D32(ev_shm_open(&g_test_3b5b.smt_token_2, key), 0);
 
-    ASSERT_EQ_SIZE(g_test_3b5b.smt_token_1.size, mem_size);
-    ASSERT_EQ_SIZE(g_test_3b5b.smt_token_2.size, mem_size);
+    ASSERT_EQ_SIZE(ev_shm_size(&g_test_3b5b.smt_token_1), mem_size);
+    ASSERT_EQ_SIZE(ev_shm_size(&g_test_3b5b.smt_token_2), mem_size);
 }
 
 TEST_FIXTURE_TEAREDOWN(shm)
@@ -32,6 +32,6 @@ TEST_FIXTURE_TEAREDOWN(shm)
 
 TEST_F(shm, memset)
 {
-    memset(g_test_3b5b.smt_token_1.addr, 0, g_test_3b5b.smt_token_1.size);
-    memset(g_test_3b5b.smt_token_2.addr, 0, g_test_3b5b.smt_token_2.size);
+    memset(ev_shm_addr(&g_test_3b5b.smt_token_1), 0, ev_shm_size(&g_test_3b5b.smt_token_1));
+    memset(ev_shm_addr(&g_test_3b5b.smt_token_2), 0, ev_shm_size(&g_test_3b5b.smt_token_2));
 }

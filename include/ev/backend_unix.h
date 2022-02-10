@@ -1,7 +1,9 @@
 #ifndef __EV_BACKEND_UNIX_H__
 #define __EV_BACKEND_UNIX_H__
 
+#include "ev/defs.h"
 #include "ev/os_unix.h"
+#include "ev/todo.h"
 #include "ev/map.h"
 #include "ev/list.h"
 #include "ev/ipc-protocol.h"
@@ -34,7 +36,7 @@ typedef void(*ev_stream_read_cb)(ev_nonblock_stream_t* stream, ev_read_t* req, s
 
 /**
  * @brief Buffer
- * @internal Must share the same layout with struct iovec
+ * @internal Must share the same layout with `struct iovec`.
  */
 struct ev_buf
 {

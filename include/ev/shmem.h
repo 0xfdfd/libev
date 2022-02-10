@@ -47,6 +47,20 @@ int ev_shm_open(ev_shm_t* shm, const char* key);
 void ev_shm_exit(ev_shm_t* shm);
 
 /**
+ * @brief Get shared memory address
+ * @param[in] shm   Shared memory token
+ * @return          Shared memory address
+ */
+void* ev_shm_addr(ev_shm_t* shm);
+
+/**
+ * @brief Get shared memory size
+ * @param[in] shm   Shared memory token
+ * @return          Shared memory size
+ */
+size_t ev_shm_size(ev_shm_t* shm);
+
+/**
  * @} EV_SHARED_MEMORY
  */
 

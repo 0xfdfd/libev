@@ -5,7 +5,9 @@
 #   define _WIN32_WINNT   0x0600
 #endif
 
+#include "ev/defs.h"
 #include "ev/os_win.h"
+#include "ev/todo.h"
 #include "ev/ipc-protocol.h"
 #include "ev/map.h"
 #include "ev/tcp_forward.h"

@@ -17,6 +17,7 @@ add_library(${PROJECT_NAME}
     "src/map_low.c"
     "src/pipe-common.c"
     "src/queue.c"
+    "src/shmem-common.c"
     "src/threadpool.c"
     "src/timer.c"
     "src/udp-common.c")

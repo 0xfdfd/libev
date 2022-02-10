@@ -2,6 +2,7 @@
 #define __EV_TODO_H__
 
 #include "ev/defs.h"
+#include "ev/list.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -67,6 +67,13 @@ int ev_shm_open(ev_shm_t* shm, const char* key)
 
 void ev_shm_exit(ev_shm_t* shm)
 {
-    UnmapViewOfFile(shm->addr);
-    CloseHandle(shm->backend.map_file);
+    if (!UnmapViewOfFile(shm->addr))
+    {
+        BREAK_ABORT();
+    }
+
+    if (!CloseHandle(shm->backend.map_file))
+    {
+        BREAK_ABORT();
+    }
 }
