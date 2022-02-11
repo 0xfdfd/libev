@@ -14,6 +14,7 @@ add_executable(ev_test
     "src/cases/pipe_ipc_mode_dgram.c"
     "src/cases/pipe_ipc_mode_tcp_handle.c"
     "src/cases/queue.c"
+    "src/cases/ringbuffer.c"
     "src/cases/shm.c"
     "src/cases/tcp_connect_non_exist.c"
     "src/cases/tcp_idle_client.c"
