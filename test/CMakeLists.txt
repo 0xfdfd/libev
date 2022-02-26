@@ -64,7 +64,7 @@ if (EV_PGO_EXPORT)
     endif ()
 endif ()
 
-target_link_libraries(ev_test PRIVATE ev cutest)
+target_link_libraries(ev_test PRIVATE libev cutest)
 add_test(ev_test ev_test)
 
 if(EV_HAVE_COVERAGE)
