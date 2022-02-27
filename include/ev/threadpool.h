@@ -7,6 +7,7 @@
 #include "ev/list.h"
 #include "ev/async.h"
 #include "ev/todo.h"
+#include "ev/threadpool_forward.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,26 +18,7 @@ extern "C" {
  * @{
  */
 
-struct ev_threadpool;
-typedef struct ev_threadpool ev_threadpool_t;
-
-struct ev_threadpool_work;
-typedef struct ev_threadpool_work ev_threadpool_work_t;
-
-/**
- * @brief Thread pool task
- * @param[in] work  Work token
- */
-typedef void (*ev_threadpool_work_cb)(ev_threadpool_work_t* work);
-
-/**
- * @brief Work done callback in event loop
- * @param[in] work      Work token
- * @param[in] status    Work status
- */
-typedef void (*ev_threadpool_work_done_cb)(ev_threadpool_work_t* work, int status);
-
-typedef enum ev_threadpool_work_type
+enum ev_threadpool_work_type
 {
     /**
      * @brief CPU work
@@ -52,7 +34,7 @@ typedef enum ev_threadpool_work_type
      * @brief Slow IO. Typically network operations.
      */
     EV_THREADPOOL_WORK_IO_SLOW,
-}ev_threadpool_work_type_t;
+};
 
 struct ev_threadpool
 {
@@ -66,16 +48,16 @@ struct ev_threadpool
 
     int                             looping;        /**< Looping flag */
 
-    ev_queue_node_t            cpu_queue;      /**< work queue for #EV_THREADPOOL_WORK_CPU */
-    ev_queue_node_t            io_fast_queue;  /**< work queue for #EV_THREADPOOL_WORK_IO_FAST */
-    ev_queue_node_t            io_slow_queue;  /**< work queue for #EV_THREADPOOL_WORK_IO_SLOW */
+    ev_queue_node_t                 cpu_queue;      /**< work queue for #EV_THREADPOOL_WORK_CPU */
+    ev_queue_node_t                 io_fast_queue;  /**< work queue for #EV_THREADPOOL_WORK_IO_FAST */
+    ev_queue_node_t                 io_slow_queue;  /**< work queue for #EV_THREADPOOL_WORK_IO_SLOW */
 };
 
 struct ev_threadpool_work
 {
     ev_handle_t                     base;           /**< Base object */
 
-    ev_queue_node_t            node;           /**< List node */
+    ev_queue_node_t                 node;           /**< List node */
     ev_todo_t                       token;          /**< Callback token */
     struct
     {

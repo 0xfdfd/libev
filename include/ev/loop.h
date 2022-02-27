@@ -5,6 +5,7 @@
 #include "ev/list.h"
 #include "ev/mutex.h"
 #include "ev/backend.h"
+#include "ev/threadpool_forward.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,13 +71,13 @@ struct ev_loop
     {
         struct
         {
-            ev_mutex_t              mutex;
-            ev_queue_node_t    queue;              /**< Async handle queue. #ev_async_t::backend::node */
+            ev_mutex_t              mutex;              /**< Mutex */
+            ev_queue_node_t         queue;              /**< Async handle queue. #ev_async_t::backend::node */
         }async;
 
         struct
         {
-            ev_mutex_t              mutex;
+            ev_mutex_t              mutex;              /**< Mutex */
             ev_list_t               queue;              /**< #ev_todo_t::node */
         }work;
     }wakeup;
@@ -86,15 +87,17 @@ struct ev_loop
         unsigned                    b_stop : 1;         /**< Flag: need to stop */
     }mask;
 
+    ev_threadpool_t*                threadpool;         /**< Thread pool */
     ev_loop_plt_t                   backend;            /**< Platform related implementation */
 };
 #define EV_LOOP_INIT        \
     {\
         0,                                      /* .hwtime */\
-        { EV_LIST_INVALID, EV_LIST_INVALID },         /* .handles */\
-        { EV_LIST_INVALID },                       /* .todo */\
+        { EV_LIST_INVALID, EV_LIST_INVALID },   /* .handles */\
+        { EV_LIST_INVALID },                    /* .todo */\
         { EV_MAP_INIT(NULL, NULL) },            /* .timer */\
         { 0 },                                  /* .mask */\
+        NULL,                                   /* .threadpool */\
         EV_LOOP_PLT_INIT,                       /* .backend */\
     }
 
@@ -138,6 +141,17 @@ void ev_loop_stop(ev_loop_t* loop);
  * @see ev_loop_mode_t
  */
 int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode);
+
+/**
+ * @brief Link loop with thread pool.
+ * 
+ * Some actions require a linked thread pool.
+ * 
+ * @param[in] loop      The event loop.
+ * @param[in] pool      The Thread pool.
+ * @return              #ev_errno_t
+ */
+int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool);
 
 /**
  * @} EV_EVENT_LOOP

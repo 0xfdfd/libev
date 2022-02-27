@@ -62,6 +62,7 @@ static int _ev_loop_init(ev_loop_t* loop)
     }
 
     ev_map_init(&loop->timer.heap, _ev_cmp_timer, NULL);
+    loop->threadpool = NULL;
     return EV_SUCCESS;
 }
 
@@ -477,6 +478,17 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
     }
 
     return ret;
+}
+
+int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool)
+{
+    if (loop->threadpool != NULL)
+    {
+        return EV_EBUSY;
+    }
+
+    loop->threadpool = pool;
+    return EV_SUCCESS;
 }
 
 int ev_ipv4_addr(const char* ip, int port, struct sockaddr_in* addr)
