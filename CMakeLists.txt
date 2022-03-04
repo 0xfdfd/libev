@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.2)
-project(libev)
+project(ev)
 
 # add custom cmake files
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/third_party/cmake-modules")
