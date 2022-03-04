@@ -27,7 +27,7 @@ struct ev_read
 };
 #define EV_READ_INVALID     \
     {\
-        EV_LIST_NODE_INVALID,/* .node */\
+        EV_LIST_NODE_INIT,/* .node */\
         {/* .data */\
             NULL,                                                   /* .data.cb */\
             NULL,                                                   /* .data.bufs */\
@@ -58,7 +58,7 @@ struct ev_write
 };
 #define EV_WRITE_INVALID    \
     {\
-        EV_LIST_NODE_INVALID,                                          /* .node */\
+        EV_LIST_NODE_INIT,                                          /* .node */\
         {/* .data */\
             NULL,                                                   /* .data.cb */\
             NULL,                                                   /* .data.bufs */\

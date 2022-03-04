@@ -157,3 +157,27 @@ size_t ev_list_size(const ev_list_t* handler)
 {
     return handler->size;
 }
+
+void ev_list_migrate(ev_list_t* dst, ev_list_t* src)
+{
+    if (src->head == NULL)
+    {
+        return;
+    }
+
+    if (dst->tail == NULL)
+    {
+        *dst = *src;
+    }
+    else
+    {
+        dst->tail->p_after = src->head;
+        dst->tail->p_after->p_before = dst->tail;
+        dst->tail = src->tail;
+        dst->size += src->size;
+    }
+
+    src->head = NULL;
+    src->tail = NULL;
+    src->size = 0;
+}

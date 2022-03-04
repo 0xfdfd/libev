@@ -27,18 +27,18 @@ extern "C" {
  * @brief Static initializer for #ev_list_t
  * @see ev_list_t
  */
-#define EV_LIST_INVALID         { NULL, NULL, 0 }
+#define EV_LIST_INIT            { NULL, NULL, 0 }
 
 /**
  * @brief Static initializer for #ev_list_node_t
  * @see ev_list_node_t
  */
-#define EV_LIST_NODE_INVALID    { NULL, NULL }
+#define EV_LIST_NODE_INIT       { NULL, NULL }
 
 /**
  * @brief The list node.
  * This node must put in your struct.
- * @see EV_LIST_NODE_INVALID
+ * @see EV_LIST_NODE_INIT
  */
 typedef struct ev_list_node
 {
@@ -48,7 +48,7 @@ typedef struct ev_list_node
 
 /**
  * @brief Double Linked List
- * @see EV_LIST_INVALID
+ * @see EV_LIST_INIT
  */
 typedef struct ev_list
 {
@@ -154,6 +154,13 @@ ev_list_node_t* ev_list_next(const ev_list_node_t* node);
  * @return          previous node
  */
 ev_list_node_t* ev_list_prev(const ev_list_node_t* node);
+
+/**
+ * @brief Move all elements from \p src into the end of \p dst.
+ * @param[in] dst   Destination list.
+ * @param[in] src   Source list.
+ */
+void ev_list_migrate(ev_list_t* dst, ev_list_t* src);
 
 /**
  * @} EV_UTILS/EV_UTILS_LIST

@@ -160,8 +160,8 @@ struct ev_nonblock_stream
     {\
         NULL,                           /* .loop */\
         { 0, 0, 0, 0, 0 },              /* .flags */\
-        EV_NONBLOCK_IO_INVALID,            /* .io */\
-        { EV_LIST_INVALID, EV_LIST_INVALID }, /* .pending */\
+        EV_NONBLOCK_IO_INVALID,         /* .io */\
+        { EV_LIST_INIT, EV_LIST_INIT }, /* .pending */\
         { NULL, NULL }                  /* .callbacks */\
     }
 
@@ -192,7 +192,7 @@ typedef struct ev_tcp_backend
         }client;
     }u;
 }ev_tcp_backend_t;
-#define EV_TCP_BACKEND_INIT     { { { EV_NONBLOCK_IO_INVALID, EV_LIST_INVALID } } }
+#define EV_TCP_BACKEND_INIT     { { { EV_NONBLOCK_IO_INVALID, EV_LIST_INIT } } }
 
 typedef struct ev_udp_backend
 {

@@ -28,7 +28,7 @@ struct ev_todo
  */
 #define EV_TODO_INVALID     \
     {\
-        EV_LIST_NODE_INVALID,\
+        EV_LIST_NODE_INIT,\
         NULL,\
     }
 

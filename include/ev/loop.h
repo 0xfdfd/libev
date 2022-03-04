@@ -93,8 +93,8 @@ struct ev_loop
 #define EV_LOOP_INIT        \
     {\
         0,                                      /* .hwtime */\
-        { EV_LIST_INVALID, EV_LIST_INVALID },   /* .handles */\
-        { EV_LIST_INVALID },                    /* .todo */\
+        { EV_LIST_INIT, EV_LIST_INIT },         /* .handles */\
+        { EV_LIST_INIT },                       /* .todo */\
         { EV_MAP_INIT(NULL, NULL) },            /* .timer */\
         { 0 },                                  /* .mask */\
         NULL,                                   /* .threadpool */\

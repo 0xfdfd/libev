@@ -137,7 +137,7 @@ typedef struct ev_tcp_backend
         }stream;
     }u;
 }ev_tcp_backend_t;
-#define EV_TCP_BACKEND_INIT     { 0, EV_IOCP_INIT, EV_TODO_INVALID, { 0 }, { { EV_LIST_INVALID, EV_LIST_INVALID } } }
+#define EV_TCP_BACKEND_INIT     { 0, EV_IOCP_INIT, EV_TODO_INVALID, { 0 }, { { EV_LIST_INIT, EV_LIST_INIT } } }
 
 typedef int (WSAAPI* ev_wsarecvfrom_fn)(
     SOCKET socket,

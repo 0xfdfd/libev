@@ -57,7 +57,7 @@ struct ev_handle
  */
 #define EV_HANDLE_INVALID       \
     {\
-        EV_LIST_NODE_INVALID,   /* .node */\
+        EV_LIST_NODE_INIT,      /* .node */\
         {/* .data */\
             NULL,               /* .loop */\
             EV_ROLE_UNKNOWN,    /* .role */\
