@@ -6,6 +6,7 @@
 #include "ev/mutex.h"
 #include "ev/backend.h"
 #include "ev/threadpool_forward.h"
+#include "ev/loop_forward.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,7 +17,7 @@ extern "C" {
  * @{
  */
 
-typedef enum ev_loop_mode
+enum ev_loop_mode
 {
     /**
      * @brief Runs the event loop until there are no more active and referenced
@@ -45,7 +46,7 @@ typedef enum ev_loop_mode
      * sometime in the future).
      */
     EV_LOOP_MODE_NOWAIT,
-}ev_loop_mode_t;
+};
 
 struct ev_loop
 {
