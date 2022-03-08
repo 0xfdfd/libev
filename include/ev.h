@@ -30,13 +30,6 @@ extern "C" {
 #endif
 
 /**
- * @brief Calculate minimum size of iov storage.
- * @param[in] nbuf  The number of iov buffers
- * @return          The size of iov storage in bytes
- */
-#define EV_IOV_BUF_SIZE(nbuf)   EV_IOV_BUF_SIZE_INTERNAL(nbuf)
-
-/**
  * @defgroup EV_UTILS Miscellaneous utilities
  * @{
  */

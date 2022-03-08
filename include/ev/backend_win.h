@@ -85,12 +85,6 @@ typedef struct ev_read_backend
         { EV_INIT_REPEAT(EV_IOV_MAX, EV_IOCP_INIT), }\
     }
 
-/**
- * @brief Can be used by #ev_write_backend_t and #ev_read_backend_t
- */
-#define EV_IOV_BUF_SIZE_INTERNAL(nbuf)   \
-    ((sizeof(ev_iocp_t) + sizeof(ev_buf_t)) * (nbuf))
-
 typedef struct ev_tcp_backend
 {
     int                         af;                 /**< AF_INET / AF_INET6 */

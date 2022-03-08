@@ -126,12 +126,6 @@ typedef struct ev_udp_write_backend
 
 #define EV_UDP_READ_BACKEND
 
-/**
- * @brief Can be used by #ev_write_backend_t and #ev_read_backend_t
- */
-#define EV_IOV_BUF_SIZE_INTERNAL(nbuf)   \
-    (sizeof(ev_buf_t) * (nbuf))
-
 struct ev_nonblock_stream
 {
     ev_loop_t*                  loop;               /**< Event loop */
