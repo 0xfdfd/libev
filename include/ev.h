@@ -6,6 +6,7 @@
 
 #include <stddef.h>
 #include <stdarg.h>
+#include "ev/allocator.h"
 #include "ev/errno.h"
 #include "ev/defs.h"
 #include "ev/list.h"
@@ -97,74 +98,6 @@ int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t le
  * @param[in] cb        A pointer to an application-defined InitOnceCallback function.
  */
 void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
-
-/**
- * @brief Initialize #ev_write_t
- * @param[out] req  A write request to be initialized
- * @param[in] bufs  Buffer list
- * @param[in] nbuf  Buffer list size, can not larger than #EV_IOV_MAX.
- * @param[in] cb    Write complete callback
- * @return          #ev_errno_t
- */
-int ev_write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb);
-
-/**
- * @brief Initialize #ev_write_t
- * 
- * The extend version of #ev_write_init(). You should use this function if any
- * of following condition is meet:
- *
- *   + The value of \p nbuf is larger than #EV_IOV_MAX.<br>
- *     In this case you should pass \p iov_bufs as storage, the minimum value of
- *     \p iov_size can be calculated by #EV_IOV_BUF_SIZE(). \p take the ownership
- *     of \p iov_bufs, so you cannot modify or free \p iov_bufs until \p callback
- *     is called.
- * 
- * @param[out] req          A write request to be initialized
- * @param[in] callback      Write complete callback
- * @param[in] bufs          Buffer list
- * @param[in] nbuf          Buffer list size
- * @param[in] iov_bufs      The buffer to store IOV request
- * @param[in] iov_size      The size of \p iov_bufs in bytes
- * @return                  #ev_errno_t
- */
-int ev_write_init_ext(ev_write_t* req, ev_write_cb callback,
-    ev_buf_t* bufs, size_t nbuf,
-    void* iov_bufs, size_t iov_size);
-
-/**
- * @brief Initialize #ev_read_t
- * @param[out] req  A read request to be initialized
- * @param[in] bufs  Buffer list
- * @param[in] nbuf  Buffer list size, can not larger than #EV_IOV_MAX.
- * @param[in] cb    Read complete callback
- * @return          #ev_errno_t
- */
-int ev_read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb);
-
-/**
- * @brief Initialize #ev_write_t
- *
- * The extend version of #ev_write_init(). You should use this function if any
- * of following condition is meet:
- *
- *   + The value of \p nbuf is larger than #EV_IOV_MAX.<br>
- *     In this case you should pass \p iov_bufs as storage, the minimum value of
- *     \p iov_size can be calculated by #EV_IOV_BUF_SIZE(). \p take the ownership
- *     of \p iov_bufs, so you cannot modify or free \p iov_bufs until \p callback
- *     is called.
- *
- * @param[out] req          A write request to be initialized
- * @param[in] callback      Write complete callback
- * @param[in] bufs          Buffer list
- * @param[in] nbuf          Buffer list size
- * @param[in] iov_bufs      The buffer to store IOV request
- * @param[in] iov_size      The size of \p iov_bufs in bytes
- * @return                  #ev_errno_t
- */
-int ev_read_init_ext(ev_read_t* req, ev_read_cb callback,
-    ev_buf_t* bufs, size_t nbuf,
-    void* iov_bufs, size_t iov_size);
 
 /**
  * @brief Constructor for #ev_buf_t

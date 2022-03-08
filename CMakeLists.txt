@@ -10,6 +10,7 @@ option(EV_ENABLE_COVERAGE "Enable code coverage. GCC/Clang only" OFF)
 
 # add source files
 add_library(${PROJECT_NAME}
+    "src/allocator.c"
     "src/ev-common.c"
     "src/list.c"
     "src/log.c"

@@ -258,12 +258,15 @@ static void _ev_tcp_setup_stream_once(ev_tcp_t* sock)
 static void _ev_tcp_proxy_write_unix(ev_write_t* req, size_t size, int stat)
 {
     ev_tcp_write_req_t* real_req = container_of(req, ev_tcp_write_req_t, base);
+
+    ev__write_exit(req);
     real_req->user_callback(real_req, size, stat);
 }
 
 static void _ev_tcp_proxy_read_unix(ev_read_t* req, size_t size, int stat)
 {
     ev_tcp_read_req_t* real_req = container_of(req, ev_tcp_read_req_t, base);
+    ev__read_exit(req);
     real_req->user_callback(real_req, size, stat);
 }
 
@@ -365,7 +368,7 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_tcp_accept_cb cb)
 int ev_tcp_write(ev_tcp_t* sock, ev_tcp_write_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_tcp_write_cb cb)
 {
     req->user_callback = cb;
-    int ret = ev_write_init(&req->base, bufs, nbuf, _ev_tcp_proxy_write_unix);
+    int ret = ev__write_init(&req->base, bufs, nbuf, _ev_tcp_proxy_write_unix);
     if (ret != EV_SUCCESS)
     {
         return ret;
@@ -391,7 +394,7 @@ int ev_tcp_read(ev_tcp_t* sock, ev_tcp_read_req_t* req, ev_buf_t* bufs, size_t n
     }
 
     req->user_callback = cb;
-    int ret = ev_read_init(&req->base, bufs, nbuf, _ev_tcp_proxy_read_unix);
+    int ret = ev__read_init(&req->base, bufs, nbuf, _ev_tcp_proxy_read_unix);
     if (ret != EV_SUCCESS)
     {
         return ret;

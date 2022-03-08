@@ -113,7 +113,7 @@ TEST_F(pipe, ipc_mode_tcp_handle)
     buf = ev_buf_make(g_test_19f1.data1, sizeof(g_test_19f1.data1));
     ASSERT_EQ_D32(ev_pipe_write_ex(&g_test_19f1.s_pipe, &g_test_19f1.pipe.w_req,
         &buf, 1, EV_ROLE_EV_TCP, &g_test_19f1.s_tcp, sizeof(g_test_19f1.s_tcp),
-        NULL, 0, _on_pipe_write_done_19f1), 0);
+        _on_pipe_write_done_19f1), 0);
 
     /* recv data and handle */
     buf = ev_buf_make(g_test_19f1.data2, sizeof(g_test_19f1.data2));

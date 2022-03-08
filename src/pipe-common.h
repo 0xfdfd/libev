@@ -49,8 +49,6 @@ API_LOCAL int ev__pipe_write_init(ev_pipe_write_req_t* req, ev_buf_t* bufs, size
  * @param[in] callback      Write complete callback
  * @param[in] bufs          Buffer list
  * @param[in] nbuf          Buffer list size
- * @param[in] iov_bufs      The buffer to store IOV request
- * @param[in] iov_size      The size of \p iov_bufs in bytes
  * @param[in] handle_role   The type of handle to send
  * @param[in] handle_addr   The address of handle to send
  * @param[in] handle_size   The size of handle to send
@@ -58,7 +56,6 @@ API_LOCAL int ev__pipe_write_init(ev_pipe_write_req_t* req, ev_buf_t* bufs, size
  */
 API_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t* req, ev_pipe_write_cb callback,
     ev_buf_t* bufs, size_t nbuf,
-    void* iov_bufs, size_t iov_size,
     ev_role_t handle_role, void* handle_addr, size_t handle_size);
 
 #ifdef __cplusplus

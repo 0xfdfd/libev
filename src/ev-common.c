@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <string.h>
+#include "allocator.h"
 #include "ev-common.h"
 #include "ev.h"
 
@@ -544,48 +545,43 @@ int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t le
     return EV_SUCCESS;
 }
 
-int ev_write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb)
+int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb)
 {
-    return ev_write_init_ext(req, cb, bufs, nbuf, NULL, 0);
-}
-
-int ev_write_init_ext(ev_write_t* req, ev_write_cb callback,
-    ev_buf_t* bufs, size_t nbuf,
-    void* iov_bufs, size_t iov_size)
-{
-    req->data.cb = callback;
+    req->data.cb = cb;
     req->data.nbuf = nbuf;
 
     if (nbuf <= ARRAY_SIZE(req->data.bufsml))
     {
         req->data.bufs = req->data.bufsml;
-        goto fin;
     }
-
-    if (iov_bufs == NULL || iov_size < EV_IOV_BUF_SIZE(nbuf))
+    else
     {
-        return EV_ENOBUFS;
+        req->data.bufs = ev__malloc(sizeof(ev_buf_t) * nbuf);
+        if (req->data.bufs == NULL)
+        {
+            return EV_ENOMEM;
+        }
     }
 
-    req->data.bufs = iov_bufs;
-
-fin:
     memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);
     req->data.size = 0;
     req->data.capacity = _ev_calculate_write_size(req);
     return EV_SUCCESS;
 }
 
-int ev_read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb)
+void ev__write_exit(ev_write_t* req)
 {
-    return ev_read_init_ext(req, cb, bufs, nbuf, NULL, 0);
+    if (req->data.bufs != req->data.bufsml)
+    {
+        ev__free(req->data.bufs);
+    }
+
+    req->data.bufs = NULL;
 }
 
-int ev_read_init_ext(ev_read_t* req, ev_read_cb callback,
-    ev_buf_t* bufs, size_t nbuf,
-    void* iov_bufs, size_t iov_size)
+int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb)
 {
-    req->data.cb = callback;
+    req->data.cb = cb;
     req->data.nbuf = nbuf;
 
     if (nbuf <= ARRAY_SIZE(req->data.bufsml))
@@ -594,23 +590,40 @@ int ev_read_init_ext(ev_read_t* req, ev_read_cb callback,
 #if defined(_MSC_VER)
         req->backend.io = req->backend.iosml;
 #endif
-        goto fin;
     }
-
-    if (iov_bufs == NULL || iov_size < EV_IOV_BUF_SIZE(nbuf))
+    else
     {
-        return EV_ENOBUFS;
-    }
-    req->data.bufs = iov_bufs;
 #if defined(_MSC_VER)
-    req->backend.io = (ev_iocp_t*)(req->data.bufs + nbuf);
+        size_t malloc_size = (sizeof(ev_iocp_t) + sizeof(ev_buf_t)) * nbuf;
+#else
+        size_t malloc_size = sizeof(ev_buf_t) * nbuf;
 #endif
+        req->data.bufs = ev__malloc(malloc_size);
+        if (req->data.bufs == NULL)
+        {
+            return EV_ENOMEM;
+        }
+#if defined(_MSC_VER)
+        req->backend.io = (ev_iocp_t*)(req->data.bufs + nbuf);
+#endif
+    }
 
-fin:
     memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);
     req->data.capacity = _ev_calculate_read_capacity(req);
     req->data.size = 0;
     return EV_SUCCESS;
+}
+
+void ev__read_exit(ev_read_t* req)
+{
+    if (req->data.bufs != req->data.bufsml)
+    {
+        ev__free(req->data.bufs);
+    }
+    req->data.bufs = NULL;
+#if defined(_MSC_VER)
+    req->backend.io = NULL;
+#endif
 }
 
 ev_buf_t ev_buf_make(void* buf, size_t len)

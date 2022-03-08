@@ -741,7 +741,6 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
 int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
     ev_buf_t* bufs, size_t nbuf,
     ev_role_t handle_role, void* handle_addr, size_t handle_size,
-    ev_buf_t* iov_bufs, size_t iov_size,
     ev_pipe_write_cb cb)
 {
     if (pipe->pipfd == EV_OS_PIPE_INVALID)
@@ -749,7 +748,7 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
         return EV_EBADF;
     }
 
-    int ret = ev__pipe_write_init_ext(req, cb, bufs, nbuf, iov_bufs, iov_size,
+    int ret = ev__pipe_write_init_ext(req, cb, bufs, nbuf,
         handle_role, handle_addr, handle_size);
     if (ret != EV_SUCCESS)
     {

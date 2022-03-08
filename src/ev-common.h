@@ -172,6 +172,30 @@ API_LOCAL void ev__loop_submit_task_mt(ev_loop_t* loop, ev_todo_t* token, ev_tod
  */
 API_LOCAL socklen_t ev__get_addr_len(const struct sockaddr* addr);
 
+/**
+ * @brief Initialize #ev_write_t
+ * @param[out] req  A write request to be initialized
+ * @param[in] bufs  Buffer list
+ * @param[in] nbuf  Buffer list size, can not larger than #EV_IOV_MAX.
+ * @param[in] cb    Write complete callback
+ * @return          #ev_errno_t
+ */
+API_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb);
+
+API_LOCAL void ev__write_exit(ev_write_t* req);
+
+/**
+ * @brief Initialize #ev_read_t
+ * @param[out] req  A read request to be initialized
+ * @param[in] bufs  Buffer list
+ * @param[in] nbuf  Buffer list size, can not larger than #EV_IOV_MAX.
+ * @param[in] cb    Read complete callback
+ * @return          #ev_errno_t
+ */
+API_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb);
+
+API_LOCAL void ev__read_exit(ev_read_t* req);
+
 #ifdef __cplusplus
 }
 #endif

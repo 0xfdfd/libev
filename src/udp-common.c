@@ -4,12 +4,14 @@
 static void _ev_udp_proxy_recv(ev_read_t* req, size_t size, int stat)
 {
     ev_udp_read_t* real_req = container_of(req, ev_udp_read_t, base);
+    ev__read_exit(req);
     real_req->usr_cb(real_req, size, stat);
 }
 
 static void _ev_udp_proxy_send_unix(ev_write_t* req, size_t size, int stat)
 {
     ev_udp_write_t* real_req = container_of(req, ev_udp_write_t, base);
+    ev__write_exit(req);
     real_req->usr_cb(real_req, size, stat);
 }
 
@@ -69,7 +71,7 @@ int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf, 
     }
 
     req->usr_cb = cb;
-    if ((ret = ev_read_init(&req->base, bufs, nbuf, _ev_udp_proxy_recv)) != EV_SUCCESS)
+    if ((ret = ev__read_init(&req->base, bufs, nbuf, _ev_udp_proxy_recv)) != EV_SUCCESS)
     {
         return ret;
     }
@@ -90,7 +92,7 @@ int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
     int ret;
 
     req->usr_cb = cb;
-    if ((ret = ev_write_init(&req->base, bufs, nbuf, _ev_udp_proxy_send_unix)) != EV_SUCCESS)
+    if ((ret = ev__write_init(&req->base, bufs, nbuf, _ev_udp_proxy_send_unix)) != EV_SUCCESS)
     {
         return ret;
     }

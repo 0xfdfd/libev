@@ -119,15 +119,12 @@ int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req, ev_buf_t* bufs,
  * @param[in] handle_role   The type of handle to send
  * @param[in] handle_addr   The address of handle to send
  * @param[in] handle_size   The size of handle to send
- * @param[in] iov_bufs      The buffer to store IOV request
- * @param[in] iov_size      The size of \p iov_bufs in bytes
  * @param[in] cb            Write result callback
  * @return                  #ev_errno_t
  */
 int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
     ev_buf_t* bufs, size_t nbuf,
     ev_role_t handle_role, void* handle_addr, size_t handle_size,
-    ev_buf_t* iov_bufs, size_t iov_size,
     ev_pipe_write_cb cb);
 
 /**
