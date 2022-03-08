@@ -8,6 +8,7 @@
 #include "ev/list.h"
 #include "ev/ipc-protocol.h"
 #include "ev/mutex.h"
+#include "ev/loop_forward.h"
 #include "ev/tcp_forward.h"
 #include "ev/pipe_forward.h"
 
