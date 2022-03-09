@@ -39,6 +39,7 @@ if(WIN32)
 else()
     target_sources(${PROJECT_NAME}
         PRIVATE
+            "src/unix/io.c"
             "src/unix/loop.c"
             "src/unix/mutex.c"
             "src/unix/once.c"

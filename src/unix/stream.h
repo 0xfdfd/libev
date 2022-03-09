@@ -1,7 +1,7 @@
 #ifndef __EV_STREAM_UNIX_H__
 #define __EV_STREAM_UNIX_H__
 
-#include "unix/loop.h"
+#include "unix/io.h"
 
 #ifdef __cplusplus
 extern "C" {
