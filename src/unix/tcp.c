@@ -398,7 +398,6 @@ int ev_tcp_read(ev_tcp_t* sock, ev_tcp_read_req_t* req, ev_buf_t* bufs, size_t n
         return ret;
     }
 
-    ev__read_init_unix(&req->base);
     _ev_tcp_setup_stream_once(sock);
 
     ev__handle_active(&sock->base);

@@ -883,11 +883,6 @@ void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned evts)
     }
 }
 
-void ev__read_init_unix(ev_read_t* req)
-{
-    (void)req;
-}
-
 ssize_t ev__write_unix(int fd, void* buffer, size_t size)
 {
     ssize_t send_size;

@@ -804,7 +804,6 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
     }
 
     ev__handle_active(&pipe->base);
-    ev__read_init_unix(&req->base);
 
     if (pipe->base.data.flags & EV_PIPE_IPC)
     {

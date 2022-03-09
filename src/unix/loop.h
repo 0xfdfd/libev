@@ -106,8 +106,6 @@ API_LOCAL void ev__nonblock_stream_abort(ev_nonblock_stream_t* stream);
  */
 API_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned evts);
 
-API_LOCAL void ev__read_init_unix(ev_read_t* req);
-
 /**
  * @brief Add or remove FD_CLOEXEC
  * @param[in] fd    File descriptor
