@@ -102,7 +102,15 @@ static void _ev_wakeup_clear_eventfd(ev_loop_t* loop)
     uint64_t cnt = 0;
 
     /* EFD_SEMAPHORE not set, the counter's value is reset to zero. */
-    (void)read(loop->backend.wakeup.fd, &cnt, sizeof(cnt));
+    ssize_t ret = read(loop->backend.wakeup.fd, &cnt, sizeof(cnt));
+    if (ret >= 0)
+    {
+        return;
+    }
+
+    /* In case of failure, the errcode should be EAGAIN */
+    int errcode = errno;
+    assert(errcode == EAGAIN); (void)errcode;
 }
 
 static void _ev_loop_on_wakeup_unix(ev_nonblock_io_t* io, unsigned evts, void* arg)
