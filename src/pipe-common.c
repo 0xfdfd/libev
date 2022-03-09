@@ -1,13 +1,6 @@
 #include "ev-common.h"
 #include "pipe-common.h"
 
-static void _ev_pipe_on_read(ev_read_t* req, size_t size, int stat)
-{
-    ev_pipe_read_req_t* real_req = container_of(req, ev_pipe_read_req_t, base);
-    ev__read_exit(req);
-    real_req->ucb(real_req, size, stat);
-}
-
 int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req, ev_buf_t* bufs,
     size_t nbuf, ev_pipe_write_cb cb)
 {
@@ -17,7 +10,7 @@ int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req, ev_buf_t* bufs,
 int ev__pipe_read_init(ev_pipe_read_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_pipe_read_cb cb)
 {
     int ret;
-    if ((ret = ev__read_init(&req->base, bufs, nbuf, _ev_pipe_on_read)) != EV_SUCCESS)
+    if ((ret = ev__read_init(&req->base, bufs, nbuf)) != EV_SUCCESS)
     {
         return ret;
     }

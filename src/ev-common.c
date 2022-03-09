@@ -579,9 +579,8 @@ void ev__write_exit(ev_write_t* req)
     req->data.nbuf = 0;
 }
 
-int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb)
+int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf)
 {
-    req->data.cb = cb;
     req->data.nbuf = nbuf;
 
     if (nbuf <= ARRAY_SIZE(req->data.bufsml))

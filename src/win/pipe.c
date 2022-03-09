@@ -27,12 +27,18 @@ static HANDLE _ev_pipe_make_c(const char* name)
     return pip_w;
 }
 
+static void _ev_pipe_r_user_callback_win(ev_pipe_read_req_t* req, size_t size, int stat)
+{
+    ev__read_exit(&req->base);
+    req->ucb(req, size, stat);
+}
+
 static void _ev_pipe_cancel_all_r_ipc_mode(ev_pipe_t* pipe, int stat)
 {
     ev_pipe_read_req_t* req;
     if ((req = pipe->backend.ipc_mode.rio.reading.reading) != NULL)
     {
-        req->base.data.cb(&req->base, req->base.data.size, stat);
+        _ev_pipe_r_user_callback_win(req, req->base.data.size, stat);
         pipe->backend.ipc_mode.rio.reading.reading = NULL;
     }
     pipe->backend.ipc_mode.rio.reading.buf_idx = 0;
@@ -42,7 +48,7 @@ static void _ev_pipe_cancel_all_r_ipc_mode(ev_pipe_t* pipe, int stat)
     while ((it = ev_list_pop_front(&pipe->backend.ipc_mode.rio.pending)) != NULL)
     {
         req = container_of(it, ev_pipe_read_req_t, base.node);
-        req->base.data.cb(&req->base, req->base.data.size, stat);
+        _ev_pipe_r_user_callback_win(req, req->base.data.size, stat);
     }
 }
 
@@ -51,7 +57,7 @@ static void _ev_pipe_cancel_all_r_data_mode(ev_pipe_t* pipe, int stat)
     ev_pipe_read_req_t* req;
     if ((req = pipe->backend.data_mode.rio.r_doing) != NULL)
     {
-        req->base.data.cb(&req->base, req->base.data.size, stat);
+        _ev_pipe_r_user_callback_win(req, req->base.data.size, stat);
         pipe->backend.data_mode.rio.r_doing = NULL;
     }
 
@@ -59,7 +65,7 @@ static void _ev_pipe_cancel_all_r_data_mode(ev_pipe_t* pipe, int stat)
     while ((it = ev_list_pop_front(&pipe->backend.data_mode.rio.r_pending)) != NULL)
     {
         req = container_of(it, ev_pipe_read_req_t, base.node);
-        req->base.data.cb(&req->base, req->base.data.size, stat);
+        _ev_pipe_r_user_callback_win(req, req->base.data.size, stat);
     }
 }
 
@@ -75,7 +81,7 @@ static void _ev_pipe_cancel_all_r(ev_pipe_t* pipe, int stat)
     }
 }
 
-static void _ev_pipe_user_callback(ev_pipe_write_req_t* req, size_t size, int stat)
+static void _ev_pipe_w_user_callback_win(ev_pipe_write_req_t* req, size_t size, int stat)
 {
     ev__write_exit(&req->base);
     req->ucb(req, size, stat);
@@ -86,7 +92,7 @@ static void _ev_pipe_cancel_all_w_data_mode(ev_pipe_t* pipe, int stat)
     ev_pipe_write_req_t* req;
     if ((req = pipe->backend.data_mode.wio.w_half) != NULL)
     {
-        _ev_pipe_user_callback(req, req->base.data.size, stat);
+        _ev_pipe_w_user_callback_win(req, req->base.data.size, stat);
         pipe->backend.data_mode.wio.w_half = NULL;
     }
     pipe->backend.data_mode.wio.w_half_idx = 0;
@@ -95,7 +101,7 @@ static void _ev_pipe_cancel_all_w_data_mode(ev_pipe_t* pipe, int stat)
     while ((it = ev_list_pop_front(&pipe->backend.data_mode.wio.w_pending)) != NULL)
     {
         req = container_of(it, ev_pipe_write_req_t, base.node);
-        _ev_pipe_user_callback(req, req->base.data.size, stat);
+        _ev_pipe_w_user_callback_win(req, req->base.data.size, stat);
     }
 }
 
@@ -104,7 +110,7 @@ static void _ev_pipe_cancel_all_w_ipc_mode(ev_pipe_t* pipe, int stat)
     ev_pipe_write_req_t* req;
     if ((req = pipe->backend.ipc_mode.wio.sending.w_req) != NULL)
     {
-        _ev_pipe_user_callback(req, req->base.data.size, stat);
+        _ev_pipe_w_user_callback_win(req, req->base.data.size, stat);
         pipe->backend.ipc_mode.wio.sending.w_req = NULL;
     }
     pipe->backend.ipc_mode.wio.sending.donecnt = 0;
@@ -113,7 +119,7 @@ static void _ev_pipe_cancel_all_w_ipc_mode(ev_pipe_t* pipe, int stat)
     while ((it = ev_list_pop_front(&pipe->backend.ipc_mode.wio.pending)) != NULL)
     {
         req = container_of(it, ev_pipe_write_req_t, base.node);
-        _ev_pipe_user_callback(req, req->base.data.size, stat);
+        _ev_pipe_w_user_callback_win(req, req->base.data.size, stat);
     }
 }
 
@@ -274,7 +280,7 @@ static void _ev_pipe_data_mode_callback_and_mount_next_win(ev_pipe_t* pipe, ev_p
         pipe->backend.data_mode.rio.r_doing = container_of(it, ev_pipe_read_req_t, base.node);
     }
 
-    req->base.data.cb(&req->base, req->base.data.size, EV_SUCCESS);
+    _ev_pipe_r_user_callback_win(req, req->base.data.size, EV_SUCCESS);
 }
 
 static int _ev_pipe_on_data_mode_read_recv(ev_pipe_t* pipe)
@@ -486,7 +492,7 @@ static void _ev_pipe_on_data_mode_write(ev_iocp_t* iocp, size_t transferred, voi
         int stat = NT_SUCCESS(iocp->overlapped.Internal) ? EV_SUCCESS :
             ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal));
         ev_list_erase(&pipe->backend.data_mode.wio.w_doing, &curr_req->base.node);
-        _ev_pipe_user_callback(curr_req, curr_req->base.data.size, stat);
+        _ev_pipe_w_user_callback_win(curr_req, curr_req->base.data.size, stat);
     }
 
     /* If submit error, abort any pending actions */
@@ -646,7 +652,7 @@ static int _ev_pipe_on_ipc_mode_read_remain(ev_pipe_t* pipe)
         if (pipe->backend.ipc_mode.rio.remain_size == 0)
         {
             pipe->backend.ipc_mode.rio.reading.reading = NULL;
-            req->base.data.cb(&req->base, req->base.data.size, EV_SUCCESS);
+            _ev_pipe_r_user_callback_win(req, req->base.data.size, EV_SUCCESS);
             continue;
         }
 
@@ -666,7 +672,7 @@ static int _ev_pipe_on_ipc_mode_read_remain(ev_pipe_t* pipe)
 
         /* Buffer is full, need to notify user */
         pipe->backend.ipc_mode.rio.reading.reading = NULL;
-        req->base.data.cb(&req->base, req->base.data.size, EV_SUCCESS);
+        _ev_pipe_r_user_callback_win(req, req->base.data.size, EV_SUCCESS);
     }
 
     return EV_SUCCESS;
@@ -890,7 +896,7 @@ finish_request:
     pipe->backend.ipc_mode.wio.sending.w_req = NULL;
     pipe->backend.ipc_mode.wio.sending.donecnt = 0;
 
-    _ev_pipe_user_callback(req, req->base.data.size, EV_SUCCESS);
+    _ev_pipe_w_user_callback_win(req, req->base.data.size, EV_SUCCESS);
 
     if ((ret = _ev_pipe_ipc_mode_send_next(pipe)) != EV_SUCCESS)
     {

@@ -428,13 +428,6 @@ static void _ev_tcp_on_iocp(ev_iocp_t* req, size_t transferred, void* arg)
     }
 }
 
-static void _ev_tcp_proxy_read_win(ev_read_t* req, size_t size, int stat)
-{
-    ev_tcp_read_req_t* real_req = container_of(req, ev_tcp_read_req_t, base);
-    ev__read_exit(req);
-    real_req->user_callback(real_req, size, stat);
-}
-
 static int _ev_tcp_init_write_req_win(ev_tcp_t* sock, ev_tcp_write_req_t* req,
     ev_buf_t* bufs, size_t nbuf, ev_tcp_write_cb cb)
 {
@@ -457,7 +450,7 @@ static int _ev_tcp_init_read_req_win(ev_tcp_t* sock, ev_tcp_read_req_t* req,
 {
     int ret;
 
-    if ((ret = ev__read_init(&req->base, bufs, nbuf, _ev_tcp_proxy_read_win)) != EV_SUCCESS)
+    if ((ret = ev__read_init(&req->base, bufs, nbuf)) != EV_SUCCESS)
     {
         return ret;
     }

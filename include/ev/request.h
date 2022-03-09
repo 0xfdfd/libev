@@ -16,7 +16,6 @@ struct ev_read
     ev_list_node_t          node;               /**< Intrusive node */
     struct
     {
-        ev_read_cb          cb;                 /**< Read complete callback */
         ev_buf_t*           bufs;               /**< Buffer list */
         size_t              nbuf;               /**< Buffer list count */
         size_t              capacity;           /**< Total bytes of buffer */
@@ -28,7 +27,6 @@ struct ev_read
     {\
         EV_LIST_NODE_INIT,/* .node */\
         {/* .data */\
-            NULL,                                                   /* .data.cb */\
             NULL,                                                   /* .data.bufs */\
             0,                                                      /* .data.nbuf */\
             0,                                                      /* .data.capacity */\

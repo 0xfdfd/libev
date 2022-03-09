@@ -111,9 +111,15 @@ fin:
     sock->backend.u.client.cb(sock, sock->backend.u.client.stat);
 }
 
-static void _ev_tcp_user_callback_unix(ev_tcp_write_req_t* req, size_t size, int stat)
+static void _ev_tcp_w_user_callback_unix(ev_tcp_write_req_t* req, size_t size, int stat)
 {
     ev__write_exit(&req->base);
+    req->user_callback(req, size, stat);
+}
+
+static void _ev_tcp_r_user_callback_unix(ev_tcp_read_req_t* req, size_t size, int stat)
+{
+    ev__read_exit(&req->base);
     req->user_callback(req, size, stat);
 }
 
@@ -123,7 +129,7 @@ static void _on_tcp_write_done(ev_nonblock_stream_t* stream, ev_write_t* req, si
     _ev_tcp_smart_deactive(sock);
 
     ev_tcp_write_req_t* w_req = container_of(req, ev_tcp_write_req_t, base);
-    _ev_tcp_user_callback_unix(w_req, size, stat);
+    _ev_tcp_w_user_callback_unix(w_req, size, stat);
 }
 
 static void _on_tcp_read_done(ev_nonblock_stream_t* stream, ev_read_t* req, size_t size, int stat)
@@ -131,7 +137,8 @@ static void _on_tcp_read_done(ev_nonblock_stream_t* stream, ev_read_t* req, size
     ev_tcp_t* sock = container_of(stream, ev_tcp_t, backend.u.stream);
     _ev_tcp_smart_deactive(sock);
 
-    req->data.cb(req, size, stat);
+    ev_tcp_read_req_t* r_req = container_of(req, ev_tcp_read_req_t, base);
+    _ev_tcp_r_user_callback_unix(r_req, size, stat);
 }
 
 static void _ev_tcp_on_accept(ev_tcp_t* acpt)
@@ -262,13 +269,6 @@ static void _ev_tcp_setup_stream_once(ev_tcp_t* sock)
     sock->base.data.flags |= EV_TCP_STREAMING;
 }
 
-static void _ev_tcp_proxy_read_unix(ev_read_t* req, size_t size, int stat)
-{
-    ev_tcp_read_req_t* real_req = container_of(req, ev_tcp_read_req_t, base);
-    ev__read_exit(req);
-    real_req->user_callback(real_req, size, stat);
-}
-
 int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* sock)
 {
     ev__handle_init(loop, &sock->base, EV_ROLE_EV_TCP, _ev_tcp_on_close);
@@ -392,7 +392,7 @@ int ev_tcp_read(ev_tcp_t* sock, ev_tcp_read_req_t* req, ev_buf_t* bufs, size_t n
     }
 
     req->user_callback = cb;
-    int ret = ev__read_init(&req->base, bufs, nbuf, _ev_tcp_proxy_read_unix);
+    int ret = ev__read_init(&req->base, bufs, nbuf);
     if (ret != EV_SUCCESS)
     {
         return ret;

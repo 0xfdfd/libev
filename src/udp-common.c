@@ -1,13 +1,6 @@
 #include "udp-common.h"
 #include <string.h>
 
-static void _ev_udp_proxy_recv(ev_read_t* req, size_t size, int stat)
-{
-    ev_udp_read_t* real_req = container_of(req, ev_udp_read_t, base);
-    ev__read_exit(req);
-    real_req->usr_cb(real_req, size, stat);
-}
-
 int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
     const char* interface_addr, int is_ipv6)
 {
@@ -64,7 +57,7 @@ int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf, 
     }
 
     req->usr_cb = cb;
-    if ((ret = ev__read_init(&req->base, bufs, nbuf, _ev_udp_proxy_recv)) != EV_SUCCESS)
+    if ((ret = ev__read_init(&req->base, bufs, nbuf)) != EV_SUCCESS)
     {
         return ret;
     }
