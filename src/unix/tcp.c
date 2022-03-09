@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include "unix/loop.h"
+#include "unix/stream.h"
 #include "unix/tcp.h"
 
 static void _ev_tcp_close_fd(ev_tcp_t* sock)

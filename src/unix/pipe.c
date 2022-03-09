@@ -4,6 +4,7 @@
 #include <string.h>
 #include "unix/loop.h"
 #include "unix/tcp.h"
+#include "unix/stream.h"
 #include "pipe-common.h"
 #include "log.h"
 

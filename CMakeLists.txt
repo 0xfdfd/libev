@@ -45,6 +45,7 @@ else()
             "src/unix/pipe.c"
             "src/unix/sem.c"
             "src/unix/shmem.c"
+            "src/unix/stream.c"
             "src/unix/tcp.c"
             "src/unix/thread.c"
             "src/unix/udp.c")
