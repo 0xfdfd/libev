@@ -101,22 +101,8 @@ static void _ev_wakeup_clear_eventfd(ev_loop_t* loop)
 {
     uint64_t cnt = 0;
 
-    for (;;)
-    {
-        ssize_t read_size = read(loop->backend.wakeup.fd, &cnt, sizeof(cnt));
-        if (read_size >= 0)
-        {
-            continue;
-        }
-
-        int err = errno;
-        if (err == EINTR)
-        {
-            continue;
-        }
-
-        break;
-    }
+    /* EFD_SEMAPHORE not set, the counter's value is reset to zero. */
+    (void)read(loop->backend.wakeup.fd, &cnt, sizeof(cnt));
 }
 
 static void _ev_loop_on_wakeup_unix(ev_nonblock_io_t* io, unsigned evts, void* arg)
