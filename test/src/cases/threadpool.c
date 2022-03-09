@@ -51,12 +51,15 @@ static void _test_threadpool_on_work_done(ev_threadpool_work_t* work, int status
 
 TEST_F(threadpool, normal)
 {
-    int submit_ret = ev_threadpool_submit(&g_test_757a.pool, &g_test_757a.loop,
-        &g_test_757a.token, EV_THREADPOOL_WORK_CPU,
-        _test_threadpool_on_work, _test_threadpool_on_work_done);
-    ASSERT_EQ_D32(submit_ret, 0);
-
     ASSERT_EQ_D32(g_test_757a.cnt_work, 0);
+
+    {
+        int submit_ret = ev_threadpool_submit(&g_test_757a.pool, &g_test_757a.loop,
+            &g_test_757a.token, EV_THREADPOOL_WORK_CPU,
+            _test_threadpool_on_work, _test_threadpool_on_work_done);
+        ASSERT_EQ_D32(submit_ret, 0);
+    }
+
     ASSERT_EQ_D32(g_test_757a.cnt_done, 0);
     ASSERT_EQ_D32(ev_loop_run(&g_test_757a.loop, EV_LOOP_MODE_DEFAULT), 0);
     ASSERT_EQ_D32(g_test_757a.cnt_work, 1);
