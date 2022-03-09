@@ -4,9 +4,8 @@ name: doxygen
 
 # Controls when the action will run. 
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
+  # Triggers the workflow on push or pull request events
   push:
-    branches: [ master ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -25,8 +24,15 @@ jobs:
 
       # Build documents
       - name: Doxygen Action
-        uses: mattnotmitt/doxygen-action@v1.3.1
+        uses: mattnotmitt/doxygen-action@v1.9.2
+        with:
+          doxyfile-path: 'docs/Doxyfile'
 
+  deploy:
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: success() && github.ref == 'refs/heads/master'
+    steps:
       # Deploy to github gh-pages
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
