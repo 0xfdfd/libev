@@ -39,6 +39,7 @@ struct ev_tcp_read_req
 {
     ev_read_t               base;               /**< Base object */
     ev_tcp_read_cb          user_callback;      /**< User callback */
+    ev_tcp_read_backend_t   backend;            /**< Backend */
 };
 
 struct ev_tcp_write_req

@@ -49,7 +49,7 @@ struct ev_udp_read
     ev_read_t               base;               /**< Base request */
     ev_udp_recv_cb          usr_cb;             /**< User callback */
     struct sockaddr_storage addr;               /**< Peer address */
-    EV_UDP_READ_BACKEND                         /**< Backend */
+    ev_udp_read_backend_t   backend;            /**< Backend */
 };
 
 /**

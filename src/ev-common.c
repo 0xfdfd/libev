@@ -587,25 +587,14 @@ int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb)
     if (nbuf <= ARRAY_SIZE(req->data.bufsml))
     {
         req->data.bufs = req->data.bufsml;
-#if defined(_MSC_VER)
-        req->backend.io = req->backend.iosml;
-#endif
     }
     else
     {
-#if defined(_MSC_VER)
-        size_t malloc_size = (sizeof(ev_iocp_t) + sizeof(ev_buf_t)) * nbuf;
-#else
-        size_t malloc_size = sizeof(ev_buf_t) * nbuf;
-#endif
-        req->data.bufs = ev__malloc(malloc_size);
+        req->data.bufs = ev__malloc(sizeof(ev_buf_t) * nbuf);
         if (req->data.bufs == NULL)
         {
             return EV_ENOMEM;
         }
-#if defined(_MSC_VER)
-        req->backend.io = (ev_iocp_t*)(req->data.bufs + nbuf);
-#endif
     }
 
     memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);
@@ -621,9 +610,7 @@ void ev__read_exit(ev_read_t* req)
         ev__free(req->data.bufs);
     }
     req->data.bufs = NULL;
-#if defined(_MSC_VER)
-    req->backend.io = NULL;
-#endif
+    req->data.nbuf = 0;
 }
 
 ev_buf_t ev_buf_make(void* buf, size_t len)

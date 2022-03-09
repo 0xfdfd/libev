@@ -434,19 +434,6 @@ int ev__ntstatus_to_winsock_error(NTSTATUS status)
     }
 }
 
-void ev__read_init_win(ev_read_t* req, void* owner, int stat,
-    ev_iocp_cb iocp_cb, void* iocp_arg)
-{
-    req->backend.owner = owner;
-    req->backend.stat = stat;
-
-    size_t i;
-    for (i = 0; i < req->data.nbuf; i++)
-    {
-        ev__iocp_init(&req->backend.io[i], iocp_cb, iocp_arg);
-    }
-}
-
 void ev__loop_wakeup(ev_loop_t* loop)
 {
     if (!PostQueuedCompletionStatus(loop->backend.iocp, 0, 0, &loop->backend.wakeup.io.overlapped))

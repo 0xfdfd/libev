@@ -113,17 +113,25 @@ typedef struct ev_read_backend
 }ev_read_backend_t;
 #define EV_READ_BACKEND_INIT    { }
 
+typedef struct ev_tcp_read_backend
+{
+    int                         _useless[0];        /**< Useless field */
+}ev_tcp_read_backend_t;
+
 typedef struct ev_tcp_write_backend
 {
-    int                         _useless[0];        /**< Write buffer index */
+    int                         _useless[0];        /**< Useless field */
 }ev_tcp_write_backend_t;
+
+typedef struct ev_udp_read_backend
+{
+    int                         _useless[0];        /**< Useless field */
+}ev_udp_read_backend_t;
 
 typedef struct ev_udp_write_backend
 {
     struct sockaddr_storage     peer_addr;          /**< Peer address */
 }ev_udp_write_backend_t;
-
-#define EV_UDP_READ_BACKEND
 
 struct ev_nonblock_stream
 {
@@ -192,6 +200,11 @@ typedef struct ev_udp_backend
 {
     ev_nonblock_io_t            io;                 /**< Backend IO */
 }ev_udp_backend_t;
+
+typedef struct ev_pipe_read_backend
+{
+    int                                 _useless[0];        /**< Useless field */
+}ev_pipe_read_backend_t;
 
 typedef struct ev_pipe_write_backend
 {

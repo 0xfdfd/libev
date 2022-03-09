@@ -1292,6 +1292,22 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
     return ret;
 }
 
+static int _ev_pipe_init_read_token_win(ev_pipe_t* pipe, ev_pipe_read_req_t* req,
+    ev_buf_t* bufs, size_t nbuf, ev_pipe_read_cb cb)
+{
+    int ret;
+
+    if ((ret = ev__pipe_read_init(req, bufs, nbuf, cb)) != EV_SUCCESS)
+    {
+        return ret;
+    }
+
+    req->backend.owner = pipe;
+    req->backend.stat = EV_EINPROGRESS;
+
+    return EV_SUCCESS;
+}
+
 int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
     size_t nbuf, ev_pipe_read_cb cb)
 {
@@ -1300,13 +1316,11 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
         return EV_EBADF;
     }
 
-    int ret = ev__pipe_read_init(req, bufs, nbuf, cb);
+    int ret = _ev_pipe_init_read_token_win(pipe, req, bufs, nbuf, cb);
     if (ret != EV_SUCCESS)
     {
         return ret;
     }
-
-    ev__read_init_win(&req->base, pipe, EV_EINPROGRESS, NULL, NULL);
 
     if (pipe->base.data.flags & EV_PIPE_IPC)
     {

@@ -23,7 +23,6 @@ struct ev_read
         size_t              size;               /**< Data size */
         ev_buf_t            bufsml[EV_IOV_MAX]; /**< Bound buffer list */
     }data;
-    ev_read_backend_t       backend;            /**< Back-end */
 };
 #define EV_READ_INVALID     \
     {\
@@ -36,7 +35,6 @@ struct ev_read
             0,                                                      /* .data.size */\
             { EV_INIT_REPEAT(EV_IOV_MAX, EV_BUF_INIT(NULL, 0)), },  /* .data.bufsml */\
         },\
-        EV_READ_BACKEND_INIT\
     }
 
 /**

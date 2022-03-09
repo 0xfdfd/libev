@@ -319,13 +319,24 @@ static void _ev_udp_smart_deactive_win(ev_udp_t* udp)
     }
 }
 
+static void _ev_udp_w_user_callback_win(ev_udp_write_t* req, size_t size, int stat)
+{
+    ev__write_exit(&req->base);
+    req->usr_cb(req, size, stat);
+}
+
+static void _ev_udp_r_user_callback_win(ev_udp_read_t* req, size_t size, int stat)
+{
+    ev__read_exit(&req->base);
+    req->usr_cb(req, size, stat);
+}
+
 static void _ev_udp_on_send_complete_win(ev_udp_t* udp, ev_udp_write_t* req)
 {
     ev_list_erase(&udp->send_list, &req->base.node);
     _ev_udp_smart_deactive_win(udp);
 
-    ev__write_exit(&req->base);
-    req->usr_cb(req, req->base.data.size, req->backend.stat);
+    _ev_udp_w_user_callback_win(req, req->base.data.size, req->backend.stat);
 }
 
 static void _ev_udp_on_send_bypass_iocp(ev_todo_t* todo)
@@ -359,17 +370,17 @@ static void _ev_udp_do_recv_win(ev_udp_t* udp, ev_udp_read_t* req)
     if (ret != SOCKET_ERROR)
     {
         req->base.data.size = recv_bytes;
-        req->base.backend.stat = EV_SUCCESS;
+        req->backend.stat = EV_SUCCESS;
     }
     else
     {
         ret = WSAGetLastError();
-        req->base.backend.stat = ev__translate_sys_error(ret);
+        req->backend.stat = ev__translate_sys_error(ret);
     }
 
     ev_list_erase(&udp->recv_list, &req->base.node);
     _ev_udp_smart_deactive_win(udp);
-    req->base.data.cb(&req->base, req->base.data.size, req->base.backend.stat);
+    _ev_udp_r_user_callback_win(req, req->base.data.size, req->backend.stat);
 }
 
 static void _ev_udp_on_recv_iocp_win(ev_iocp_t* iocp, size_t transferred, void* arg)
@@ -384,7 +395,7 @@ static void _ev_udp_on_recv_iocp_win(ev_iocp_t* iocp, size_t transferred, void* 
 static void _ev_udp_on_recv_bypass_iocp_win(ev_todo_t* todo)
 {
     ev_udp_read_t* req = container_of(todo, ev_udp_read_t, backend.token);
-    ev_udp_t* udp = req->base.backend.owner;
+    ev_udp_t* udp = req->backend.owner;
 
     _ev_udp_do_recv_win(udp, req);
 }
@@ -398,8 +409,8 @@ int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
     DWORD bytes;
     DWORD flags = MSG_PEEK;
 
-    req->base.backend.owner = udp;
-    req->base.backend.stat = EV_EINPROGRESS;
+    req->backend.owner = udp;
+    req->backend.stat = EV_EINPROGRESS;
     ev__iocp_init(&req->backend.io, _ev_udp_on_recv_iocp_win, udp);
 
     int ret = WSARecv(udp->sock, &buf, 1, &bytes, &flags, &req->backend.io.overlapped, NULL);

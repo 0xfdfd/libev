@@ -75,6 +75,13 @@ typedef struct ev_read_backend
         { EV_INIT_REPEAT(EV_IOV_MAX, EV_IOCP_INIT), }\
     }
 
+typedef struct ev_tcp_read_backend
+{
+    ev_tcp_t*                   owner;              /**< Owner */
+    ev_iocp_t                   io;                 /**< IOCP */
+    int                         stat;               /**< Read result */
+}ev_tcp_read_backend_t;
+
 typedef struct ev_tcp_write_backend
 {
     void*                       owner;              /**< Owner */
@@ -149,11 +156,13 @@ typedef struct ev_udp_write_backend
     ev_udp_t*                   owner;              /**< Owner */
 }ev_udp_write_backend_t;
 
-#define EV_UDP_READ_BACKEND \
-    struct {\
-        ev_iocp_t   io;\
-        ev_todo_t   token;\
-    } backend;
+typedef struct ev_udp_read_backend
+{
+    ev_udp_t*                   owner;              /**< Owner */
+    ev_iocp_t                   io;                 /**< IOCP handle */
+    ev_todo_t                   token;              /**< Todo token */
+    int                         stat;               /**< Read result */
+}ev_udp_read_backend_t;
 
 typedef struct ev_udp_backend
 {
@@ -185,6 +194,12 @@ typedef struct ev_pipe_write_backend
     ev_pipe_t*                  owner;              /**< Owner */
     int                         stat;               /**< Write result */
 }ev_pipe_write_backend_t;
+
+typedef struct ev_pipe_read_backend
+{
+    ev_pipe_t*                  owner;              /**< Owner */
+    int                         stat;               /**< Read result */
+}ev_pipe_read_backend_t;
 
 typedef union ev_pipe_backend
 {
