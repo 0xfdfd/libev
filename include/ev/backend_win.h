@@ -11,6 +11,7 @@
 #include "ev/ipc-protocol.h"
 #include "ev/map.h"
 #include "ev/tcp_forward.h"
+#include "ev/udp_forward.h"
 #include "ev/pipe_forward.h"
 
 #ifdef __cplusplus
@@ -61,17 +62,6 @@ typedef struct ev_loop_plt
 }ev_loop_plt_t;
 #define EV_LOOP_PLT_INIT        { NULL }
 
-typedef struct ev_write_backend
-{
-    void*                       owner;              /**< Owner */
-    int                         stat;               /**< Write result */
-    ev_iocp_t                   io;                 /**< IOCP backend */
-}ev_write_backend_t;
-#define EV_WRITE_BACKEND_INIT   \
-    {\
-        NULL, 0, EV_IOCP_INIT\
-    }
-
 typedef struct ev_read_backend
 {
     void*                       owner;              /**< Owner */
@@ -84,6 +74,13 @@ typedef struct ev_read_backend
         NULL, NULL, 0,\
         { EV_INIT_REPEAT(EV_IOV_MAX, EV_IOCP_INIT), }\
     }
+
+typedef struct ev_tcp_write_backend
+{
+    void*                       owner;              /**< Owner */
+    int                         stat;               /**< Write result */
+    ev_iocp_t                   io;                 /**< IOCP backend */
+}ev_tcp_write_backend_t;
 
 typedef struct ev_tcp_backend
 {
@@ -146,8 +143,10 @@ typedef int (WSAAPI* ev_wsarecvfrom_fn)(
 
 typedef struct ev_udp_write_backend
 {
-    ev_iocp_t   io;                                 /**< IOCP handle */
-    ev_todo_t   token;                              /**< Todo token */
+    ev_iocp_t                   io;                 /**< IOCP handle */
+    ev_todo_t                   token;              /**< Todo token */
+    int                         stat;               /**< Write result */
+    ev_udp_t*                   owner;              /**< Owner */
 }ev_udp_write_backend_t;
 
 #define EV_UDP_READ_BACKEND \
@@ -180,6 +179,12 @@ typedef struct ev_pipe_win_ipc_info
         WSAPROTOCOL_INFOW       as_protocol_info;   /**< Protocol info */
     }data;
 }ev_pipe_win_ipc_info_t;
+
+typedef struct ev_pipe_write_backend
+{
+    ev_pipe_t*                  owner;              /**< Owner */
+    int                         stat;               /**< Write result */
+}ev_pipe_write_backend_t;
 
 typedef union ev_pipe_backend
 {

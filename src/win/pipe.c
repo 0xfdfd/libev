@@ -1014,7 +1014,8 @@ static int _ev_pipe_data_mode_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
     int flag_failure = 0;
     DWORD err = 0;
 
-    ev__write_init_win(&req->base, pipe, EV_EINPROGRESS, NULL, NULL);
+    req->backend.owner = pipe;
+    req->backend.stat = EV_EINPROGRESS;
 
     size_t available_iocp_cnt = ARRAY_SIZE(pipe->backend.data_mode.wio.iocp) -
         pipe->backend.data_mode.wio.w_io_cnt;

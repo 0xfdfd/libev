@@ -323,13 +323,13 @@ static void _ev_udp_on_send_complete_win(ev_udp_t* udp, ev_udp_write_t* req)
 {
     ev_list_erase(&udp->send_list, &req->base.node);
     _ev_udp_smart_deactive_win(udp);
-    req->base.data.cb(&req->base, req->base.data.size, req->base.backend.stat);
+    req->base.data.cb(&req->base, req->base.data.size, req->backend.stat);
 }
 
 static void _ev_udp_on_send_bypass_iocp(ev_todo_t* todo)
 {
     ev_udp_write_t* req = container_of(todo, ev_udp_write_t, backend.token);
-    ev_udp_t* udp = req->base.backend.owner;
+    ev_udp_t* udp = req->backend.owner;
 
     _ev_udp_on_send_complete_win(udp, req);
 }
@@ -340,7 +340,7 @@ static void _ev_udp_on_send_iocp_win(ev_iocp_t* iocp, size_t transferred, void* 
     ev_udp_write_t* req = container_of(iocp, ev_udp_write_t, backend.io);
 
     req->base.data.size = transferred;
-    req->base.backend.stat = NT_SUCCESS(iocp->overlapped.Internal) ?
+    req->backend.stat = NT_SUCCESS(iocp->overlapped.Internal) ?
         EV_SUCCESS : ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal));
 
     _ev_udp_on_send_complete_win(udp, req);
@@ -434,8 +434,8 @@ int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr
         }
     }
 
-    req->base.backend.owner = udp;
-    req->base.backend.stat = EV_EINPROGRESS;
+    req->backend.owner = udp;
+    req->backend.stat = EV_EINPROGRESS;
     ev__iocp_init(&req->backend.io, _ev_udp_on_send_iocp_win, udp);
 
     DWORD send_bytes;
@@ -447,14 +447,14 @@ int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr
     if (ret == 0 && (udp->base.data.flags & EV_UDP_BYPASS_IOCP))
     {
         req->base.data.size += req->base.data.capacity;
-        req->base.backend.stat = EV_SUCCESS;
+        req->backend.stat = EV_SUCCESS;
         ev__loop_submit_task(udp->base.data.loop, &req->backend.token, _ev_udp_on_send_bypass_iocp);
         return EV_SUCCESS;
     }
 
     if (ret == 0 || (err = GetLastError()) == ERROR_IO_PENDING)
     {
-        req->base.backend.stat = EV_EINPROGRESS;
+        req->backend.stat = EV_EINPROGRESS;
         return EV_SUCCESS;
     }
 

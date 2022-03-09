@@ -32,6 +32,7 @@ struct test_6d69
     {
         ev_tcp_read_req_t   r_req;
         ev_buf_t            buf;
+        size_t              pos;
         char                recv_buf[6 * 1024 * 1024];
     }s_read_pack;
 };
@@ -58,7 +59,8 @@ static void _on_close_client_socket_6d69(ev_tcp_t* sock)
 
 static void _on_send_finish_6d69(ev_tcp_write_req_t* req, size_t size, int stat)
 {
-    (void)req; (void)size;
+    (void)req;
+    ASSERT_EQ_D32(size, sizeof(g_test_6d69.s_write_pack.send_buf));
     ASSERT_EQ_D32(stat, EV_SUCCESS);
 
     /* Close connection */
@@ -79,8 +81,13 @@ static void _on_accept_6d69(ev_tcp_t* from, ev_tcp_t* to, int stat)
 static void _on_read_6d69(ev_tcp_read_req_t* req, size_t size, int stat)
 {
     (void)req;
+
+    ASSERT_LE_D32(size, sizeof(g_test_6d69.s_write_pack.send_buf));
+    g_test_6d69.s_read_pack.pos += size;
+
     if (stat == EV_EOF)
     {
+        ASSERT_EQ_D32(g_test_6d69.s_read_pack.pos, sizeof(g_test_6d69.s_write_pack.send_buf));
         int ret = memcmp(g_test_6d69.s_write_pack.send_buf,
             g_test_6d69.s_read_pack.recv_buf, sizeof(g_test_6d69.s_write_pack.send_buf));
         ASSERT_EQ_D32(ret, 0);
@@ -89,8 +96,8 @@ static void _on_read_6d69(ev_tcp_read_req_t* req, size_t size, int stat)
 
     ASSERT_EQ_D32(stat, EV_SUCCESS);
 
-    g_test_6d69.s_read_pack.buf = ev_buf_make((char*)g_test_6d69.s_read_pack.buf.data + size,
-        g_test_6d69.s_read_pack.buf.size - size);
+    g_test_6d69.s_read_pack.buf = ev_buf_make(g_test_6d69.s_read_pack.recv_buf + g_test_6d69.s_read_pack.pos,
+        sizeof(g_test_6d69.s_read_pack.recv_buf) - g_test_6d69.s_read_pack.pos);
     ASSERT_EQ_D32(ev_tcp_read(&g_test_6d69.s_client, &g_test_6d69.s_read_pack.r_req,
         &g_test_6d69.s_read_pack.buf, 1, _on_read_6d69), 0);
 }

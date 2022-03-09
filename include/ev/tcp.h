@@ -45,6 +45,7 @@ struct ev_tcp_write_req
 {
     ev_write_t              base;               /**< Base object */
     ev_tcp_write_cb         user_callback;      /**< User callback */
+    ev_tcp_write_backend_t  backend;            /**< Backend */
 };
 
 /**

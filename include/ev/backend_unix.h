@@ -107,17 +107,16 @@ typedef struct ev_loop_plt
         }\
     }
 
-typedef struct ev_write_backend
-{
-    size_t                      idx;                /**< Write buffer index */
-}ev_write_backend_t;
-#define EV_WRITE_BACKEND_INIT   { 0 }
-
 typedef struct ev_read_backend
 {
-    int                         useless[0];         /**< Useless field */
+    int                         _useless[0];        /**< Useless field */
 }ev_read_backend_t;
 #define EV_READ_BACKEND_INIT    { }
+
+typedef struct ev_tcp_write_backend
+{
+    int                         _useless[0];        /**< Write buffer index */
+}ev_tcp_write_backend_t;
 
 typedef struct ev_udp_write_backend
 {
@@ -193,6 +192,11 @@ typedef struct ev_udp_backend
 {
     ev_nonblock_io_t            io;                 /**< Backend IO */
 }ev_udp_backend_t;
+
+typedef struct ev_pipe_write_backend
+{
+    int                                 _useless[0];        /**< Useless field */
+}ev_pipe_write_backend_t;
 
 typedef union ev_pipe_backend
 {

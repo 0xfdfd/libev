@@ -47,17 +47,6 @@ API_LOCAL void ev__init_once_win(void);
 API_LOCAL void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg);
 
 /**
- * @brief Initialize #ev_write_t
- * @param[out] req      A write request to be initialized
- * @param[in] owner     Who own this object
- * @param[in] stat      Initial status
- * @param[in] iocp_cb   IOCP completion callback
- * @param[in] iocp_arg  User defined argument passed to #iocp_cb
- */
-API_LOCAL void ev__write_init_win(ev_write_t* req, void* owner, int stat,
-    ev_iocp_cb iocp_cb, void* iocp_arg);
-
-/**
  * @brief Initialize #ev_read_t
  * @param[out] req      A read request to be initialized
  * @param[in] owner     Who own this object

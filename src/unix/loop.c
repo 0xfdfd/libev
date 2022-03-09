@@ -883,11 +883,6 @@ void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned evts)
     }
 }
 
-void ev__write_init_unix(ev_write_t* req)
-{
-    req->backend.idx = 0;
-}
-
 void ev__read_init_unix(ev_read_t* req)
 {
     (void)req;
@@ -940,17 +935,56 @@ void ev__loop_wakeup(ev_loop_t* loop)
     abort();
 }
 
+static int _ev_finalize_send_req_unix(ev_write_t* req, size_t write_size)
+{
+    req->data.size += write_size;
+
+    /* All data is sent */
+    if (req->data.size == req->data.capacity)
+    {
+        req->data.nbuf = 0;
+        return EV_SUCCESS;
+    }
+    assert(req->data.size < req->data.capacity);
+
+    /* maintenance iovec */
+    size_t idx;
+    for (idx = 0; write_size > 0 && idx < req->data.nbuf; idx++)
+    {
+        if (write_size < req->data.bufs[idx].size)
+        {
+            req->data.bufs[idx].size -= write_size;
+            req->data.bufs[idx].data = (uint8_t*)req->data.bufs[idx].data + write_size;
+            break;
+        }
+        else
+        {
+            write_size -= req->data.bufs[idx].size;
+        }
+    }
+
+    assert(idx < req->data.nbuf);
+    assert(write_size > 0);
+
+    memmove(&req->data.bufs[0], &req->data.bufs[idx], sizeof(req->data.bufs[0]) * (req->data.nbuf - idx));
+    req->data.nbuf -= idx;
+
+    return EV_EAGAIN;
+}
+
 int ev__send_unix(int fd, ev_write_t* req,
     ssize_t(*do_write)(int fd, struct iovec* iov, int iovcnt, void* arg), void* arg)
 {
-    ev_buf_t* iov = req->data.bufs + req->backend.idx;
-    int iovcnt = req->data.nbuf - req->backend.idx;
+    ev_buf_t* iov = req->data.bufs;
+    int iovcnt = req->data.nbuf;
     if (iovcnt > g_ev_loop_unix_ctx.iovmax)
     {
         iovcnt = g_ev_loop_unix_ctx.iovmax;
     }
 
     ssize_t write_size = do_write(fd, (struct iovec*)iov, iovcnt, arg);
+
+    /* Check send result */
     if (write_size < 0)
     {
         if (write_size == EV_ENOBUFS)
@@ -960,20 +994,5 @@ int ev__send_unix(int fd, ev_write_t* req,
         return write_size;
     }
 
-    req->data.size += write_size;
-    while (write_size > 0)
-    {
-        if ((size_t)write_size < req->data.bufs[req->backend.idx].size)
-        {
-            req->data.bufs[req->backend.idx].data =
-                (void*)((uint8_t*)(req->data.bufs[req->backend.idx].data) + write_size);
-            req->data.bufs[req->backend.idx].size -= write_size;
-            break;
-        }
-
-        write_size -= req->data.bufs[req->backend.idx].size;
-        req->backend.idx++;
-    }
-
-    return req->backend.idx < req->data.nbuf ? EV_EAGAIN : EV_SUCCESS;
+    return _ev_finalize_send_req_unix(req, (size_t)write_size);
 }

@@ -54,7 +54,6 @@ struct ev_write
         size_t              capacity;           /**< Total bytes need to send */
         ev_buf_t            bufsml[EV_IOV_MAX]; /**< Bound buffer list */
     }data;
-    ev_write_backend_t      backend;            /**< Back-end */
 };
 #define EV_WRITE_INVALID    \
     {\
@@ -67,7 +66,6 @@ struct ev_write
             0,                                                      /* .data.capacity */\
             { EV_INIT_REPEAT(EV_IOV_MAX, EV_BUF_INIT(NULL, 0)), }   /* .data.bufsml */\
         },\
-        EV_WRITE_BACKEND_INIT                                       /* .backend */\
     }
 
 #ifdef __cplusplus

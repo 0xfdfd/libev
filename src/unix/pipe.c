@@ -756,7 +756,6 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
     }
 
     ev__handle_active(&pipe->base);
-    ev__write_init_unix(&req->base);
 
     if (pipe->base.data.flags & EV_PIPE_IPC)
     {

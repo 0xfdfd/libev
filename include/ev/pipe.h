@@ -48,6 +48,7 @@ struct ev_pipe_write_req
             ev_os_socket_t  os_socket;          /**< A EV handle instance */
         }u;
     }handle;
+    ev_pipe_write_backend_t backend;
 };
 
 struct ev_pipe_read_req
