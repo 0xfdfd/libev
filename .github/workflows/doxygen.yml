@@ -20,13 +20,20 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
       # Build documents
-      - name: Doxygen Action
+      - name: Build documents
         uses: mattnotmitt/doxygen-action@v1.9.2
         with:
           doxyfile-path: 'docs/Doxyfile'
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: doxygen_html
+          path: docs/html/
 
   deploy:
     needs: [build]
@@ -34,6 +41,12 @@ jobs:
     if: success() && github.ref == 'refs/heads/master'
     steps:
       # Deploy to github gh-pages
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: doxygen_html
+          path: docs/html/
+
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
