@@ -545,9 +545,8 @@ int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t le
     return EV_SUCCESS;
 }
 
-int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb)
+int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf)
 {
-    req->data.cb = cb;
     req->data.nbuf = nbuf;
 
     if (nbuf <= ARRAY_SIZE(req->data.bufsml))
@@ -577,6 +576,7 @@ void ev__write_exit(ev_write_t* req)
     }
 
     req->data.bufs = NULL;
+    req->data.nbuf = 0;
 }
 
 int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_read_cb cb)

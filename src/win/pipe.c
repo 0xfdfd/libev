@@ -75,12 +75,18 @@ static void _ev_pipe_cancel_all_r(ev_pipe_t* pipe, int stat)
     }
 }
 
+static void _ev_pipe_user_callback(ev_pipe_write_req_t* req, size_t size, int stat)
+{
+    ev__write_exit(&req->base);
+    req->ucb(req, size, stat);
+}
+
 static void _ev_pipe_cancel_all_w_data_mode(ev_pipe_t* pipe, int stat)
 {
     ev_pipe_write_req_t* req;
     if ((req = pipe->backend.data_mode.wio.w_half) != NULL)
     {
-        req->base.data.cb(&req->base, req->base.data.size, stat);
+        _ev_pipe_user_callback(req, req->base.data.size, stat);
         pipe->backend.data_mode.wio.w_half = NULL;
     }
     pipe->backend.data_mode.wio.w_half_idx = 0;
@@ -89,7 +95,7 @@ static void _ev_pipe_cancel_all_w_data_mode(ev_pipe_t* pipe, int stat)
     while ((it = ev_list_pop_front(&pipe->backend.data_mode.wio.w_pending)) != NULL)
     {
         req = container_of(it, ev_pipe_write_req_t, base.node);
-        req->base.data.cb(&req->base, req->base.data.size, stat);
+        _ev_pipe_user_callback(req, req->base.data.size, stat);
     }
 }
 
@@ -98,7 +104,7 @@ static void _ev_pipe_cancel_all_w_ipc_mode(ev_pipe_t* pipe, int stat)
     ev_pipe_write_req_t* req;
     if ((req = pipe->backend.ipc_mode.wio.sending.w_req) != NULL)
     {
-        req->base.data.cb(&req->base, req->base.data.size, stat);
+        _ev_pipe_user_callback(req, req->base.data.size, stat);
         pipe->backend.ipc_mode.wio.sending.w_req = NULL;
     }
     pipe->backend.ipc_mode.wio.sending.donecnt = 0;
@@ -107,7 +113,7 @@ static void _ev_pipe_cancel_all_w_ipc_mode(ev_pipe_t* pipe, int stat)
     while ((it = ev_list_pop_front(&pipe->backend.ipc_mode.wio.pending)) != NULL)
     {
         req = container_of(it, ev_pipe_write_req_t, base.node);
-        req->base.data.cb(&req->base, req->base.data.size, stat);
+        _ev_pipe_user_callback(req, req->base.data.size, stat);
     }
 }
 
@@ -480,7 +486,7 @@ static void _ev_pipe_on_data_mode_write(ev_iocp_t* iocp, size_t transferred, voi
         int stat = NT_SUCCESS(iocp->overlapped.Internal) ? EV_SUCCESS :
             ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal));
         ev_list_erase(&pipe->backend.data_mode.wio.w_doing, &curr_req->base.node);
-        curr_req->base.data.cb(&curr_req->base, curr_req->base.data.size, stat);
+        _ev_pipe_user_callback(curr_req, curr_req->base.data.size, stat);
     }
 
     /* If submit error, abort any pending actions */
@@ -884,7 +890,7 @@ finish_request:
     pipe->backend.ipc_mode.wio.sending.w_req = NULL;
     pipe->backend.ipc_mode.wio.sending.donecnt = 0;
 
-    req->base.data.cb(&req->base, req->base.data.size, EV_SUCCESS);
+    _ev_pipe_user_callback(req, req->base.data.size, EV_SUCCESS);
 
     if ((ret = _ev_pipe_ipc_mode_send_next(pipe)) != EV_SUCCESS)
     {

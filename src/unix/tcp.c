@@ -111,12 +111,19 @@ fin:
     sock->backend.u.client.cb(sock, sock->backend.u.client.stat);
 }
 
+static void _ev_tcp_user_callback_unix(ev_tcp_write_req_t* req, size_t size, int stat)
+{
+    ev__write_exit(&req->base);
+    req->user_callback(req, size, stat);
+}
+
 static void _on_tcp_write_done(ev_nonblock_stream_t* stream, ev_write_t* req, size_t size, int stat)
 {
     ev_tcp_t* sock = container_of(stream, ev_tcp_t, backend.u.stream);
     _ev_tcp_smart_deactive(sock);
 
-    req->data.cb(req, size, stat);
+    ev_tcp_write_req_t* w_req = container_of(req, ev_tcp_write_req_t, base);
+    _ev_tcp_user_callback_unix(w_req, size, stat);
 }
 
 static void _on_tcp_read_done(ev_nonblock_stream_t* stream, ev_read_t* req, size_t size, int stat)
@@ -255,14 +262,6 @@ static void _ev_tcp_setup_stream_once(ev_tcp_t* sock)
     sock->base.data.flags |= EV_TCP_STREAMING;
 }
 
-static void _ev_tcp_proxy_write_unix(ev_write_t* req, size_t size, int stat)
-{
-    ev_tcp_write_req_t* real_req = container_of(req, ev_tcp_write_req_t, base);
-
-    ev__write_exit(req);
-    real_req->user_callback(real_req, size, stat);
-}
-
 static void _ev_tcp_proxy_read_unix(ev_read_t* req, size_t size, int stat)
 {
     ev_tcp_read_req_t* real_req = container_of(req, ev_tcp_read_req_t, base);
@@ -368,7 +367,7 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_tcp_accept_cb cb)
 int ev_tcp_write(ev_tcp_t* sock, ev_tcp_write_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_tcp_write_cb cb)
 {
     req->user_callback = cb;
-    int ret = ev__write_init(&req->base, bufs, nbuf, _ev_tcp_proxy_write_unix);
+    int ret = ev__write_init(&req->base, bufs, nbuf);
     if (ret != EV_SUCCESS)
     {
         return ret;

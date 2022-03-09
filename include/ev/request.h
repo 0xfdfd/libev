@@ -47,7 +47,6 @@ struct ev_write
     ev_list_node_t          node;               /**< Intrusive node */
     struct
     {
-        ev_write_cb         cb;                 /**< Write complete callback */
         ev_buf_t*           bufs;               /**< Buffer list */
         size_t              nbuf;               /**< Buffer list count */
         size_t              size;               /**< Write size */
@@ -59,7 +58,6 @@ struct ev_write
     {\
         EV_LIST_NODE_INIT,                                          /* .node */\
         {/* .data */\
-            NULL,                                                   /* .data.cb */\
             NULL,                                                   /* .data.bufs */\
             0,                                                      /* .data.nbuf */\
             0,                                                      /* .data.size */\

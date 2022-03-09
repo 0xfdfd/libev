@@ -323,7 +323,9 @@ static void _ev_udp_on_send_complete_win(ev_udp_t* udp, ev_udp_write_t* req)
 {
     ev_list_erase(&udp->send_list, &req->base.node);
     _ev_udp_smart_deactive_win(udp);
-    req->base.data.cb(&req->base, req->base.data.size, req->backend.stat);
+
+    ev__write_exit(&req->base);
+    req->usr_cb(req, req->base.data.size, req->backend.stat);
 }
 
 static void _ev_udp_on_send_bypass_iocp(ev_todo_t* todo)

@@ -62,14 +62,6 @@ typedef struct ev_buf ev_buf_t;
 typedef void(*ev_once_cb)(void);
 
 /**
- * @brief Write callback
- * @param[in] req       Write request
- * @param[in] size      Write size
- * @param[in] stat      Write result
- */
-typedef void(*ev_write_cb)(ev_write_t* req, size_t size, int stat);
-
-/**
  * @brief Read callback
  * @param[in] req       Read callback
  * @param[in] size      Read size

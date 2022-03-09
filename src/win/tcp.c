@@ -82,8 +82,8 @@ static void _ev_tcp_cleanup_stream(ev_tcp_t* sock)
     }
     while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue)) != NULL)
     {
-        ev_write_t* req = container_of(it, ev_write_t, node);
-        req->data.cb(req, 0, EV_ECANCELED);
+        ev_tcp_write_req_t* req = container_of(it, ev_tcp_write_req_t, base.node);
+        req->user_callback(req, 0, EV_ECANCELED);
     }
 }
 
@@ -427,7 +427,7 @@ static void _ev_tcp_proxy_read_win(ev_read_t* req, size_t size, int stat)
 static int _ev_tcp_init_write_req(ev_tcp_t* sock, ev_tcp_write_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_tcp_write_cb cb)
 {
     int ret;
-    if ((ret = ev__write_init(&req->base, bufs, nbuf, NULL)) != EV_SUCCESS)
+    if ((ret = ev__write_init(&req->base, bufs, nbuf)) != EV_SUCCESS)
     {
         return ret;
     }

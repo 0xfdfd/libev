@@ -70,13 +70,20 @@ static void _ev_pipe_smart_deactive_unix(ev_pipe_t* pipe)
     }
 }
 
+static void _ev_pipe_user_callback_unix(ev_pipe_write_req_t* req, size_t size, int stat)
+{
+    ev__write_exit(&req->base);
+    req->ucb(req, size, stat);
+}
+
 static void _ev_pipe_on_data_mode_write_unix(ev_nonblock_stream_t* stream,
     ev_write_t* req, size_t size, int stat)
 {
     ev_pipe_t* pipe_handle = container_of(stream, ev_pipe_t, backend.data_mode.stream);
     _ev_pipe_smart_deactive_unix(pipe_handle);
 
-    req->data.cb(req, size, stat);
+    ev_pipe_write_req_t* w_req = container_of(req, ev_pipe_write_req_t, base);
+    _ev_pipe_user_callback_unix(w_req, size, stat);
 }
 
 static void _ev_pipe_on_data_mode_read_unix(ev_nonblock_stream_t* stream,
@@ -420,7 +427,7 @@ static int _ev_pipe_on_ipc_mode_io_write_remain_body_unix(ev_pipe_t* pipe)
     if (pipe->backend.ipc_mode.wio.curr.buf_idx >= req->base.data.nbuf)
     {
         pipe->backend.ipc_mode.wio.curr.writing = NULL;
-        req->base.data.cb(&req->base, req->base.data.size, EV_SUCCESS);
+        _ev_pipe_user_callback_unix(req, req->base.data.size, EV_SUCCESS);
     }
 
     return EV_SUCCESS;
@@ -563,8 +570,8 @@ static void _ev_pipe_ipc_mode_cancel_all_wio_unix(ev_pipe_t* pipe, int stat)
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&pipe->backend.ipc_mode.wio.wqueue)) != NULL)
     {
-        ev_write_t* req = container_of(it, ev_write_t, node);
-        req->data.cb(req, req->data.size, stat);
+        ev_pipe_write_req_t* req = container_of(it, ev_pipe_write_req_t, base.node);
+        _ev_pipe_user_callback_unix(req, req->base.data.size, stat);
     }
 }
 

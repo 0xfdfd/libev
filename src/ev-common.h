@@ -177,10 +177,9 @@ API_LOCAL socklen_t ev__get_addr_len(const struct sockaddr* addr);
  * @param[out] req  A write request to be initialized
  * @param[in] bufs  Buffer list
  * @param[in] nbuf  Buffer list size, can not larger than #EV_IOV_MAX.
- * @param[in] cb    Write complete callback
  * @return          #ev_errno_t
  */
-API_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf, ev_write_cb cb);
+API_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf);
 
 API_LOCAL void ev__write_exit(ev_write_t* req);
 
