@@ -21,7 +21,7 @@ struct ev_shm
     size_t                  size;       /**< Shared memory size */
     ev_shm_backend_t        backend;    /**< Backend */
 };
-#define EV_SHM_INIT         { NULL, 0, EV_SHM_BACKEND_INIT }
+#define EV_SHM_INIT         { NULL, 0, EV_SHM_BACKEND_INVALID }
 
 /**
  * @brief Create a new shared memory

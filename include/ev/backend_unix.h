@@ -266,7 +266,7 @@ typedef union ev_pipe_backend
         }wio;
     }ipc_mode;
 }ev_pipe_backend_t;
-#define EV_PIPE_BACKEND_INIT    { 0 }
+#define EV_PIPE_BACKEND_INVALID    { 0 }
 
 typedef struct ev_shm_backend
 {
@@ -278,7 +278,7 @@ typedef struct ev_shm_backend
         unsigned                is_open : 1;
     }mask;
 }ev_shm_backend_t;
-#define EV_SHM_BACKEND_INIT     { 0 }
+#define EV_SHM_BACKEND_INVALID     { 0 }
 
 #ifdef __cplusplus
 }

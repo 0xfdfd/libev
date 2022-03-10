@@ -33,7 +33,7 @@ struct ev_pipe
         EV_HANDLE_INVALID,\
         NULL,\
         EV_OS_PIPE_INVALID,\
-        EV_PIPE_BACKEND_INIT,\
+        EV_PIPE_BACKEND_INVALID,\
     }
 
 struct ev_pipe_write_req

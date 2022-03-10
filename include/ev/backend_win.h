@@ -287,13 +287,13 @@ typedef union ev_pipe_backend
 #undef EV_PIPE_BACKEND_BUFFER_SIZE
     }ipc_mode;
 }ev_pipe_backend_t;
-#define EV_PIPE_BACKEND_INIT    { 0 }
+#define EV_PIPE_BACKEND_INVALID         { 0 }
 
 typedef struct ev_shm_backend
 {
     HANDLE                      map_file;           /**< Shared memory file */
 }ev_shm_backend_t;
-#define EV_SHM_BACKEND_INIT     { NULL }
+#define EV_SHM_BACKEND_INVALID          { NULL }
 
 #ifdef __cplusplus
 }
