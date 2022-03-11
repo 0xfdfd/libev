@@ -3,6 +3,23 @@
 #undef NDEBUG
 #endif
 
+#if !defined(__has_feature)
+#   define __has_feature(x)    0
+#endif
+
+#if defined(__clang__) && __has_feature(address_sanitizer)
+/* Clang with address sanitizer */
+#   define HAVE_SANS   1
+#elif defined(__GNUC__) && defined(__SANITIZE_ADDRESS__) && (__SANITIZE_ADDRESS__ == 1)
+/* GCC with address sanitizer */
+#   define HAVE_SANS   1
+#elif defined(_MSC_VER) && defined(__SANITIZE_ADDRESS__) && (__SANITIZE_ADDRESS__ == 1)
+/* MSVC with address sanitizer */
+#   define HAVE_SANS   1
+#else
+#   define HAVE_SANS   0
+#endif
+
 #include "ev.h"
 #include "memcheck.h"
 #include "cutest.h"
@@ -12,6 +29,18 @@
 
 #define container_of(ptr, type, member) \
     ((type *) ((char *) (ptr) - offsetof(type, member)))
+
+#if HAVE_SANS
+
+void setup_memcheck(void)
+{
+}
+
+void dump_memcheck(void)
+{
+}
+
+#else
 
 #if defined(_MSC_VER)
 #include <crtdbg.h>
@@ -184,3 +213,5 @@ void setup_memcheck(void)
         EV_SUCCESS
     );
 }
+
+#endif
