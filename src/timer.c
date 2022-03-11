@@ -3,7 +3,7 @@
 
 static void _ev_timer_on_close(ev_handle_t* handle)
 {
-    ev_timer_t* timer = container_of(handle, ev_timer_t, base);
+    ev_timer_t* timer = EV_CONTAINER_OF(handle, ev_timer_t, base);
     if (timer->close_cb != NULL)
     {
         timer->close_cb(timer);

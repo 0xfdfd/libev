@@ -45,7 +45,7 @@ err:
 
 static void _ev_udp_on_close_win(ev_handle_t* handle)
 {
-    ev_udp_t* udp = container_of(handle, ev_udp_t, base);
+    ev_udp_t* udp = EV_CONTAINER_OF(handle, ev_udp_t, base);
     if (udp->close_cb != NULL)
     {
         udp->close_cb(udp);
@@ -341,7 +341,7 @@ static void _ev_udp_on_send_complete_win(ev_udp_t* udp, ev_udp_write_t* req)
 
 static void _ev_udp_on_send_bypass_iocp(ev_todo_t* todo)
 {
-    ev_udp_write_t* req = container_of(todo, ev_udp_write_t, backend.token);
+    ev_udp_write_t* req = EV_CONTAINER_OF(todo, ev_udp_write_t, backend.token);
     ev_udp_t* udp = req->backend.owner;
 
     _ev_udp_on_send_complete_win(udp, req);
@@ -350,7 +350,7 @@ static void _ev_udp_on_send_bypass_iocp(ev_todo_t* todo)
 static void _ev_udp_on_send_iocp_win(ev_iocp_t* iocp, size_t transferred, void* arg)
 {
     ev_udp_t* udp = arg;
-    ev_udp_write_t* req = container_of(iocp, ev_udp_write_t, backend.io);
+    ev_udp_write_t* req = EV_CONTAINER_OF(iocp, ev_udp_write_t, backend.io);
 
     req->base.data.size = transferred;
     req->backend.stat = NT_SUCCESS(iocp->overlapped.Internal) ?
@@ -387,14 +387,14 @@ static void _ev_udp_on_recv_iocp_win(ev_iocp_t* iocp, size_t transferred, void* 
 {
     (void)transferred;
     ev_udp_t* udp = arg;
-    ev_udp_read_t* req = container_of(iocp, ev_udp_read_t, backend.io);
+    ev_udp_read_t* req = EV_CONTAINER_OF(iocp, ev_udp_read_t, backend.io);
 
     _ev_udp_do_recv_win(udp, req);
 }
 
 static void _ev_udp_on_recv_bypass_iocp_win(ev_todo_t* todo)
 {
-    ev_udp_read_t* req = container_of(todo, ev_udp_read_t, backend.token);
+    ev_udp_read_t* req = EV_CONTAINER_OF(todo, ev_udp_read_t, backend.token);
     ev_udp_t* udp = req->backend.owner;
 
     _ev_udp_do_recv_win(udp, req);

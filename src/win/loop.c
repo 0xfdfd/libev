@@ -70,7 +70,7 @@ static void _ev_pool_win_handle_req(OVERLAPPED_ENTRY* overlappeds, ULONG count)
     {
         if (overlappeds[i].lpOverlapped)
         {
-            ev_iocp_t* req = container_of(overlappeds[i].lpOverlapped, ev_iocp_t, overlapped);
+            ev_iocp_t* req = EV_CONTAINER_OF(overlappeds[i].lpOverlapped, ev_iocp_t, overlapped);
             req->cb(req, overlappeds[i].dwNumberOfBytesTransferred, req->arg);
         }
     }
@@ -94,7 +94,7 @@ static void _ev_async_on_wakeup_win(ev_iocp_t* iocp, size_t transferred, void* a
 {
     (void)transferred;
 
-    ev_loop_t* loop = container_of(iocp, ev_loop_t, backend.wakeup.io);
+    ev_loop_t* loop = EV_CONTAINER_OF(iocp, ev_loop_t, backend.wakeup.io);
     ev_loop_on_wakeup_cb wakeup_cb = (ev_loop_on_wakeup_cb)arg;
 
     wakeup_cb(loop);

@@ -19,7 +19,7 @@ static void _ev_tcp_cleanup_listen_queue(ev_tcp_t* s_sock, int stat)
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&s_sock->backend.u.listen.accept_queue)) != NULL)
     {
-        ev_tcp_t* c_sock = container_of(it, ev_tcp_t, backend.u.accept.accept_node);
+        ev_tcp_t* c_sock = EV_CONTAINER_OF(it, ev_tcp_t, backend.u.accept.accept_node);
         c_sock->backend.u.accept.cb(s_sock, c_sock, stat);
     }
 }
@@ -63,7 +63,7 @@ static void _ev_tcp_smart_deactive(ev_tcp_t* sock)
 
 static void _ev_tcp_on_close(ev_handle_t* handle)
 {
-    ev_tcp_t* sock = container_of(handle, ev_tcp_t, base);
+    ev_tcp_t* sock = EV_CONTAINER_OF(handle, ev_tcp_t, base);
 
     if (sock->base.data.flags & EV_TCP_STREAMING)
     {
@@ -126,19 +126,19 @@ static void _ev_tcp_r_user_callback_unix(ev_tcp_read_req_t* req, size_t size, in
 
 static void _on_tcp_write_done(ev_nonblock_stream_t* stream, ev_write_t* req, size_t size, int stat)
 {
-    ev_tcp_t* sock = container_of(stream, ev_tcp_t, backend.u.stream);
+    ev_tcp_t* sock = EV_CONTAINER_OF(stream, ev_tcp_t, backend.u.stream);
     _ev_tcp_smart_deactive(sock);
 
-    ev_tcp_write_req_t* w_req = container_of(req, ev_tcp_write_req_t, base);
+    ev_tcp_write_req_t* w_req = EV_CONTAINER_OF(req, ev_tcp_write_req_t, base);
     _ev_tcp_w_user_callback_unix(w_req, size, stat);
 }
 
 static void _on_tcp_read_done(ev_nonblock_stream_t* stream, ev_read_t* req, size_t size, int stat)
 {
-    ev_tcp_t* sock = container_of(stream, ev_tcp_t, backend.u.stream);
+    ev_tcp_t* sock = EV_CONTAINER_OF(stream, ev_tcp_t, backend.u.stream);
     _ev_tcp_smart_deactive(sock);
 
-    ev_tcp_read_req_t* r_req = container_of(req, ev_tcp_read_req_t, base);
+    ev_tcp_read_req_t* r_req = EV_CONTAINER_OF(req, ev_tcp_read_req_t, base);
     _ev_tcp_r_user_callback_unix(r_req, size, stat);
 }
 
@@ -150,7 +150,7 @@ static void _ev_tcp_on_accept(ev_tcp_t* acpt)
         BREAK_ABORT();
     }
 
-    ev_tcp_t* conn = container_of(it, ev_tcp_t, backend.u.accept.accept_node);
+    ev_tcp_t* conn = EV_CONTAINER_OF(it, ev_tcp_t, backend.u.accept.accept_node);
     _ev_tcp_close_fd(conn);
 
     do
@@ -186,7 +186,7 @@ static void _ev_tcp_on_accept(ev_tcp_t* acpt)
 static void _ev_tcp_on_server_event(ev_nonblock_io_t* io, unsigned evts, void* arg)
 {
     (void)evts; (void)arg;
-    ev_tcp_t* sock = container_of(io, ev_tcp_t, backend.u.listen.io);
+    ev_tcp_t* sock = EV_CONTAINER_OF(io, ev_tcp_t, backend.u.listen.io);
 
     _ev_tcp_on_accept(sock);
     _ev_tcp_smart_deactive(sock);
@@ -195,7 +195,7 @@ static void _ev_tcp_on_server_event(ev_nonblock_io_t* io, unsigned evts, void* a
 static void _ev_tcp_on_client_event(ev_nonblock_io_t* io, unsigned evts, void* arg)
 {
     (void)evts; (void)arg;
-    ev_tcp_t* sock = container_of(io, ev_tcp_t, backend.u.client.io);
+    ev_tcp_t* sock = EV_CONTAINER_OF(io, ev_tcp_t, backend.u.client.io);
 
     _ev_tcp_on_connect(sock);
     _ev_tcp_smart_deactive(sock);
@@ -253,7 +253,7 @@ static int _ev_tcp_is_listening(ev_tcp_t* sock)
 
 static void _ev_tcp_to_connect(ev_todo_t* todo)
 {
-    ev_tcp_t* sock = container_of(todo, ev_tcp_t, backend.u.client.token);
+    ev_tcp_t* sock = EV_CONTAINER_OF(todo, ev_tcp_t, backend.u.client.token);
 
     sock->base.data.flags &= ~EV_TCP_CONNECTING;
     sock->backend.u.client.cb(sock, EV_SUCCESS);

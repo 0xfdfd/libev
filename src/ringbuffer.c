@@ -512,7 +512,7 @@ ring_buffer_token_t* ring_buffer_consume(ring_buffer_t* handler)
 
 int ring_buffer_commit(ring_buffer_t* handler, ring_buffer_token_t* token, int flags)
 {
-    ring_buffer_node_t* node = container_of(token, ring_buffer_node_t, token);
+    ring_buffer_node_t* node = EV_CONTAINER_OF(token, ring_buffer_node_t, token);
 
     return node->state == RINGBUFFER_STAT_WRITING ?
         _ring_buffer_commit_for_write(handler, node, flags) :
@@ -537,7 +537,7 @@ ring_buffer_token_t* ring_buffer_begin(const ring_buffer_t* handler)
 
 ring_buffer_token_t* ring_buffer_next(const ring_buffer_t* handler, const ring_buffer_token_t* token)
 {
-    ring_buffer_node_t* node = container_of(token, ring_buffer_node_t, token);
+    ring_buffer_node_t* node = EV_CONTAINER_OF(token, ring_buffer_node_t, token);
     if (node->chain_time.off_newer == 0)
     {
         return NULL;

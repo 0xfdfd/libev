@@ -36,8 +36,8 @@ err:
 static int _ev_cmp_io_unix(const ev_map_node_t* key1, const ev_map_node_t* key2, void* arg)
 {
     (void)arg;
-    ev_nonblock_io_t* io1 = container_of(key1, ev_nonblock_io_t, node);
-    ev_nonblock_io_t* io2 = container_of(key2, ev_nonblock_io_t, node);
+    ev_nonblock_io_t* io1 = EV_CONTAINER_OF(key1, ev_nonblock_io_t, node);
+    ev_nonblock_io_t* io2 = EV_CONTAINER_OF(key2, ev_nonblock_io_t, node);
     return io1->data.fd - io2->data.fd;
 }
 
@@ -47,7 +47,7 @@ static ev_nonblock_io_t* _ev_find_io(ev_loop_t* loop, int fd)
     tmp.data.fd = fd;
 
     ev_map_node_t* it = ev_map_find(&loop->backend.io, &tmp.node);
-    return it != NULL ? container_of(it, ev_nonblock_io_t, node) : NULL;
+    return it != NULL ? EV_CONTAINER_OF(it, ev_nonblock_io_t, node) : NULL;
 }
 
 static int _ev_poll_once(ev_loop_t* loop, struct epoll_event* events, int maxevents, int timeout)
@@ -116,7 +116,7 @@ static void _ev_wakeup_clear_eventfd(ev_loop_t* loop)
 static void _ev_loop_on_wakeup_unix(ev_nonblock_io_t* io, unsigned evts, void* arg)
 {
     (void)evts;
-    ev_loop_t* loop = container_of(io, ev_loop_t, backend.wakeup.io);
+    ev_loop_t* loop = EV_CONTAINER_OF(io, ev_loop_t, backend.wakeup.io);
     ev_loop_on_wakeup_cb wakeup_cb = arg;
 
     _ev_wakeup_clear_eventfd(loop);

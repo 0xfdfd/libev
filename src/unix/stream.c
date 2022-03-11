@@ -37,7 +37,7 @@ static void _ev_stream_do_write(ev_nonblock_stream_t* stream)
 
     while ((it = ev_list_pop_front(&stream->pending.w_queue)) != NULL)
     {
-        req = container_of(it, ev_write_t, node);
+        req = EV_CONTAINER_OF(it, ev_write_t, node);
         if ((ret = _ev_stream_do_write_once(stream, req)) == EV_SUCCESS)
         {
             stream->callbacks.w_cb(stream, req, req->data.size, EV_SUCCESS);
@@ -59,7 +59,7 @@ static void _ev_stream_do_write(ev_nonblock_stream_t* stream)
 err:
     while ((it = ev_list_pop_front(&stream->pending.w_queue)) != NULL)
     {
-        req = container_of(it, ev_write_t, node);
+        req = EV_CONTAINER_OF(it, ev_write_t, node);
         stream->callbacks.w_cb(stream, req, req->data.size, ret);
     }
 }
@@ -68,7 +68,7 @@ static void _ev_stream_do_read(ev_nonblock_stream_t* stream)
 {
     int ret;
     ev_list_node_t* it = ev_list_pop_front(&stream->pending.r_queue);
-    ev_read_t* req = container_of(it, ev_read_t, node);
+    ev_read_t* req = EV_CONTAINER_OF(it, ev_read_t, node);
 
     size_t r_size = 0;
     ret = _ev_stream_do_read_once(stream, req, &r_size);
@@ -90,7 +90,7 @@ static void _ev_stream_do_read(ev_nonblock_stream_t* stream)
     /* If error, cleanup all pending read requests */
     while ((it = ev_list_pop_front(&stream->pending.r_queue)) != NULL)
     {
-        req = container_of(it, ev_read_t, node);
+        req = EV_CONTAINER_OF(it, ev_read_t, node);
         stream->callbacks.r_cb(stream, req, 0, ret);
     }
 }
@@ -100,7 +100,7 @@ static void _ev_stream_cleanup_r(ev_nonblock_stream_t* stream, int errcode)
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&stream->pending.r_queue)) != NULL)
     {
-        ev_read_t* req = container_of(it, ev_read_t, node);
+        ev_read_t* req = EV_CONTAINER_OF(it, ev_read_t, node);
         stream->callbacks.r_cb(stream, req, 0, errcode);
     }
 }
@@ -110,7 +110,7 @@ static void _ev_stream_cleanup_w(ev_nonblock_stream_t* stream, int errcode)
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&stream->pending.w_queue)) != NULL)
     {
-        ev_write_t* req = container_of(it, ev_write_t, node);
+        ev_write_t* req = EV_CONTAINER_OF(it, ev_write_t, node);
         stream->callbacks.w_cb(stream, req, req->data.size, errcode);
     }
 }
@@ -118,7 +118,7 @@ static void _ev_stream_cleanup_w(ev_nonblock_stream_t* stream, int errcode)
 static void _ev_nonblock_stream_on_io(ev_nonblock_io_t* io, unsigned evts, void* arg)
 {
     (void)arg;
-    ev_nonblock_stream_t* stream = container_of(io, ev_nonblock_stream_t, io);
+    ev_nonblock_stream_t* stream = EV_CONTAINER_OF(io, ev_nonblock_stream_t, io);
 
     if (evts & EPOLLOUT)
     {

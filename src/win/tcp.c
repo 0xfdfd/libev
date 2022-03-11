@@ -46,7 +46,7 @@ static void _ev_tcp_cleanup_listen(ev_tcp_t* sock)
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&sock->backend.u.listen.a_queue)) != NULL)
     {
-        ev_tcp_t* conn = container_of(it, ev_tcp_t, backend.u.accept.node);
+        ev_tcp_t* conn = EV_CONTAINER_OF(it, ev_tcp_t, backend.u.accept.node);
         _ev_tcp_close_socket(conn);
         conn->base.data.flags &= ~EV_TCP_ACCEPTING;
         _ev_tcp_deactive(conn);
@@ -54,7 +54,7 @@ static void _ev_tcp_cleanup_listen(ev_tcp_t* sock)
     }
     while ((it = ev_list_pop_front(&sock->backend.u.listen.a_queue_done)) != NULL)
     {
-        ev_tcp_t* conn = container_of(it, ev_tcp_t, backend.u.accept.node);
+        ev_tcp_t* conn = EV_CONTAINER_OF(it, ev_tcp_t, backend.u.accept.node);
         _ev_tcp_close_socket(conn);
         conn->base.data.flags &= ~EV_TCP_ACCEPTING;
         _ev_tcp_deactive(conn);
@@ -79,22 +79,22 @@ static void _ev_tcp_cleanup_stream(ev_tcp_t* sock)
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&sock->backend.u.stream.r_queue_done)) != NULL)
     {
-        ev_tcp_read_req_t* req = container_of(it, ev_tcp_read_req_t, base.node);
+        ev_tcp_read_req_t* req = EV_CONTAINER_OF(it, ev_tcp_read_req_t, base.node);
         _ev_tcp_r_user_callbak_win(req, req->base.data.size, req->backend.stat);
     }
     while ((it = ev_list_pop_front(&sock->backend.u.stream.r_queue)) != NULL)
     {
-        ev_tcp_read_req_t* req = container_of(it, ev_tcp_read_req_t, base.node);
+        ev_tcp_read_req_t* req = EV_CONTAINER_OF(it, ev_tcp_read_req_t, base.node);
         _ev_tcp_r_user_callbak_win(req, 0, EV_ECANCELED);
     }
     while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue_done)) != NULL)
     {
-        ev_tcp_write_req_t* req = container_of(it, ev_tcp_write_req_t, base.node);
+        ev_tcp_write_req_t* req = EV_CONTAINER_OF(it, ev_tcp_write_req_t, base.node);
         _ev_tcp_w_user_callback_win(req, req->base.data.size, req->backend.stat);
     }
     while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue)) != NULL)
     {
-        ev_tcp_write_req_t* req = container_of(it, ev_tcp_write_req_t, base.node);
+        ev_tcp_write_req_t* req = EV_CONTAINER_OF(it, ev_tcp_write_req_t, base.node);
         _ev_tcp_w_user_callback_win(req, 0, EV_ECANCELED);
     }
 }
@@ -110,7 +110,7 @@ static void _ev_tcp_cleanup_connect(ev_tcp_t* sock)
 
 static void _ev_tcp_on_close(ev_handle_t* handle)
 {
-    ev_tcp_t* sock = container_of(handle, ev_tcp_t, base);
+    ev_tcp_t* sock = EV_CONTAINER_OF(handle, ev_tcp_t, base);
     if (sock->sock != INVALID_SOCKET)
     {
         _ev_tcp_close_socket(sock);
@@ -252,7 +252,7 @@ static void _ev_tcp_process_stream(ev_tcp_t* sock)
 
     while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue_done)) != NULL)
     {
-        ev_tcp_write_req_t* req = container_of(it, ev_tcp_write_req_t, base.node);
+        ev_tcp_write_req_t* req = EV_CONTAINER_OF(it, ev_tcp_write_req_t, base.node);
         size_t write_size = req->base.data.size;
         int write_stat = req->backend.stat;
 
@@ -261,7 +261,7 @@ static void _ev_tcp_process_stream(ev_tcp_t* sock)
 
     while ((it = ev_list_pop_front(&sock->backend.u.stream.r_queue_done)) != NULL)
     {
-        ev_tcp_read_req_t* req = container_of(it, ev_tcp_read_req_t, base.node);
+        ev_tcp_read_req_t* req = EV_CONTAINER_OF(it, ev_tcp_read_req_t, base.node);
         size_t read_size = req->base.data.size;
         int read_stat = req->backend.stat;
 
@@ -302,7 +302,7 @@ static void _ev_tcp_process_connect(ev_tcp_t* sock)
 
 static void _ev_tcp_on_task_done(ev_todo_t* todo)
 {
-    ev_tcp_t* sock = container_of(todo, ev_tcp_t, backend.token);
+    ev_tcp_t* sock = EV_CONTAINER_OF(todo, ev_tcp_t, backend.token);
     sock->backend.mask.todo_pending = 0;
 
     if (sock->base.data.flags & EV_TCP_STREAMING)

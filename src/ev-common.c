@@ -18,8 +18,8 @@ typedef struct ev_strerror_pair
 static int _ev_cmp_timer(const ev_map_node_t* key1, const ev_map_node_t* key2, void* arg)
 {
     (void)arg;
-    ev_timer_t* t1 = container_of(key1, ev_timer_t, node);
-    ev_timer_t* t2 = container_of(key2, ev_timer_t, node);
+    ev_timer_t* t1 = EV_CONTAINER_OF(key1, ev_timer_t, node);
+    ev_timer_t* t2 = EV_CONTAINER_OF(key2, ev_timer_t, node);
 
     if (t1->data.active == t2->data.active)
     {
@@ -83,7 +83,7 @@ static int _ev_loop_active_timer(ev_loop_t* loop)
     ev_map_node_t* it;
     while ((it = ev_map_begin(&loop->timer.heap)) != NULL)
     {
-        ev_timer_t* timer = container_of(it, ev_timer_t, node);
+        ev_timer_t* timer = EV_CONTAINER_OF(it, ev_timer_t, node);
         if (timer->data.active > loop->hwtime)
         {
             break;
@@ -106,7 +106,7 @@ static void _ev_loop_active_todo(ev_loop_t* loop)
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&loop->todo.pending)) != NULL)
     {
-        ev_todo_t* todo = container_of(it, ev_todo_t, node);
+        ev_todo_t* todo = EV_CONTAINER_OF(it, ev_todo_t, node);
         todo->cb(todo);
     }
 }
@@ -119,7 +119,7 @@ static uint32_t _ev_backend_timeout_timer(ev_loop_t* loop)
         return (uint32_t)-1;
     }
 
-    ev_timer_t* timer = container_of(it, ev_timer_t, node);
+    ev_timer_t* timer = EV_CONTAINER_OF(it, ev_timer_t, node);
     if (timer->data.active <= loop->hwtime)
     {
         return 0;
@@ -154,7 +154,7 @@ static uint32_t _ev_backend_timeout(ev_loop_t* loop)
 
 static void _ev_to_close(ev_todo_t* todo)
 {
-    ev_handle_t* handle = container_of(todo, ev_handle_t, data.close_queue);
+    ev_handle_t* handle = EV_CONTAINER_OF(todo, ev_handle_t, data.close_queue);
 
     handle->data.flags &= ~EV_HANDLE_CLOSING;
     handle->data.flags |= EV_HANDLE_CLOSED;
@@ -190,7 +190,7 @@ static size_t _ev_calculate_write_size(const ev_write_t* req)
 
 static void _ev_async_on_close(ev_handle_t* handle)
 {
-    ev_async_t* async = container_of(handle, ev_async_t, base);
+    ev_async_t* async = EV_CONTAINER_OF(handle, ev_async_t, base);
 
     if (async->data.close_cb != NULL)
     {
@@ -206,7 +206,7 @@ static void _ev_loop_handle_async(ev_loop_t* loop)
         ev_mutex_enter(&loop->wakeup.async.mutex);
         {
             ev_queue_node_t* it = ev_queue_pop_front(&loop->wakeup.async.queue);
-            async = it != NULL ? container_of(it, ev_async_t, node) : NULL;
+            async = it != NULL ? EV_CONTAINER_OF(it, ev_async_t, node) : NULL;
         }
         ev_mutex_leave(&loop->wakeup.async.mutex);
 
@@ -233,7 +233,7 @@ static void _ev_loop_handle_work(ev_loop_t* loop)
         ev_mutex_enter(&loop->wakeup.work.mutex);
         {
             ev_list_node_t* it = ev_list_pop_front(&loop->wakeup.work.queue);
-            todo = it != NULL ? container_of(it, ev_todo_t, node) : NULL;
+            todo = it != NULL ? EV_CONTAINER_OF(it, ev_todo_t, node) : NULL;
         }
         ev_mutex_leave(&loop->wakeup.work.mutex);
 

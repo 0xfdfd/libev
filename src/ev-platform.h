@@ -1,5 +1,8 @@
 #ifndef __EV_PLATFORM_INTERNAL_H__
 #define __EV_PLATFORM_INTERNAL_H__
+
+#include "ev/defs.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,15 +17,8 @@ extern "C" {
 
 #if (defined(__GNUC__) || defined(__clang__)) && !defined(_WIN32)
 #   define API_LOCAL    __attribute__((visibility ("hidden")))
-#   define container_of(ptr, type, member) \
-        ({ \
-            const typeof(((type *)0)->member)*__mptr = (ptr); \
-            (type *)((char *)__mptr - offsetof(type, member)); \
-        })
 #else
 #   define API_LOCAL
-#   define container_of(ptr, type, member) \
-        ((type *) ((char *) (ptr) - offsetof(type, member)))
 #endif
 
 #if defined(_MSC_VER)

@@ -30,7 +30,7 @@ static void _ev_udp_cancel_all_w_unix(ev_udp_t* udp, int err)
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&udp->send_list)) != NULL)
     {
-        ev_udp_write_t* req = container_of(it, ev_udp_write_t, base.node);
+        ev_udp_write_t* req = EV_CONTAINER_OF(it, ev_udp_write_t, base.node);
         _ev_udp_w_user_callback_unix(req, req->base.data.size, err);
     }
 }
@@ -40,7 +40,7 @@ static void _ev_udp_cancel_all_r_unix(ev_udp_t* udp, int err)
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&udp->recv_list)) != NULL)
     {
-        ev_udp_read_t* req = container_of(it, ev_udp_read_t, base.node);
+        ev_udp_read_t* req = EV_CONTAINER_OF(it, ev_udp_read_t, base.node);
         _ev_udp_r_user_callback_unix(req, req->base.data.size, err);
     }
 }
@@ -54,7 +54,7 @@ static void _ev_udp_abort_unix(ev_udp_t* udp, int err)
 
 static void _ev_udp_on_close_unix(ev_handle_t* handle)
 {
-    ev_udp_t* udp = container_of(handle, ev_udp_t, base);
+    ev_udp_t* udp = EV_CONTAINER_OF(handle, ev_udp_t, base);
 
     _ev_udp_abort_unix(udp, EV_ECANCELED);
 
@@ -171,7 +171,7 @@ static int _ev_udp_on_io_write_unix(ev_udp_t* udp)
     ev_list_node_t* it;
     while ((it = ev_list_begin(&udp->send_list)) != NULL)
     {
-        ev_udp_write_t* req = container_of(it, ev_udp_write_t, base.node);
+        ev_udp_write_t* req = EV_CONTAINER_OF(it, ev_udp_write_t, base.node);
 
         if ((ret = _ev_udp_do_sendmsg_unix(udp, req)) != EV_SUCCESS)
         {
@@ -226,7 +226,7 @@ static int _ev_udp_on_io_read_unix(ev_udp_t* udp)
     ev_list_node_t* it;
     while ((it = ev_list_begin(&udp->recv_list)) != NULL)
     {
-        ev_udp_read_t* req = container_of(it, ev_udp_read_t, base.node);
+        ev_udp_read_t* req = EV_CONTAINER_OF(it, ev_udp_read_t, base.node);
 
         if ((ret = _ev_udp_do_recvmsg_unix(udp, req)) != EV_SUCCESS)
         {
@@ -269,7 +269,7 @@ static void _ev_udp_on_io_unix(ev_nonblock_io_t* io, unsigned evts, void* arg)
 {
     (void)arg;
     int ret;
-    ev_udp_t* udp = container_of(io, ev_udp_t, backend.io);
+    ev_udp_t* udp = EV_CONTAINER_OF(io, ev_udp_t, backend.io);
 
     if (evts & EPOLLOUT)
     {

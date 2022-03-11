@@ -47,7 +47,7 @@ static void _ev_pipe_cancel_all_r_ipc_mode(ev_pipe_t* pipe, int stat)
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&pipe->backend.ipc_mode.rio.pending)) != NULL)
     {
-        req = container_of(it, ev_pipe_read_req_t, base.node);
+        req = EV_CONTAINER_OF(it, ev_pipe_read_req_t, base.node);
         _ev_pipe_r_user_callback_win(req, req->base.data.size, stat);
     }
 }
@@ -64,7 +64,7 @@ static void _ev_pipe_cancel_all_r_data_mode(ev_pipe_t* pipe, int stat)
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&pipe->backend.data_mode.rio.r_pending)) != NULL)
     {
-        req = container_of(it, ev_pipe_read_req_t, base.node);
+        req = EV_CONTAINER_OF(it, ev_pipe_read_req_t, base.node);
         _ev_pipe_r_user_callback_win(req, req->base.data.size, stat);
     }
 }
@@ -100,7 +100,7 @@ static void _ev_pipe_cancel_all_w_data_mode(ev_pipe_t* pipe, int stat)
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&pipe->backend.data_mode.wio.w_pending)) != NULL)
     {
-        req = container_of(it, ev_pipe_write_req_t, base.node);
+        req = EV_CONTAINER_OF(it, ev_pipe_write_req_t, base.node);
         _ev_pipe_w_user_callback_win(req, req->base.data.size, stat);
     }
 }
@@ -118,7 +118,7 @@ static void _ev_pipe_cancel_all_w_ipc_mode(ev_pipe_t* pipe, int stat)
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&pipe->backend.ipc_mode.wio.pending)) != NULL)
     {
-        req = container_of(it, ev_pipe_write_req_t, base.node);
+        req = EV_CONTAINER_OF(it, ev_pipe_write_req_t, base.node);
         _ev_pipe_w_user_callback_win(req, req->base.data.size, stat);
     }
 }
@@ -137,7 +137,7 @@ static void _ev_pipe_cancel_all_w(ev_pipe_t* pipe, int stat)
 
 static void _ev_pipe_on_close_win(ev_handle_t* handle)
 {
-    ev_pipe_t* pipe = container_of(handle, ev_pipe_t, base);
+    ev_pipe_t* pipe = EV_CONTAINER_OF(handle, ev_pipe_t, base);
 
     if (pipe->close_cb != NULL)
     {
@@ -277,7 +277,7 @@ static void _ev_pipe_data_mode_callback_and_mount_next_win(ev_pipe_t* pipe, ev_p
     }
     else
     {
-        pipe->backend.data_mode.rio.r_doing = container_of(it, ev_pipe_read_req_t, base.node);
+        pipe->backend.data_mode.rio.r_doing = EV_CONTAINER_OF(it, ev_pipe_read_req_t, base.node);
     }
 
     _ev_pipe_r_user_callback_win(req, req->base.data.size, EV_SUCCESS);
@@ -433,7 +433,7 @@ static int _ev_pipe_io_wio_submit_pending(ev_pipe_t* pipe, struct ev_pipe_backen
     {
         return 1;
     }
-    ev_pipe_write_req_t* wreq = container_of(it, ev_pipe_write_req_t, base.node);
+    ev_pipe_write_req_t* wreq = EV_CONTAINER_OF(it, ev_pipe_write_req_t, base.node);
 
     wio->w_req = wreq;
     wio->w_buf_idx = 0;
@@ -470,7 +470,7 @@ static int _ev_pipe_io_wio_submit_next(ev_pipe_t* pipe, struct ev_pipe_backend_d
 static void _ev_pipe_on_data_mode_write(ev_iocp_t* iocp, size_t transferred, void* arg)
 {
     ev_pipe_t* pipe = arg;
-    struct ev_pipe_backend_data_mode_wio* wio = container_of(iocp, struct ev_pipe_backend_data_mode_wio, io);
+    struct ev_pipe_backend_data_mode_wio* wio = EV_CONTAINER_OF(iocp, struct ev_pipe_backend_data_mode_wio, io);
 
     /* wio will be override, we need to backup value */
     ev_pipe_write_req_t* curr_req = wio->w_req;
@@ -562,7 +562,8 @@ static ev_pipe_read_req_t* _ev_pipe_on_ipc_mode_read_mount_next(ev_pipe_t* pipe)
     }
     else
     {
-        pipe->backend.ipc_mode.rio.reading.reading = container_of(it, ev_pipe_read_req_t, base.node);
+        pipe->backend.ipc_mode.rio.reading.reading =
+            EV_CONTAINER_OF(it, ev_pipe_read_req_t, base.node);
     }
 
     return pipe->backend.ipc_mode.rio.reading.reading;
@@ -851,7 +852,7 @@ static int _ev_pipe_ipc_mode_send_next(ev_pipe_t* pipe)
         return EV_SUCCESS;
     }
 
-    ev_pipe_write_req_t* next_req = container_of(it, ev_pipe_write_req_t, base.node);
+    ev_pipe_write_req_t* next_req = EV_CONTAINER_OF(it, ev_pipe_write_req_t, base.node);
     int ret = _ev_pipe_ipc_mode_write_data(pipe, next_req);
     if (ret != EV_SUCCESS)
     {

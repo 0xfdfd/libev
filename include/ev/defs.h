@@ -36,6 +36,23 @@ extern "C" {
 #define EV_INIT_REPEAT_15(...)   EV_INIT_REPEAT_14(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
 #define EV_INIT_REPEAT_16(...)   EV_INIT_REPEAT_15(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
 
+/**
+ * @brief cast a member of a structure out to the containing structure.
+ */
+#if defined(container_of)
+#   define EV_CONTAINER_OF(ptr, type, member)   \
+        container_of(ptr, type, member)
+#elif defined(__GNUC__) || defined(__clang__)
+#   define EV_CONTAINER_OF(ptr, type, member)   \
+        ({ \
+            const typeof(((type *)0)->member)*__mptr = (ptr); \
+            (type *)((char *)__mptr - offsetof(type, member)); \
+        })
+#else
+#   define EV_CONTAINER_OF(ptr, type, member)   \
+        ((type *) ((char *) (ptr) - offsetof(type, member)))
+#endif
+
 struct ev_once;
 typedef struct ev_once ev_once_t;
 

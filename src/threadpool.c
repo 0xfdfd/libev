@@ -2,7 +2,7 @@
 
 static void _ev_threadpool_on_loop(ev_todo_t* todo)
 {
-    ev_threadpool_work_t* work = container_of(todo, ev_threadpool_work_t, token);
+    ev_threadpool_work_t* work = EV_CONTAINER_OF(todo, ev_threadpool_work_t, token);
     ev__handle_exit(&work->base, 0);
     work->data.done_cb(work, work->data.status);
 }
@@ -40,7 +40,7 @@ static ev_threadpool_work_t* _ev_threadpool_get_work_locked(ev_threadpool_t* poo
         return NULL;
     }
 
-    return container_of(it, ev_threadpool_work_t, node);
+    return EV_CONTAINER_OF(it, ev_threadpool_work_t, node);
 }
 
 static void _ev_threadpool_do_work(ev_threadpool_t* pool)
