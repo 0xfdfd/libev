@@ -13,6 +13,7 @@
 #include "ev/queue.h"
 #include "ev/todo.h"
 #include "ev/mutex.h"
+#include "ev/once.h"
 #include "ev/sem.h"
 #include "ev/thread.h"
 #include "ev/shmem.h"
@@ -81,17 +82,6 @@ int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t le
 /**
  * @} EV_UTILS/EV_UTILS_NET
  */
-
-/**
- * @brief Executes the specified function one time.
- *
- * No other threads that specify the same one-time initialization structure can
- * execute the specified function while it is being executed by the current thread.
- *
- * @param[in] guard     A pointer to the one-time initialization structure.
- * @param[in] cb        A pointer to an application-defined InitOnceCallback function.
- */
-void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
 
 /**
  * @brief Constructor for #ev_buf_t

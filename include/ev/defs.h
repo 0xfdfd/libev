@@ -53,9 +53,6 @@ extern "C" {
         ((type *) ((char *) (ptr) - offsetof(type, member)))
 #endif
 
-struct ev_once;
-typedef struct ev_once ev_once_t;
-
 struct ev_shmv;
 typedef struct ev_shmv ev_shmv_t;
 
@@ -70,13 +67,6 @@ typedef struct ev_read ev_read_t;
 
 struct ev_buf;
 typedef struct ev_buf ev_buf_t;
-
-/**
- * @brief An application-defined callback function.
- *
- * Specify a pointer to this function when calling the #ev_once_execute function.
- */
-typedef void(*ev_once_cb)(void);
 
 #ifdef __cplusplus
 }
