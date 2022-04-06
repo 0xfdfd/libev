@@ -22,7 +22,8 @@ add_library(${PROJECT_NAME}
     "src/shmem-common.c"
     "src/threadpool.c"
     "src/timer.c"
-    "src/udp-common.c")
+    "src/udp-common.c"
+    "src/version.c")
 if(WIN32)
     target_sources(${PROJECT_NAME}
         PRIVATE

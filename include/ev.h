@@ -24,6 +24,7 @@
 #include "ev/tcp.h"
 #include "ev/udp.h"
 #include "ev/pipe.h"
+#include "ev/version.h"
 
 #ifdef __cplusplus
 extern "C" {
