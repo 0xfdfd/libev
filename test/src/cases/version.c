@@ -4,8 +4,8 @@
 TEST(version, str)
 {
     char buffer[64];
-#if EV_VERSION_DEV
-    snprintf(buffer, sizeof(buffer), "%d.%d.%d-dev%d", EV_VERSION_MAJOR, EV_VERSION_MINOR, EV_VERSION_PATCH, EV_VERSION_DEV);
+#if EV_VERSION_PREREL
+    snprintf(buffer, sizeof(buffer), "%d.%d.%d-dev%d", EV_VERSION_MAJOR, EV_VERSION_MINOR, EV_VERSION_PATCH, EV_VERSION_PREREL);
 #else
     snprintf(buffer, sizeof(buffer), "%d.%d.%d", EV_VERSION_MAJOR, EV_VERSION_MINOR, EV_VERSION_PATCH);
 #endif

@@ -27,7 +27,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_DEV              2
+#define EV_VERSION_PREREL           2
 
 /**
  * @brief Version calculate helper macro.
@@ -42,7 +42,7 @@ extern "C" {
  * @brief Current version code.
  */
 #define EV_VERSION_CODE             \
-    EV_VERSION(EV_VERSION_MAJOR, EV_VERSION_MINOR, EV_VERSION_PATCH, EV_VERSION_DEV)
+    EV_VERSION(EV_VERSION_MAJOR, EV_VERSION_MINOR, EV_VERSION_PATCH, EV_VERSION_PREREL)
 
 /**
  * @brief Get version code as c string.
