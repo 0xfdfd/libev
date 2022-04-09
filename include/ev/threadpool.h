@@ -1,9 +1,10 @@
 #ifndef __EV_THREAD_POOL_H__
 #define __EV_THREAD_POOL_H__
 
-#include "ev/loop.h"
+#include "ev/loop_forward.h"
 #include "ev/thread.h"
 #include "ev/mutex.h"
+#include "ev/sem.h"
 #include "ev/list.h"
 #include "ev/async.h"
 #include "ev/todo.h"

@@ -1,5 +1,6 @@
-#include "cutest.h"
+#include "test.h"
 #include "tools/memcheck.h"
+#include <stdlib.h>
 
 static void _before_all_test(int argc, char* argv[])
 {

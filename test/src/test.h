@@ -61,6 +61,8 @@ int test_thread_execute(test_execute_token_t* token, fn_execute callback);
  */
 int test_thread_wait(test_execute_token_t* token);
 
+const char* test_strerror(int errcode);
+
 #ifdef __cplusplus
 }
 #endif

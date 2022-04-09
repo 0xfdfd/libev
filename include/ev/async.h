@@ -2,6 +2,7 @@
 #define __EV_ASYNC_H__
 
 #include "ev/defs.h"
+#include "ev/queue.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,7 +25,7 @@ typedef void(*ev_async_cb)(ev_async_t* async);
 struct ev_async
 {
     ev_handle_t             base;               /**< Base object */
-    ev_queue_node_t    node;               /**< #ev_loop_t::wakeup::async::queue */
+    ev_queue_node_t         node;               /**< #ev_loop_t::wakeup::async::queue */
 
     struct
     {

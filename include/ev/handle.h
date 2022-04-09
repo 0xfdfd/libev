@@ -4,6 +4,7 @@
 #include "ev/defs.h"
 #include "ev/list.h"
 #include "ev/todo.h"
+#include "ev/loop_forward.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,8 +20,9 @@ typedef enum ev_role
     EV_ROLE_EV_TCP          = 4,                    /**< Type of #ev_tcp_t */
     EV_ROLE_EV_UDP          = 5,                    /**< Reverse */
     EV_ROLE_EV_WORK         = 6,                    /**< Type of #ev_threadpool_work_t */
+    EV_ROLE_EV_FILE         = 7,                    /**< Type of #ev_file_t */
     EV_ROLE_EV__RANGE_BEG   = EV_ROLE_EV_TIMER,
-    EV_ROLE_EV__RANGE_END   = EV_ROLE_EV_WORK,
+    EV_ROLE_EV__RANGE_END   = EV_ROLE_EV_FILE,
 
     EV_ROLE_OS_SOCKET       = 100,              /**< OS socket */
     EV_ROLE_OS__RANGE_BEG   = EV_ROLE_OS_SOCKET,

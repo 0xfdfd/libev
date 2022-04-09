@@ -3,6 +3,7 @@
 
 #include "ev/defs.h"
 #include "ev/list.h"
+#include "ev/queue.h"
 #include "ev/mutex.h"
 #include "ev/backend.h"
 #include "ev/threadpool_forward.h"

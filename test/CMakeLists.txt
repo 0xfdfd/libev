@@ -7,6 +7,7 @@ add_executable(ev_test
     "src/utils/sockpair.c"
     "src/cases/async.c"
     "src/cases/buf.c"
+    "src/cases/file.c"
     "src/cases/ipv4_addr.c"
     "src/cases/list.c"
     "src/cases/loop_empty.c"
@@ -68,7 +69,8 @@ if (EV_PGO_EXPORT)
 endif ()
 
 target_link_libraries(ev_test PRIVATE ev cutest)
-add_test(ev_test ev_test)
+add_test(NAME ev_test
+    COMMAND $<TARGET_FILE:ev_test>)
 
 if(EV_HAVE_COVERAGE)
     setup_target_for_coverage_lcov(

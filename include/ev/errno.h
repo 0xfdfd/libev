@@ -62,6 +62,7 @@ typedef enum ev_errno
     /* Extend error code */
     EV_UNKNOWN          = -1001,                /**< Unknown error */
     EV_EOF              = -1002,                /**< End of file */
+    EV_ENOTHREADPOOL    = -1003,                /**< No linked thread pool */
 }ev_errno_t;
 
 /**

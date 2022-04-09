@@ -4,10 +4,10 @@
 extern "C" {
 #endif
 
-#include <stdlib.h>
-#include <assert.h>
 #include "ev.h"
 #include "ev-platform.h"
+#include <stdlib.h>
+#include <assert.h>
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #define EV_MIN(a, b)    ((a) < (b) ? (a) : (b))
@@ -181,6 +181,10 @@ API_LOCAL socklen_t ev__get_addr_len(const struct sockaddr* addr);
  */
 API_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf);
 
+/**
+ * @brief Cleanup write request
+ * @param[in] req   Write request
+ */
 API_LOCAL void ev__write_exit(ev_write_t* req);
 
 /**
@@ -192,7 +196,18 @@ API_LOCAL void ev__write_exit(ev_write_t* req);
  */
 API_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf);
 
+/**
+ * @brief Cleanup read request
+ * @param[in] req   read request
+ */
 API_LOCAL void ev__read_exit(ev_read_t* req);
+
+void* ev__malloc(size_t size);
+void* ev__calloc(size_t nmemb, size_t size);
+void* ev__realloc(void* ptr, size_t size);
+void ev__free(void* ptr);
+
+char* ev__strdup(const char* str);
 
 #ifdef __cplusplus
 }

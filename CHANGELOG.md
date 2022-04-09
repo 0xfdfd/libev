@@ -4,6 +4,7 @@
 
 ### Features
 1. Add version code
+2. add file support
 
 
 ## v0.0.2 (2022/03/10)
