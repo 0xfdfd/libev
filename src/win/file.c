@@ -17,7 +17,7 @@ static void _ev_file_on_close_win(ev_handle_t* handle)
     }
 }
 
-static int _ev_file_init_token_as_open_win(ev_file_req_t* token, ev_file_t* file,
+static int _ev_file_init_token_as_open_win(ev_fs_req_t* token, ev_file_t* file,
     const char* path, int flags, int mode, ev_file_cb cb)
 {
     token->file = file;
@@ -35,7 +35,7 @@ static int _ev_file_init_token_as_open_win(ev_file_req_t* token, ev_file_t* file
     return EV_SUCCESS;
 }
 
-static void _ev_file_cleanup_token_as_open_win(ev_file_req_t* token)
+static void _ev_file_cleanup_token_as_open_win(ev_fs_req_t* token)
 {
     if (token->op.as_open.path != NULL)
     {
@@ -44,7 +44,7 @@ static void _ev_file_cleanup_token_as_open_win(ev_file_req_t* token)
     }
 }
 
-static int _ev_file_get_open_attributes(ev_file_req_t* req, file_open_info_win_t* info)
+static int _ev_file_get_open_attributes(ev_fs_req_t* req, file_open_info_win_t* info)
 {
     info->access = 0;
     info->share = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
@@ -123,7 +123,7 @@ static int _ev_file_get_open_attributes(ev_file_req_t* req, file_open_info_win_t
 
 static void _ev_file_on_open_win(ev_threadpool_work_t* work)
 {
-    ev_file_req_t* req = EV_CONTAINER_OF(work, ev_file_req_t, work_token);
+    ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
     ev_file_t* file = req->file;
     int flags = req->op.as_open.flags;
 
@@ -153,7 +153,7 @@ static void _ev_file_on_open_win(ev_threadpool_work_t* work)
 
 static void _ev_file_on_open_done_win(ev_threadpool_work_t* work, int status)
 {
-    ev_file_req_t* req = EV_CONTAINER_OF(work, ev_file_req_t, work_token);
+    ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
     ev_file_t* file = req->file;
 
     if (status == EV_ECANCELED)
@@ -166,7 +166,7 @@ static void _ev_file_on_open_done_win(ev_threadpool_work_t* work, int status)
     req->cb(file, req);
 }
 
-static int _ev_file_init_token_as_read_win(ev_file_req_t* req, ev_file_t* file,
+static int _ev_file_init_token_as_read_win(ev_fs_req_t* req, ev_file_t* file,
     ev_buf_t bufs[], size_t nbuf, ssize_t offset, ev_file_cb cb)
 {
     int ret = ev__read_init(&req->op.as_read.read_req, bufs, nbuf);
@@ -182,14 +182,14 @@ static int _ev_file_init_token_as_read_win(ev_file_req_t* req, ev_file_t* file,
     return EV_SUCCESS;
 }
 
-static void _ev_file_cleanup_token_as_read_win(ev_file_req_t* req)
+static void _ev_file_cleanup_token_as_read_win(ev_fs_req_t* req)
 {
     ev__read_exit(&req->op.as_read.read_req);
 }
 
 static void _ev_file_on_read_win(ev_threadpool_work_t* work)
 {
-    ev_file_req_t* req = EV_CONTAINER_OF(work, ev_file_req_t, work_token);
+    ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
     ev_file_t* file = req->file;
     ev_read_t* read_req = &req->op.as_read.read_req;
     ssize_t offset = req->op.as_read.offset;
@@ -240,7 +240,7 @@ static void _ev_file_on_read_win(ev_threadpool_work_t* work)
 
 static void _ev_file_on_read_done_win(ev_threadpool_work_t* work, int status)
 {
-    ev_file_req_t* req = EV_CONTAINER_OF(work, ev_file_req_t, work_token);
+    ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
     ev_file_t* file = req->file;
 
     if (status == EV_ECANCELED)
@@ -253,7 +253,7 @@ static void _ev_file_on_read_done_win(ev_threadpool_work_t* work, int status)
     req->cb(file, req);
 }
 
-static int _ev_file_init_token_as_write_win(ev_file_req_t* token, ev_file_t* file,
+static int _ev_file_init_token_as_write_win(ev_fs_req_t* token, ev_file_t* file,
     ev_buf_t bufs[], size_t nbuf, ssize_t offset, ev_file_cb cb)
 {
     int ret = ev__write_init(&token->op.as_write.write_req, bufs, nbuf);
@@ -269,14 +269,14 @@ static int _ev_file_init_token_as_write_win(ev_file_req_t* token, ev_file_t* fil
     return EV_SUCCESS;
 }
 
-static void _ev_file_cleanup_token_as_write_win(ev_file_req_t* req)
+static void _ev_file_cleanup_token_as_write_win(ev_fs_req_t* req)
 {
     ev__write_exit(&req->op.as_write.write_req);
 }
 
 static void _ev_file_on_write_win(ev_threadpool_work_t* work)
 {
-    ev_file_req_t* req = EV_CONTAINER_OF(work, ev_file_req_t, work_token);
+    ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
     ev_file_t* file = req->file;
     ev_write_t* write_req = &req->op.as_write.write_req;
     ssize_t offset = req->op.as_write.offset;
@@ -322,7 +322,7 @@ static void _ev_file_on_write_win(ev_threadpool_work_t* work)
 
 static void _ev_file_on_write_done_win(ev_threadpool_work_t* work, int status)
 {
-    ev_file_req_t* req = EV_CONTAINER_OF(work, ev_file_req_t, work_token);
+    ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
     ev_file_t* file = req->file;
 
     if (status == EV_ECANCELED)
@@ -361,7 +361,7 @@ void ev_file_exit(ev_file_t* file, ev_file_close_cb cb)
     ev__handle_exit(&file->base, 0);
 }
 
-int ev_file_open(ev_file_t* file, ev_file_req_t* req, const char* path,
+int ev_file_open(ev_file_t* file, ev_fs_req_t* req, const char* path,
     int flags, int mode, ev_file_cb cb)
 {
     int ret;
@@ -385,7 +385,7 @@ int ev_file_open(ev_file_t* file, ev_file_req_t* req, const char* path,
     return EV_SUCCESS;
 }
 
-int ev_file_read(ev_file_t* file, ev_file_req_t* req, ev_buf_t bufs[],
+int ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb)
 {
     int ret;
@@ -409,7 +409,7 @@ int ev_file_read(ev_file_t* file, ev_file_req_t* req, ev_buf_t bufs[],
     return EV_SUCCESS;
 }
 
-int ev_file_write(ev_file_t* file, ev_file_req_t* req, ev_buf_t bufs[],
+int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb)
 {
     int ret;

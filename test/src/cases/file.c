@@ -17,7 +17,7 @@ typedef struct test_file
 {
     ev_loop_t       loop;           /**< Event loop */
     ev_file_t       file;           /**< File handle */
-    ev_file_req_t   token;          /**< Request token */
+    ev_fs_req_t   token;          /**< Request token */
 
     struct
     {
@@ -68,7 +68,7 @@ TEST_FIXTURE_TEAREDOWN(file)
     ev_threadpool_exit(&g_test_file.pool);
 }
 
-static void _test_file_on_open_nonexist_open(ev_file_t* file, ev_file_req_t* req)
+static void _test_file_on_open_nonexist_open(ev_file_t* file, ev_fs_req_t* req)
 {
     ASSERT_EQ_PTR(file, &g_test_file.file);
     ASSERT_EQ_D32(req->result, EV_ENOENT);
@@ -87,7 +87,7 @@ TEST_F(file, open_nonexist)
     ASSERT_EQ_D32(ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT), EV_SUCCESS);
 }
 
-static void _test_file_on_open_create_open(ev_file_t* file, ev_file_req_t* req)
+static void _test_file_on_open_create_open(ev_file_t* file, ev_fs_req_t* req)
 {
     ASSERT_EQ_PTR(file, &g_test_file.file);
     ASSERT_EQ_D32(req->result, EV_SUCCESS);
@@ -107,7 +107,7 @@ TEST_F(file, open_create)
     ASSERT_EQ_D32(ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT), EV_SUCCESS);
 }
 
-static void _test_file_read_write_on_open(ev_file_t* file, ev_file_req_t* req)
+static void _test_file_read_write_on_open(ev_file_t* file, ev_fs_req_t* req)
 {
     ASSERT_EQ_PTR(file, &g_test_file.file);
     ASSERT_EQ_D32(req->result, EV_SUCCESS);
@@ -115,13 +115,13 @@ static void _test_file_read_write_on_open(ev_file_t* file, ev_file_req_t* req)
     ASSERT_EQ_D32(access(s_sample_file, F_OK), 0);
 }
 
-static void _test_file_read_write_on_write_done(ev_file_t* file, ev_file_req_t* req)
+static void _test_file_read_write_on_write_done(ev_file_t* file, ev_fs_req_t* req)
 {
     ASSERT_EQ_PTR(file, &g_test_file.file);
     ASSERT_EQ_D32(req->result, strlen(s_test_buf));
 }
 
-static void _test_file_read_write_on_read_done(ev_file_t* file, ev_file_req_t* req)
+static void _test_file_read_write_on_read_done(ev_file_t* file, ev_fs_req_t* req)
 {
     ASSERT_EQ_PTR(file, &g_test_file.file);
     ASSERT_EQ_D32(req->result, strlen(s_test_buf));

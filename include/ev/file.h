@@ -1,3 +1,6 @@
+/**
+ * @file
+ */
 #ifndef __EV_FILE_H__
 #define __EV_FILE_H__
 
@@ -13,7 +16,7 @@ extern "C" {
 #endif
 
 /**
- * @defgroup EV_FILE File
+ * @addtogroup EV_FILESYSTEM
  * @{
  */
 
@@ -24,7 +27,7 @@ struct ev_file_s
     ev_file_close_cb            close_cb;       /**< Close callback */
 };
 
-struct ev_file_req_s
+struct ev_fs_req_s
 {
     ev_list_node_t              node;           /**< Queue node */
     ev_threadpool_work_t        work_token;     /**< Thread pool token */
@@ -71,7 +74,25 @@ int ev_file_init(ev_loop_t* loop, ev_file_t* file);
 void ev_file_exit(ev_file_t* file, ev_file_close_cb cb);
 
 /**
- * @brief Open file.
+ * @brief Equivalent to [open(2)](https://man7.org/linux/man-pages/man2/open.2.html).
+ * 
+ * The full list of \p flags are:
+ * + #EV_FS_O_APPEND
+ * + #EV_FS_O_CREAT
+ * + #EV_FS_O_DSYNC
+ * + #EV_FS_O_EXCL
+ * + #EV_FS_O_SYNC
+ * + #EV_FS_O_TRUNC
+ * + #EV_FS_O_RDONLY
+ * + #EV_FS_O_WRONLY
+ * + #EV_FS_O_RDWR
+ * 
+ * The full list of \p mode are:
+ * + #EV_FS_S_IRUSR
+ * + #EV_FS_S_IWUSR
+ * + #EV_FS_S_IXUSR
+ * + #EV_FS_S_IRWXU
+ * 
  * @note File always open in binary mode.
  * @param[in] file      File handle
  * @param[in] req       File token
@@ -81,7 +102,7 @@ void ev_file_exit(ev_file_t* file, ev_file_close_cb cb);
  * @param[in] cb        Open result callback
  * @return              #ev_errno_t
  */
-int ev_file_open(ev_file_t* file, ev_file_req_t* req, const char* path,
+int ev_file_open(ev_file_t* file, ev_fs_req_t* req, const char* path,
     int flags, int mode, ev_file_cb cb);
 
 /**
@@ -94,7 +115,7 @@ int ev_file_open(ev_file_t* file, ev_file_req_t* req, const char* path,
  * @param[in] cb        Read callback
  * @return              #ev_errno_t
  */
-int ev_file_read(ev_file_t* file, ev_file_req_t* req, ev_buf_t bufs[],
+int ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb);
 
 /**
@@ -107,11 +128,11 @@ int ev_file_read(ev_file_t* file, ev_file_req_t* req, ev_buf_t bufs[],
  * @param[in] cb        Write callback
  * @return              #ev_errno_t
  */
-int ev_file_write(ev_file_t* file, ev_file_req_t* req, ev_buf_t bufs[],
+int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb);
 
 /**
- * @} EV_FILE
+ * @} EV_FILESYSTEM
  */
 
 #ifdef __cplusplus

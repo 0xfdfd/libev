@@ -12,8 +12,8 @@ extern "C" {
 struct ev_file_s;
 typedef struct ev_file_s ev_file_t;
 
-struct ev_file_req_s;
-typedef struct ev_file_req_s ev_file_req_t;
+struct ev_fs_req_s;
+typedef struct ev_fs_req_s ev_fs_req_t;
 
 /**
  * @brief File close callback
@@ -26,7 +26,7 @@ typedef void (*ev_file_close_cb)(ev_file_t* file);
  * @param[in] file      File handle
  * @param[in] req       Request token
  */
-typedef void (*ev_file_cb)(ev_file_t* file, ev_file_req_t* req);
+typedef void (*ev_file_cb)(ev_file_t* file, ev_fs_req_t* req);
 
 /**
  * @} EV_FILESYSTEM
