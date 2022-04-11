@@ -15,6 +15,9 @@ typedef struct ev_file_s ev_file_t;
 struct ev_fs_req_s;
 typedef struct ev_fs_req_s ev_fs_req_t;
 
+struct ev_file_stat_s;
+typedef struct ev_file_stat_s ev_file_stat_t;
+
 /**
  * @brief File close callback
  * @param[in] file      File handle

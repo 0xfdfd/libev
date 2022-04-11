@@ -10,6 +10,7 @@
 #include "ev/threadpool.h"
 #include "ev/request.h"
 #include "ev/os.h"
+#include "ev/time.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,6 +26,27 @@ struct ev_file_s
     ev_handle_t                 base;           /**< Base object */
     ev_os_file_t                file;           /**< File handle */
     ev_file_close_cb            close_cb;       /**< Close callback */
+};
+
+struct ev_file_stat_s
+{
+    uint64_t                    st_dev;         /**< ID of device containing file */
+    uint64_t                    st_ino;         /**< Inode number */
+    uint64_t                    st_mode;        /**< File type and mode */
+    uint64_t                    st_nlink;       /**< Number of hard links */
+    uint64_t                    st_uid;         /**< User ID of owner */
+    uint64_t                    st_gid;         /**< Group ID of owner */
+    uint64_t                    st_rdev;        /**< Device ID (if special file) */
+
+    uint64_t                    st_size;        /**< Total size, in bytes */
+    uint64_t                    st_blksize;     /**< Block size for filesystem I/O */
+    uint64_t                    st_blocks;      /**< Number of 512B blocks allocated */
+    uint64_t                    st_flags;
+    uint64_t                    st_gen;
+    ev_timespec_t               st_atim;        /**< Time of last access */
+    ev_timespec_t               st_mtim;        /**< Time of last modification */
+    ev_timespec_t               st_ctim;        /**< Time of last status change */
+    ev_timespec_t               st_birthtim;    /**< Time of file creation */
 };
 
 struct ev_fs_req_s
@@ -55,7 +77,15 @@ struct ev_fs_req_s
             ssize_t             offset;         /**< File offset */
             ev_write_t          write_req;      /**< Write token */
         }as_write;
-    }op;
+    }req;
+
+    union
+    {
+        struct
+        {
+            ev_file_stat_t      fileinfo;       /**< File information */
+        }as_fstat;
+    }rsp;
 };
 
 /**
@@ -130,6 +160,22 @@ int ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
  */
 int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb);
+
+/**
+ * @brief Get information about a file.
+ * @param[in] file      File handle.
+ * @param[in] req       File system request.
+ * @param[in] cb        Result callback.
+ * @return              #ev_errno_t
+ */
+int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_file_cb cb);
+
+/**
+ * @brief Get stat buffer from \p req.
+ * @param[in] req       A finish file system request
+ * @return              Stat buf
+ */
+ev_file_stat_t* ev_fs_get_statbuf(ev_fs_req_t* req);
 
 /**
  * @} EV_FILESYSTEM

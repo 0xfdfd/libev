@@ -19,6 +19,18 @@ typedef _Return_type_success_(return >= 0)  LONG NTSTATUS;
 #   define NT_SUCCESS(Status)               (((NTSTATUS)(Status)) >= 0)
 #endif
 
+#ifndef NT_INFORMATION
+# define NT_INFORMATION(status) ((((ULONG) (status)) >> 30) == 1)
+#endif
+
+#ifndef NT_WARNING
+# define NT_WARNING(status) ((((ULONG) (status)) >> 30) == 2)
+#endif
+
+#ifndef NT_ERROR
+#   define NT_ERROR(status) ((((ULONG) (status)) >> 30) == 3)
+#endif
+
 #ifndef STATUS_SUCCESS
 #   define STATUS_SUCCESS                   ((NTSTATUS)0x00000000L)
 #endif
@@ -286,6 +298,20 @@ typedef enum _FILE_INFORMATION_CLASS {
     FileMaximumInformation
 } FILE_INFORMATION_CLASS, * PFILE_INFORMATION_CLASS;
 
+typedef enum _FS_INFORMATION_CLASS {
+    FileFsVolumeInformation = 1,
+    FileFsLabelInformation = 2,
+    FileFsSizeInformation = 3,
+    FileFsDeviceInformation = 4,
+    FileFsAttributeInformation = 5,
+    FileFsControlInformation = 6,
+    FileFsFullSizeInformation = 7,
+    FileFsObjectIdInformation = 8,
+    FileFsDriverPathInformation = 9,
+    FileFsVolumeFlagsInformation = 10,
+    FileFsSectorSizeInformation = 11
+} FS_INFORMATION_CLASS, * PFS_INFORMATION_CLASS;
+
 typedef struct _IO_STATUS_BLOCK {
 #pragma warning(push)
 #pragma warning(disable: 4201) // we'll always use the Microsoft compiler
@@ -298,13 +324,109 @@ typedef struct _IO_STATUS_BLOCK {
     ULONG_PTR Information;
 } IO_STATUS_BLOCK, * PIO_STATUS_BLOCK;
 
+typedef struct _FILE_BASIC_INFORMATION {
+    LARGE_INTEGER CreationTime;
+    LARGE_INTEGER LastAccessTime;
+    LARGE_INTEGER LastWriteTime;
+    LARGE_INTEGER ChangeTime;
+    DWORD FileAttributes;
+} FILE_BASIC_INFORMATION, * PFILE_BASIC_INFORMATION;
+
+typedef struct _FILE_STANDARD_INFORMATION {
+    LARGE_INTEGER AllocationSize;
+    LARGE_INTEGER EndOfFile;
+    ULONG         NumberOfLinks;
+    BOOLEAN       DeletePending;
+    BOOLEAN       Directory;
+} FILE_STANDARD_INFORMATION, * PFILE_STANDARD_INFORMATION;
+
+typedef struct _FILE_INTERNAL_INFORMATION {
+    LARGE_INTEGER IndexNumber;
+} FILE_INTERNAL_INFORMATION, * PFILE_INTERNAL_INFORMATION;
+
+typedef struct _FILE_EA_INFORMATION {
+    ULONG EaSize;
+} FILE_EA_INFORMATION, * PFILE_EA_INFORMATION;
+
 typedef struct _FILE_ACCESS_INFORMATION {
     ACCESS_MASK AccessFlags;
 } FILE_ACCESS_INFORMATION, * PFILE_ACCESS_INFORMATION;
 
+typedef struct _FILE_POSITION_INFORMATION {
+    LARGE_INTEGER CurrentByteOffset;
+} FILE_POSITION_INFORMATION, * PFILE_POSITION_INFORMATION;
+
 typedef struct _FILE_MODE_INFORMATION {
     ULONG Mode;
 } FILE_MODE_INFORMATION, * PFILE_MODE_INFORMATION;
+
+typedef struct _FILE_ALIGNMENT_INFORMATION {
+    ULONG AlignmentRequirement;
+} FILE_ALIGNMENT_INFORMATION, * PFILE_ALIGNMENT_INFORMATION;
+
+typedef struct _FILE_NAME_INFORMATION {
+    ULONG FileNameLength;
+    WCHAR FileName[1];
+} FILE_NAME_INFORMATION, * PFILE_NAME_INFORMATION;
+
+typedef struct _FILE_ALL_INFORMATION {
+    FILE_BASIC_INFORMATION     BasicInformation;
+    FILE_STANDARD_INFORMATION  StandardInformation;
+    FILE_INTERNAL_INFORMATION  InternalInformation;
+    FILE_EA_INFORMATION        EaInformation;
+    FILE_ACCESS_INFORMATION    AccessInformation;
+    FILE_POSITION_INFORMATION  PositionInformation;
+    FILE_MODE_INFORMATION      ModeInformation;
+    FILE_ALIGNMENT_INFORMATION AlignmentInformation;
+    FILE_NAME_INFORMATION      NameInformation;
+} FILE_ALL_INFORMATION, * PFILE_ALL_INFORMATION;
+
+typedef struct _FILE_FS_VOLUME_INFORMATION {
+    LARGE_INTEGER VolumeCreationTime;
+    ULONG         VolumeSerialNumber;
+    ULONG         VolumeLabelLength;
+    BOOLEAN       SupportsObjects;
+    WCHAR         VolumeLabel[1];
+} FILE_FS_VOLUME_INFORMATION, * PFILE_FS_VOLUME_INFORMATION;
+
+/**
+ * MinGW already has a definition for REPARSE_DATA_BUFFER, but mingw-w64 does
+ * not.
+ */
+#if defined(_MSC_VER) || defined(__MINGW64_VERSION_MAJOR)
+typedef struct _REPARSE_DATA_BUFFER {
+    ULONG  ReparseTag;
+    USHORT ReparseDataLength;
+    USHORT Reserved;
+#pragma warning(push)
+#pragma warning(disable : 4201)
+    union {
+        struct {
+            USHORT SubstituteNameOffset;
+            USHORT SubstituteNameLength;
+            USHORT PrintNameOffset;
+            USHORT PrintNameLength;
+            ULONG Flags;
+            WCHAR PathBuffer[1];
+        } SymbolicLinkReparseBuffer;
+        struct {
+            USHORT SubstituteNameOffset;
+            USHORT SubstituteNameLength;
+            USHORT PrintNameOffset;
+            USHORT PrintNameLength;
+            WCHAR PathBuffer[1];
+        } MountPointReparseBuffer;
+        struct {
+            UCHAR  DataBuffer[1];
+        } GenericReparseBuffer;
+        struct {
+            ULONG StringCount;
+            WCHAR StringList[1];
+        } AppExecLinkReparseBuffer;
+    };
+#pragma warning(pop)
+} REPARSE_DATA_BUFFER, * PREPARSE_DATA_BUFFER;
+#endif
 
 /**
  * @brief The NtQueryInformationFile routine returns various kinds of information about a file object.
@@ -318,6 +440,26 @@ typedef NTSTATUS (NTAPI* fn_NtQueryInformationFile)(HANDLE FileHandle, PIO_STATU
  * @see https://docs.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-rtlntstatustodoserror
  */
 typedef ULONG (NTAPI* fn_RtlNtStatusToDosError)(NTSTATUS Status);
+
+/**
+ * @brief Retrieves information about the volume associated with a given file, directory, storage device, or volume.
+ * @see https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntqueryvolumeinformationfile
+ */
+typedef NTSTATUS(NTAPI* fn_NtQueryVolumeInformationFile)(HANDLE FileHandle,
+    PIO_STATUS_BLOCK IoStatusBlock, PVOID FsInformation, ULONG Length,
+    FS_INFORMATION_CLASS FsInformationClass);
+
+typedef struct ev_winapi_s
+{
+    fn_NtQueryInformationFile       NtQueryInformationFile;
+    fn_RtlNtStatusToDosError        RtlNtStatusToDosError;
+    fn_NtQueryVolumeInformationFile NtQueryVolumeInformationFile;
+}ev_winapi_t;
+
+/**
+ * @brief Windows API.
+ */
+extern ev_winapi_t ev_winapi;
 
 /**
  * @brief Initialize WinAPI

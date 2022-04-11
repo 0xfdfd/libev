@@ -1,6 +1,7 @@
 #include <assert.h>
 #include "win/loop.h"
 #include "win/thread.h"
+#include "win/winapi.h"
 
 ev_loop_win_ctx_t g_ev_loop_win_ctx;
 

@@ -1,4 +1,13 @@
-#include "ev-common.h"
+#include "win/loop.h"
+#include "win/winapi.h"
+
+#define MILLION ((int64_t) 1000 * 1000)
+#define BILLION ((int64_t) 1000 * 1000 * 1000)
+#define NSEC_IN_SEC (1 * 1000 * 1000 * 1000)
+
+#ifndef S_IFLNK
+#   define S_IFLNK 0xA000
+#endif
 
 typedef struct file_open_info_win_s
 {
@@ -17,30 +26,53 @@ static void _ev_file_on_close_win(ev_handle_t* handle)
     }
 }
 
+static void _ev_file_on_done_win(ev_threadpool_work_t* work, int status, void (*cb)(ev_fs_req_t*))
+{
+    ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
+    ev_file_t* file = req->file;
+
+    if (status == EV_ECANCELED)
+    {
+        assert(req->result == EV_SUCCESS);
+        req->result = EV_ECANCELED;
+    }
+
+    if (cb != NULL)
+    {
+        cb(req);
+    }
+    req->cb(file, req);
+}
+
+static void _ev_file_init_token_win(ev_fs_req_t* req, ev_file_t* file, ev_file_cb cb)
+{
+    req->cb = cb;
+    req->file = file;
+    req->result = EV_EINPROGRESS;
+}
+
 static int _ev_file_init_token_as_open_win(ev_fs_req_t* token, ev_file_t* file,
     const char* path, int flags, int mode, ev_file_cb cb)
 {
-    token->file = file;
-    token->cb = cb;
-    token->result = EV_SUCCESS;
+    _ev_file_init_token_win(token, file, cb);
 
-    if ((token->op.as_open.path = ev__strdup(path)) == NULL)
+    if ((token->req.as_open.path = ev__strdup(path)) == NULL)
     {
         return EV_ENOMEM;
     }
 
-    token->op.as_open.flags = flags;
-    token->op.as_open.mode = mode;
+    token->req.as_open.flags = flags;
+    token->req.as_open.mode = mode;
 
     return EV_SUCCESS;
 }
 
 static void _ev_file_cleanup_token_as_open_win(ev_fs_req_t* token)
 {
-    if (token->op.as_open.path != NULL)
+    if (token->req.as_open.path != NULL)
     {
-        ev__free(token->op.as_open.path);
-        token->op.as_open.path = NULL;
+        ev__free(token->req.as_open.path);
+        token->req.as_open.path = NULL;
     }
 }
 
@@ -51,8 +83,8 @@ static int _ev_file_get_open_attributes(ev_fs_req_t* req, file_open_info_win_t* 
     info->attributes = FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS;
     info->disposition = 0;
 
-    int flags = req->op.as_open.flags;
-    int mode = req->op.as_open.mode;
+    int flags = req->req.as_open.flags;
+    int mode = req->req.as_open.mode;
 
     switch (flags & (EV_FS_O_RDONLY | EV_FS_O_WRONLY | EV_FS_O_RDWR))
     {
@@ -125,7 +157,7 @@ static void _ev_file_on_open_win(ev_threadpool_work_t* work)
 {
     ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
     ev_file_t* file = req->file;
-    int flags = req->op.as_open.flags;
+    int flags = req->req.as_open.flags;
 
     file_open_info_win_t info;
     req->result = _ev_file_get_open_attributes(req, &info);
@@ -134,7 +166,7 @@ static void _ev_file_on_open_win(ev_threadpool_work_t* work)
         return;
     }
 
-    const char* path = req->op.as_open.path;
+    const char* path = req->req.as_open.path;
     file->file = CreateFile(path, info.access, info.share, NULL, info.disposition, info.attributes, NULL);
     if (file->file == INVALID_HANDLE_VALUE)
     {
@@ -153,46 +185,36 @@ static void _ev_file_on_open_win(ev_threadpool_work_t* work)
 
 static void _ev_file_on_open_done_win(ev_threadpool_work_t* work, int status)
 {
-    ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
-    ev_file_t* file = req->file;
-
-    if (status == EV_ECANCELED)
-    {
-        assert(req->result == EV_SUCCESS);
-        req->result = EV_ECANCELED;
-    }
-
-    _ev_file_cleanup_token_as_open_win(req);
-    req->cb(file, req);
+    _ev_file_on_done_win(work, status, _ev_file_cleanup_token_as_open_win);
 }
 
 static int _ev_file_init_token_as_read_win(ev_fs_req_t* req, ev_file_t* file,
     ev_buf_t bufs[], size_t nbuf, ssize_t offset, ev_file_cb cb)
 {
-    int ret = ev__read_init(&req->op.as_read.read_req, bufs, nbuf);
+    int ret;
+    _ev_file_init_token_win(req, file, cb);
+
+    ret = ev__read_init(&req->req.as_read.read_req, bufs, nbuf);
     if (ret != EV_SUCCESS)
     {
         return ret;
     }
-    req->op.as_read.offset = offset;
-    req->cb = cb;
-    req->file = file;
-    req->result = EV_SUCCESS;
+    req->req.as_read.offset = offset;
 
     return EV_SUCCESS;
 }
 
 static void _ev_file_cleanup_token_as_read_win(ev_fs_req_t* req)
 {
-    ev__read_exit(&req->op.as_read.read_req);
+    ev__read_exit(&req->req.as_read.read_req);
 }
 
 static void _ev_file_on_read_win(ev_threadpool_work_t* work)
 {
     ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
     ev_file_t* file = req->file;
-    ev_read_t* read_req = &req->op.as_read.read_req;
-    ssize_t offset = req->op.as_read.offset;
+    ev_read_t* read_req = &req->req.as_read.read_req;
+    ssize_t offset = req->req.as_read.offset;
 
     if (file->file == INVALID_HANDLE_VALUE)
     {
@@ -240,46 +262,36 @@ static void _ev_file_on_read_win(ev_threadpool_work_t* work)
 
 static void _ev_file_on_read_done_win(ev_threadpool_work_t* work, int status)
 {
-    ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
-    ev_file_t* file = req->file;
-
-    if (status == EV_ECANCELED)
-    {
-        assert(req->result == EV_SUCCESS);
-        req->result = EV_ECANCELED;
-    }
-
-    _ev_file_cleanup_token_as_read_win(req);
-    req->cb(file, req);
+    _ev_file_on_done_win(work, status, _ev_file_cleanup_token_as_read_win);
 }
 
 static int _ev_file_init_token_as_write_win(ev_fs_req_t* token, ev_file_t* file,
     ev_buf_t bufs[], size_t nbuf, ssize_t offset, ev_file_cb cb)
 {
-    int ret = ev__write_init(&token->op.as_write.write_req, bufs, nbuf);
+    int ret;
+    _ev_file_init_token_win(token, file, cb);
+
+    ret = ev__write_init(&token->req.as_write.write_req, bufs, nbuf);
     if (ret != EV_SUCCESS)
     {
         return ret;
     }
-    token->op.as_write.offset = offset;
-    token->cb = cb;
-    token->file = file;
-    token->result = EV_SUCCESS;
+    token->req.as_write.offset = offset;
 
     return EV_SUCCESS;
 }
 
 static void _ev_file_cleanup_token_as_write_win(ev_fs_req_t* req)
 {
-    ev__write_exit(&req->op.as_write.write_req);
+    ev__write_exit(&req->req.as_write.write_req);
 }
 
 static void _ev_file_on_write_win(ev_threadpool_work_t* work)
 {
     ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
     ev_file_t* file = req->file;
-    ev_write_t* write_req = &req->op.as_write.write_req;
-    ssize_t offset = req->op.as_write.offset;
+    ev_write_t* write_req = &req->req.as_write.write_req;
+    ssize_t offset = req->req.as_write.offset;
 
     if (file->file == INVALID_HANDLE_VALUE)
     {
@@ -322,17 +334,389 @@ static void _ev_file_on_write_win(ev_threadpool_work_t* work)
 
 static void _ev_file_on_write_done_win(ev_threadpool_work_t* work, int status)
 {
+    _ev_file_on_done_win(work, status, _ev_file_cleanup_token_as_write_win);
+}
+
+static int _ev_fs_wide_to_utf8(WCHAR* w_source_ptr,
+    DWORD w_source_len,
+    char** target_ptr,
+    uint64_t* target_len_ptr) {
+    int r;
+    int target_len;
+    char* target;
+    target_len = WideCharToMultiByte(CP_UTF8,
+        0,
+        w_source_ptr,
+        w_source_len,
+        NULL,
+        0,
+        NULL,
+        NULL);
+
+    if (target_len == 0) {
+        return -1;
+    }
+
+    if (target_len_ptr != NULL) {
+        *target_len_ptr = target_len;
+    }
+
+    if (target_ptr == NULL) {
+        return 0;
+    }
+
+    target = ev__malloc(target_len + 1);
+    if (target == NULL) {
+        SetLastError(ERROR_OUTOFMEMORY);
+        return -1;
+    }
+
+    r = WideCharToMultiByte(CP_UTF8,
+        0,
+        w_source_ptr,
+        w_source_len,
+        target,
+        target_len,
+        NULL,
+        NULL);
+    assert(r == target_len);
+    target[target_len] = '\0';
+    *target_ptr = target;
+    return 0;
+}
+
+static int _ev_fs_readlink_handle(HANDLE handle, char** target_ptr,
+    uint64_t* target_len_ptr)
+{
+    char buffer[MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
+    REPARSE_DATA_BUFFER* reparse_data = (REPARSE_DATA_BUFFER*)buffer;
+    WCHAR* w_target;
+    DWORD w_target_len;
+    DWORD bytes;
+    size_t i;
+    size_t len;
+
+    if (!DeviceIoControl(handle,
+        FSCTL_GET_REPARSE_POINT,
+        NULL,
+        0,
+        buffer,
+        sizeof buffer,
+        &bytes,
+        NULL)) {
+        return -1;
+    }
+
+    if (reparse_data->ReparseTag == IO_REPARSE_TAG_SYMLINK) {
+        /* Real symlink */
+        w_target = reparse_data->SymbolicLinkReparseBuffer.PathBuffer +
+            (reparse_data->SymbolicLinkReparseBuffer.SubstituteNameOffset /
+                sizeof(WCHAR));
+        w_target_len =
+            reparse_data->SymbolicLinkReparseBuffer.SubstituteNameLength /
+            sizeof(WCHAR);
+
+        /* Real symlinks can contain pretty much everything, but the only thing we
+         * really care about is undoing the implicit conversion to an NT namespaced
+         * path that CreateSymbolicLink will perform on absolute paths. If the path
+         * is win32-namespaced then the user must have explicitly made it so, and
+         * we better just return the unmodified reparse data. */
+        if (w_target_len >= 4 &&
+            w_target[0] == L'\\' &&
+            w_target[1] == L'?' &&
+            w_target[2] == L'?' &&
+            w_target[3] == L'\\') {
+            /* Starts with \??\ */
+            if (w_target_len >= 6 &&
+                ((w_target[4] >= L'A' && w_target[4] <= L'Z') ||
+                    (w_target[4] >= L'a' && w_target[4] <= L'z')) &&
+                w_target[5] == L':' &&
+                (w_target_len == 6 || w_target[6] == L'\\')) {
+                /* \??\<drive>:\ */
+                w_target += 4;
+                w_target_len -= 4;
+
+            }
+            else if (w_target_len >= 8 &&
+                (w_target[4] == L'U' || w_target[4] == L'u') &&
+                (w_target[5] == L'N' || w_target[5] == L'n') &&
+                (w_target[6] == L'C' || w_target[6] == L'c') &&
+                w_target[7] == L'\\') {
+                /* \??\UNC\<server>\<share>\ - make sure the final path looks like
+                 * \\<server>\<share>\ */
+                w_target += 6;
+                w_target[0] = L'\\';
+                w_target_len -= 6;
+            }
+        }
+
+    }
+    else if (reparse_data->ReparseTag == IO_REPARSE_TAG_MOUNT_POINT) {
+        /* Junction. */
+        w_target = reparse_data->MountPointReparseBuffer.PathBuffer +
+            (reparse_data->MountPointReparseBuffer.SubstituteNameOffset /
+                sizeof(WCHAR));
+        w_target_len = reparse_data->MountPointReparseBuffer.SubstituteNameLength /
+            sizeof(WCHAR);
+
+        /* Only treat junctions that look like \??\<drive>:\ as symlink. Junctions
+         * can also be used as mount points, like \??\Volume{<guid>}, but that's
+         * confusing for programs since they wouldn't be able to actually
+         * understand such a path when returned by uv_readlink(). UNC paths are
+         * never valid for junctions so we don't care about them. */
+        if (!(w_target_len >= 6 &&
+            w_target[0] == L'\\' &&
+            w_target[1] == L'?' &&
+            w_target[2] == L'?' &&
+            w_target[3] == L'\\' &&
+            ((w_target[4] >= L'A' && w_target[4] <= L'Z') ||
+                (w_target[4] >= L'a' && w_target[4] <= L'z')) &&
+            w_target[5] == L':' &&
+            (w_target_len == 6 || w_target[6] == L'\\'))) {
+            SetLastError(ERROR_SYMLINK_NOT_SUPPORTED);
+            return -1;
+        }
+
+        /* Remove leading \??\ */
+        w_target += 4;
+        w_target_len -= 4;
+
+    }
+    else if (reparse_data->ReparseTag == IO_REPARSE_TAG_APPEXECLINK) {
+        /* String #3 in the list has the target filename. */
+        if (reparse_data->AppExecLinkReparseBuffer.StringCount < 3) {
+            SetLastError(ERROR_SYMLINK_NOT_SUPPORTED);
+            return -1;
+        }
+        w_target = reparse_data->AppExecLinkReparseBuffer.StringList;
+        /* The StringList buffer contains a list of strings separated by "\0",   */
+        /* with "\0\0" terminating the list. Move to the 3rd string in the list: */
+        for (i = 0; i < 2; ++i) {
+            len = wcslen(w_target);
+            if (len == 0) {
+                SetLastError(ERROR_SYMLINK_NOT_SUPPORTED);
+                return -1;
+            }
+            w_target += len + 1;
+        }
+        w_target_len = (DWORD)wcslen(w_target);
+        if (w_target_len == 0) {
+            SetLastError(ERROR_SYMLINK_NOT_SUPPORTED);
+            return -1;
+        }
+        /* Make sure it is an absolute path. */
+        if (!(w_target_len >= 3 &&
+            ((w_target[0] >= L'a' && w_target[0] <= L'z') ||
+                (w_target[0] >= L'A' && w_target[0] <= L'Z')) &&
+            w_target[1] == L':' &&
+            w_target[2] == L'\\')) {
+            SetLastError(ERROR_SYMLINK_NOT_SUPPORTED);
+            return -1;
+        }
+
+    }
+    else {
+        /* Reparse tag does not indicate a symlink. */
+        SetLastError(ERROR_SYMLINK_NOT_SUPPORTED);
+        return -1;
+    }
+
+    return _ev_fs_wide_to_utf8(w_target, w_target_len, target_ptr, target_len_ptr);
+}
+
+static void _ev_filetime_to_timespec(ev_timespec_t* ts, int64_t filetime)
+{
+    filetime -= 116444736 * BILLION;
+    ts->tv_sec = (long)(filetime / (10 * MILLION));
+    ts->tv_nsec = (long)((filetime - ts->tv_sec * 10 * MILLION) * 100U);
+    if (ts->tv_nsec < 0)
+    {
+        ts->tv_sec -= 1;
+        ts->tv_nsec += NSEC_IN_SEC;
+    }
+}
+
+static int _ev_file_wrap_fstat_win(HANDLE handle, ev_file_stat_t* statbuf, int do_lstat)
+{
+    FILE_ALL_INFORMATION file_info;
+    FILE_FS_VOLUME_INFORMATION volume_info;
+    NTSTATUS nt_status;
+    IO_STATUS_BLOCK io_status;
+
+    nt_status = ev_winapi.NtQueryInformationFile(handle,
+        &io_status,
+        &file_info,
+        sizeof(file_info),
+        FileAllInformation);
+
+    /* Buffer overflow (a warning status code) is expected here. */
+    if (NT_ERROR(nt_status))
+    {
+        SetLastError(ev_winapi.RtlNtStatusToDosError(nt_status));
+        return -1;
+    }
+
+    nt_status = ev_winapi.NtQueryVolumeInformationFile(handle,
+        &io_status,
+        &volume_info,
+        sizeof volume_info,
+        FileFsVolumeInformation);
+
+    /* Buffer overflow (a warning status code) is expected here. */
+    if (io_status.Status == STATUS_NOT_IMPLEMENTED)
+    {
+        statbuf->st_dev = 0;
+    }
+    else if (NT_ERROR(nt_status))
+    {
+        SetLastError(ev_winapi.RtlNtStatusToDosError(nt_status));
+        return -1;
+    }
+    else
+    {
+        statbuf->st_dev = volume_info.VolumeSerialNumber;
+    }
+
+    /* Todo: st_mode should probably always be 0666 for everyone. We might also
+     * want to report 0777 if the file is a .exe or a directory.
+     *
+     * Currently it's based on whether the 'readonly' attribute is set, which
+     * makes little sense because the semantics are so different: the 'read-only'
+     * flag is just a way for a user to protect against accidental deletion, and
+     * serves no security purpose. Windows uses ACLs for that.
+     *
+     * Also people now use uv_fs_chmod() to take away the writable bit for good
+     * reasons. Windows however just makes the file read-only, which makes it
+     * impossible to delete the file afterwards, since read-only files can't be
+     * deleted.
+     *
+     * IOW it's all just a clusterfuck and we should think of something that
+     * makes slightly more sense.
+     *
+     * And uv_fs_chmod should probably just fail on windows or be a total no-op.
+     * There's nothing sensible it can do anyway.
+     */
+    statbuf->st_mode = 0;
+
+    /*
+    * On Windows, FILE_ATTRIBUTE_REPARSE_POINT is a general purpose mechanism
+    * by which filesystem drivers can intercept and alter file system requests.
+    *
+    * The only reparse points we care about are symlinks and mount points, both
+    * of which are treated as POSIX symlinks. Further, we only care when
+    * invoked via lstat, which seeks information about the link instead of its
+    * target. Otherwise, reparse points must be treated as regular files.
+    */
+    if (do_lstat &&
+        (file_info.BasicInformation.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
+    {
+        /*
+         * If reading the link fails, the reparse point is not a symlink and needs
+         * to be treated as a regular file. The higher level lstat function will
+         * detect this failure and retry without do_lstat if appropriate.
+         */
+        if (_ev_fs_readlink_handle(handle, NULL, &statbuf->st_size) != 0)
+            return -1;
+        statbuf->st_mode |= S_IFLNK;
+    }
+
+    if (statbuf->st_mode == 0) {
+        if (file_info.BasicInformation.FileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            statbuf->st_mode |= _S_IFDIR;
+            statbuf->st_size = 0;
+        }
+        else {
+            statbuf->st_mode |= _S_IFREG;
+            statbuf->st_size = file_info.StandardInformation.EndOfFile.QuadPart;
+        }
+    }
+
+    if (file_info.BasicInformation.FileAttributes & FILE_ATTRIBUTE_READONLY)
+        statbuf->st_mode |= _S_IREAD | (_S_IREAD >> 3) | (_S_IREAD >> 6);
+    else
+        statbuf->st_mode |= (_S_IREAD | _S_IWRITE) | ((_S_IREAD | _S_IWRITE) >> 3) |
+        ((_S_IREAD | _S_IWRITE) >> 6);
+
+    _ev_filetime_to_timespec(&statbuf->st_atim,
+        file_info.BasicInformation.LastAccessTime.QuadPart);
+    _ev_filetime_to_timespec(&statbuf->st_ctim,
+        file_info.BasicInformation.ChangeTime.QuadPart);
+    _ev_filetime_to_timespec(&statbuf->st_mtim,
+        file_info.BasicInformation.LastWriteTime.QuadPart);
+    _ev_filetime_to_timespec(&statbuf->st_birthtim,
+        file_info.BasicInformation.CreationTime.QuadPart);
+
+    statbuf->st_ino = file_info.InternalInformation.IndexNumber.QuadPart;
+
+    /* st_blocks contains the on-disk allocation size in 512-byte units. */
+    statbuf->st_blocks =
+        (uint64_t)file_info.StandardInformation.AllocationSize.QuadPart >> 9;
+
+    statbuf->st_nlink = file_info.StandardInformation.NumberOfLinks;
+
+    /* The st_blksize is supposed to be the 'optimal' number of bytes for reading
+     * and writing to the disk. That is, for any definition of 'optimal' - it's
+     * supposed to at least avoid read-update-write behavior when writing to the
+     * disk.
+     *
+     * However nobody knows this and even fewer people actually use this value,
+     * and in order to fill it out we'd have to make another syscall to query the
+     * volume for FILE_FS_SECTOR_SIZE_INFORMATION.
+     *
+     * Therefore we'll just report a sensible value that's quite commonly okay
+     * on modern hardware.
+     *
+     * 4096 is the minimum required to be compatible with newer Advanced Format
+     * drives (which have 4096 bytes per physical sector), and to be backwards
+     * compatible with older drives (which have 512 bytes per physical sector).
+     */
+    statbuf->st_blksize = 4096;
+
+    /* Todo: set st_flags to something meaningful. Also provide a wrapper for
+     * chattr(2).
+     */
+    statbuf->st_flags = 0;
+
+    /* Windows has nothing sensible to say about these values, so they'll just
+     * remain empty.
+     */
+    statbuf->st_gid = 0;
+    statbuf->st_uid = 0;
+    statbuf->st_rdev = 0;
+    statbuf->st_gen = 0;
+
+    return 0;
+}
+
+static int _ev_file_fstat_win(HANDLE handle, ev_file_stat_t* statbuf, int do_lstat)
+{
+    int errcode;
+    if (_ev_file_wrap_fstat_win(handle, statbuf, do_lstat) != 0)
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    return EV_SUCCESS;
+}
+
+static void _ev_file_on_fstat_win(ev_threadpool_work_t* work)
+{
     ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
     ev_file_t* file = req->file;
 
-    if (status == EV_ECANCELED)
+    if (file->file == INVALID_HANDLE_VALUE)
     {
-        assert(req->result == EV_SUCCESS);
-        req->result = EV_ECANCELED;
+        req->result = ev__translate_sys_error(ERROR_INVALID_HANDLE);
+        return;
     }
 
-    _ev_file_cleanup_token_as_write_win(req);
-    req->cb(file, req);
+    req->result = _ev_file_fstat_win(file->file, &req->rsp.as_fstat.fileinfo, 0);
+}
+
+static void _ev_file_on_fstat_done_win(ev_threadpool_work_t* work, int status)
+{
+    _ev_file_on_done_win(work, status, NULL);
 }
 
 int ev_file_init(ev_loop_t* loop, ev_file_t* file)
@@ -351,6 +735,10 @@ int ev_file_init(ev_loop_t* loop, ev_file_t* file)
 
 void ev_file_exit(ev_file_t* file, ev_file_close_cb cb)
 {
+    /**
+     * TODO: we may have pending work in threadpool, so need to stop or wait for result.
+     */
+
     if (file->file != EV_OS_FILE_INVALID)
     {
         CloseHandle(file->file);
@@ -427,6 +815,24 @@ int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     if (ret != EV_SUCCESS)
     {
         _ev_file_cleanup_token_as_write_win(req);
+        return ret;
+    }
+
+    return EV_SUCCESS;
+}
+
+int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_file_cb cb)
+{
+    int ret;
+    ev_loop_t* loop = file->base.data.loop;
+    ev_threadpool_t* pool = loop->threadpool;
+
+    _ev_file_init_token_win(req, file, cb);
+
+    ret = ev_threadpool_submit(pool, loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
+        _ev_file_on_fstat_win, _ev_file_on_fstat_done_win);
+    if (ret != EV_SUCCESS)
+    {
         return ret;
     }
 

@@ -17,7 +17,7 @@ typedef struct test_file
 {
     ev_loop_t       loop;           /**< Event loop */
     ev_file_t       file;           /**< File handle */
-    ev_fs_req_t   token;          /**< Request token */
+    ev_fs_req_t     token;          /**< Request token */
 
     struct
     {
@@ -158,4 +158,33 @@ TEST_F(file, read_write)
 
     buffer[strlen(s_test_buf)] = '\0';
     ASSERT_EQ_STR(s_test_buf, buffer);
+}
+
+static void _test_file_stat_on_stat(ev_file_t* file, ev_fs_req_t* req)
+{
+    ASSERT_EQ_PTR(file, &g_test_file.file);
+
+    ASSERT_EQ_D32(req->result, EV_SUCCESS);
+    ev_file_stat_t* statbuf = ev_fs_get_statbuf(req);
+
+    ASSERT_EQ_U64(statbuf->st_size, 0);
+}
+
+TEST_F(file, stat)
+{
+    int ret;
+
+    ret = ev_file_open(&g_test_file.file, &g_test_file.token, s_sample_file,
+        EV_FS_O_RDWR | EV_FS_O_CREAT, EV_FS_S_IRUSR | EV_FS_S_IWUSR,
+        _test_file_read_write_on_open);
+    ASSERT_EQ_D32(ret, EV_SUCCESS);
+
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ASSERT_EQ_D32(ret, EV_SUCCESS);
+
+    ret = ev_file_stat(&g_test_file.file, &g_test_file.token, _test_file_stat_on_stat);
+    ASSERT_EQ_D32(ret, EV_SUCCESS);
+
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ASSERT_EQ_D32(ret, EV_SUCCESS);
 }

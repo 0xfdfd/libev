@@ -1,6 +1,7 @@
 #include <WinSock2.h>
 #include <assert.h>
 #include "win/loop.h"
+#include "win/winapi.h"
 #include "win/tcp.h"
 
 static void _ev_tcp_deactive(ev_tcp_t* sock)

@@ -1,6 +1,6 @@
 #include "win/loop.h"
 #include "win/tcp.h"
-#include "ev-common.h"
+#include "win/winapi.h"
 #include "pipe-common.h"
 #include <stdio.h>
 
@@ -346,7 +346,7 @@ static int _ev_pipe_is_success_iocp_request(const ev_iocp_t* iocp)
 static DWORD _ev_pipe_get_iocp_error(const ev_iocp_t* iocp)
 {
     NTSTATUS status = (NTSTATUS)(iocp->overlapped.Internal);
-    return g_ev_loop_win_ctx.RtlNtStatusToDosError(status);
+    return ev_winapi.RtlNtStatusToDosError(status);
 }
 
 static void _ev_pipe_on_data_mode_read_win(ev_iocp_t* iocp, size_t transferred, void* arg)
@@ -1212,7 +1212,7 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
 
     IO_STATUS_BLOCK io_status;
     FILE_ACCESS_INFORMATION access;
-    NTSTATUS nt_status = g_ev_loop_win_ctx.NtQueryInformationFile(handle,
+    NTSTATUS nt_status = ev_winapi.NtQueryInformationFile(handle,
         &io_status, &access, sizeof(access), FileAccessInformation);
     if (nt_status != STATUS_SUCCESS)
     {
@@ -1240,7 +1240,7 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
     }
 
     FILE_MODE_INFORMATION mode_info;
-    nt_status = g_ev_loop_win_ctx.NtQueryInformationFile(handle,
+    nt_status = ev_winapi.NtQueryInformationFile(handle,
         &io_status, &mode_info, sizeof(mode_info), FileModeInformation);
     if (nt_status != STATUS_SUCCESS)
     {

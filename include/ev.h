@@ -20,6 +20,7 @@
 #include "ev/shmem.h"
 #include "ev/loop.h"
 #include "ev/request.h"
+#include "ev/time.h"
 #include "ev/timer.h"
 #include "ev/async.h"
 #include "ev/threadpool.h"

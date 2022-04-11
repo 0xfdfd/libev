@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-#include "winapi.h"
+#include "ev-common.h"
 
 #define EV_INVALID_PID_WIN  0
 
@@ -26,9 +26,6 @@ typedef struct ev_loop_win_ctx
     {
         ev_tls_t                thread_key;                 /**< Thread handle */
     }thread;
-
-    fn_NtQueryInformationFile   NtQueryInformationFile;
-    fn_RtlNtStatusToDosError    RtlNtStatusToDosError;
 }ev_loop_win_ctx_t;
 
 extern ev_loop_win_ctx_t        g_ev_loop_win_ctx;          /**< Global runtime for Windows */

@@ -1,14 +1,15 @@
 #include "ev.h"
 #include "winapi.h"
-#include "loop.h"
 #include <assert.h>
+
+ev_winapi_t ev_winapi;
 
 void ev__winapi_init(void)
 {
 #define GET_NTDLL_FUNC(name)  \
     do {\
-        g_ev_loop_win_ctx.name = (fn_##name)GetProcAddress(ntdll_modeule, #name);\
-        assert(g_ev_loop_win_ctx.name != NULL);\
+        ev_winapi.name = (fn_##name)GetProcAddress(ntdll_modeule, #name);\
+        assert(ev_winapi.name != NULL);\
     } while (0)
 
     HMODULE ntdll_modeule = GetModuleHandle("ntdll.dll");
@@ -16,6 +17,7 @@ void ev__winapi_init(void)
 
     GET_NTDLL_FUNC(NtQueryInformationFile);
     GET_NTDLL_FUNC(RtlNtStatusToDosError);
+    GET_NTDLL_FUNC(NtQueryVolumeInformationFile);
 
 #undef GET_NTDLL_FUNC
 }
