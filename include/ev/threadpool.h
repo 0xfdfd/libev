@@ -113,7 +113,9 @@ int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
     ev_threadpool_work_cb work_cb, ev_threadpool_work_done_cb done_cb);
 
 /**
- * @brief Cancel task
+ * @brief Cancel task.
+ * @note No matter the task is canceled or not, the task always callback in the
+ *   event loop.
  * @param[in]           Work token
  * @return              #ev_errno_t
  */
