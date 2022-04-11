@@ -26,6 +26,7 @@ struct ev_file_s
     ev_handle_t                 base;           /**< Base object */
     ev_os_file_t                file;           /**< File handle */
     ev_file_close_cb            close_cb;       /**< Close callback */
+    ev_list_t                   work_queue;     /**< Work queue */
 };
 
 struct ev_file_stat_s

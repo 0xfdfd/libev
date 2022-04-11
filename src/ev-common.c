@@ -417,6 +417,11 @@ int ev__handle_is_closing(ev_handle_t* handle)
     return handle->data.flags & (EV_HANDLE_CLOSING | EV_HANDLE_CLOSED);
 }
 
+ev_loop_t* ev__handle_loop(ev_handle_t* handle)
+{
+    return handle->data.loop;
+}
+
 void ev__loop_submit_task(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb)
 {
     token->cb = cb;

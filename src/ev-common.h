@@ -122,6 +122,13 @@ API_LOCAL int ev__handle_is_active(ev_handle_t* handle);
 API_LOCAL int ev__handle_is_closing(ev_handle_t* handle);
 
 /**
+ * @brief Get event loop for the handle.
+ * @param[in] handle    handler
+ * @return              Event loop
+ */
+API_LOCAL ev_loop_t* ev__handle_loop(ev_handle_t* handle);
+
+/**
  * @brief Check IPC frame header
  * @param[in] buffer    Buffer to check
  * @param[in] size      Buffer size
