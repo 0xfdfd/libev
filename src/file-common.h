@@ -8,6 +8,14 @@ extern "C" {
 #endif
 
 /**
+ * @brief Readdir callback.
+ * @param[in] info      Dirent information.
+ * @param[in] arg       User defined data.
+ * @return              non-zero to stop.
+ */
+typedef int (*ev_fs_readdir_cb)(ev_dirent_t* info, void* arg);
+
+/**
  * @brief Close         file handle.
  * @return              #ev_errno_t
  */
@@ -50,6 +58,15 @@ API_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
  * @return              #ev_errno_t
  */
 API_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_file_stat_t* statbuf);
+
+/**
+ * @brief Same as [readdir(3)](https://man7.org/linux/man-pages/man3/readdir.3.html)
+ * @param[in] path      Directory path.
+ * @param[in] cb        Dirent callback.
+ * @param[in] arg       User defined data.
+ * @return              The number of dirent count or #ev_errno_t.
+ */
+API_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg);
 
 #ifdef __cplusplus
 }

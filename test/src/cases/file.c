@@ -68,12 +68,17 @@ TEST_FIXTURE_TEAREDOWN(file)
     ev_threadpool_exit(&g_test_file.pool);
 }
 
+//////////////////////////////////////////////////////////////////////////
+// file.open_nonexist
+//////////////////////////////////////////////////////////////////////////
+
 static void _test_file_on_open_nonexist_open(ev_file_t* file, ev_fs_req_t* req)
 {
     ASSERT_EQ_PTR(file, &g_test_file.file);
     ASSERT_EQ_D32(req->result, EV_ENOENT);
 
     ASSERT_EQ_D32(access(s_sample_file, F_OK), -1);
+    ev_fs_req_cleanup(req);
 }
 
 TEST_F(file, open_nonexist)
@@ -87,12 +92,17 @@ TEST_F(file, open_nonexist)
     ASSERT_EQ_D32(ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT), EV_SUCCESS);
 }
 
+//////////////////////////////////////////////////////////////////////////
+// file.open_create
+//////////////////////////////////////////////////////////////////////////
+
 static void _test_file_on_open_create_open(ev_file_t* file, ev_fs_req_t* req)
 {
     ASSERT_EQ_PTR(file, &g_test_file.file);
     ASSERT_EQ_D32(req->result, EV_SUCCESS);
 
     ASSERT_EQ_D32(access(s_sample_file, F_OK), 0);
+    ev_fs_req_cleanup(req);
 }
 
 TEST_F(file, open_create)
@@ -107,24 +117,31 @@ TEST_F(file, open_create)
     ASSERT_EQ_D32(ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT), EV_SUCCESS);
 }
 
+//////////////////////////////////////////////////////////////////////////
+// file.read_write
+//////////////////////////////////////////////////////////////////////////
+
 static void _test_file_read_write_on_open(ev_file_t* file, ev_fs_req_t* req)
 {
     ASSERT_EQ_PTR(file, &g_test_file.file);
     ASSERT_EQ_D32(req->result, EV_SUCCESS);
 
     ASSERT_EQ_D32(access(s_sample_file, F_OK), 0);
+    ev_fs_req_cleanup(req);
 }
 
 static void _test_file_read_write_on_write_done(ev_file_t* file, ev_fs_req_t* req)
 {
     ASSERT_EQ_PTR(file, &g_test_file.file);
     ASSERT_EQ_D32(req->result, strlen(s_test_buf));
+    ev_fs_req_cleanup(req);
 }
 
 static void _test_file_read_write_on_read_done(ev_file_t* file, ev_fs_req_t* req)
 {
     ASSERT_EQ_PTR(file, &g_test_file.file);
     ASSERT_EQ_D32(req->result, strlen(s_test_buf));
+    ev_fs_req_cleanup(req);
 }
 
 TEST_F(file, read_write)
@@ -160,6 +177,10 @@ TEST_F(file, read_write)
     ASSERT_EQ_STR(s_test_buf, buffer);
 }
 
+//////////////////////////////////////////////////////////////////////////
+// file.stat
+//////////////////////////////////////////////////////////////////////////
+
 static void _test_file_stat_on_stat(ev_file_t* file, ev_fs_req_t* req)
 {
     ASSERT_EQ_PTR(file, &g_test_file.file);
@@ -168,6 +189,7 @@ static void _test_file_stat_on_stat(ev_file_t* file, ev_fs_req_t* req)
     ev_file_stat_t* statbuf = ev_fs_get_statbuf(req);
 
     ASSERT_EQ_U64(statbuf->st_size, 0);
+    ev_fs_req_cleanup(req);
 }
 
 TEST_F(file, stat)
@@ -183,6 +205,69 @@ TEST_F(file, stat)
     ASSERT_EQ_D32(ret, EV_SUCCESS);
 
     ret = ev_file_stat(&g_test_file.file, &g_test_file.token, _test_file_stat_on_stat);
+    ASSERT_EQ_D32(ret, EV_SUCCESS);
+
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ASSERT_EQ_D32(ret, EV_SUCCESS);
+}
+
+//////////////////////////////////////////////////////////////////////////
+// file.readdir_nonexist
+//////////////////////////////////////////////////////////////////////////
+
+static void _test_file_readdir_nonexist_on_readdir(ev_file_t* file, ev_fs_req_t* req)
+{
+    ASSERT_EQ_PTR(file, NULL);
+    ASSERT_EQ_D32(req->result, EV_ENOENT);
+    ev_fs_req_cleanup(req);
+}
+
+TEST_F(file, readdir_nonexist)
+{
+    int ret;
+    const char* path = "./non-exist-dir";
+
+    ret = ev_fs_readdir(&g_test_file.loop, &g_test_file.token, path,
+        _test_file_readdir_nonexist_on_readdir);
+    ASSERT_EQ_D32(ret, EV_SUCCESS);
+
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ASSERT_EQ_D32(ret, EV_SUCCESS);
+}
+
+//////////////////////////////////////////////////////////////////////////
+// file.readdir_root
+//////////////////////////////////////////////////////////////////////////
+
+static void _test_file_readdir_current_on_readdir(ev_file_t* file, ev_fs_req_t* req)
+{
+    ASSERT_EQ_PTR(file, NULL);
+    ASSERT_GT_D64(req->result, 0);
+
+    ev_dirent_t* it = ev_fs_get_first_dirent(req);
+    ASSERT_NE_PTR(it, NULL);
+
+    size_t cnt = 0;
+    for (; it != NULL; it = ev_fs_get_next_dirent(it))
+    {
+        cnt++;
+    }
+
+    ASSERT_EQ_U64(req->result, cnt);
+
+    ev_fs_req_cleanup(req);
+}
+
+TEST_F(file, readdir_root)
+{
+    int ret;
+    const char* path = "/";
+#if defined(_WIN32)
+    path = "C:";
+#endif
+
+    ret = ev_fs_readdir(&g_test_file.loop, &g_test_file.token, path,
+        _test_file_readdir_current_on_readdir);
     ASSERT_EQ_D32(ret, EV_SUCCESS);
 
     ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);

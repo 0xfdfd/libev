@@ -1,13 +1,50 @@
 #define _GNU_SOURCE 1
 #include "ev-common.h"
+#include "file-common.h"
 #include "unix/io.h"
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <dirent.h>
 #include <sys/uio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
+
+static ev_dirent_type_t _ev_fs_get_dirent_type(struct dirent* dent)
+{
+    ev_dirent_type_t type;
+
+    switch (dent->d_type)
+    {
+    case DT_DIR:
+        type = EV_DIRENT_DIR;
+        break;
+    case DT_REG:
+        type = EV_DIRENT_FILE;
+        break;
+    case DT_LNK:
+        type = EV_DIRENT_LINK;
+        break;
+    case DT_FIFO:
+        type = EV_DIRENT_FIFO;
+        break;
+    case DT_SOCK:
+        type = EV_DIRENT_SOCKET;
+        break;
+    case DT_CHR:
+        type = EV_DIRENT_CHR;
+        break;
+    case DT_BLK:
+        type = EV_DIRENT_BLOCK;
+        break;
+    default:
+        type = EV_DIRENT_UNKNOWN;
+        break;
+    }
+
+    return type;
+}
 
 int ev__fs_fstat(ev_os_file_t file, ev_file_stat_t* statbuf)
 {
@@ -192,4 +229,41 @@ ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t o
 
     int errcode = errno;
     return ev__translate_sys_error(errcode);
+}
+
+int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
+{
+    int ret;
+    DIR* dir = opendir(path);
+
+    if (dir == NULL)
+    {
+        ret = errno;
+        return ev__translate_sys_error(ret);
+    }
+
+    struct dirent* res;
+    ev_dirent_t info;
+
+    ret = 0;
+    while ((res = readdir(dir)) != NULL)
+    {
+        if (strcmp(res->d_name, ".") == 0 || strcmp(res->d_name, "..") == 0)
+        {
+            continue;
+        }
+
+        info.name = res->d_name;
+        info.type = _ev_fs_get_dirent_type(res);
+
+        ret++;
+        if (cb(&info, arg) != 0)
+        {
+            break;
+        }
+    }
+
+    closedir(dir);
+
+    return ret;
 }

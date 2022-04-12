@@ -21,6 +21,28 @@ extern "C" {
  * @{
  */
 
+enum ev_fs_req_type_e
+{
+    EV_FS_REQ_UNKNOWN,
+    EV_FS_REQ_OPEN,
+    EV_FS_REQ_READ,
+    EV_FS_REQ_WRITE,
+    EV_FS_REQ_FSTAT,
+    EV_FS_REQ_READDIR,
+};
+
+enum ev_dirent_type_e
+{
+    EV_DIRENT_UNKNOWN,
+    EV_DIRENT_FILE,
+    EV_DIRENT_DIR,
+    EV_DIRENT_LINK,
+    EV_DIRENT_FIFO,
+    EV_DIRENT_SOCKET,
+    EV_DIRENT_CHR,
+    EV_DIRENT_BLOCK
+};
+
 struct ev_file_s
 {
     ev_handle_t                 base;           /**< Base object */
@@ -50,8 +72,15 @@ struct ev_file_stat_s
     ev_timespec_t               st_birthtim;    /**< Time of file creation */
 };
 
+struct ev_dirent_s
+{
+    const char*                 name;           /**< Entry name */
+    ev_dirent_type_t            type;           /**< Entry type */
+};
+
 struct ev_fs_req_s
 {
+    ev_fs_req_type_t            req_type;       /**< Request type */
     ev_list_node_t              node;           /**< Queue node */
     ev_threadpool_work_t        work_token;     /**< Thread pool token */
     ev_file_t*                  file;           /**< File handle */
@@ -78,14 +107,17 @@ struct ev_fs_req_s
             ssize_t             offset;         /**< File offset */
             ev_write_t          write_req;      /**< Write token */
         }as_write;
+
+        struct
+        {
+            char*               path;           /**< File path */
+        }as_readdir;
     }req;
 
     union
     {
-        struct
-        {
-            ev_file_stat_t      fileinfo;       /**< File information */
-        }as_fstat;
+        ev_file_stat_t          fileinfo;       /**< File information */
+        ev_list_t               dirents;        /**< Dirent list */
     }rsp;
 };
 
@@ -172,11 +204,46 @@ int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
 int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_file_cb cb);
 
 /**
+ * @brief Get all entry in directory.
+ *
+ * Use #ev_fs_get_first_dirent() and #ev_fs_get_next_dirent() to traverse all
+ * the dirent information.
+ *
+ * @param[in] loop      Event loop.
+ * @param[in] req       File system request
+ * @param[in] path      Directory path.
+ * @param[in] cb        Result callback.
+ * @return              #ev_errno_t
+ */
+int ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
+    ev_file_cb cb);
+
+/**
+ * @brief Cleanup file system request
+ * @param[in] req       File system request
+ */
+void ev_fs_req_cleanup(ev_fs_req_t* req);
+
+/**
  * @brief Get stat buffer from \p req.
  * @param[in] req       A finish file system request
  * @return              Stat buf
  */
 ev_file_stat_t* ev_fs_get_statbuf(ev_fs_req_t* req);
+
+/**
+ * @brief Get first dirent information from \p req.
+ * @param[in] req       File system request.
+ * @return              Dirent information.
+ */
+ev_dirent_t* ev_fs_get_first_dirent(ev_fs_req_t* req);
+
+/**
+ * @brief Get next dirent information.
+ * @param[in] curr      Current dirent information.
+ * @return              Next dirent information, or NULL if non-exists.
+ */
+ev_dirent_t* ev_fs_get_next_dirent(ev_dirent_t* curr);
 
 /**
  * @} EV_FILESYSTEM

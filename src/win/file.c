@@ -1,3 +1,5 @@
+#include "ev-common.h"
+#include "file-common.h"
 #include "win/loop.h"
 #include "win/winapi.h"
 
@@ -566,6 +568,23 @@ static int _ev_file_fstat_win(HANDLE handle, ev_file_stat_t* statbuf, int do_lst
     return EV_SUCCESS;
 }
 
+static ev_dirent_type_t _ev_fs_get_dirent_type_win(WIN32_FIND_DATAA* info)
+{
+    if (info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+    {
+        return EV_DIRENT_DIR;
+    }
+    if (info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
+    {
+        return EV_DIRENT_LINK;
+    }
+    if (info->dwFileAttributes & FILE_ATTRIBUTE_DEVICE)
+    {
+        return EV_DIRENT_CHR;
+    }
+    return EV_DIRENT_FILE;
+}
+
 int ev__fs_fstat(ev_os_file_t file, ev_file_stat_t* statbuf)
 {
     return _ev_file_fstat_win(file, statbuf, 0);
@@ -580,4 +599,38 @@ int ev__fs_close(ev_os_file_t file)
         return ev__translate_sys_error(errcode);
     }
     return EV_SUCCESS;
+}
+
+int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
+{
+    DWORD errcode;
+    WIN32_FIND_DATAA info;
+    ev_dirent_t dirent_info;
+
+    HANDLE dir_handle = FindFirstFile(path, &info);
+    if (dir_handle == INVALID_HANDLE_VALUE)
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    int ret = 0;
+    do 
+    {
+        if (strcmp(info.cFileName, ".") == 0 || strcmp(info.cFileName, "..") == 0)
+        {
+            continue;
+        }
+
+        dirent_info.name = info.cFileName;
+        dirent_info.type = _ev_fs_get_dirent_type_win(&info);
+        ret++;
+
+        if (cb(&dirent_info, arg) != 0)
+        {
+            break;
+        }
+    } while (FindNextFile(dir_handle, &info));
+
+    return ret;
 }
