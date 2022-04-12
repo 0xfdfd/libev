@@ -81,7 +81,7 @@ int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
     statbuf->st_gen = 0;
 #else
     struct stat pbuf;
-    ret = fstat(fd, &pbuf);
+    ret = fstat(file, &pbuf);
     if (ret != 0)
     {
         goto err_errno;
