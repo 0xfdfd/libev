@@ -77,8 +77,8 @@ int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
     statbuf->st_ctim.tv_nsec        = statxbuf.stx_ctime.tv_nsec;
     statbuf->st_birthtim.tv_sec     = statxbuf.stx_btime.tv_sec;
     statbuf->st_birthtim.tv_nsec    = statxbuf.stx_btime.tv_nsec;
-    statbuf->st_flags = 0;
-    statbuf->st_gen = 0;
+    statbuf->st_flags               = 0;
+    statbuf->st_gen                 = 0;
 #else
     struct stat pbuf;
     ret = fstat(file, &pbuf);
@@ -117,8 +117,8 @@ int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
     statbuf->st_ctim.tv_nsec        = pbuf.st_ctimensec;
     statbuf->st_birthtim.tv_sec     = pbuf.st_ctime;
     statbuf->st_birthtim.tv_nsec    = pbuf.st_ctimensec;
-    statbuf->st_flags = 0;
-    statbuf->st_gen = 0;
+    statbuf->st_flags               = 0;
+    statbuf->st_gen                 = 0;
 #   elif !defined(_AIX) && !defined(__MVS__) && \
         (\
             defined(__DragonFly__)   || \
@@ -145,8 +145,8 @@ int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
 #       else
     statbuf->st_birthtim.tv_sec     = pbuf.st_ctim.tv_sec;
     statbuf->st_birthtim.tv_nsec    = pbuf.st_ctim.tv_nsec;
-    statbuf->st_flags = 0;
-    statbuf->st_gen = 0;
+    statbuf->st_flags               = 0;
+    statbuf->st_gen                 = 0;
 #       endif
 #   else
     statbuf->st_atim.tv_sec         = pbuf.st_atime;

@@ -65,8 +65,9 @@ struct ev_fs_stat_s
     uint64_t                    st_size;        /**< Total size, in bytes */
     uint64_t                    st_blksize;     /**< Block size for filesystem I/O */
     uint64_t                    st_blocks;      /**< Number of 512B blocks allocated */
-    uint64_t                    st_flags;
-    uint64_t                    st_gen;
+    uint64_t                    st_flags;       /**< File flags */
+    uint64_t                    st_gen;         /**< Generation number of this i-node. */
+
     ev_timespec_t               st_atim;        /**< Time of last access */
     ev_timespec_t               st_mtim;        /**< Time of last modification */
     ev_timespec_t               st_ctim;        /**< Time of last status change */
