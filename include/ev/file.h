@@ -246,6 +246,13 @@ int ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
 void ev_fs_req_cleanup(ev_fs_req_t* req);
 
 /**
+ * @brief Get file handle from request.
+ * @param[in] req       File system request.
+ * @return              File handle.
+ */
+ev_file_t* ev_fs_get_file(ev_fs_req_t* req);
+
+/**
  * @brief Get stat buffer from \p req.
  * @param[in] req       A finish file system request
  * @return              Stat buf

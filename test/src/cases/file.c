@@ -73,9 +73,9 @@ TEST_FIXTURE_TEAREDOWN(file)
 // file.open_nonexist
 //////////////////////////////////////////////////////////////////////////
 
-static void _test_file_on_open_nonexist_open(ev_file_t* file, ev_fs_req_t* req)
+static void _test_file_on_open_nonexist_open(ev_fs_req_t* req)
 {
-    ASSERT_EQ_PTR(file, &g_test_file.file);
+    ASSERT_EQ_PTR(ev_fs_get_file(req), &g_test_file.file);
     ASSERT_EQ_D32(req->result, EV_ENOENT);
 
     ASSERT_EQ_D32(access(s_sample_file, F_OK), -1);
@@ -97,9 +97,9 @@ TEST_F(file, open_nonexist)
 // file.open_create
 //////////////////////////////////////////////////////////////////////////
 
-static void _test_file_on_open_create_open(ev_file_t* file, ev_fs_req_t* req)
+static void _test_file_on_open_create_open(ev_fs_req_t* req)
 {
-    ASSERT_EQ_PTR(file, &g_test_file.file);
+    ASSERT_EQ_PTR(ev_fs_get_file(req), &g_test_file.file);
     ASSERT_EQ_D32(req->result, EV_SUCCESS);
 
     ASSERT_EQ_D32(access(s_sample_file, F_OK), 0);
@@ -122,25 +122,25 @@ TEST_F(file, open_create)
 // file.read_write
 //////////////////////////////////////////////////////////////////////////
 
-static void _test_file_read_write_on_open(ev_file_t* file, ev_fs_req_t* req)
+static void _test_file_read_write_on_open(ev_fs_req_t* req)
 {
-    ASSERT_EQ_PTR(file, &g_test_file.file);
+    ASSERT_EQ_PTR(ev_fs_get_file(req), &g_test_file.file);
     ASSERT_EQ_D32(req->result, EV_SUCCESS);
 
     ASSERT_EQ_D32(access(s_sample_file, F_OK), 0);
     ev_fs_req_cleanup(req);
 }
 
-static void _test_file_read_write_on_write_done(ev_file_t* file, ev_fs_req_t* req)
+static void _test_file_read_write_on_write_done(ev_fs_req_t* req)
 {
-    ASSERT_EQ_PTR(file, &g_test_file.file);
+    ASSERT_EQ_PTR(ev_fs_get_file(req), &g_test_file.file);
     ASSERT_EQ_D32(req->result, strlen(s_test_buf));
     ev_fs_req_cleanup(req);
 }
 
-static void _test_file_read_write_on_read_done(ev_file_t* file, ev_fs_req_t* req)
+static void _test_file_read_write_on_read_done(ev_fs_req_t* req)
 {
-    ASSERT_EQ_PTR(file, &g_test_file.file);
+    ASSERT_EQ_PTR(ev_fs_get_file(req), &g_test_file.file);
     ASSERT_EQ_D32(req->result, strlen(s_test_buf));
     ev_fs_req_cleanup(req);
 }
@@ -182,9 +182,9 @@ TEST_F(file, read_write)
 // file.stat
 //////////////////////////////////////////////////////////////////////////
 
-static void _test_file_stat_on_stat(ev_file_t* file, ev_fs_req_t* req)
+static void _test_file_stat_on_stat(ev_fs_req_t* req)
 {
-    ASSERT_EQ_PTR(file, &g_test_file.file);
+    ASSERT_EQ_PTR(ev_fs_get_file(req), &g_test_file.file);
 
     ASSERT_EQ_D32(req->result, EV_SUCCESS);
     ev_file_stat_t* statbuf = ev_fs_get_statbuf(req);
@@ -216,9 +216,8 @@ TEST_F(file, stat)
 // file.readdir_nonexist
 //////////////////////////////////////////////////////////////////////////
 
-static void _test_file_readdir_nonexist_on_readdir(ev_file_t* file, ev_fs_req_t* req)
+static void _test_file_readdir_nonexist_on_readdir(ev_fs_req_t* req)
 {
-    ASSERT_EQ_PTR(file, NULL);
     ASSERT_EQ_D32(req->result, EV_ENOENT);
     ev_fs_req_cleanup(req);
 }
@@ -240,10 +239,8 @@ TEST_F(file, readdir_nonexist)
 // file.readfile
 //////////////////////////////////////////////////////////////////////////
 
-static void _test_file_readfile_on_readfile(ev_file_t* file, ev_fs_req_t* req)
+static void _test_file_readfile_on_readfile(ev_fs_req_t* req)
 {
-    (void)file;
-
     ev_buf_t* buf = ev_fs_get_filecontent(req);
     ASSERT_EQ_U64(buf->size, strlen(s_test_buf));
 

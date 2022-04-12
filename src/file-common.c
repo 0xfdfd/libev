@@ -256,7 +256,7 @@ static void _ev_fs_on_done(ev_threadpool_work_t* work, int status)
         _ev_fs_erase_req(file, req);
         _ev_file_smart_deactive(file);
     }
-    req->cb(file, req);
+    req->cb(req);
 }
 
 static void _ev_file_on_open(ev_threadpool_work_t* work)
@@ -561,6 +561,11 @@ void ev_fs_req_cleanup(ev_fs_req_t* req)
     default:
         abort();
     }
+}
+
+ev_file_t* ev_fs_get_file(ev_fs_req_t* req)
+{
+    return req->file;
 }
 
 ev_dirent_t* ev_fs_get_first_dirent(ev_fs_req_t* req)

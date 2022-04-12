@@ -37,10 +37,9 @@ typedef void (*ev_file_close_cb)(ev_file_t* file);
  * @brief File operation callback
  * @note Always call #ev_fs_req_cleanup() to free resource in \p req.
  * @warning Missing call to #ev_fs_req_cleanup() will cause resource leak.
- * @param[in] file      File handle
  * @param[in] req       Request token
  */
-typedef void (*ev_file_cb)(ev_file_t* file, ev_fs_req_t* req);
+typedef void (*ev_file_cb)(ev_fs_req_t* req);
 
 /**
  * @} EV_FILESYSTEM
