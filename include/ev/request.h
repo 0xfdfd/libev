@@ -3,6 +3,7 @@
 
 #include "ev/backend.h"
 #include "ev/handle.h"
+#include "ev/buf.h"
 
 #ifdef __cplusplus
 extern "C" {

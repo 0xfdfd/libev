@@ -23,6 +23,7 @@ add_library(${PROJECT_NAME}
     "src/threadpool.c"
     "src/timer.c"
     "src/udp-common.c"
+    "src/utils.c"
     "src/version.c")
 if(WIN32)
     target_sources(${PROJECT_NAME}

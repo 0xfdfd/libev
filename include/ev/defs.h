@@ -65,9 +65,6 @@ typedef struct ev_write ev_write_t;
 struct ev_read;
 typedef struct ev_read ev_read_t;
 
-struct ev_buf;
-typedef struct ev_buf ev_buf_t;
-
 #ifdef __cplusplus
 }
 #endif
