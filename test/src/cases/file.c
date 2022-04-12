@@ -1,5 +1,6 @@
 #include "ev.h"
 #include "test.h"
+#include "utils/file.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -229,6 +230,38 @@ TEST_F(file, readdir_nonexist)
 
     ret = ev_fs_readdir(&g_test_file.loop, &g_test_file.token, path,
         _test_file_readdir_nonexist_on_readdir);
+    ASSERT_EQ_D32(ret, EV_SUCCESS);
+
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ASSERT_EQ_D32(ret, EV_SUCCESS);
+}
+
+//////////////////////////////////////////////////////////////////////////
+// file.readfile
+//////////////////////////////////////////////////////////////////////////
+
+static void _test_file_readfile_on_readfile(ev_file_t* file, ev_fs_req_t* req)
+{
+    (void)file;
+
+    ev_buf_t* buf = ev_fs_get_filecontent(req);
+    ASSERT_EQ_U64(buf->size, strlen(s_test_buf));
+
+    int ret = memcmp(buf->data, s_test_buf, buf->size);
+    ASSERT_EQ_D32(ret, 0);
+
+    ev_fs_req_cleanup(req);
+}
+
+TEST_F(file, readfile)
+{
+    int ret;
+
+    ret = test_write_file(s_sample_file, s_test_buf, strlen(s_test_buf));
+    ASSERT_EQ_D32(ret, EV_SUCCESS);
+
+    ret = ev_fs_readfile(&g_test_file.loop, &g_test_file.token, s_sample_file,
+        _test_file_readfile_on_readfile);
     ASSERT_EQ_D32(ret, EV_SUCCESS);
 
     ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);

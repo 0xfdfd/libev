@@ -29,6 +29,7 @@ enum ev_fs_req_type_e
     EV_FS_REQ_WRITE,
     EV_FS_REQ_FSTAT,
     EV_FS_REQ_READDIR,
+    EV_FS_REQ_READFILE,
 };
 
 enum ev_dirent_type_e
@@ -110,14 +111,20 @@ struct ev_fs_req_s
 
         struct
         {
-            char*               path;           /**< File path */
+            char*               path;           /**< Directory path */
         }as_readdir;
+
+        struct
+        {
+            char*               path;           /**< File path */
+        }as_readfile;
     }req;
 
     union
     {
         ev_file_stat_t          fileinfo;       /**< File information */
         ev_list_t               dirents;        /**< Dirent list */
+        ev_buf_t                filecontent;    /**< File content */
     }rsp;
 };
 
@@ -219,6 +226,20 @@ int ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
     ev_file_cb cb);
 
 /**
+ * @brief Read file content.
+ *
+ * Use #ev_fs_get_filecontent() to get file content.
+ *
+ * @param[in] loop      Event loop.
+ * @param[in] req       File system request.
+ * @param[in] path      File path.
+ * @param[in] cb        Result callback.
+ * @return              #ev_errno_t
+ */
+int ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
+    ev_file_cb cb);
+
+/**
  * @brief Cleanup file system request
  * @param[in] req       File system request
  */
@@ -244,6 +265,13 @@ ev_dirent_t* ev_fs_get_first_dirent(ev_fs_req_t* req);
  * @return              Next dirent information, or NULL if non-exists.
  */
 ev_dirent_t* ev_fs_get_next_dirent(ev_dirent_t* curr);
+
+/**
+ * @brief Get content of file.
+ * @param[in] req       A finish file system request
+ * @return              File content buffer.
+ */
+ev_buf_t* ev_fs_get_filecontent(ev_fs_req_t* req);
 
 /**
  * @} EV_FILESYSTEM

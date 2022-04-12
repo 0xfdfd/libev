@@ -53,6 +53,22 @@ static void _ev_fs_cleanup_req_as_readdir(ev_fs_req_t* req)
     }
 }
 
+static void _ev_fs_cleanup_req_as_readfile(ev_fs_req_t* req)
+{
+    if (req->req.as_readfile.path != NULL)
+    {
+        ev__free(req->req.as_readfile.path);
+        req->req.as_readfile.path = NULL;
+    }
+
+    if (req->rsp.filecontent.data != NULL)
+    {
+        ev__free(req->rsp.filecontent.data);
+        req->rsp.filecontent.data = NULL;
+    }
+    req->rsp.filecontent.size = 0;
+}
+
 static void _ev_fs_init_req(ev_fs_req_t* req, ev_file_t* file, ev_file_cb cb, ev_fs_req_type_t type)
 {
     req->req_type = type;
@@ -127,6 +143,22 @@ static int _ev_fs_init_req_as_readdir(ev_fs_req_t* req, const char* path, ev_fil
     }
 
     ev_list_init(&req->rsp.dirents);
+
+    return EV_SUCCESS;
+}
+
+static int _ev_fs_init_req_as_readfile(ev_fs_req_t* req, const char* path,
+    ev_file_cb cb)
+{
+    _ev_fs_init_req(req, NULL, cb, EV_FS_REQ_READFILE);
+
+    req->req.as_readfile.path = ev__strdup(path);
+    if (req->req.as_readfile.path == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    req->rsp.filecontent = ev_buf_make(NULL, 0);
 
     return EV_SUCCESS;
 }
@@ -208,7 +240,7 @@ err_nomem:
     return -1;
 }
 
-static void _ev_file_on_done(ev_threadpool_work_t* work, int status)
+static void _ev_fs_on_done(ev_threadpool_work_t* work, int status)
 {
     ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
     ev_file_t* file = req->file;
@@ -264,7 +296,7 @@ static void _ev_file_on_fstat(ev_threadpool_work_t* work)
     req->result = ev__fs_fstat(file->file, &req->rsp.fileinfo);
 }
 
-static void _ev_file_on_readdir(ev_threadpool_work_t* work)
+static void _ev_fs_on_readdir(ev_threadpool_work_t* work)
 {
     int ret;
     ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
@@ -277,6 +309,40 @@ static void _ev_file_on_readdir(ev_threadpool_work_t* work)
     {
         req->result = ret;
     }
+}
+
+static void _ev_fs_on_readfile(ev_threadpool_work_t* work)
+{
+    ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
+    const char* path = req->req.as_readfile.path;
+
+    ev_os_file_t file;
+    req->result = ev__fs_open(&file, path, EV_FS_O_RDONLY, 0);
+    if (req->result != EV_SUCCESS)
+    {
+        return;
+    }
+
+    ev_file_stat_t statbuf;
+    req->result = ev__fs_fstat(file, &statbuf);
+    if (req->result != EV_SUCCESS)
+    {
+        goto close_file;
+    }
+
+    void* data = ev__malloc(statbuf.st_size);
+    req->rsp.filecontent = ev_buf_make(data, statbuf.st_size);
+
+    if (req->rsp.filecontent.data == NULL)
+    {
+        req->result = EV_ENOMEM;
+        goto close_file;
+    }
+
+    req->result = ev__fs_preadv(file, &req->rsp.filecontent, 1, 0);
+
+close_file:
+    ev__fs_close(file);
 }
 
 int ev_file_init(ev_loop_t* loop, ev_file_t* file)
@@ -323,7 +389,7 @@ int ev_file_open(ev_file_t* file, ev_fs_req_t* token, const char* path, int flag
     ev__handle_active(&file->base);
 
     ret = ev_threadpool_submit(pool, loop, &token->work_token, EV_THREADPOOL_WORK_IO_FAST,
-        _ev_file_on_open, _ev_file_on_done);
+        _ev_file_on_open, _ev_fs_on_done);
     if (ret != EV_SUCCESS)
     {
         _ev_fs_cleanup_req_as_open(token);
@@ -348,7 +414,7 @@ int ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     ev__handle_active(&file->base);
 
     ret = ev_threadpool_submit(pool, loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
-        _ev_file_on_read, _ev_file_on_done);
+        _ev_file_on_read, _ev_fs_on_done);
     if (ret != EV_SUCCESS)
     {
         _ev_fs_cleanup_req_as_read(req);
@@ -374,7 +440,7 @@ int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     ev__handle_active(&file->base);
 
     ret = ev_threadpool_submit(pool, loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
-        _ev_file_on_write, _ev_file_on_done);
+        _ev_file_on_write, _ev_fs_on_done);
     if (ret != EV_SUCCESS)
     {
         _ev_fs_cleanup_req_as_write(req);
@@ -394,7 +460,7 @@ int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_file_cb cb)
     ev__handle_active(&file->base);
 
     ret = ev_threadpool_submit(pool, loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
-        _ev_file_on_fstat, _ev_file_on_done);
+        _ev_file_on_fstat, _ev_fs_on_done);
     if (ret != EV_SUCCESS)
     {
         return ret;
@@ -403,7 +469,8 @@ int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_file_cb cb)
     return EV_SUCCESS;
 }
 
-int ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path, ev_file_cb cb)
+int ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
+    ev_file_cb cb)
 {
     int ret;
     ev_threadpool_t* pool = loop->threadpool;
@@ -420,10 +487,38 @@ int ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path, ev_file_c
     }
 
     ret = ev_threadpool_submit(pool, loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
-        _ev_file_on_readdir, _ev_file_on_done);
+        _ev_fs_on_readdir, _ev_fs_on_done);
     if (ret != EV_SUCCESS)
     {
         _ev_fs_cleanup_req_as_readdir(req);
+        return ret;
+    }
+
+    return EV_SUCCESS;
+}
+
+int ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
+    ev_file_cb cb)
+{
+    int ret;
+    ev_threadpool_t* pool = loop->threadpool;
+
+    if (pool == NULL)
+    {
+        return EV_ENOTHREADPOOL;
+    }
+
+    ret = _ev_fs_init_req_as_readfile(req, path, cb);
+    if (ret != EV_SUCCESS)
+    {
+        return ret;
+    }
+
+    ret = ev_threadpool_submit(pool, loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
+        _ev_fs_on_readfile, _ev_fs_on_done);
+    if (ret != EV_SUCCESS)
+    {
+        _ev_fs_cleanup_req_as_readfile(req);
         return ret;
     }
 
@@ -457,6 +552,10 @@ void ev_fs_req_cleanup(ev_fs_req_t* req)
 
     case EV_FS_REQ_READDIR:
         _ev_fs_cleanup_req_as_readdir(req);
+        break;
+
+    case EV_FS_REQ_READFILE:
+        _ev_fs_cleanup_req_as_readfile(req);
         break;
 
     default:
@@ -493,4 +592,9 @@ ev_dirent_t* ev_fs_get_next_dirent(ev_dirent_t* curr)
 
     ev_dirent_record_t* next_rec = EV_CONTAINER_OF(next_node, ev_dirent_record_t, node);
     return &next_rec->data;
+}
+
+ev_buf_t* ev_fs_get_filecontent(ev_fs_req_t* req)
+{
+    return &req->rsp.filecontent;
 }
