@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.0.4 (2022/04/12)
+
+### Bug Fixes
+1. build error with glibc version lower than `2.28`
+
+
 ## v0.0.3 (2022/04/12)
 
 ### Features
