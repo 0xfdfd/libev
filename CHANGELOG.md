@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.0.3
+## v0.0.3 (2022/04/12)
 
 ### Features
 1. Add version code
