@@ -187,7 +187,7 @@ static void _test_file_stat_on_stat(ev_fs_req_t* req)
     ASSERT_EQ_PTR(ev_fs_get_file(req), &g_test_file.file);
 
     ASSERT_EQ_D32(req->result, EV_SUCCESS);
-    ev_file_stat_t* statbuf = ev_fs_get_statbuf(req);
+    ev_fs_stat_t* statbuf = ev_fs_get_statbuf(req);
 
     ASSERT_EQ_U64(statbuf->st_size, 0);
     ev_fs_req_cleanup(req);

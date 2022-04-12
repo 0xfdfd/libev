@@ -1,5 +1,5 @@
 #include "ev-common.h"
-#include "file-common.h"
+#include "fs-common.h"
 
 typedef struct ev_dirent_record_s
 {
@@ -323,7 +323,7 @@ static void _ev_fs_on_readfile(ev_threadpool_work_t* work)
         return;
     }
 
-    ev_file_stat_t statbuf;
+    ev_fs_stat_t statbuf;
     req->result = ev__fs_fstat(file, &statbuf);
     if (req->result != EV_SUCCESS)
     {
@@ -525,7 +525,7 @@ int ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
     return EV_SUCCESS;
 }
 
-ev_file_stat_t* ev_fs_get_statbuf(ev_fs_req_t* req)
+ev_fs_stat_t* ev_fs_get_statbuf(ev_fs_req_t* req)
 {
     return &req->rsp.fileinfo;
 }

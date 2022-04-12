@@ -1,11 +1,11 @@
 /**
  * @file
  */
-#ifndef __EV_FILE_H__
-#define __EV_FILE_H__
+#ifndef __EV_FILESYSTEM_H__
+#define __EV_FILESYSTEM_H__
 
 #include "ev/handle.h"
-#include "ev/file_forward.h"
+#include "ev/fs_forward.h"
 #include "ev/loop_forward.h"
 #include "ev/threadpool.h"
 #include "ev/request.h"
@@ -52,7 +52,7 @@ struct ev_file_s
     ev_list_t                   work_queue;     /**< Work queue */
 };
 
-struct ev_file_stat_s
+struct ev_fs_stat_s
 {
     uint64_t                    st_dev;         /**< ID of device containing file */
     uint64_t                    st_ino;         /**< Inode number */
@@ -122,7 +122,7 @@ struct ev_fs_req_s
 
     union
     {
-        ev_file_stat_t          fileinfo;       /**< File information */
+        ev_fs_stat_t            fileinfo;       /**< File information */
         ev_list_t               dirents;        /**< Dirent list */
         ev_buf_t                filecontent;    /**< File content */
     }rsp;
@@ -257,7 +257,7 @@ ev_file_t* ev_fs_get_file(ev_fs_req_t* req);
  * @param[in] req       A finish file system request
  * @return              Stat buf
  */
-ev_file_stat_t* ev_fs_get_statbuf(ev_fs_req_t* req);
+ev_fs_stat_t* ev_fs_get_statbuf(ev_fs_req_t* req);
 
 /**
  * @brief Get first dirent information from \p req.

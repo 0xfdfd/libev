@@ -57,7 +57,7 @@ API_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
  * @param[out] statbuf  File information.
  * @return              #ev_errno_t
  */
-API_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_file_stat_t* statbuf);
+API_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf);
 
 /**
  * @brief Same as [readdir(3)](https://man7.org/linux/man-pages/man3/readdir.3.html)

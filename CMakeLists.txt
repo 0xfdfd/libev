@@ -11,7 +11,7 @@ option(EV_ENABLE_COVERAGE "Enable code coverage. GCC/Clang only" OFF)
 # add source files
 add_library(${PROJECT_NAME}
     "src/ev-common.c"
-    "src/file-common.c"
+    "src/fs-common.c"
     "src/list.c"
     "src/log.c"
     "src/map.c"
@@ -28,7 +28,7 @@ add_library(${PROJECT_NAME}
 if(WIN32)
     target_sources(${PROJECT_NAME}
         PRIVATE
-            "src/win/file.c"
+            "src/win/fs.c"
             "src/win/loop.c"
             "src/win/mutex.c"
             "src/win/once.c"
@@ -42,7 +42,7 @@ if(WIN32)
 else()
     target_sources(${PROJECT_NAME}
         PRIVATE
-            "src/unix/file.c"
+            "src/unix/fs.c"
             "src/unix/io.c"
             "src/unix/loop.c"
             "src/unix/mutex.c"

@@ -1,5 +1,5 @@
-#ifndef __EV_FILE_FORWARD_H__
-#define __EV_FILE_FORWARD_H__
+#ifndef __EV_FILESYSTEM_FORWARD_H__
+#define __EV_FILESYSTEM_FORWARD_H__
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -21,8 +21,8 @@ typedef struct ev_file_s ev_file_t;
 struct ev_fs_req_s;
 typedef struct ev_fs_req_s ev_fs_req_t;
 
-struct ev_file_stat_s;
-typedef struct ev_file_stat_s ev_file_stat_t;
+struct ev_fs_stat_s;
+typedef struct ev_fs_stat_s ev_fs_stat_t;
 
 struct ev_dirent_s;
 typedef struct ev_dirent_s ev_dirent_t;

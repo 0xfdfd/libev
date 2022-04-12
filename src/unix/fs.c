@@ -1,6 +1,6 @@
 #define _GNU_SOURCE 1
 #include "ev-common.h"
-#include "file-common.h"
+#include "fs-common.h"
 #include "unix/io.h"
 #include <string.h>
 #include <unistd.h>
@@ -46,7 +46,7 @@ static ev_dirent_type_t _ev_fs_get_dirent_type(struct dirent* dent)
     return type;
 }
 
-int ev__fs_fstat(ev_os_file_t file, ev_file_stat_t* statbuf)
+int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
 {
     int ret;
     int errcode;

@@ -1,5 +1,5 @@
 #include "ev-common.h"
-#include "file-common.h"
+#include "fs-common.h"
 #include "win/loop.h"
 #include "win/winapi.h"
 
@@ -404,7 +404,7 @@ static void _ev_filetime_to_timespec(ev_timespec_t* ts, int64_t filetime)
     }
 }
 
-static int _ev_file_wrap_fstat_win(HANDLE handle, ev_file_stat_t* statbuf, int do_lstat)
+static int _ev_file_wrap_fstat_win(HANDLE handle, ev_fs_stat_t* statbuf, int do_lstat)
 {
     FILE_ALL_INFORMATION file_info;
     FILE_FS_VOLUME_INFORMATION volume_info;
@@ -556,7 +556,7 @@ static int _ev_file_wrap_fstat_win(HANDLE handle, ev_file_stat_t* statbuf, int d
     return 0;
 }
 
-static int _ev_file_fstat_win(HANDLE handle, ev_file_stat_t* statbuf, int do_lstat)
+static int _ev_file_fstat_win(HANDLE handle, ev_fs_stat_t* statbuf, int do_lstat)
 {
     int errcode;
     if (_ev_file_wrap_fstat_win(handle, statbuf, do_lstat) != 0)
@@ -585,7 +585,7 @@ static ev_dirent_type_t _ev_fs_get_dirent_type_win(WIN32_FIND_DATAA* info)
     return EV_DIRENT_FILE;
 }
 
-int ev__fs_fstat(ev_os_file_t file, ev_file_stat_t* statbuf)
+int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
 {
     return _ev_file_fstat_win(file, statbuf, 0);
 }

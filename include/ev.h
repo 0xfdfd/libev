@@ -8,7 +8,7 @@
 #include <stdarg.h>
 #include "ev/allocator.h"
 #include "ev/errno.h"
-#include "ev/file.h"
+#include "ev/fs.h"
 #include "ev/defs.h"
 #include "ev/list.h"
 #include "ev/queue.h"
