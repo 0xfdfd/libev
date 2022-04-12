@@ -1,16 +1,44 @@
 #include "test.h"
 #include "tools/memcheck.h"
 #include <stdlib.h>
+#include <string.h>
+
+typedef struct test_config
+{
+    int flag_no_memcheck;
+}test_config_t;
+
+test_config_t g_test_config;
 
 static void _before_all_test(int argc, char* argv[])
 {
     (void)argc; (void)argv;
-    setup_memcheck();
+
+    memset(&g_test_config, 0, sizeof(g_test_config));
+
+    int i;
+    for (i = 0; i < argc; i++)
+    {
+        if (strcmp(argv[i], "--no_memcheck") == 0)
+        {
+            g_test_config.flag_no_memcheck = 1;
+        }
+    }
+
+    if (!g_test_config.flag_no_memcheck)
+    {
+        setup_memcheck();
+    }
 }
 
 static void _after_all_test(void)
 {
-    dump_memcheck();
+    fflush(NULL);
+
+    if (!g_test_config.flag_no_memcheck)
+    {
+        dump_memcheck();
+    }
 }
 
 static cutest_hook_t test_hook = {

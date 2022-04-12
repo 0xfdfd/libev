@@ -39,12 +39,17 @@ static void _ev_fs_cleanup_req_as_fstat(ev_fs_req_t* req)
 static void _ev_fs_cleanup_req_as_readdir(ev_fs_req_t* req)
 {
     ev_list_node_t* it;
-
     while ((it = ev_list_pop_front(&req->rsp.dirents)) != NULL)
     {
         ev_dirent_record_t* rec = EV_CONTAINER_OF(it, ev_dirent_record_t, node);
         ev__free((char*)rec->data.name);
         ev__free(rec);
+    }
+
+    if (req->req.as_readdir.path != NULL)
+    {
+        ev__free(req->req.as_readdir.path);
+        req->req.as_readdir.path = NULL;
     }
 }
 

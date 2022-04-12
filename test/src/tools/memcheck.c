@@ -3,26 +3,10 @@
 #undef NDEBUG
 #endif
 
-#if !defined(__has_feature)
-#   define __has_feature(x)    0
-#endif
-
-#if defined(__clang__) && __has_feature(address_sanitizer)
-/* Clang with address sanitizer */
-#   define HAVE_SANS   1
-#elif defined(__GNUC__) && defined(__SANITIZE_ADDRESS__) && (__SANITIZE_ADDRESS__ == 1)
-/* GCC with address sanitizer */
-#   define HAVE_SANS   1
-#elif defined(_MSC_VER) && defined(__SANITIZE_ADDRESS__) && (__SANITIZE_ADDRESS__ == 1)
-/* MSVC with address sanitizer */
-#   define HAVE_SANS   1
-#else
-#   define HAVE_SANS   0
-#endif
-
 #include "ev.h"
 #include "memcheck.h"
 #include "cutest.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -30,47 +14,9 @@
 #define container_of(ptr, type, member) \
     ((type *) ((char *) (ptr) - offsetof(type, member)))
 
-#if HAVE_SANS
-
-void setup_memcheck(void)
-{
-}
-
-void dump_memcheck(void)
-{
-}
-
-#else
-
 #if defined(_MSC_VER)
 #include <crtdbg.h>
-
-static void* _memcheck_malloc(size_t size)
-{
-    return malloc(size);
-}
-
-static void* _memcheck_calloc(size_t nmemb, size_t size)
-{
-    return calloc(nmemb, size);
-}
-
-static void* _memcheck_realloc(void* ptr, size_t size)
-{
-    return realloc(ptr, size);
-}
-
-static void _memcheck_free(void* ptr)
-{
-    free(ptr);
-}
-
-void dump_memcheck(void)
-{
-    _CrtDumpMemoryLeaks();
-}
-
-#else
+#endif
 
 #include <stdlib.h>
 
@@ -78,7 +24,14 @@ typedef struct memblock_s
 {
     ev_list_node_t  node;
     size_t          size;
+#if defined(_MSC_VER)
+#    pragma warning(push)
+#    pragma warning(disable : 4200)
+#endif
     uint8_t         payload[];
+#if defined(_MSC_VER)
+#    pragma warning(pop)
+#endif
 }memblock_t;
 
 typedef struct memcheck_runtime_s
@@ -201,10 +154,14 @@ static void* _memcheck_realloc(void* ptr, size_t size)
 
 void dump_memcheck(void)
 {
-    assert(ev_list_size(&s_runtime.mem_queue) == 0);
+    size_t left_block = ev_list_size(&s_runtime.mem_queue);
+    if (left_block != 0)
+    {
+        fprintf(stderr, "[  ERROR   ] memory leak detected: %zu block%s not free.\n",
+            left_block, left_block == 1 ? "" : "s");
+        exit(EXIT_FAILURE);
+    }
 }
-
-#endif
 
 void setup_memcheck(void)
 {
@@ -222,5 +179,3 @@ void setup_memcheck(void)
         EV_SUCCESS
     );
 }
-
-#endif

@@ -21,11 +21,11 @@ typedef struct test_file
 
     struct
     {
-        unsigned    file_init : 1;  /**< Flag for file init */
+        unsigned    file_init : 1;  /**< Flag for file initialize */
     }flags;
 
     ev_threadpool_t pool;           /**< Thread pool */
-    ev_os_thread_t  threads[4];
+    ev_os_thread_t  threads[4];     /**< Thread storage */
 }test_file_t;
 
 test_file_t         g_test_file;    /**< Global test context */
