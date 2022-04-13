@@ -9,12 +9,19 @@ extern "C" {
 
 /**
  * @brief Write data to file.
- * @param[in] path  File path.
- * @param[in] data  Data content to write
- * @param[in] size  Data size
- * @return          #ev_errno_t
+ * @param[in] path      File path.
+ * @param[in] data      Data content to write
+ * @param[in] size      Data size
+ * @return              #ev_errno_t
  */
 int test_write_file(const char* path, const void* data, size_t size);
+
+/**
+ * @brief Check a directory exist.
+ * @param[in] path      Directory path.
+ * @return              #ev_errno_t
+ */
+int test_access_dir(const char* path);
 
 #ifdef __cplusplus
 }

@@ -69,6 +69,15 @@ static void _ev_fs_cleanup_req_as_readfile(ev_fs_req_t* req)
     req->rsp.filecontent.size = 0;
 }
 
+static void _ev_fs_cleanup_req_as_mkdir(ev_fs_req_t* req)
+{
+    if (req->req.as_mkdir.path != NULL)
+    {
+        ev__free(req->req.as_mkdir.path);
+        req->req.as_mkdir.path = NULL;
+    }
+}
+
 static void _ev_fs_init_req(ev_fs_req_t* req, ev_file_t* file, ev_file_cb cb, ev_fs_req_type_t type)
 {
     req->req_type = type;
@@ -159,6 +168,21 @@ static int _ev_fs_init_req_as_readfile(ev_fs_req_t* req, const char* path,
     }
 
     req->rsp.filecontent = ev_buf_make(NULL, 0);
+
+    return EV_SUCCESS;
+}
+
+static int _ev_fs_init_req_as_mkdir(ev_fs_req_t* req, const char* path, int mode,
+    ev_file_cb cb)
+{
+    _ev_fs_init_req(req, NULL, cb, EV_FS_REQ_MKDIR);
+
+    req->req.as_mkdir.path = ev__strdup(path);
+    if (req->req.as_mkdir.path == NULL)
+    {
+        return EV_ENOMEM;
+    }
+    req->req.as_mkdir.mode = mode;
 
     return EV_SUCCESS;
 }
@@ -345,6 +369,15 @@ close_file:
     ev__fs_close(file);
 }
 
+static void _ev_fs_on_mkdir(ev_threadpool_work_t* work)
+{
+    ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
+    const char* path = req->req.as_mkdir.path;
+    int mode = req->req.as_mkdir.mode;
+
+    req->result = ev__fs_mkdir(path, mode);
+}
+
 int ev_file_init(ev_loop_t* loop, ev_file_t* file)
 {
     if (loop->threadpool == NULL)
@@ -525,6 +558,34 @@ int ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
     return EV_SUCCESS;
 }
 
+int ev_fs_mkdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path, int mode,
+    ev_file_cb cb)
+{
+    int ret;
+    ev_threadpool_t* pool = loop->threadpool;
+
+    if (pool == NULL)
+    {
+        return EV_ENOTHREADPOOL;
+    }
+
+    ret = _ev_fs_init_req_as_mkdir(req, path, mode, cb);
+    if (ret != EV_SUCCESS)
+    {
+        return ret;
+    }
+
+    ret = ev_threadpool_submit(pool, loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
+        _ev_fs_on_mkdir, _ev_fs_on_done);
+    if (ret != EV_SUCCESS)
+    {
+        _ev_fs_cleanup_req_as_mkdir(req);
+        return ret;
+    }
+
+    return EV_SUCCESS;
+}
+
 ev_fs_stat_t* ev_fs_get_statbuf(ev_fs_req_t* req)
 {
     return &req->rsp.fileinfo;
@@ -556,6 +617,10 @@ void ev_fs_req_cleanup(ev_fs_req_t* req)
 
     case EV_FS_REQ_READFILE:
         _ev_fs_cleanup_req_as_readfile(req);
+        break;
+
+    case EV_FS_REQ_MKDIR:
+        _ev_fs_cleanup_req_as_mkdir(req);
         break;
 
     default:

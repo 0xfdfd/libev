@@ -1,6 +1,13 @@
 #include "ev.h"
 #include "file.h"
 #include <stdio.h>
+#include <errno.h>
+
+#if !defined(_WIN32)
+#   include <dirent.h>
+#endif
+
+extern int ev__translate_sys_error(int errcode);
 
 int test_write_file(const char* path, const void* data, size_t size)
 {
@@ -28,4 +35,38 @@ int test_write_file(const char* path, const void* data, size_t size)
     fclose(file);
 
     return EV_SUCCESS;
+}
+
+int test_access_dir(const char* path)
+{
+#if defined(_WIN32)
+
+    DWORD ret = GetFileAttributesA(path);
+    if (ret == INVALID_FILE_ATTRIBUTES)
+    {
+        ret = GetLastError();
+        return ev__translate_sys_error(ret);
+    }
+
+    switch (ret)
+    {
+    case FILE_ATTRIBUTE_DIRECTORY:
+        return EV_SUCCESS;
+
+    default:
+        return EV_ENOENT;
+    }
+
+#else
+    int errcode;
+    DIR* dir = opendir(path);
+    if (dir == NULL)
+    {
+        errcode = errno;
+        return ev__translate_sys_error(errcode);
+    }
+
+    closedir(dir);
+    return EV_SUCCESS;
+#endif
 }

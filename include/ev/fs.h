@@ -30,6 +30,7 @@ enum ev_fs_req_type_e
     EV_FS_REQ_FSTAT,
     EV_FS_REQ_READDIR,
     EV_FS_REQ_READFILE,
+    EV_FS_REQ_MKDIR,
 };
 
 enum ev_dirent_type_e
@@ -119,6 +120,12 @@ struct ev_fs_req_s
         {
             char*               path;           /**< File path */
         }as_readfile;
+
+        struct
+        {
+            char*               path;           /**< Directory path */
+            int                 mode;           /**< The mode for the new directory */
+        }as_mkdir;
     }req;
 
     union
@@ -238,6 +245,24 @@ int ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
  * @return              #ev_errno_t
  */
 int ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
+    ev_file_cb cb);
+
+/**
+ * @brief Create the DIRECTORY(ies), if they do not already exist.
+ *
+ * The full list of \p mode are:
+ * + #EV_FS_S_IRUSR
+ * + #EV_FS_S_IWUSR
+ * + #EV_FS_S_IXUSR
+ * + #EV_FS_S_IRWXU
+ *
+ * @param[in] loop      Event loop
+ * @param[in] req       File system request.
+ * @param[in] path      Directory path.
+ * @param[in] cb        Result callback.
+ * @return              #ev_errno_t
+ */
+int ev_fs_mkdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path, int mode,
     ev_file_cb cb);
 
 /**

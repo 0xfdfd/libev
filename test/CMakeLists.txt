@@ -8,7 +8,7 @@ add_executable(ev_test
     "src/utils/sockpair.c"
     "src/cases/async.c"
     "src/cases/buf.c"
-    "src/cases/file.c"
+    "src/cases/fs.c"
     "src/cases/ipv4_addr.c"
     "src/cases/list.c"
     "src/cases/loop_empty.c"

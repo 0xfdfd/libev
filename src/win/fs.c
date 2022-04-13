@@ -19,6 +19,93 @@ typedef struct file_open_info_win_s
     DWORD   disposition;
 }file_open_info_win_t;
 
+/**
+ * @brief Maps a character string to a UTF-16 (wide character) string.
+ * @param[out] dst  Pointer to store wide string. Use #ev__free() to release it.
+ * @param[in] src   Source string.
+ * @return          The number of characters (not bytes) of \p dst, or #ev_errno_t if error.
+ */
+static ssize_t _ev_fs_utf8_to_wide(WCHAR** dst, const char* src)
+{
+    int errcode;
+    ssize_t pathw_len = MultiByteToWideChar(CP_UTF8, 0, src, -1, NULL, 0);
+    if (pathw_len == 0)
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    size_t buf_sz = pathw_len * sizeof(WCHAR);
+    WCHAR* buf = ev__malloc(buf_sz);
+    if (buf == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    int cchwidechar = (int)pathw_len;
+
+    // check if truncate happen.
+    assert((ssize_t)cchwidechar == pathw_len);
+
+    DWORD r = MultiByteToWideChar(CP_UTF8, 0, src, -1, buf, cchwidechar);
+    assert(r == (DWORD)pathw_len); (void)r;
+
+    *dst = buf;
+
+    return pathw_len;
+}
+
+static int _ev_fs_wide_to_utf8(WCHAR* w_source_ptr, DWORD w_source_len,
+    char** target_ptr, uint64_t* target_len_ptr)
+{
+    int r;
+    int target_len;
+    char* target;
+    target_len = WideCharToMultiByte(CP_UTF8,
+        0,
+        w_source_ptr,
+        w_source_len,
+        NULL,
+        0,
+        NULL,
+        NULL);
+
+    if (target_len == 0)
+    {
+        return -1;
+    }
+
+    if (target_len_ptr != NULL)
+    {
+        *target_len_ptr = target_len;
+    }
+
+    if (target_ptr == NULL)
+    {
+        return 0;
+    }
+
+    target = ev__malloc(target_len + 1);
+    if (target == NULL)
+    {
+        SetLastError(ERROR_OUTOFMEMORY);
+        return -1;
+    }
+
+    r = WideCharToMultiByte(CP_UTF8,
+        0,
+        w_source_ptr,
+        w_source_len,
+        target,
+        target_len,
+        NULL,
+        NULL);
+    assert(r == target_len);
+    target[target_len] = '\0';
+    *target_ptr = target;
+    return 0;
+}
+
 static int _ev_file_get_open_attributes(int flags, int mode, file_open_info_win_t* info)
 {
     info->access = 0;
@@ -203,54 +290,6 @@ ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t o
         err = ERROR_INVALID_FLAGS;
     }
     return ev__translate_sys_error(err);
-}
-
-static int _ev_fs_wide_to_utf8(WCHAR* w_source_ptr,
-    DWORD w_source_len,
-    char** target_ptr,
-    uint64_t* target_len_ptr) {
-    int r;
-    int target_len;
-    char* target;
-    target_len = WideCharToMultiByte(CP_UTF8,
-        0,
-        w_source_ptr,
-        w_source_len,
-        NULL,
-        0,
-        NULL,
-        NULL);
-
-    if (target_len == 0) {
-        return -1;
-    }
-
-    if (target_len_ptr != NULL) {
-        *target_len_ptr = target_len;
-    }
-
-    if (target_ptr == NULL) {
-        return 0;
-    }
-
-    target = ev__malloc(target_len + 1);
-    if (target == NULL) {
-        SetLastError(ERROR_OUTOFMEMORY);
-        return -1;
-    }
-
-    r = WideCharToMultiByte(CP_UTF8,
-        0,
-        w_source_ptr,
-        w_source_len,
-        target,
-        target_len,
-        NULL,
-        NULL);
-    assert(r == target_len);
-    target[target_len] = '\0';
-    *target_ptr = target;
-    return 0;
 }
 
 static int _ev_fs_readlink_handle(HANDLE handle, char** target_ptr,
@@ -585,6 +624,45 @@ static ev_dirent_type_t _ev_fs_get_dirent_type_win(WIN32_FIND_DATAA* info)
     return EV_DIRENT_FILE;
 }
 
+static int _ev_fs_wmkdir(WCHAR* path, int mode)
+{
+    (void)mode;
+
+    wchar_t* p;
+    wchar_t backup;
+    DWORD errcode;
+    const wchar_t* path_delim = L"\\/";
+
+    for (p = wcspbrk(path, path_delim); p != NULL; p = wcspbrk(p + 1, path_delim))
+    {
+        backup = *p;
+        *p = L'\0';
+        if (!CreateDirectoryW(path, NULL))
+        {
+            errcode = GetLastError();
+            if (errcode != ERROR_ALREADY_EXISTS)
+            {
+                *p = backup;
+                return ev__translate_sys_error(errcode);
+            }
+        }
+        *p = backup;
+    }
+
+    if (CreateDirectoryW(path, NULL))
+    {
+        return EV_SUCCESS;
+    }
+
+    errcode = GetLastError();
+    if (errcode == ERROR_INVALID_NAME || errcode == ERROR_DIRECTORY)
+    {
+        return EV_EINVAL;
+    }
+
+    return ev__translate_sys_error(errcode);
+}
+
 int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
 {
     return _ev_file_fstat_win(file, statbuf, 0);
@@ -633,4 +711,19 @@ int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
     } while (FindNextFile(dir_handle, &info));
 
     return ret;
+}
+
+int ev__fs_mkdir(const char* path, int mode)
+{
+    WCHAR* copy_wpath;
+    ssize_t ret = _ev_fs_utf8_to_wide(&copy_wpath, path);
+    if (ret < 0)
+    {
+        return (int)ret;
+    }
+
+    ret = _ev_fs_wmkdir(copy_wpath, mode);
+    ev__free(copy_wpath);
+
+    return (int)ret;
 }

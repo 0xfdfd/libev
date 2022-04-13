@@ -68,6 +68,15 @@ API_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf);
  */
 API_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg);
 
+/**
+ * @brief Same as [mkdir(2)](https://man7.org/linux/man-pages/man2/mkdir.2.html),
+ *   and make parent directories as needed.
+ * @param[in] path      Directory path.
+ * @param[in] mode      The mode for the new directory.
+ * @return              #ev_errno_t
+ */
+API_LOCAL int ev__fs_mkdir(const char* path, int mode);
+
 #ifdef __cplusplus
 }
 #endif

@@ -46,6 +46,39 @@ static ev_dirent_type_t _ev_fs_get_dirent_type(struct dirent* dent)
     return type;
 }
 
+static int _ev_fs_mkpath(char* file_path, int mode)
+{
+    char* p;
+    int errcode;
+    assert(file_path && *file_path);
+
+    for (p = strchr(file_path + 1, '/'); p != NULL; p = strchr(p + 1, '/'))
+    {
+        *p = '\0';
+        if (mkdir(file_path, mode) == -1)
+        {
+            errcode = errno;
+            if (errcode != EEXIST)
+            {
+                *p = '/';
+                return ev__translate_sys_error(errcode);
+            }
+        }
+        *p = '/';
+    }
+
+    if (mkdir(file_path, mode) == -1)
+    {
+        errcode = errno;
+        if (errcode != EEXIST)
+        {
+            return ev__translate_sys_error(errcode);
+        }
+    }
+
+    return EV_SUCCESS;
+}
+
 int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
 {
     int ret;
@@ -264,6 +297,20 @@ int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
     }
 
     closedir(dir);
+
+    return ret;
+}
+
+int ev__fs_mkdir(const char* path, int mode)
+{
+    char* dup_path = ev__strdup(path);
+    if (dup_path == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    int ret = _ev_fs_mkpath(dup_path, mode);
+    ev__free(dup_path);
 
     return ret;
 }
