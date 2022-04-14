@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 /**
- * @ingroup EV_TCP
+ * @addtogroup EV_TCP
  * @{
  */
 
@@ -35,6 +35,9 @@ struct ev_tcp
         EV_TCP_BACKEND_INIT,\
     }
 
+/**
+ * @brief Read request token for TCP socket.
+ */
 struct ev_tcp_read_req
 {
     ev_read_t               base;               /**< Base object */
@@ -42,6 +45,9 @@ struct ev_tcp_read_req
     ev_tcp_read_backend_t   backend;            /**< Backend */
 };
 
+/**
+ * @brief Write request token for TCP socket.
+ */
 struct ev_tcp_write_req
 {
     ev_write_t              base;               /**< Base object */
@@ -98,7 +104,8 @@ int ev_tcp_accept(ev_tcp_t* acpt, ev_tcp_t* conn, ev_tcp_accept_cb cb);
  * @param[in] cb    Connect callback
  * @return          #ev_errno_t
  */
-int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_tcp_connect_cb cb);
+int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size,
+    ev_tcp_connect_cb cb);
 
 /**
  * @brief Write data

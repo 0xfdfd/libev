@@ -214,9 +214,9 @@ static size_t _ev_calculate_write_size(const ev_write_t* req)
     size_t total = 0;
 
     size_t i;
-    for (i = 0; i < req->data.nbuf; i++)
+    for (i = 0; i < req->nbuf; i++)
     {
-        total += req->data.bufs[i].size;
+        total += req->bufs[i].size;
     }
     return total;
 }
@@ -504,36 +504,36 @@ int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool)
 
 int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf)
 {
-    req->data.nbuf = nbuf;
+    req->nbuf = nbuf;
 
-    if (nbuf <= ARRAY_SIZE(req->data.bufsml))
+    if (nbuf <= ARRAY_SIZE(req->bufsml))
     {
-        req->data.bufs = req->data.bufsml;
+        req->bufs = req->bufsml;
     }
     else
     {
-        req->data.bufs = ev__malloc(sizeof(ev_buf_t) * nbuf);
-        if (req->data.bufs == NULL)
+        req->bufs = ev__malloc(sizeof(ev_buf_t) * nbuf);
+        if (req->bufs == NULL)
         {
             return EV_ENOMEM;
         }
     }
 
-    memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);
-    req->data.size = 0;
-    req->data.capacity = _ev_calculate_write_size(req);
+    memcpy(req->bufs, bufs, sizeof(ev_buf_t) * nbuf);
+    req->size = 0;
+    req->capacity = _ev_calculate_write_size(req);
     return EV_SUCCESS;
 }
 
 void ev__write_exit(ev_write_t* req)
 {
-    if (req->data.bufs != req->data.bufsml)
+    if (req->bufs != req->bufsml)
     {
-        ev__free(req->data.bufs);
+        ev__free(req->bufs);
     }
 
-    req->data.bufs = NULL;
-    req->data.nbuf = 0;
+    req->bufs = NULL;
+    req->nbuf = 0;
 }
 
 int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf)

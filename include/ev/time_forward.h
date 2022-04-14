@@ -13,6 +13,10 @@ extern "C" {
  * @brief Time spec
  */
 struct ev_timespec_s;
+
+/**
+ * @brief Typedef of #ev_timespec_s.
+ */
 typedef struct ev_timespec_s ev_timespec_t;
 
 /**

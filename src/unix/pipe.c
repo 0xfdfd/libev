@@ -402,10 +402,10 @@ static int _ev_pipe_on_ipc_mode_io_write_remain_body_unix(ev_pipe_t* pipe)
     size_t buf_pos = pipe->backend.ipc_mode.wio.curr.buf_pos;
 
     size_t idx;
-    for (idx = 0; idx < ARRAY_SIZE(bufs) && buf_idx < req->base.data.nbuf; idx++, buf_idx++)
+    for (idx = 0; idx < ARRAY_SIZE(bufs) && buf_idx < req->base.nbuf; idx++, buf_idx++)
     {
-        bufs[idx].data = (uint8_t*)req->base.data.bufs[buf_idx].data + buf_pos;
-        bufs[idx].size = req->base.data.bufs[buf_idx].size - buf_pos;
+        bufs[idx].data = (uint8_t*)req->base.bufs[buf_idx].data + buf_pos;
+        bufs[idx].size = req->base.bufs[buf_idx].size - buf_pos;
         buf_pos = 0;
     }
 
@@ -415,10 +415,10 @@ static int _ev_pipe_on_ipc_mode_io_write_remain_body_unix(ev_pipe_t* pipe)
         return write_size;
     }
 
-    req->base.data.size += write_size;
+    req->base.size += write_size;
     while (write_size > 0)
     {
-        size_t left_size = req->base.data.bufs[pipe->backend.ipc_mode.wio.curr.buf_idx].size -
+        size_t left_size = req->base.bufs[pipe->backend.ipc_mode.wio.curr.buf_idx].size -
             pipe->backend.ipc_mode.wio.curr.buf_pos;
         if (left_size > (size_t)write_size)
         {
@@ -433,10 +433,10 @@ static int _ev_pipe_on_ipc_mode_io_write_remain_body_unix(ev_pipe_t* pipe)
     }
 
     /* send finish */
-    if (pipe->backend.ipc_mode.wio.curr.buf_idx >= req->base.data.nbuf)
+    if (pipe->backend.ipc_mode.wio.curr.buf_idx >= req->base.nbuf)
     {
         pipe->backend.ipc_mode.wio.curr.writing = NULL;
-        _ev_pipe_w_user_callback_unix(req, req->base.data.size, EV_SUCCESS);
+        _ev_pipe_w_user_callback_unix(req, req->base.size, EV_SUCCESS);
     }
 
     return EV_SUCCESS;
@@ -482,7 +482,7 @@ static int _ev_pipe_ipc_mode_write_new_frame_unix(ev_pipe_t* pipe)
     ev_pipe_write_req_t* req = pipe->backend.ipc_mode.wio.curr.writing;
 
     ev_ipc_frame_hdr_t frame_hdr;
-    ev__ipc_init_frame_hdr(&frame_hdr, 0, 0, req->base.data.capacity);
+    ev__ipc_init_frame_hdr(&frame_hdr, 0, 0, req->base.capacity);
     memcpy(pipe->backend.ipc_mode.wio.buffer, &frame_hdr, sizeof(frame_hdr));
     pipe->backend.ipc_mode.wio.curr.head_send_capacity = sizeof(frame_hdr);
 
@@ -581,7 +581,7 @@ static void _ev_pipe_ipc_mode_cancel_all_wio_unix(ev_pipe_t* pipe, int stat)
     while ((it = ev_list_pop_front(&pipe->backend.ipc_mode.wio.wqueue)) != NULL)
     {
         ev_pipe_write_req_t* req = EV_CONTAINER_OF(it, ev_pipe_write_req_t, base.node);
-        _ev_pipe_w_user_callback_unix(req, req->base.data.size, stat);
+        _ev_pipe_w_user_callback_unix(req, req->base.size, stat);
     }
 }
 
@@ -673,7 +673,7 @@ static void _ev_pipe_ipc_mode_want_read_unix(ev_pipe_t* pipe)
 
 static int _ev_pipe_write_ipc_mode_unix(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
 {
-    if (req->base.data.capacity > UINT32_MAX)
+    if (req->base.capacity > UINT32_MAX)
     {
         return EV_E2BIG;
     }

@@ -12,6 +12,9 @@ extern "C" {
  * @{
  */
 
+/**
+ * @brief Mutex handle type.
+ */
 typedef struct ev_mutex
 {
     union

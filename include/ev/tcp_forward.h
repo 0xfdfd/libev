@@ -10,12 +10,24 @@ extern "C" {
  */
 
 struct ev_tcp;
+
+/**
+ * @brief Typedef of #ev_tcp.
+ */
 typedef struct ev_tcp ev_tcp_t;
 
 struct ev_tcp_read_req;
+
+/**
+ * @brief Typedef of #ev_tcp_read_req.
+ */
 typedef struct ev_tcp_read_req ev_tcp_read_req_t;
 
 struct ev_tcp_write_req;
+
+/**
+ * @brief Typedef of #ev_tcp_write_req.
+ */
 typedef struct ev_tcp_write_req ev_tcp_write_req_t;
 
 /**

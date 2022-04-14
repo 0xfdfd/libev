@@ -14,10 +14,13 @@ extern "C" {
 #endif
 
 /**
- * @defgroup EV_EVENT_LOOP Event loop
+ * @addtogroup EV_EVENT_LOOP
  * @{
  */
 
+/**
+ * @brief Running mode of event loop.
+ */
 enum ev_loop_mode
 {
     /**
@@ -49,6 +52,9 @@ enum ev_loop_mode
     EV_LOOP_MODE_NOWAIT,
 };
 
+/**
+ * @brief Event loop type.
+ */
 struct ev_loop
 {
     uint64_t                        hwtime;             /**< A fast clock time in milliseconds */
@@ -92,7 +98,13 @@ struct ev_loop
     ev_threadpool_t*                threadpool;         /**< Thread pool */
     ev_loop_plt_t                   backend;            /**< Platform related implementation */
 };
-#define EV_LOOP_INIT        \
+
+/**
+ * @brief Static initializer for #ev_loop_t.
+ * @note A static initialized #ev_loop_t is not a workable event loop, please
+ *   initialize with #ev_loop_init().
+ */
+#define EV_LOOP_INVALID        \
     {\
         0,                                      /* .hwtime */\
         { EV_LIST_INIT, EV_LIST_INIT },         /* .handles */\
@@ -117,6 +129,7 @@ int ev_loop_init(ev_loop_t* loop);
  * handles and requests have been closed, or it will return #EV_EBUSY. After
  * this function returns, the user can free the memory allocated for the loop.
  *
+ * @param[in] loop      Event loop handler.
  * @return #ev_errno_t
  */
 int ev_loop_exit(ev_loop_t* loop);

@@ -91,7 +91,7 @@ static void _ev_tcp_cleanup_stream(ev_tcp_t* sock)
     while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue_done)) != NULL)
     {
         ev_tcp_write_req_t* req = EV_CONTAINER_OF(it, ev_tcp_write_req_t, base.node);
-        _ev_tcp_w_user_callback_win(req, req->base.data.size, req->backend.stat);
+        _ev_tcp_w_user_callback_win(req, req->base.size, req->backend.stat);
     }
     while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue)) != NULL)
     {
@@ -254,7 +254,7 @@ static void _ev_tcp_process_stream(ev_tcp_t* sock)
     while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue_done)) != NULL)
     {
         ev_tcp_write_req_t* req = EV_CONTAINER_OF(it, ev_tcp_write_req_t, base.node);
-        size_t write_size = req->base.data.size;
+        size_t write_size = req->base.size;
         int write_stat = req->backend.stat;
 
         _ev_tcp_w_user_callback_win(req, write_size, write_stat);
@@ -382,7 +382,7 @@ static void _ev_tcp_on_stream_write_done(ev_iocp_t* iocp, size_t transferred, vo
     ev_tcp_write_req_t* req = arg;
     ev_tcp_t* sock = req->backend.owner;
 
-    req->base.data.size = transferred;
+    req->base.size = transferred;
     req->backend.stat = NT_SUCCESS(iocp->overlapped.Internal) ?
         EV_SUCCESS : ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal));
 
@@ -710,7 +710,7 @@ int ev_tcp_write(ev_tcp_t* sock, ev_tcp_write_req_t* req, ev_buf_t* bufs, size_t
     sock->base.data.flags |= EV_TCP_STREAMING;
     ev__handle_active(&sock->base);
 
-    ret = WSASend(sock->sock, (WSABUF*)req->base.data.bufs, (DWORD)req->base.data.nbuf,
+    ret = WSASend(sock->sock, (WSABUF*)req->base.bufs, (DWORD)req->base.nbuf,
         NULL, 0, &req->backend.io.overlapped, NULL);
     if (ret == 0)
     {

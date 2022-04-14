@@ -337,7 +337,7 @@ static void _ev_udp_on_send_complete_win(ev_udp_t* udp, ev_udp_write_t* req)
     ev_list_erase(&udp->send_list, &req->base.node);
     _ev_udp_smart_deactive_win(udp);
 
-    _ev_udp_w_user_callback_win(req, req->base.data.size, req->backend.stat);
+    _ev_udp_w_user_callback_win(req, req->base.size, req->backend.stat);
 }
 
 static void _ev_udp_on_send_bypass_iocp(ev_todo_t* todo)
@@ -353,7 +353,7 @@ static void _ev_udp_on_send_iocp_win(ev_iocp_t* iocp, size_t transferred, void* 
     ev_udp_t* udp = arg;
     ev_udp_write_t* req = EV_CONTAINER_OF(iocp, ev_udp_write_t, backend.io);
 
-    req->base.data.size = transferred;
+    req->base.size = transferred;
     req->backend.stat = NT_SUCCESS(iocp->overlapped.Internal) ?
         EV_SUCCESS : ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal));
 
@@ -455,12 +455,12 @@ int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr
     DWORD send_bytes;
 
     ev__handle_active(&udp->base);
-    ret = WSASendTo(udp->sock, (WSABUF*)req->base.data.bufs, (DWORD)req->base.data.nbuf,
+    ret = WSASendTo(udp->sock, (WSABUF*)req->base.bufs, (DWORD)req->base.nbuf,
         &send_bytes, 0, addr, addrlen, &req->backend.io.overlapped, NULL);
 
     if (ret == 0 && (udp->base.data.flags & EV_UDP_BYPASS_IOCP))
     {
-        req->base.data.size += req->base.data.capacity;
+        req->base.size += req->base.capacity;
         req->backend.stat = EV_SUCCESS;
         ev__loop_submit_task(udp->base.data.loop, &req->backend.token, _ev_udp_on_send_bypass_iocp);
         return EV_SUCCESS;

@@ -15,10 +15,13 @@ extern "C" {
 #endif
 
 /**
- * @defgroup EV_THREAD_POOL Thread pool
+ * @addtogroup EV_THREAD_POOL
  * @{
  */
 
+/**
+ * @brief Work type.
+ */
 enum ev_threadpool_work_type
 {
     /**
@@ -37,6 +40,9 @@ enum ev_threadpool_work_type
     EV_THREADPOOL_WORK_IO_SLOW,
 };
 
+/**
+ * @brief Thread pool handle type.
+ */
 struct ev_threadpool
 {
     ev_mutex_t                      mutex;          /**< Thread pool mutex */
@@ -54,6 +60,9 @@ struct ev_threadpool
     ev_queue_node_t                 io_slow_queue;  /**< work queue for #EV_THREADPOOL_WORK_IO_SLOW */
 };
 
+/**
+ * @brief Thread pool work token.
+ */
 struct ev_threadpool_work
 {
     ev_handle_t                     base;           /**< Base object */
@@ -116,7 +125,7 @@ int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
  * @brief Cancel task.
  * @note No matter the task is canceled or not, the task always callback in the
  *   event loop.
- * @param[in]           Work token
+ * @param[in] token     Work token
  * @return              #ev_errno_t
  */
 int ev_threadpool_cancel(ev_threadpool_work_t* token);

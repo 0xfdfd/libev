@@ -3,25 +3,20 @@
 
 #include "ev/handle.h"
 #include "ev/loop.h"
+#include "ev/timer_forward.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @defgroup EV_TIMER Timer
+ * @addtogroup EV_TIMER
  * @{
  */
 
-struct ev_timer;
-typedef struct ev_timer ev_timer_t;
-
 /**
- * @brief Type definition for callback passed to #ev_timer_start().
- * @param[in] handle    A pointer to #ev_timer_t structure
+ * @brief Timer handle type.
  */
-typedef void(*ev_timer_cb)(ev_timer_t* timer);
-
 struct ev_timer
 {
     ev_handle_t             base;               /**< Base object */

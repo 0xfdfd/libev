@@ -21,6 +21,9 @@ extern "C" {
  * @{
  */
 
+/**
+ * @brief File system request type.
+ */
 enum ev_fs_req_type_e
 {
     EV_FS_REQ_UNKNOWN,
@@ -33,6 +36,9 @@ enum ev_fs_req_type_e
     EV_FS_REQ_MKDIR,
 };
 
+/**
+ * @brief Directory type.
+ */
 enum ev_dirent_type_e
 {
     EV_DIRENT_UNKNOWN,
@@ -45,6 +51,9 @@ enum ev_dirent_type_e
     EV_DIRENT_BLOCK
 };
 
+/**
+ * @brief File type.
+ */
 struct ev_file_s
 {
     ev_handle_t                 base;           /**< Base object */
@@ -53,6 +62,9 @@ struct ev_file_s
     ev_list_t                   work_queue;     /**< Work queue */
 };
 
+/**
+ * @brief File status information.
+ */
 struct ev_fs_stat_s
 {
     uint64_t                    st_dev;         /**< ID of device containing file */
@@ -75,12 +87,18 @@ struct ev_fs_stat_s
     ev_timespec_t               st_birthtim;    /**< Time of file creation */
 };
 
+/**
+ * @brief Directory entry.
+ */
 struct ev_dirent_s
 {
     const char*                 name;           /**< Entry name */
     ev_dirent_type_t            type;           /**< Entry type */
 };
 
+/**
+ * @brief File system request token.
+ */
 struct ev_fs_req_s
 {
     ev_fs_req_type_t            req_type;       /**< Request type */
@@ -256,9 +274,10 @@ int ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
  * + #EV_FS_S_IXUSR
  * + #EV_FS_S_IRWXU
  *
- * @param[in] loop      Event loop
+ * @param[in] loop      Event loop.
  * @param[in] req       File system request.
  * @param[in] path      Directory path.
+ * @param[in] mode      Creation mode.
  * @param[in] cb        Result callback.
  * @return              #ev_errno_t
  */

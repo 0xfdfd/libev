@@ -59,7 +59,7 @@ int ev_ipv4_name(const struct sockaddr_in* addr, int* port, char* ip, size_t len
 int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t len);
 
 /**
- * @} EV_UTILS/EV_UTILS_NET
+ * @} EV_UTILS_NET
  */
 
 /**

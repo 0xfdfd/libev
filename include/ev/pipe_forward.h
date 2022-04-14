@@ -10,12 +10,24 @@ extern "C" {
  */
 
 struct ev_pipe;
+
+/**
+ * @brief Typedef of #ev_pipe.
+ */
 typedef struct ev_pipe ev_pipe_t;
 
 struct ev_pipe_write_req;
+
+/**
+ * @brief Typedef of #ev_pipe_write_req.
+ */
 typedef struct ev_pipe_write_req ev_pipe_write_req_t;
 
 struct ev_pipe_read_req;
+
+/**
+ * @brief Typedef of #ev_pipe_read_req.
+ */
 typedef struct ev_pipe_read_req ev_pipe_read_req_t;
 
 /**

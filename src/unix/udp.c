@@ -31,7 +31,7 @@ static void _ev_udp_cancel_all_w_unix(ev_udp_t* udp, int err)
     while ((it = ev_list_pop_front(&udp->send_list)) != NULL)
     {
         ev_udp_write_t* req = EV_CONTAINER_OF(it, ev_udp_write_t, base.node);
-        _ev_udp_w_user_callback_unix(req, req->base.data.size, err);
+        _ev_udp_w_user_callback_unix(req, req->base.size, err);
     }
 }
 
@@ -179,7 +179,7 @@ static int _ev_udp_on_io_write_unix(ev_udp_t* udp)
         }
 
         ev_list_erase(&udp->send_list, it);
-        _ev_udp_w_user_callback_unix(req, req->base.data.size, EV_SUCCESS);
+        _ev_udp_w_user_callback_unix(req, req->base.size, EV_SUCCESS);
     }
 
     if (ret == EV_EAGAIN)

@@ -43,7 +43,7 @@ extern "C" {
 typedef struct ev_ipc_frame_hdr
 {
     uint32_t    hdr_magic;      /**< Magic code */
-    uint8_t     hdr_flags;      /**< #ev_ipc_frame_flag_t */
+    uint8_t     hdr_flags;      /**< Bit OR flags */
     uint8_t     hdr_version;    /**< Protocol version */
     uint16_t    hdr_exsz;       /**< Extra data size */
     uint32_t    hdr_dtsz;       /**< Data size */

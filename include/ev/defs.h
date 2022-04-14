@@ -15,9 +15,19 @@ extern "C" {
  */
 #define EV_IOV_MAX              16
 
+/**
+ * @brief Expand macro.
+ * @param[in] ...   Code to expand.
+ */
 #define EV_EXPAND(...)          __VA_ARGS__
 
+/**
+ * @brief Repeat code for \p n times.
+ * @param[in] n     How many times to repeat.
+ * @param[in] ...   Code fragment to repeat.
+ */
 #define EV_INIT_REPEAT(n, ...)   EV_INIT_REPEAT2(n, __VA_ARGS__)
+/** @cond */
 #define EV_INIT_REPEAT2(n, ...)  EV_INIT_REPEAT_##n(__VA_ARGS__)
 #define EV_INIT_REPEAT_1(...)    EV_EXPAND(__VA_ARGS__)
 #define EV_INIT_REPEAT_2(...)    EV_INIT_REPEAT_1(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
@@ -35,8 +45,10 @@ extern "C" {
 #define EV_INIT_REPEAT_14(...)   EV_INIT_REPEAT_13(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
 #define EV_INIT_REPEAT_15(...)   EV_INIT_REPEAT_14(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
 #define EV_INIT_REPEAT_16(...)   EV_INIT_REPEAT_15(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
+/** @endcond */
 
 /**
+ * @def EV_CONTAINER_OF
  * @brief cast a member of a structure out to the containing structure.
  */
 #if defined(container_of)
@@ -52,18 +64,6 @@ extern "C" {
 #   define EV_CONTAINER_OF(ptr, type, member)   \
         ((type *) ((char *) (ptr) - offsetof(type, member)))
 #endif
-
-struct ev_shmv;
-typedef struct ev_shmv ev_shmv_t;
-
-struct ev_shmv_token;
-typedef struct ev_shmv_token ev_shmv_token_t;
-
-struct ev_write;
-typedef struct ev_write ev_write_t;
-
-struct ev_read;
-typedef struct ev_read ev_read_t;
 
 #ifdef __cplusplus
 }

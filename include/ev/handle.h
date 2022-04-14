@@ -38,6 +38,9 @@ typedef struct ev_handle ev_handle_t;
  */
 typedef void(*ev_close_cb)(ev_handle_t* handle);
 
+/**
+ * @brief Base class for all major object.
+ */
 struct ev_handle
 {
     ev_list_node_t          node;               /**< Node for #ev_loop_t::handles */

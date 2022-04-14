@@ -308,8 +308,8 @@ static void _ev_file_on_write(ev_threadpool_work_t* work)
     ev_file_t* file = req->file;
     ev_write_t* write_req = &req->req.as_write.write_req;
 
-    req->result = ev__fs_pwritev(file->file, write_req->data.bufs,
-        write_req->data.nbuf, req->req.as_write.offset);
+    req->result = ev__fs_pwritev(file->file, write_req->bufs,
+        write_req->nbuf, req->req.as_write.offset);
 }
 
 static void _ev_file_on_fstat(ev_threadpool_work_t* work)

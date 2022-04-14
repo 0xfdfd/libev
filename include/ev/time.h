@@ -8,11 +8,23 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup EV_TIME
+ * @{
+ */
+
+/**
+ * @brief High-accuracy time type.
+ */
 struct ev_timespec_s
 {
     uint64_t    tv_sec;     /**< seconds */
     uint32_t    tv_nsec;    /**< nanoseconds */
 };
+
+/**
+ * @} EV_TIME
+ */
 
 #ifdef __cplusplus
 }

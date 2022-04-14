@@ -10,9 +10,17 @@ extern "C" {
  */
 
 enum ev_loop_mode;
+
+/**
+ * @brief Typedef of #ev_loop_mode.
+ */
 typedef enum ev_loop_mode ev_loop_mode_t;
 
 struct ev_loop;
+
+/**
+ * @brief Typedef of #ev_loop.
+ */
 typedef struct ev_loop ev_loop_t;
 
 /**

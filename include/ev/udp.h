@@ -9,22 +9,31 @@ extern "C" {
 #endif
 
 /**
- * @defgroup EV_UDP UDP
+ * @addtogroup EV_UDP
  * @{
  */
 
-typedef enum ev_udp_membership 
+/**
+ * @brief Multicast operation.
+ */
+enum ev_udp_membership
 {
     EV_UDP_LEAVE_GROUP  = 0,    /**< Leave multicast group */
     EV_UDP_ENTER_GROUP  = 1,    /**< Join multicast group */
-} ev_udp_membership_t;
+};
 
-typedef enum ev_udp_flags
+/**
+ * @brief UDP socket flags.
+ */
+enum ev_udp_flags
 {
     EV_UDP_IPV6_ONLY    = 1,    /**< Do not bound to IPv4 address */
     EV_UDP_REUSEADDR    = 2,    /**< Reuse address. Only the last one can receive message. */
-}ev_udp_flags_t;
+};
 
+/**
+ * @brief UDP socket type.
+ */
 struct ev_udp
 {
     ev_handle_t             base;               /**< Base object */
@@ -37,6 +46,9 @@ struct ev_udp
     ev_udp_backend_t        backend;            /**< Platform related implementation */
 };
 
+/**
+ * @brief Write request token for UDP socket.
+ */
 struct ev_udp_write
 {
     ev_write_t              base;               /**< Base request */
@@ -44,6 +56,9 @@ struct ev_udp_write
     ev_udp_write_backend_t  backend;            /**< Backend */
 };
 
+/**
+ * @brief Read request token for UDP socket.
+ */
 struct ev_udp_read
 {
     ev_read_t               base;               /**< Base request */
@@ -203,7 +218,10 @@ int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
  *   completed immediately.
  * @param[in] udp   A UDP handle
  * @param[in] req   Write request token
+ * @param[in] bufs  Buffer list
+ * @param[in] nbuf  Buffer number
  * @param[in] addr  Peer address
+ * @param[in] cb    Send result callback
  * @return          #ev_errno_t
  */
 int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,

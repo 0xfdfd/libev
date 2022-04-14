@@ -2,40 +2,36 @@
 #define __EV_THREAD_H__
 
 #include "ev/backend.h"
+#include "ev/thread_forward.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @defgroup EV_Thread Thread
+ * @addtogroup EV_Thread
  * @{
  */
 
 /**
- * @brief Infinite timeout.
+ * @brief Thread attribute.
  */
-#define EV_THREAD_WAIT_INFINITE ((unsigned long)-1)
-
-/**
- * @brief Thread callback
- * @param[in] arg       User data
- */
-typedef void (*ev_thread_cb)(void* arg);
-
-typedef struct ev_thread_opt
+struct ev_thread_opt
 {
     struct
     {
         unsigned    have_stack_size : 1;    /**< Enable stack size */
     }flags;
     size_t          stack_size;             /**< Stack size. */
-}ev_thread_opt_t;
+};
 
-typedef struct ev_tls
+/**
+ * @brief Thread local storage.
+ */
+struct ev_tls
 {
-    ev_os_tls_t     tls;                /**< Thread local storage */
-}ev_tls_t;
+    ev_os_tls_t     tls;                    /**< Thread local storage */
+};
 
 /**
  * @brief Create thread
@@ -45,7 +41,8 @@ typedef struct ev_tls
  * @param[in] arg   User data
  * @return          #ev_errno_t
  */
-int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt, ev_thread_cb cb, void* arg);
+int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
+    ev_thread_cb cb, void* arg);
 
 /**
  * @brief Exit thread

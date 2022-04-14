@@ -17,6 +17,9 @@ typedef struct ev_todo ev_todo_t;
  */
 typedef void(*ev_todo_cb)(ev_todo_t* todo);
 
+/**
+ * @brief TODO token type.
+ */
 struct ev_todo
 {
     ev_list_node_t          node;           /**< List node */

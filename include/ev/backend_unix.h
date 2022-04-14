@@ -11,6 +11,7 @@
 #include "ev/loop_forward.h"
 #include "ev/tcp_forward.h"
 #include "ev/pipe_forward.h"
+#include "ev/request_forward.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -12,7 +12,10 @@ extern "C" {
  * @{
  */
 
-typedef struct ev_sem
+/**
+ * @brief Semaphore handle type.
+ */
+typedef struct ev_sem_s
 {
     union
     {

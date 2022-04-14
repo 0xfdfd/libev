@@ -40,7 +40,7 @@ static void _ev_stream_do_write(ev_nonblock_stream_t* stream)
         req = EV_CONTAINER_OF(it, ev_write_t, node);
         if ((ret = _ev_stream_do_write_once(stream, req)) == EV_SUCCESS)
         {
-            stream->callbacks.w_cb(stream, req, req->data.size, EV_SUCCESS);
+            stream->callbacks.w_cb(stream, req, req->size, EV_SUCCESS);
             continue;
         }
 
@@ -60,7 +60,7 @@ err:
     while ((it = ev_list_pop_front(&stream->pending.w_queue)) != NULL)
     {
         req = EV_CONTAINER_OF(it, ev_write_t, node);
-        stream->callbacks.w_cb(stream, req, req->data.size, ret);
+        stream->callbacks.w_cb(stream, req, req->size, ret);
     }
 }
 
@@ -111,7 +111,7 @@ static void _ev_stream_cleanup_w(ev_nonblock_stream_t* stream, int errcode)
     while ((it = ev_list_pop_front(&stream->pending.w_queue)) != NULL)
     {
         ev_write_t* req = EV_CONTAINER_OF(it, ev_write_t, node);
-        stream->callbacks.w_cb(stream, req, req->data.size, errcode);
+        stream->callbacks.w_cb(stream, req, req->size, errcode);
     }
 }
 

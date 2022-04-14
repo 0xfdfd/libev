@@ -9,13 +9,39 @@ extern "C" {
  * @{
  */
 
+enum ev_udp_membership;
+
+/**
+ * @brief Typedef of #ev_udp_membership.
+ */
+typedef enum ev_udp_membership ev_udp_membership_t;
+
+enum ev_udp_flags;
+
+/**
+ * @brief Typedef of #ev_udp_flags.
+ */
+typedef enum ev_udp_flags ev_udp_flags_t;
+
 struct ev_udp;
+
+/**
+ * @brief Typedef of #ev_udp.
+ */
 typedef struct ev_udp ev_udp_t;
 
 struct ev_udp_write;
+
+/**
+ * @brief Typedef of #ev_udp_write.
+ */
 typedef struct ev_udp_write ev_udp_write_t;
 
 struct ev_udp_read;
+
+/**
+ * @brief Typedef of #ev_udp_read.
+ */
 typedef struct ev_udp_read ev_udp_read_t;
 
 /**

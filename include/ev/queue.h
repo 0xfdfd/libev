@@ -11,11 +11,19 @@ extern "C" {
  * @{
  */
 
+/**
+ * @brief Queue node type.
+ */
 typedef struct ev_queue_node
 {
     struct ev_queue_node* p_prev;
     struct ev_queue_node* p_next;
-}ev_queue_node_t;
+} ev_queue_node_t;
+
+/**
+ * @brief Static initializer for #ev_queue_node_t.
+ * @note A static initialized queue node is not a valid node.
+ */
 #define EV_QUEUE_NODE_INVALID  \
     {\
         NULL,\
@@ -66,14 +74,14 @@ ev_queue_node_t* ev_queue_pop_front(ev_queue_node_t* head);
 
 /**
  * @brief Get the last node and remove it from the list.
- * @param[in,out] handler   Pointer to list
+ * @param[in,out] head      Pointer to list
  * @return                  The last node
  */
 ev_queue_node_t* ev_queue_pop_back(ev_queue_node_t* head);
 
 /**
  * @brief Get the first node.
- * @param[in] handler   Pointer to list
+ * @param[in] head      Pointer to list
  * @return              The first node
  */
 ev_queue_node_t* ev_queue_head(ev_queue_node_t* head);

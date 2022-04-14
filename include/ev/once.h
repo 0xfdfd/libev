@@ -13,6 +13,10 @@ extern "C" {
  */
 
 struct ev_once;
+
+/**
+ * @brief Typedef of #ev_once.
+ */
 typedef struct ev_once ev_once_t;
 
 /**

@@ -1,7 +1,8 @@
 #ifndef __EV_ASYNC_H__
 #define __EV_ASYNC_H__
 
-#include "ev/defs.h"
+#include "ev/handle.h"
+#include "ev/mutex.h"
 #include "ev/queue.h"
 
 #ifdef __cplusplus
@@ -14,6 +15,10 @@ extern "C" {
  */
 
 struct ev_async;
+
+/**
+ * @brief Typedef of #ev_async.
+ */
 typedef struct ev_async ev_async_t;
 
 /**
@@ -22,6 +27,9 @@ typedef struct ev_async ev_async_t;
  */
 typedef void(*ev_async_cb)(ev_async_t* async);
 
+/**
+ * @brief Async handle type.
+ */
 struct ev_async
 {
     ev_handle_t             base;               /**< Base object */
@@ -36,6 +44,11 @@ struct ev_async
         int                 pending;            /**< Pending mask */
     }data;
 };
+
+/**
+ * @brief Static initializer for #ev_async_t.
+ * @note A static initialized #ev_async_t is not a valid handle.
+ */
 #define EV_ASYNC_INVALID    \
     {\
         EV_HANDLE_INVALID,\

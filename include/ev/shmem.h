@@ -15,6 +15,9 @@ extern "C" {
 struct ev_shm;
 typedef struct ev_shm ev_shm_t;
 
+/**
+ * @brief Shared memory type.
+ */
 struct ev_shm
 {
     void*                   addr;       /**< Shared memory address */
