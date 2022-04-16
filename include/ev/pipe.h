@@ -189,11 +189,20 @@ int ev_pipe_accept(ev_pipe_t* pipe, ev_pipe_read_req_t* req,
     ev_role_t handle_role, void* handle_addr, size_t handle_size);
 
 /**
- * @brief Make a pair of pipe
+ * @brief Make a pair of pipe.
+ *
+ * Close pipe by #ev_pipe_close() when no longer need it.
+ *
  * @param[out] fds  fds[0] for read, fds[1] for write
  * @return          #ev_errno_t
  */
 int ev_pipe_make(ev_os_pipe_t fds[2]);
+
+/**
+ * @brief Close OS pipe.
+ * @param[in] fd    pipe create by #ev_pipe_make().
+ */
+void ev_pipe_close(ev_os_pipe_t fd);
 
 /**
  * @} EV_PIPE

@@ -1367,3 +1367,8 @@ int ev_pipe_accept(ev_pipe_t* pipe, ev_pipe_read_req_t* req,
 
     return ret;
 }
+
+void ev_pipe_close(ev_os_pipe_t fd)
+{
+    CloseHandle(fd);
+}

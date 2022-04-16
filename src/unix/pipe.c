@@ -845,3 +845,8 @@ int ev_pipe_accept(ev_pipe_t* pipe, ev_pipe_read_req_t* req,
     ev_tcp_t* tcp = handle_addr;
     return ev__tcp_open(tcp, req->handle.os_socket);
 }
+
+void ev_pipe_close(ev_os_pipe_t fd)
+{
+    close(fd);
+}
