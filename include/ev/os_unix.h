@@ -71,6 +71,9 @@
 extern "C" {
 #endif
 
+typedef pid_t                   ev_os_pid_t;
+#define EV_OS_PID_INVALID       ((pid_t)-1)
+
 typedef int                     ev_os_pipe_t;
 #define EV_OS_PIPE_INVALID      (-1)
 

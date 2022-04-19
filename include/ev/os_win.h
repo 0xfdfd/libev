@@ -101,6 +101,18 @@ typedef HANDLE                  ev_os_file_t;
   * @} EV_FILESYSTEM
   */
 
+/**
+ * @addtogroup EV_PROCESS
+ * @{
+ */
+
+typedef HANDLE                  ev_os_pid_t;
+#define EV_OS_PID_INVALID       INVALID_HANDLE_VALUE
+
+/**
+ * @} EV_PROCESS
+ */
+
 typedef HANDLE                  ev_os_pipe_t;
 #define EV_OS_PIPE_INVALID      INVALID_HANDLE_VALUE
 

@@ -1,9 +1,15 @@
 #include "ev.h"
 #include "file.h"
+#include "config.h"
+#include "cutest.h"
 #include <stdio.h>
 #include <errno.h>
+#include <assert.h>
 
-#if !defined(_WIN32)
+#if defined(_WIN32)
+#   include <windows.h>
+#else
+#   include <unistd.h>
 #   include <dirent.h>
 #endif
 
@@ -68,5 +74,40 @@ int test_access_dir(const char* path)
 
     closedir(dir);
     return EV_SUCCESS;
+#endif
+}
+
+const char* test_get_self_exe(void)
+{
+#if defined(_WIN32)
+
+    char* path;
+    errno_t errcode = _get_pgmptr(&path);
+    ASSERT_EQ_D32(errcode, 0);
+
+    return path;
+#else
+
+    static char buffer[4096];
+    const char* path = "/proc/self/exe";
+#   if defined(__FreeBSD__)
+    path = "/proc/curproc/file";
+#elif defined(__sun)
+    path = "/proc/self/path/a.out";
+#   endif
+
+    ssize_t ret = readlink(path, buffer, sizeof(buffer));
+    if (ret == -1 && errno == ENOENT)
+    {
+        /* argv[0] is not a reliable executable path */
+        if(test_config.argv != NULL && test_config.argv[0][0] == '\\')
+        {
+            return test_config.argv[0];
+        }
+        assert(0);
+        return NULL;
+    }
+
+    return buffer;
 #endif
 }

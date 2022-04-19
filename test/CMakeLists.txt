@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.2)
 
 add_executable(ev_test
     "src/tools/memcheck.c"
+    "src/utils/config.c"
     "src/utils/file.c"
     "src/utils/hash.c"
     "src/utils/random.c"
@@ -18,6 +19,7 @@ add_executable(ev_test
     "src/cases/pipe_data_mode.c"
     "src/cases/pipe_ipc_mode_dgram.c"
     "src/cases/pipe_ipc_mode_tcp_handle.c"
+    "src/cases/process.c"
     "src/cases/queue.c"
     "src/cases/ringbuffer.c"
     "src/cases/shm.c"

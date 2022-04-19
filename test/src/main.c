@@ -1,31 +1,29 @@
 #include "test.h"
 #include "tools/memcheck.h"
+#include "utils/config.h"
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct test_config
+static void _start_as_stdio_echo_server(void)
 {
-    int flag_no_memcheck;
-}test_config_t;
-
-test_config_t g_test_config;
+    int c;
+    while ((c = fgetc(stdin)) != EOF)
+    {
+        fputc(c, stdout);
+    }
+    exit(EXIT_SUCCESS);
+}
 
 static void _before_all_test(int argc, char* argv[])
 {
-    (void)argc; (void)argv;
+    test_config_setup(argc, argv);
 
-    memset(&g_test_config, 0, sizeof(g_test_config));
-
-    int i;
-    for (i = 0; i < argc; i++)
+    if (test_config.flag_as_stdio_echo_server)
     {
-        if (strcmp(argv[i], "--no_memcheck") == 0)
-        {
-            g_test_config.flag_no_memcheck = 1;
-        }
+        _start_as_stdio_echo_server();
     }
 
-    if (!g_test_config.flag_no_memcheck)
+    if (!test_config.flag_no_memcheck)
     {
         setup_memcheck();
     }
@@ -35,7 +33,7 @@ static void _after_all_test(void)
 {
     fflush(NULL);
 
-    if (!g_test_config.flag_no_memcheck)
+    if (!test_config.flag_no_memcheck)
     {
         dump_memcheck();
     }

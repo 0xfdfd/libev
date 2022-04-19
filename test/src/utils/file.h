@@ -23,6 +23,11 @@ int test_write_file(const char* path, const void* data, size_t size);
  */
 int test_access_dir(const char* path);
 
+/**
+ * @brief Path to current executable.
+ */
+const char* test_get_self_exe(void);
+
 #ifdef __cplusplus
 }
 #endif

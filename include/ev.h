@@ -53,6 +53,7 @@
 #include "ev/mutex.h"
 #include "ev/once.h"
 #include "ev/pipe.h"
+#include "ev/process.h"
 #include "ev/queue.h"
 #include "ev/sem.h"
 #include "ev/shmem.h"
