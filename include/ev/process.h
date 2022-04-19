@@ -12,13 +12,6 @@ extern "C" {
  * @{
  */
 
-struct ev_exec_opt_s;
-
-/**
- * @brief Typedef of #ev_exec_opt_s.
- */
-typedef struct ev_exec_opt_s ev_exec_opt_t;
-
 /**
  * @brief Process executable options.
  */
@@ -45,7 +38,12 @@ struct ev_exec_opt_s
      * @note This field requires #ev_exec_opt_t::use_std_handles set to 1.
      */
     ev_os_pipe_t    stdios[3];
-} ;
+};
+
+/**
+ * @brief Typedef of #ev_exec_opt_s.
+ */
+typedef struct ev_exec_opt_s ev_exec_opt_t;
 
 /**
  * @brief Execute process.
@@ -58,8 +56,11 @@ int ev_exec(ev_os_pid_t* pid, const ev_exec_opt_t* opt);
 /**
  * @brief Wait for process exit.
  * @param[in] pid       Child Process Identifier.
+ * @param[in] ms        Wait timeout in milliseconds, or #EV_INFINITE_TIMEOUT
+ *   to return only when the process exit.
+ * @return              #ev_errno_t
  */
-void ev_waitpid(ev_os_pid_t pid);
+int ev_waitpid(ev_os_pid_t pid, uint32_t ms);
 
 /**
  * @} EV_PROCESS

@@ -87,10 +87,30 @@ int ev_exec(ev_os_pid_t* pid, const ev_exec_opt_t* opt)
     return EV_SUCCESS;
 }
 
-void ev_waitpid(ev_os_pid_t pid)
+int ev_waitpid(ev_os_pid_t pid, uint32_t ms)
 {
-    WaitForSingleObject(pid, INFINITE);
-    CloseHandle(pid);
+    DWORD errcode;
+    DWORD wait_time = (ms == EV_INFINITE_TIMEOUT) ? INFINITE : ms;
+
+    DWORD ret = WaitForSingleObject(pid, wait_time);
+    switch(ret)
+    {
+    case WAIT_TIMEOUT:
+        return EV_ETIMEDOUT;
+
+    case WAIT_OBJECT_0:
+        CloseHandle(pid);
+        return EV_SUCCESS;
+
+    case WAIT_FAILED:
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+
+    default:
+        break;
+    }
+
+    abort();
 }
 
 

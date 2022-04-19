@@ -48,7 +48,7 @@ int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
  * @brief Exit thread
  * @warning Cannot be called in thread body.
  * @param[in] thr       Thread handle
- * @param[in] timeout   Timeout in milliseconds. #EV_THREAD_WAIT_INFINITE to wait infinite.
+ * @param[in] timeout   Timeout in milliseconds. #EV_INFINITE_TIMEOUT to wait infinite.
  * @return              #EV_ETIMEDOUT if timed out before thread terminated,
  *                      #EV_SUCCESS if thread terminated.
  */
@@ -78,7 +78,7 @@ int ev_thread_equal(const ev_os_thread_t* t1, const ev_os_thread_t* t2);
  * @brief Suspends the execution of the calling thread.
  * @param[in] timeout   Timeout in milliseconds.
  */
-void ev_thread_sleep(unsigned long timeout);
+void ev_thread_sleep(uint32_t timeout);
 
 /**
  * @brief Initialize thread local storage.

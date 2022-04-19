@@ -127,7 +127,7 @@ int ev_thread_equal(const ev_os_thread_t* t1, const ev_os_thread_t* t2)
     return *t1 == *t2;
 }
 
-void ev_thread_sleep(unsigned long timeout)
+void ev_thread_sleep(uint32_t timeout)
 {
     Sleep(timeout);
 }

@@ -85,7 +85,7 @@ err_fin:
 int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
 {
     int ret = EBUSY;
-    if (timeout == EV_THREAD_WAIT_INFINITE)
+    if (timeout == EV_INFINITE_TIMEOUT)
     {
         int err = pthread_join(*thr, NULL);
         return ev__translate_sys_error(err);
@@ -131,7 +131,7 @@ int ev_thread_equal(const ev_os_thread_t* t1, const ev_os_thread_t* t2)
     return pthread_equal(*t1, *t2);
 }
 
-void ev_thread_sleep(unsigned long timeout)
+void ev_thread_sleep(uint32_t timeout)
 {
     struct timespec t_req, t_rem;
     t_req.tv_sec = timeout / 1000;

@@ -139,8 +139,49 @@ int ev_exec(ev_os_pid_t* pid, const ev_exec_opt_t* opt)
     return EV_UNKNOWN;
 }
 
-void ev_waitpid(ev_os_pid_t pid)
+int ev_waitpid(ev_os_pid_t pid, uint32_t ms)
 {
-    waitpid(pid, NULL, 0);
+    pid_t wait_ret;
+    int wstatus;
+
+    if (ms == EV_INFINITE_TIMEOUT)
+    {
+        wait_ret = waitpid(pid, &wstatus, 0);
+        goto fin;
+    }
+
+    const uint64_t start_time = ev__clocktime();
+    const uint64_t end_time = start_time + ms;
+
+    for(;;)
+    {
+        wait_ret = waitpid(pid, &wstatus, WNOHANG);
+        if (wait_ret != 0)
+        {
+            break;
+        }
+
+        uint64_t now_time = ev__clocktime();
+        if (now_time > end_time)
+        {
+            return EV_ETIMEDOUT;
+        }
+
+        uint64_t dif_time = end_time - now_time;
+        if (dif_time > 10)
+        {
+            dif_time = 10;
+        }
+
+        ev_thread_sleep(dif_time);
+    }
+
+fin:
+    if (wait_ret < 0)
+    {
+        int errcode = errno;
+        return ev__translate_sys_error(errcode);
+    }
+    return EV_SUCCESS;
 }
 

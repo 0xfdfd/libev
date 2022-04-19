@@ -143,7 +143,7 @@ err_release_thread:
     }
     for (i = 0; i < idx; i++)
     {
-        ev_thread_exit(&storage[i], EV_THREAD_WAIT_INFINITE);
+        ev_thread_exit(&storage[i], EV_INFINITE_TIMEOUT);
     }
     ev_sem_exit(&pool->ent_sem);
     ev_sem_exit(&pool->p2w_sem);
@@ -229,7 +229,7 @@ void ev_threadpool_exit(ev_threadpool_t* pool)
     }
     for (i = 0; i < pool->thrnum; i++)
     {
-        if (ev_thread_exit(&pool->threads[i], EV_THREAD_WAIT_INFINITE) != EV_SUCCESS)
+        if (ev_thread_exit(&pool->threads[i], EV_INFINITE_TIMEOUT) != EV_SUCCESS)
         {
             abort();
         }

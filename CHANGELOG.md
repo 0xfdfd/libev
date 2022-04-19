@@ -6,6 +6,9 @@
 1. Support mkdir
 2. Support process
 
+### BREAKING CHANGES
+1. rename #EV_THREAD_WAIT_INFINITE to #EV_INFINITE_TIMEOUT
+
 
 ## v0.0.4 (2022/04/12)
 

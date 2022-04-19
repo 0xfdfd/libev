@@ -9,11 +9,6 @@ extern "C" {
  * @{
  */
 
-/**
- * @brief Infinite timeout.
- */
-#define EV_THREAD_WAIT_INFINITE ((unsigned long)-1)
-
 struct ev_thread_opt;
 
 /**

@@ -19,7 +19,7 @@ TEST_FIXTURE_TEAREDOWN(process)
 {
     if (g_test_process.pid != EV_OS_PID_INVALID)
     {
-        ev_waitpid(g_test_process.pid);
+        ASSERT_EQ_D32(ev_waitpid(g_test_process.pid, EV_INFINITE_TIMEOUT), EV_SUCCESS);
         g_test_process.pid = EV_OS_PID_INVALID;
     }
 }

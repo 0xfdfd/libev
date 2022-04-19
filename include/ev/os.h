@@ -10,4 +10,9 @@
 #   include "ev/os_unix.h"
 #endif
 
+/**
+ * @brief Infinite timeout.
+ */
+#define EV_INFINITE_TIMEOUT    ((uint32_t)-1)
+
 #endif
