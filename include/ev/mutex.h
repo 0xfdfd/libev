@@ -66,9 +66,9 @@ void ev_mutex_leave(ev_mutex_t* handle);
 /**
  * @brief If the mutex object referenced by \p handle is currently locked, the
  *   call shall return immediately.
- * @param[in] handle    Mutex object
+ * @param[in] handle    Mutex object.
+ * @return              #EV_SUCCESS: a lock on the mutex object referenced by \p handle is acquired.
  * @return              #EV_EBUSY: The \p handle could not be acquired because it was already locked.
- *                      #EV_SUCCESS: a lock on the mutex object referenced by \p handle is acquired.
  */
 int ev_mutex_try_enter(ev_mutex_t* handle);
 

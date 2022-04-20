@@ -178,12 +178,11 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
  * @param[in] handle_role   Handle type.
  * @param[in] handle_addr   Handle address.
  * @param[in] handle_size   Handle size.
- * @return
- *   + #EV_SUCCESS: Operation success.
- *   + #EV_EINVAL: \p pipe is not initialized with IPC, or \p handle_role is
- *     not support, or \p handle_addr is NULL.
- *   + #EV_ENOENT: \p req does not receive a handle.
- *   + #EV_ENOMEM: \p handle_size is too small.
+ * @return  #EV_SUCCESS: Operation success.
+ * @return  #EV_EINVAL: \p pipe is not initialized with IPC, or \p handle_role is
+ *              not support, or \p handle_addr is NULL.
+ * @return  #EV_ENOENT: \p req does not receive a handle.
+ * @return  #EV_ENOMEM: \p handle_size is too small.
  */
 int ev_pipe_accept(ev_pipe_t* pipe, ev_pipe_read_req_t* req,
     ev_role_t handle_role, void* handle_addr, size_t handle_size);
