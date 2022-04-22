@@ -139,7 +139,7 @@ int ev_exec(ev_os_pid_t* pid, const ev_exec_opt_t* opt)
     return EV_UNKNOWN;
 }
 
-int ev_waitpid(ev_os_pid_t pid, uint32_t ms)
+int ev_waitpid(ev_os_pid_t pid, uint32_t ms, ev_process_exit_status_t* status)
 {
     pid_t wait_ret;
     int wstatus;
@@ -182,6 +182,23 @@ fin:
         int errcode = errno;
         return ev__translate_sys_error(errcode);
     }
+    if (status == NULL)
+    {
+        return EV_SUCCESS;
+    }
+
+    status->exit_status = 0;
+    if (WIFEXITED(wait_ret))
+    {
+        status->exit_status = WEXITSTATUS(wait_ret);
+    }
+
+    status->term_signal = 0;
+    if (WIFSIGNALED(wait_ret))
+    {
+        status->term_signal = WTERMSIG(wait_ret);
+    }
+
     return EV_SUCCESS;
 }
 

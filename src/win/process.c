@@ -87,7 +87,7 @@ int ev_exec(ev_os_pid_t* pid, const ev_exec_opt_t* opt)
     return EV_SUCCESS;
 }
 
-int ev_waitpid(ev_os_pid_t pid, uint32_t ms)
+int ev_waitpid(ev_os_pid_t pid, uint32_t ms, ev_process_exit_status_t* status)
 {
     DWORD errcode;
     DWORD wait_time = (ms == EV_INFINITE_TIMEOUT) ? INFINITE : ms;
@@ -99,18 +99,31 @@ int ev_waitpid(ev_os_pid_t pid, uint32_t ms)
         return EV_ETIMEDOUT;
 
     case WAIT_OBJECT_0:
-        CloseHandle(pid);
-        return EV_SUCCESS;
+        break;
 
     case WAIT_FAILED:
         errcode = GetLastError();
         return ev__translate_sys_error(errcode);
 
     default:
-        break;
+        abort();
     }
 
-    abort();
+    DWORD exit_status;
+    if (!GetExitCodeProcess(pid, &exit_status))
+    {
+        exit_status = GetLastError();
+        exit_status = ev__translate_sys_error(exit_status);
+    }
+
+    if (status != NULL)
+    {
+        status->exit_status = exit_status;
+        status->term_signal = 0;
+    }
+
+    CloseHandle(pid);
+    return EV_SUCCESS;
 }
 
 

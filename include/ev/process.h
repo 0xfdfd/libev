@@ -40,6 +40,17 @@ struct ev_exec_opt_s
     ev_os_pipe_t    stdios[3];
 };
 
+struct ev_process_exit_status_s
+{
+    int             exit_status;    /**< Exit status  */
+    int             term_signal;    /**< The signal that caused the process to terminate */
+};
+
+/**
+ * @brief Typedef of #ev_process_exit_status_s.
+ */
+typedef struct ev_process_exit_status_s ev_process_exit_status_t;
+
 /**
  * @brief Typedef of #ev_exec_opt_s.
  */
@@ -58,9 +69,10 @@ int ev_exec(ev_os_pid_t* pid, const ev_exec_opt_t* opt);
  * @param[in] pid       Child Process Identifier.
  * @param[in] ms        Wait timeout in milliseconds, or #EV_INFINITE_TIMEOUT
  *   to return only when the process exit.
+ * @param[out] status   Exit status.
  * @return              #ev_errno_t
  */
-int ev_waitpid(ev_os_pid_t pid, uint32_t ms);
+int ev_waitpid(ev_os_pid_t pid, uint32_t ms, ev_process_exit_status_t* status);
 
 /**
  * @} EV_PROCESS
