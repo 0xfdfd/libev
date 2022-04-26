@@ -1,4 +1,4 @@
-#include "ev/async.h"
+#include "async.h"
 #include "ev-common.h"
 
 static void _ev_async_on_close(ev_handle_t* handle)
@@ -9,6 +9,23 @@ static void _ev_async_on_close(ev_handle_t* handle)
     {
         async->data.close_cb(async);
     }
+}
+
+static void _ev_async_exit(ev_async_t* handle, ev_async_cb close_cb, int is_force)
+{
+    ev_loop_t* loop = handle->base.data.loop;
+    assert(!ev__handle_is_closing(&handle->base));
+
+    handle->data.close_cb = close_cb;
+
+    ev_mutex_enter(&loop->wakeup.async.mutex);
+    {
+        ev_queue_erase(&handle->node);
+    }
+    ev_mutex_leave(&loop->wakeup.async.mutex);
+
+    ev_mutex_exit(&handle->data.mutex);
+    ev__handle_exit(&handle->base, is_force);
 }
 
 int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
@@ -31,19 +48,12 @@ int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
 
 void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
 {
-    ev_loop_t* loop = handle->base.data.loop;
-    assert(!ev__handle_is_closing(&handle->base));
+    _ev_async_exit(handle, close_cb, 0);
+}
 
-    handle->data.close_cb = close_cb;
-
-    ev_mutex_enter(&loop->wakeup.async.mutex);
-    {
-        ev_queue_erase(&handle->node);
-    }
-    ev_mutex_leave(&loop->wakeup.async.mutex);
-
-    ev_mutex_exit(&handle->data.mutex);
-    ev__handle_exit(&handle->base, 0);
+void ev__async_exit_force(ev_async_t* handle)
+{
+    _ev_async_exit(handle, NULL, 1);
 }
 
 void ev_async_wakeup(ev_async_t* handle)
