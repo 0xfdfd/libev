@@ -6,25 +6,47 @@
 
 static char s_ev_zero[] = "";
 
-static HANDLE _ev_pipe_make_s(const char* name)
+static int _ev_pipe_make_s(HANDLE* pip_handle, const char* name, int flags)
 {
-    DWORD r_open_mode = FILE_FLAG_OVERLAPPED | WRITE_DAC | FILE_FLAG_FIRST_PIPE_INSTANCE | PIPE_ACCESS_DUPLEX;
+    DWORD r_open_mode = WRITE_DAC | FILE_FLAG_FIRST_PIPE_INSTANCE;
+    r_open_mode |= (flags & EV_PIPE_READABLE) ? PIPE_ACCESS_INBOUND : 0;
+    r_open_mode |= (flags & EV_PIPE_WRITABLE) ? PIPE_ACCESS_OUTBOUND : 0;
+    r_open_mode |= (flags & EV_PIPE_NONBLOCK) ? FILE_FLAG_OVERLAPPED : 0;
+
     HANDLE pip_r = CreateNamedPipe(name, r_open_mode,
         PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 65535, 65535, 0, NULL);
+    if (pip_r != INVALID_HANDLE_VALUE)
+    {
+        *pip_handle = pip_r;
+        return EV_SUCCESS;
+    }
 
-    return pip_r;
+    DWORD errcode = GetLastError();
+    return ev__translate_sys_error(errcode);
 }
 
-static HANDLE _ev_pipe_make_c(const char* name)
+static int _ev_pipe_make_c(HANDLE* pipe_handle, const char* name, int flags)
 {
-    DWORD w_open_mode = GENERIC_READ | GENERIC_WRITE | WRITE_DAC;
+    DWORD w_open_mode = WRITE_DAC;
+    w_open_mode |= (flags & EV_PIPE_READABLE) ? GENERIC_READ : FILE_READ_ATTRIBUTES;
+    w_open_mode |= (flags & EV_PIPE_WRITABLE) ? GENERIC_WRITE : FILE_WRITE_ATTRIBUTES;
+
     SECURITY_ATTRIBUTES sa;
     sa.nLength = sizeof sa;
     sa.lpSecurityDescriptor = NULL;
     sa.bInheritHandle = 0;
 
-    HANDLE pip_w = CreateFile(name, w_open_mode, 0, &sa, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
-    return pip_w;
+    DWORD dwFlagsAndAttributes = (flags & EV_PIPE_NONBLOCK) ? FILE_FLAG_OVERLAPPED : 0;
+    HANDLE pip_w = CreateFile(name, w_open_mode, 0, &sa, OPEN_EXISTING, dwFlagsAndAttributes, NULL);
+
+    if (pip_w != INVALID_HANDLE_VALUE)
+    {
+        *pipe_handle = pip_w;
+        return EV_SUCCESS;
+    }
+
+    DWORD errcode = GetLastError();
+    return ev__translate_sys_error(errcode);
 }
 
 static void _ev_pipe_r_user_callback_win(ev_pipe_read_req_t* req, size_t size, int stat)
@@ -71,7 +93,7 @@ static void _ev_pipe_cancel_all_r_data_mode(ev_pipe_t* pipe, int stat)
 
 static void _ev_pipe_cancel_all_r(ev_pipe_t* pipe, int stat)
 {
-    if (pipe->base.data.flags & EV_PIPE_IPC)
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
         _ev_pipe_cancel_all_r_ipc_mode(pipe, stat);
     }
@@ -125,7 +147,7 @@ static void _ev_pipe_cancel_all_w_ipc_mode(ev_pipe_t* pipe, int stat)
 
 static void _ev_pipe_cancel_all_w(ev_pipe_t* pipe, int stat)
 {
-    if (pipe->base.data.flags & EV_PIPE_IPC)
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
         _ev_pipe_cancel_all_w_ipc_mode(pipe, stat);
     }
@@ -153,7 +175,7 @@ static void _ev_pipe_smart_deactive_win(ev_pipe_t* pipe)
         return;
     }
 
-    if (pipe->base.data.flags & EV_PIPE_IPC)
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
         if (pipe->backend.ipc_mode.rio.reading.reading != NULL
             || ev_list_size(&pipe->backend.ipc_mode.rio.pending) != 0
@@ -938,6 +960,7 @@ err:
 
 static void _ev_pipe_init_as_ipc(ev_pipe_t* pipe)
 {
+    pipe->backend.ipc_mode.iner_err = EV_SUCCESS;
     pipe->backend.ipc_mode.peer_pid = 0;
 
     /* rio */
@@ -1095,6 +1118,11 @@ static int _ev_pipe_data_mode_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
  */
 static int _ev_pipe_ipc_mode_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
 {
+    if (pipe->backend.ipc_mode.iner_err != EV_SUCCESS)
+    {
+        return pipe->backend.ipc_mode.iner_err;
+    }
+
     /* Check total send size, limited by IPC protocol */
     if (req->base.capacity > UINT32_MAX)
     {
@@ -1114,6 +1142,11 @@ static int _ev_pipe_ipc_mode_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
 
 static int _ev_pipe_read_ipc_mode(ev_pipe_t* pipe, ev_pipe_read_req_t* req)
 {
+    if (pipe->backend.ipc_mode.iner_err != EV_SUCCESS)
+    {
+        return pipe->backend.ipc_mode.iner_err;
+    }
+
     ev_list_push_back(&pipe->backend.ipc_mode.rio.pending, &req->base.node);
 
     return _ev_pipe_ipc_mode_want_read(pipe);
@@ -1131,28 +1164,39 @@ static int _ev_pipe_read_data_mode(ev_pipe_t* pipe, ev_pipe_read_req_t* req)
     return _ev_pipe_data_mode_want_read(pipe);
 }
 
-int ev_pipe_make(ev_os_pipe_t fds[2])
+static int _ev_pipe_init_read_token_win(ev_pipe_t* pipe, ev_pipe_read_req_t* req,
+    ev_buf_t* bufs, size_t nbuf, ev_pipe_read_cb cb)
 {
-    static long volatile s_pipe_serial_no = 0;
+    int ret;
 
-    char buffer[128];
-    snprintf(buffer, sizeof(buffer), "\\\\.\\pipe\\LOCAL\\libev\\RemoteExeAnon.%08lx.%08lx",
-        (long)GetCurrentProcessId(), InterlockedIncrement(&s_pipe_serial_no));
-
-    int err;
-    HANDLE pip_r = _ev_pipe_make_s(buffer);
-    if (pip_r == INVALID_HANDLE_VALUE)
+    if ((ret = ev__pipe_read_init(req, bufs, nbuf, cb)) != EV_SUCCESS)
     {
-        err = GetLastError();
-        return ev__translate_sys_error(err);
+        return ret;
     }
 
-    HANDLE pip_w = _ev_pipe_make_c(buffer);
+    req->backend.owner = pipe;
+    req->backend.stat = EV_EINPROGRESS;
+
+    return EV_SUCCESS;
+}
+
+static int _ev_pipe_make_win(ev_os_pipe_t fds[2], int rflags, int wflags,
+        const char *name)
+{
+    int err;
+    HANDLE pip_r = INVALID_HANDLE_VALUE;
+    HANDLE pip_w = INVALID_HANDLE_VALUE;
+
+    err = _ev_pipe_make_s(&pip_r, name, rflags);
+    if (err != EV_SUCCESS)
+    {
+        goto err_close_rw;
+    }
+
+    err = _ev_pipe_make_c(&pip_w, name, wflags);
     if (pip_w == INVALID_HANDLE_VALUE)
     {
-        err = GetLastError();
-        CloseHandle(pip_r);
-        return ev__translate_sys_error(err);
+        goto err_close_rw;
     }
 
     if (!ConnectNamedPipe(pip_r, NULL))
@@ -1160,9 +1204,8 @@ int ev_pipe_make(ev_os_pipe_t fds[2])
         err = GetLastError();
         if (err != ERROR_PIPE_CONNECTED)
         {
-            CloseHandle(pip_r);
-            CloseHandle(pip_w);
-            return ev__translate_sys_error(err);
+            err = ev__translate_sys_error(err);
+            goto err_close_rw;
         }
     }
 
@@ -1170,36 +1213,20 @@ int ev_pipe_make(ev_os_pipe_t fds[2])
     fds[1] = pip_w;
 
     return EV_SUCCESS;
-}
 
-int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe, int ipc)
-{
-    ev__handle_init(loop, &pipe->base, EV_ROLE_EV_PIPE, _ev_pipe_on_close_win);
-    pipe->close_cb = NULL;
-    pipe->pipfd = EV_OS_PIPE_INVALID;
-    pipe->base.data.flags |= ipc ? EV_PIPE_IPC : 0;
-
-    if (ipc)
+err_close_rw:
+    if (pip_r != INVALID_HANDLE_VALUE)
     {
-        _ev_pipe_init_as_ipc(pipe);
+        CloseHandle(pip_r);
     }
-    else
+    if (pip_w != INVALID_HANDLE_VALUE)
     {
-        _ev_pipe_init_as_data(pipe);
+        CloseHandle(pip_w);
     }
-
-    return EV_SUCCESS;
+    return err;
 }
 
-void ev_pipe_exit(ev_pipe_t* pipe, ev_pipe_cb cb)
-{
-    _ev_pipe_close(pipe);
-
-    pipe->close_cb = cb;
-    ev__handle_exit(&pipe->base, 0);
-}
-
-int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
+static int _ev_pipe_open_check_win(ev_pipe_t* pipe, ev_os_pipe_t handle)
 {
     if (pipe->pipfd != EV_OS_PIPE_INVALID)
     {
@@ -1247,21 +1274,116 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
         return ev__translate_sys_error(GetLastError());
     }
 
+    return EV_SUCCESS;
+}
+
+int ev_pipe_make(ev_os_pipe_t fds[2], int rflags, int wflags)
+{
+    static long volatile s_pipe_serial_no = 0;
+    char buffer[128];
+
+    if ((rflags & EV_PIPE_IPC) != (wflags & EV_PIPE_IPC))
+    {
+        return EV_EINVAL;
+    }
+
+    snprintf(buffer, sizeof(buffer), "\\\\.\\pipe\\LOCAL\\libev\\RemoteExeAnon.%08lx.%08lx",
+        (long)GetCurrentProcessId(), InterlockedIncrement(&s_pipe_serial_no));
+
+    rflags |= EV_PIPE_READABLE;
+    wflags |= EV_PIPE_WRITABLE;
+
+    int is_ipc = rflags & EV_PIPE_IPC;
+    if (is_ipc)
+    {
+        rflags |= EV_PIPE_WRITABLE;
+        wflags |= EV_PIPE_READABLE;
+    }
+    else
+    {
+        rflags &= ~EV_PIPE_WRITABLE;
+        wflags &= ~EV_PIPE_READABLE;
+    }
+
+    return _ev_pipe_make_win(fds, rflags, wflags, buffer);
+}
+
+int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe, int ipc)
+{
+    ev__handle_init(loop, &pipe->base, EV_ROLE_EV_PIPE, _ev_pipe_on_close_win);
+    pipe->close_cb = NULL;
+    pipe->pipfd = EV_OS_PIPE_INVALID;
+    pipe->base.data.flags |= ipc ? EV_HANDLE_PIPE_IPC : 0;
+
+    if (ipc)
+    {
+        _ev_pipe_init_as_ipc(pipe);
+    }
+    else
+    {
+        _ev_pipe_init_as_data(pipe);
+    }
+
+    return EV_SUCCESS;
+}
+
+void ev_pipe_exit(ev_pipe_t* pipe, ev_pipe_cb cb)
+{
+    _ev_pipe_close(pipe);
+
+    pipe->close_cb = cb;
+    ev__handle_exit(&pipe->base, 0);
+}
+
+int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
+{
+    int ret;
+
+    if ((ret = _ev_pipe_open_check_win(pipe, handle)) != EV_SUCCESS)
+    {
+        return ret;
+    }
+
     if (CreateIoCompletionPort(handle, pipe->base.data.loop->backend.iocp, (ULONG_PTR)pipe, 0) == NULL)
     {
         return ev__translate_sys_error(GetLastError());
     }
     pipe->pipfd = handle;
 
-    if (!(pipe->base.data.flags & EV_PIPE_IPC))
+    if (!(pipe->base.data.flags & EV_HANDLE_PIPE_IPC))
     {
         return EV_SUCCESS;
     }
 
-    /* In IPC mode, we need to setup communication */
-    _ev_pipe_notify_status(pipe);
-    _ev_pipe_ipc_mode_want_read(pipe);
     ev__handle_active(&pipe->base);
+
+    /**
+     * TODO:
+     * In IPC mode, we need to setup communication.
+     * 
+     * Here we may have problem that if the pipe is read-only / write-only, we
+     * cannot unbind IOCP beacuse windows not support that.
+     * 
+     * There are may ways to avoid it:
+     * 1. Avoid handeshake procedure. We need handeshake beacuse we need child
+     *   process information to call DuplicateHandle(). But accroding to
+     *   https://stackoverflow.com/questions/46348163/how-to-transfer-the-duplicated-handle-to-the-child-process
+     *   we can call DuplicateHandle() in child process, as long as we wait for
+     *   peer response.
+     * 2. If handle is not readable, we return success but mark it as error, and
+     *   notify user error in future operation.
+     */
+    if ((ret = _ev_pipe_notify_status(pipe)) != EV_SUCCESS)
+    {
+        pipe->backend.ipc_mode.iner_err = ret;
+        return EV_SUCCESS;
+    }
+
+    if ((ret = _ev_pipe_ipc_mode_want_read(pipe)) != EV_SUCCESS)
+    {
+        pipe->backend.ipc_mode.iner_err = ret;
+        return EV_SUCCESS;
+    }
 
     return EV_SUCCESS;
 }
@@ -1282,7 +1404,7 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
         return ret;
     }
 
-    if (pipe->base.data.flags & EV_PIPE_IPC)
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
         ret = _ev_pipe_ipc_mode_write(pipe, req);
     }
@@ -1295,24 +1417,12 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
     {
         ev__handle_active(&pipe->base);
     }
-
-    return ret;
-}
-
-static int _ev_pipe_init_read_token_win(ev_pipe_t* pipe, ev_pipe_read_req_t* req,
-    ev_buf_t* bufs, size_t nbuf, ev_pipe_read_cb cb)
-{
-    int ret;
-
-    if ((ret = ev__pipe_read_init(req, bufs, nbuf, cb)) != EV_SUCCESS)
+    else
     {
-        return ret;
+        ev__write_exit(&req->base);
     }
 
-    req->backend.owner = pipe;
-    req->backend.stat = EV_EINPROGRESS;
-
-    return EV_SUCCESS;
+    return ret;
 }
 
 int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
@@ -1329,7 +1439,7 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
         return ret;
     }
 
-    if (pipe->base.data.flags & EV_PIPE_IPC)
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
         ret = _ev_pipe_read_ipc_mode(pipe, req);
     }
@@ -1341,6 +1451,10 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
     if (ret == EV_SUCCESS)
     {
         ev__handle_active(&pipe->base);
+    }
+    else
+    {
+        ev__read_exit(&req->base);
     }
 
     return ret;

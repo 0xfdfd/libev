@@ -9,6 +9,13 @@ extern "C" {
  * @{
  */
 
+enum ev_pipe_flags_e;
+
+/**
+ * @brief Typedef of #ev_pipe_flags_e.
+ */
+typedef enum ev_pipe_flags_e ev_pipe_flags_t;
+
 struct ev_pipe;
 
 /**

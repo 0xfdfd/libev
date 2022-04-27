@@ -7,8 +7,8 @@
 2. Support process
 
 ### BREAKING CHANGES
-1. rename #EV_THREAD_WAIT_INFINITE to #EV_INFINITE_TIMEOUT
-
+1. rename #EV_THREAD_WAIT_INFINITE to #EV_INFINITE_TIMEOUT.
+2. #ev_pipe_make() now have flags.
 
 ## v0.0.4 (2022/04/12)
 

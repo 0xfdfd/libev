@@ -55,26 +55,26 @@ typedef enum ev_ipc_frame_flag
 typedef enum ev_handle_flag
 {
     /* Used by all handles. Bit 0-7. */
-    EV_HANDLE_CLOSING       = 0x01 << 0x00,     /**< 1. Handle is going to close */
-    EV_HANDLE_CLOSED        = 0x01 << 0x01,     /**< 2. Handle is closed */
-    EV_HANDLE_ACTIVE        = 0x01 << 0x02,     /**< 4. Handle is busy */
+    EV_HANDLE_CLOSING           = 0x01 << 0x00,     /**< 1. Handle is going to close */
+    EV_HANDLE_CLOSED            = 0x01 << 0x01,     /**< 2. Handle is closed */
+    EV_HANDLE_ACTIVE            = 0x01 << 0x02,     /**< 4. Handle is busy */
 
     /* #EV_ROLE_EV_TCP */
-    EV_TCP_LISTING          = 0x01 << 0x08,     /**< 256. This is a listen socket and is listening */
-    EV_TCP_ACCEPTING        = 0x01 << 0x09,     /**< 512. This is a socket waiting for accept */
-    EV_TCP_STREAMING        = 0x01 << 0x0A,     /**< 1024. This is a socket waiting for read or write */
-    EV_TCP_CONNECTING       = 0x01 << 0x0B,     /**< 2048. This is a connect and waiting for connect complete */
-    EV_TCP_BOUND            = 0x01 << 0x0C,     /**< 4096. Socket is bond to address */
+    EV_TCP_LISTING              = 0x01 << 0x08,     /**< 256. This is a listen socket and is listening */
+    EV_TCP_ACCEPTING            = 0x01 << 0x09,     /**< 512. This is a socket waiting for accept */
+    EV_TCP_STREAMING            = 0x01 << 0x0A,     /**< 1024. This is a socket waiting for read or write */
+    EV_TCP_CONNECTING           = 0x01 << 0x0B,     /**< 2048. This is a connect and waiting for connect complete */
+    EV_TCP_BOUND                = 0x01 << 0x0C,     /**< 4096. Socket is bond to address */
 
     /* #EV_ROLE_EV_UDP */
-    EV_UDP_IPV6             = 0x01 << 0x08,     /**< 256. This socket have IPv6 ability */
-    EV_UDP_CONNECTED        = 0x01 << 0x09,     /**< 512. This socket is connected */
-    EV_UDP_BOUND            = 0x01 << 0x0A,     /**< 1024. Socket is bond to address */
-    EV_UDP_BYPASS_IOCP      = 0x01 << 0x0B,     /**< 2048. FILE_SKIP_SET_EVENT_ON_HANDLE | FILE_SKIP_COMPLETION_PORT_ON_SUCCESS */
+    EV_UDP_IPV6                 = 0x01 << 0x08,     /**< 256. This socket have IPv6 ability */
+    EV_UDP_CONNECTED            = 0x01 << 0x09,     /**< 512. This socket is connected */
+    EV_UDP_BOUND                = 0x01 << 0x0A,     /**< 1024. Socket is bond to address */
+    EV_UDP_BYPASS_IOCP          = 0x01 << 0x0B,     /**< 2048. FILE_SKIP_SET_EVENT_ON_HANDLE | FILE_SKIP_COMPLETION_PORT_ON_SUCCESS */
 
     /* #EV_ROLE_EV_PIPE */
-    EV_PIPE_IPC             = 0x01 << 0x08,     /**< 256. This pipe is support IPC */
-    EV_PIPE_STREAMING       = 0x01 << 0x09,     /**< 512. This pipe is initialized by #ev_stream_t */
+    EV_HANDLE_PIPE_IPC          = 0x01 << 0x08,     /**< 256. This pipe is support IPC */
+    EV_HANDLE_PIPE_STREAMING    = 0x01 << 0x09,     /**< 512. This pipe is initialized by #ev_stream_t */
 }ev_handle_flag_t;
 
 /**

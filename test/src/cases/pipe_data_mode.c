@@ -68,8 +68,9 @@ TEST_FIXTURE_SETUP(pipe)
     ASSERT_EQ_D32(ev_pipe_init(&g_test_221d.loop, &g_test_221d.pipe_r, 0), 0);
     ASSERT_EQ_D32(ev_pipe_init(&g_test_221d.loop, &g_test_221d.pipe_w, 0), 0);
 
+    int rwflags = EV_PIPE_READABLE | EV_PIPE_WRITABLE | EV_PIPE_NONBLOCK;
     ev_os_pipe_t fds[2];
-    ASSERT_EQ_D32(ev_pipe_make(fds), 0);
+    ASSERT_EQ_D32(ev_pipe_make(fds, rwflags, rwflags), 0);
     ASSERT_EQ_D32(ev_pipe_open(&g_test_221d.pipe_r, fds[0]), 0);
     ASSERT_EQ_D32(ev_pipe_open(&g_test_221d.pipe_w, fds[1]), 0);
 }

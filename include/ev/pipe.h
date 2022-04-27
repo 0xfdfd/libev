@@ -13,6 +13,14 @@ extern "C" {
  * @{
  */
 
+enum ev_pipe_flags_e
+{
+    EV_PIPE_READABLE    = 0x01, /**< Pipe is readable */
+    EV_PIPE_WRITABLE    = 0x02, /**< Pipe is writable */
+    EV_PIPE_NONBLOCK    = 0x04, /**< Pipe is nonblock */
+    EV_PIPE_IPC         = 0x08, /**< Enable IPC */
+};
+
 /**
  * @brief PIPE
  */
@@ -192,10 +200,17 @@ int ev_pipe_accept(ev_pipe_t* pipe, ev_pipe_read_req_t* req,
  *
  * Close pipe by #ev_pipe_close() when no longer need it.
  *
- * @param[out] fds  fds[0] for read, fds[1] for write
+ * @note #EV_PIPE_READABLE and #EV_PIPE_WRITABLE are silently ignored.
+ * @note If pipe is create for IPC usage, both \p rflags and \p wflags must
+ *   have #EV_PIPE_IPC set. Only set one of \p rflags or \p wflags will return
+ *   #EV_EINVAL.
+ * 
+ * @param[out] fds      fds[0] for read, fds[1] for write
+ * @param[in] rflags    Bit-OR of #ev_pipe_flags_t for read pipe.
+ * @param[in] wflags    Bit-OR of #ev_pipe_flags_t for write pipe.
  * @return          #ev_errno_t
  */
-int ev_pipe_make(ev_os_pipe_t fds[2]);
+int ev_pipe_make(ev_os_pipe_t fds[2], int rflags, int wflags);
 
 /**
  * @brief Close OS pipe.

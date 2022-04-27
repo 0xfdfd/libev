@@ -31,7 +31,7 @@ static void _ev_pipe_on_close_unix(ev_handle_t* handle)
 
 static void _ev_pipe_smart_deactive_unix(ev_pipe_t* pipe)
 {
-    if (pipe->base.data.flags & EV_PIPE_IPC)
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
         int flag_have_write = 0;
         if (ev_list_size(&pipe->backend.ipc_mode.wio.wqueue) != 0
@@ -190,7 +190,7 @@ static ssize_t _ev_pipe_recvmsg_unix(ev_pipe_t* pipe, struct msghdr* msg)
         {
             return rc;
         }
-        if (errno != EINVAL)
+        if ((rc = errno) != EINVAL)
         {
             return ev__translate_sys_error(errno);
         }
@@ -587,7 +587,7 @@ static void _ev_pipe_ipc_mode_cancel_all_wio_unix(ev_pipe_t* pipe, int stat)
 
 static void _ev_pipe_abort_unix(ev_pipe_t* pipe, int stat)
 {
-    if (pipe->base.data.flags & EV_PIPE_IPC)
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
         ev__nonblock_io_del(pipe->base.data.loop, &pipe->backend.ipc_mode.io, EV_IO_IN | EV_IO_OUT);
         _ev_pipe_close_unix(pipe);
@@ -597,10 +597,10 @@ static void _ev_pipe_abort_unix(ev_pipe_t* pipe, int stat)
     }
     else
     {
-        if (pipe->base.data.flags & EV_PIPE_STREAMING)
+        if (pipe->base.data.flags & EV_HANDLE_PIPE_STREAMING)
         {
             ev__nonblock_stream_exit(&pipe->backend.data_mode.stream);
-            pipe->base.data.flags &= ~EV_PIPE_STREAMING;
+            pipe->base.data.flags &= ~EV_HANDLE_PIPE_STREAMING;
         }
         _ev_pipe_close_unix(pipe);
     }
@@ -691,16 +691,95 @@ static int _ev_pipe_read_ipc_mode_unix(ev_pipe_t* pipe, ev_pipe_read_req_t* req)
     return EV_SUCCESS;
 }
 
-int ev_pipe_make(ev_os_pipe_t fds[2])
+static int _ev_pipe_make_pipe(ev_os_pipe_t fds[2], int rflags, int wflags)
 {
-    int err;
-    if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0, fds) != 0)
+    int errcode;
+    if (pipe(fds) < 0)
     {
-        err = errno;
-        return ev__translate_sys_error(err);
+        errcode = errno;
+        return ev__translate_sys_error(errcode);
+    }
+
+    if ((errcode = ev__cloexec(fds[0], 1)) != EV_SUCCESS)
+    {
+        goto err;
+    }
+    if ((errcode = ev__cloexec(fds[1], 1)) != EV_SUCCESS)
+    {
+        goto err;
+    }
+
+    if (rflags & EV_PIPE_NONBLOCK)
+    {
+        if ((errcode = ev__nonblock(fds[0], 1)) != EV_SUCCESS)
+        {
+            goto err;
+        }
+    }
+
+    if (wflags & EV_PIPE_NONBLOCK)
+    {
+        if ((errcode = ev__nonblock(fds[1], 1)) != EV_SUCCESS)
+        {
+            goto err;
+        }
     }
 
     return EV_SUCCESS;
+
+    err: close(fds[0]);
+    close(fds[1]);
+    return errcode;
+}
+
+static int _ev_pipe_make_socketpair(ev_os_pipe_t fds[2], int rflags, int wflags)
+{
+    int errcode;
+    if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, fds) != 0)
+    {
+        errcode = errno;
+        return ev__translate_sys_error(errcode);
+    }
+
+    if (rflags & EV_PIPE_NONBLOCK)
+    {
+        if ((errcode = ev__nonblock(fds[0], 1)) != EV_SUCCESS)
+        {
+            goto err;
+        }
+    }
+
+    if (wflags & EV_PIPE_NONBLOCK)
+    {
+        if ((errcode = ev__nonblock(fds[1], 1)) != EV_SUCCESS)
+        {
+            goto err;
+        }
+    }
+
+    return EV_SUCCESS;
+
+err:
+    close(fds[0]);
+    close(fds[1]);
+    return errcode;
+}
+
+int ev_pipe_make(ev_os_pipe_t fds[2], int rflags, int wflags)
+{
+    if ((rflags & EV_PIPE_IPC) != (wflags & EV_PIPE_IPC))
+    {
+        return EV_EINVAL;
+    }
+
+    int is_ipc = rflags & EV_PIPE_IPC;
+
+    if (is_ipc)
+    {
+        return _ev_pipe_make_socketpair(fds, rflags, wflags);
+    }
+
+    return _ev_pipe_make_pipe(fds, rflags, wflags);
 }
 
 int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe, int ipc)
@@ -708,7 +787,7 @@ int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe, int ipc)
     ev__handle_init(loop, &pipe->base, EV_ROLE_EV_PIPE, _ev_pipe_on_close_unix);
     pipe->close_cb = NULL;
     pipe->pipfd = EV_OS_PIPE_INVALID;
-    pipe->base.data.flags |= ipc ? EV_PIPE_IPC : 0;
+    pipe->base.data.flags |= ipc ? EV_HANDLE_PIPE_IPC : 0;
 
     return EV_SUCCESS;
 }
@@ -740,9 +819,9 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
     }
 
     pipe->pipfd = handle;
-    pipe->base.data.flags |= EV_PIPE_STREAMING;
+    pipe->base.data.flags |= EV_HANDLE_PIPE_STREAMING;
 
-    if (pipe->base.data.flags & EV_PIPE_IPC)
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
         _ev_pipe_init_as_ipc_mode_unix(pipe);
     }
@@ -774,7 +853,7 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
 
     ev__handle_active(&pipe->base);
 
-    if (pipe->base.data.flags & EV_PIPE_IPC)
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
         ret = _ev_pipe_write_ipc_mode_unix(pipe, req);
     }
@@ -807,7 +886,7 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
 
     ev__handle_active(&pipe->base);
 
-    if (pipe->base.data.flags & EV_PIPE_IPC)
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
         ret = _ev_pipe_read_ipc_mode_unix(pipe, req);
     }
@@ -827,7 +906,7 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
 int ev_pipe_accept(ev_pipe_t* pipe, ev_pipe_read_req_t* req,
     ev_role_t handle_role, void* handle_addr, size_t handle_size)
 {
-    if (!(pipe->base.data.flags & EV_PIPE_IPC)
+    if (!(pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
         || handle_role != EV_ROLE_EV_TCP
         || handle_addr == NULL)
     {

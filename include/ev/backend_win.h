@@ -232,13 +232,14 @@ typedef union ev_pipe_backend
             ev_pipe_write_req_t*        w_half;
             size_t                      w_half_idx;
         }wio;
-    }data_mode;
+    } data_mode;
 
     struct
     {
 #define EV_PIPE_BACKEND_BUFFER_SIZE    \
     (sizeof(ev_ipc_frame_hdr_t) + sizeof(ev_pipe_win_ipc_info_t))
 
+        int                             iner_err;           /**< Internal error code */
         DWORD                           peer_pid;           /**< Peer process ID */
 
         struct
@@ -285,7 +286,7 @@ typedef union ev_pipe_backend
         }wio;
 
 #undef EV_PIPE_BACKEND_BUFFER_SIZE
-    }ipc_mode;
+    } ipc_mode;
 }ev_pipe_backend_t;
 #define EV_PIPE_BACKEND_INVALID         { 0 }
 

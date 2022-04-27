@@ -34,7 +34,6 @@ static int _ev_io_finalize_send_req_unix(ev_write_t* req, size_t write_size)
     }
 
     assert(idx < req->nbuf);
-    assert(write_size > 0);
 
     memmove(&req->bufs[0], &req->bufs[idx], sizeof(req->bufs[0]) * (req->nbuf - idx));
     req->nbuf -= idx;

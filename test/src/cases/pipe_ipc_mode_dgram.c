@@ -52,8 +52,9 @@ TEST_FIXTURE_SETUP(pipe)
     ASSERT_EQ_D32(ev_pipe_init(&g_test_a548.loop, &g_test_a548.s_pipe, 1), 0);
     ASSERT_EQ_D32(ev_pipe_init(&g_test_a548.loop, &g_test_a548.c_pipe, 1), 0);
 
+    int rwflags = EV_PIPE_NONBLOCK | EV_PIPE_IPC;
     ev_os_pipe_t fds[2] = { EV_OS_PIPE_INVALID, EV_OS_PIPE_INVALID };
-    ASSERT_EQ_D32(ev_pipe_make(fds), 0);
+    ASSERT_EQ_D32(ev_pipe_make(fds, rwflags, rwflags), 0);
 
     ASSERT_EQ_D32(ev_pipe_open(&g_test_a548.s_pipe, fds[0]), 0);
     ASSERT_EQ_D32(ev_pipe_open(&g_test_a548.c_pipe, fds[1]), 0);
