@@ -35,7 +35,7 @@ static int _ev_udp_setup_socket_attribute_win(ev_loop_t* loop, ev_udp_t* udp, in
 
     if (family == AF_INET6)
     {
-        udp->base.data.flags |= EV_UDP_IPV6;
+        udp->base.data.flags |= EV_HANDLE_UDP_IPV6;
     }
 
     return EV_SUCCESS;
@@ -116,13 +116,13 @@ static int _ev_udp_disconnect_win(ev_udp_t* udp)
         return ev__translate_sys_error(ret);
     }
 
-    udp->base.data.flags &= ~EV_UDP_CONNECTED;
+    udp->base.data.flags &= ~EV_HANDLE_UDP_CONNECTED;
     return EV_SUCCESS;
 }
 
 static int _ev_udp_maybe_deferred_bind_win(ev_udp_t* udp, int domain)
 {
-    if (udp->base.data.flags & EV_UDP_BOUND)
+    if (udp->base.data.flags & EV_HANDLE_UDP_BOUND)
     {
         return EV_SUCCESS;
     }
@@ -415,7 +415,7 @@ int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
     ev__iocp_init(&req->backend.io, _ev_udp_on_recv_iocp_win, udp);
 
     int ret = WSARecv(udp->sock, &buf, 1, &bytes, &flags, &req->backend.io.overlapped, NULL);
-    if (ret == 0 && (udp->base.data.flags & EV_UDP_BYPASS_IOCP))
+    if (ret == 0 && (udp->base.data.flags & EV_HANDLE_UDP_BYPASS_IOCP))
     {
         ev__loop_submit_task(udp->base.data.loop, &req->backend.token, _ev_udp_on_recv_bypass_iocp_win);
         return EV_SUCCESS;
@@ -435,7 +435,7 @@ int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr
 {
     int ret, err;
 
-    if (!(udp->base.data.flags & EV_UDP_BOUND))
+    if (!(udp->base.data.flags & EV_HANDLE_UDP_BOUND))
     {
         if (addr == NULL)
         {
@@ -458,7 +458,7 @@ int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr
     ret = WSASendTo(udp->sock, (WSABUF*)req->base.bufs, (DWORD)req->base.nbuf,
         &send_bytes, 0, addr, addrlen, &req->backend.io.overlapped, NULL);
 
-    if (ret == 0 && (udp->base.data.flags & EV_UDP_BYPASS_IOCP))
+    if (ret == 0 && (udp->base.data.flags & EV_HANDLE_UDP_BYPASS_IOCP))
     {
         req->base.size += req->base.capacity;
         req->backend.stat = EV_SUCCESS;
@@ -533,12 +533,12 @@ int ev_udp_open(ev_udp_t* udp, ev_os_socket_t sock)
 
     if (_ev_udp_is_bound_win(udp))
     {
-        udp->base.data.flags |= EV_UDP_BOUND;
+        udp->base.data.flags |= EV_HANDLE_UDP_BOUND;
     }
 
     if (_ev_udp_is_connected_win(udp))
     {
-        udp->base.data.flags |= EV_UDP_CONNECTED;
+        udp->base.data.flags |= EV_HANDLE_UDP_CONNECTED;
     }
 
     return EV_SUCCESS;
@@ -547,7 +547,7 @@ int ev_udp_open(ev_udp_t* udp, ev_os_socket_t sock)
 int ev_udp_bind(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags)
 {
     int ret;
-    if (udp->base.data.flags & EV_UDP_BOUND)
+    if (udp->base.data.flags & EV_HANDLE_UDP_BOUND)
     {
         return EV_EALREADY;
     }
@@ -575,7 +575,7 @@ int ev_udp_bind(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags)
 
     if (addr->sa_family == AF_INET6)
     {
-        udp->base.data.flags |= EV_UDP_IPV6;
+        udp->base.data.flags |= EV_HANDLE_UDP_IPV6;
         int is_ipv6_only = flags & EV_UDP_IPV6_ONLY;
 
         if ((ret = ev__ipv6only_win(udp->sock, is_ipv6_only)) != EV_SUCCESS)
@@ -591,7 +591,7 @@ int ev_udp_bind(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags)
         goto err;
     }
 
-    udp->base.data.flags |= EV_UDP_BOUND;
+    udp->base.data.flags |= EV_HANDLE_UDP_BOUND;
     return EV_SUCCESS;
 
 err:
@@ -606,7 +606,7 @@ int ev_udp_connect(ev_udp_t* udp, const struct sockaddr* addr)
 {
     if (addr == NULL)
     {
-        if (!(udp->base.data.flags & EV_UDP_CONNECTED))
+        if (!(udp->base.data.flags & EV_HANDLE_UDP_CONNECTED))
         {
             return EV_ENOTCONN;
         }
@@ -614,7 +614,7 @@ int ev_udp_connect(ev_udp_t* udp, const struct sockaddr* addr)
         return _ev_udp_disconnect_win(udp);
     }
 
-    if (udp->base.data.flags & EV_UDP_CONNECTED)
+    if (udp->base.data.flags & EV_HANDLE_UDP_CONNECTED)
     {
         return EV_EISCONN;
     }
@@ -667,7 +667,7 @@ int ev_udp_set_membership(ev_udp_t* udp, const char* multicast_addr,
 
     if ((ret = ev_ipv4_addr(multicast_addr, 0, (struct sockaddr_in*)&addr)) == EV_SUCCESS)
     {
-        if (udp->base.data.flags & EV_UDP_IPV6)
+        if (udp->base.data.flags & EV_HANDLE_UDP_IPV6)
         {
             return EV_EINVAL;
         }
@@ -681,7 +681,7 @@ int ev_udp_set_membership(ev_udp_t* udp, const char* multicast_addr,
 
     if ((ret = ev_ipv6_addr(multicast_addr, 0, (struct sockaddr_in6*)&addr)) == EV_SUCCESS)
     {
-        if ((udp->base.data.flags & EV_UDP_BOUND) && !(udp->base.data.flags & EV_UDP_IPV6))
+        if ((udp->base.data.flags & EV_HANDLE_UDP_BOUND) && !(udp->base.data.flags & EV_HANDLE_UDP_IPV6))
         {
             return EV_EINVAL;
         }
@@ -714,7 +714,7 @@ int ev_udp_set_source_membership(ev_udp_t* udp, const char* multicast_addr,
         {
             return ret;
         }
-        if (udp->base.data.flags & EV_UDP_IPV6)
+        if (udp->base.data.flags & EV_HANDLE_UDP_IPV6)
         {
             return EV_EINVAL;
         }
@@ -732,7 +732,7 @@ int ev_udp_set_source_membership(ev_udp_t* udp, const char* multicast_addr,
         {
             return ret;
         }
-        if ((udp->base.data.flags & EV_UDP_BOUND) && !(udp->base.data.flags & EV_UDP_IPV6))
+        if ((udp->base.data.flags & EV_HANDLE_UDP_BOUND) && !(udp->base.data.flags & EV_HANDLE_UDP_IPV6))
         {
             return EV_EINVAL;
         }
@@ -757,7 +757,7 @@ int ev_udp_set_multicast_loop(ev_udp_t* udp, int on)
 
     int level = IPPROTO_IP;
     int optname = IP_MULTICAST_LOOP;
-    if (udp->base.data.flags & EV_UDP_IPV6)
+    if (udp->base.data.flags & EV_HANDLE_UDP_IPV6)
     {
         level = IPPROTO_IPV6;
         optname = IPV6_MULTICAST_LOOP;
@@ -786,7 +786,7 @@ int ev_udp_set_multicast_ttl(ev_udp_t* udp, int ttl)
 
     int level = IPPROTO_IP;
     int optname = IP_MULTICAST_TTL;
-    if (udp->base.data.flags & EV_UDP_IPV6)
+    if (udp->base.data.flags & EV_HANDLE_UDP_IPV6)
     {
         level = IPPROTO_IPV6;
         optname = IPV6_MULTICAST_HOPS;
@@ -813,7 +813,7 @@ int ev_udp_set_multicast_interface(ev_udp_t* udp, const char* interface_addr)
         return EV_EBADF;
     }
 
-    int is_ipv6 = udp->base.data.flags & EV_UDP_IPV6;
+    int is_ipv6 = udp->base.data.flags & EV_HANDLE_UDP_IPV6;
     if ((ret = ev__udp_interface_addr_to_sockaddr(&addr_st, interface_addr, is_ipv6)) != EV_SUCCESS)
     {
         return ret;
@@ -870,7 +870,7 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
 
     int level = IPPROTO_IP;
     int optname = IP_TTL;
-    if (udp->base.data.flags & EV_UDP_IPV6)
+    if (udp->base.data.flags & EV_HANDLE_UDP_IPV6)
     {
         level = IPPROTO_IPV6;
         optname = IPV6_HOPLIMIT;

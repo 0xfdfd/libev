@@ -121,7 +121,7 @@ static int _ev_udp_disconnect_unix(ev_udp_t* udp)
         return ev__translate_sys_error(r);
     }
 
-    udp->base.data.flags &= ~EV_UDP_CONNECTED;
+    udp->base.data.flags &= ~EV_HANDLE_UDP_CONNECTED;
     return EV_SUCCESS;
 }
 
@@ -338,7 +338,7 @@ static int _ev_udp_do_connect_unix(ev_udp_t* udp, const struct sockaddr* addr)
         return ev__translate_sys_error(ret);
     }
 
-    udp->base.data.flags |= EV_UDP_CONNECTED;
+    udp->base.data.flags |= EV_HANDLE_UDP_CONNECTED;
     return EV_SUCCESS;
 }
 
@@ -350,7 +350,7 @@ static int _ev_udp_maybe_deferred_bind_unix(ev_udp_t* udp, int domain, int flags
         return ret;
     }
 
-    if (udp->base.data.flags & EV_UDP_BOUND)
+    if (udp->base.data.flags & EV_HANDLE_UDP_BOUND)
     {
         return EV_SUCCESS;
     }
@@ -574,7 +574,7 @@ static int _ev_udp_set_ttl_unix(ev_udp_t* udp, int ttl, int option4, int option6
 {
     int level;
     int option;
-    if (udp->base.data.flags & EV_UDP_IPV6)
+    if (udp->base.data.flags & EV_HANDLE_UDP_IPV6)
     {
         level = IPPROTO_IPV6;
         option = option6;
@@ -596,7 +596,7 @@ static int _ev_udp_set_ttl_unix(ev_udp_t* udp, int ttl, int option4, int option6
      */
 #if defined(__sun) || defined(_AIX) || defined(__OpenBSD__) || defined(__MVS__) || defined(__QNX__)
     char char_val = ttl;
-    if (!(udp->base.data.flags & EV_UDP_IPV6))
+    if (!(udp->base.data.flags & EV_HANDLE_UDP_IPV6))
     {
         optval = &char_val;
         optlen = sizeof(char_val);
@@ -697,7 +697,7 @@ int ev_udp_open(ev_udp_t* udp, ev_os_socket_t sock)
 
     if (_ev_udp_is_connected_unix(sock))
     {
-        udp->base.data.flags |= EV_UDP_CONNECTED;
+        udp->base.data.flags |= EV_HANDLE_UDP_CONNECTED;
     }
 
     return EV_SUCCESS;
@@ -741,10 +741,10 @@ int ev_udp_bind(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags)
 
     if (addr->sa_family == AF_INET6)
     {
-        udp->base.data.flags |= EV_UDP_IPV6;
+        udp->base.data.flags |= EV_HANDLE_UDP_IPV6;
     }
 
-    udp->base.data.flags |= EV_UDP_BOUND;
+    udp->base.data.flags |= EV_HANDLE_UDP_BOUND;
     return EV_SUCCESS;
 }
 
@@ -752,7 +752,7 @@ int ev_udp_connect(ev_udp_t* udp, const struct sockaddr* addr)
 {
     if (addr == NULL)
     {
-        if (!(udp->base.data.flags & EV_UDP_CONNECTED))
+        if (!(udp->base.data.flags & EV_HANDLE_UDP_CONNECTED))
         {
             return EV_ENOTCONN;
         }
@@ -884,7 +884,7 @@ int ev_udp_set_multicast_interface(ev_udp_t* udp, const char* interface_addr)
     struct sockaddr_in* addr_4 = (struct sockaddr_in*)&addr_st;
     struct sockaddr_in6* addr_6 = (struct sockaddr_in6*)&addr_st;
 
-    int is_ipv6 = udp->base.data.flags & EV_UDP_IPV6;
+    int is_ipv6 = udp->base.data.flags & EV_HANDLE_UDP_IPV6;
     if ((ret = ev__udp_interface_addr_to_sockaddr(&addr_st, interface_addr, is_ipv6)) != EV_SUCCESS)
     {
         return ret;
@@ -944,7 +944,7 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
 
 #if defined(__MVS__)
     /* zOS does not support setting ttl for IPv4 */
-    if (!(udp->base.data.flags & EV_UDP_IPV6))
+    if (!(udp->base.data.flags & EV_HANDLE_UDP_IPV6))
     {
         return EV_ENOTSUP;
     }
