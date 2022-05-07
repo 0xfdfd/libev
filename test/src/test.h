@@ -54,6 +54,11 @@ typedef struct test_execute_token
     ev_os_thread_t  thr;
 }test_execute_token_t;
 
+/**
+ * @brief Hook for tests.
+ */
+extern cutest_hook_t test_hook;
+
 int test_thread_execute(test_execute_token_t* token, fn_execute callback);
 
 /**
