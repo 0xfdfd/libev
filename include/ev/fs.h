@@ -190,42 +190,77 @@ void ev_file_exit(ev_file_t* file, ev_file_close_cb cb);
  * + #EV_FS_S_IRWXU
  * 
  * @note File always open in binary mode.
- * @param[in] file      File handle
- * @param[in] req       File token
+ * @param[in] file      File handle.
+ * @param[in] req       File token.
  * @param[in] path      File path.
  * @param[in] flags     Open flags
- * @param[in] mode      Open mode
- * @param[in] cb        Open result callback
+ * @param[in] mode      Open mode.
+ * @param[in] cb        Open result callback.
  * @return              #ev_errno_t
  */
 int ev_file_open(ev_file_t* file, ev_fs_req_t* req, const char* path,
     int flags, int mode, ev_file_cb cb);
 
 /**
+ * @brief Like #ev_file_open(), but work in synchronous mode.
+ * @see ev_file_open()
+ * @param[in] file      File handle.
+ * @param[in] path      File path.
+ * @param[in] flags     Open flags.
+ * @param[in] mode      Open mode.
+ * @return              #ev_errno_t
+ */
+int ev_file_open_sync(ev_file_t* file, const char* path, int flags, int mode);
+
+/**
  * @brief Read data.
- * @param[in] file      File handle
- * @param[in] req       File operation token
- * @param[in] bufs      Buffer list
- * @param[in] nbuf      Buffer amount
- * @param[in] offset    Offset of file
- * @param[in] cb        Read callback
+ * @param[in] file      File handle.
+ * @param[in] req       File operation token.
+ * @param[in] bufs      Buffer list.
+ * @param[in] nbuf      Buffer amount.
+ * @param[in] offset    Offset of file.
+ * @param[in] cb        Read callback.
  * @return              #ev_errno_t
  */
 int ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb);
 
 /**
+ * @brief Like #ev_file_read(), but work in synchronous mode.
+ * @see ev_file_read()
+ * @param[in] file      File handle.
+ * @param[in] bufs      Buffer list.
+ * @param[in] nbuf      Buffer amount.
+ * @param[in] offset    Offset of file.
+ * @return              #ev_errno_t
+ */
+ssize_t ev_file_read_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
+    ssize_t offset);
+
+/**
  * @brief Write data
- * @param[in] file      File handle
- * @param[in] req       File operation token
- * @param[in] bufs      Buffer list
- * @param[in] nbuf      Buffer amount
- * @param[in] offset    Offset of file
- * @param[in] cb        Write callback
+ * @param[in] file      File handle.
+ * @param[in] req       File operation token.
+ * @param[in] bufs      Buffer list.
+ * @param[in] nbuf      Buffer amount.
+ * @param[in] offset    Offset of file.
+ * @param[in] cb        Write callback.
  * @return              #ev_errno_t
  */
 int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb);
+
+/**
+ * @brief Like #ev_file_write(), but work in synchronous mode.
+ * @see ev_file_write()
+ * @param[in] file      File handle.
+ * @param[in] bufs      Buffer list.
+ * @param[in] nbuf      Buffer amount.
+ * @param[in] offset    Offset of file.
+ * @return              #ev_errno_t
+ */
+ssize_t ev_file_write_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
+    ssize_t offset);
 
 /**
  * @brief Get information about a file.
@@ -235,6 +270,15 @@ int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
  * @return              #ev_errno_t
  */
 int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_file_cb cb);
+
+/**
+ * @brief Like #ev_file_stat(), but work in synchronous mode.
+ * @see ev_file_stat()
+ * @param[in] file      File handle.
+ * @param[out] stat     File status.
+ * @return              #ev_errno_t
+ */
+int ev_file_stat_sync(ev_file_t* file, ev_fs_stat_t* stat);
 
 /**
  * @brief Get all entry in directory.
@@ -283,6 +327,15 @@ int ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
  */
 int ev_fs_mkdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path, int mode,
     ev_file_cb cb);
+
+/**
+ * @brief Like #ev_fs_mkdir(), but work in synchronous mode.
+ * @see ev_fs_mkdir()
+ * @param[in] path      Directory path.
+ * @param[in] mode      Creation mode.
+ * @return              #ev_errno_t
+ */
+int ev_fs_mkdir_sync(const char* path, int mode);
 
 /**
  * @brief Cleanup file system request

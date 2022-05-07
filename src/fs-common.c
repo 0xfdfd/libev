@@ -288,7 +288,7 @@ static void _ev_file_on_open(ev_threadpool_work_t* work)
     ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
     ev_file_t* file = req->file;
 
-    req->result = ev__fs_open(&file->file, req->req.as_open.path,
+    req->result = ev_file_open_sync(file, req->req.as_open.path,
         req->req.as_open.flags, req->req.as_open.mode);
 }
 
@@ -298,7 +298,7 @@ static void _ev_file_on_read(ev_threadpool_work_t* work)
     ev_file_t* file = req->file;
     ev_read_t* read_req = &req->req.as_read.read_req;
 
-    req->result = ev__fs_preadv(file->file, read_req->data.bufs,
+    req->result = ev_file_read_sync(file, read_req->data.bufs,
         read_req->data.nbuf, req->req.as_read.offset);
 }
 
@@ -308,7 +308,7 @@ static void _ev_file_on_write(ev_threadpool_work_t* work)
     ev_file_t* file = req->file;
     ev_write_t* write_req = &req->req.as_write.write_req;
 
-    req->result = ev__fs_pwritev(file->file, write_req->bufs,
+    req->result = ev_file_write_sync(file, write_req->bufs,
         write_req->nbuf, req->req.as_write.offset);
 }
 
@@ -317,7 +317,7 @@ static void _ev_file_on_fstat(ev_threadpool_work_t* work)
     ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
     ev_file_t* file = req->file;
 
-    req->result = ev__fs_fstat(file->file, &req->rsp.fileinfo);
+    req->result = ev_file_stat_sync(file, &req->rsp.fileinfo);
 }
 
 static void _ev_fs_on_readdir(ev_threadpool_work_t* work)
@@ -375,7 +375,7 @@ static void _ev_fs_on_mkdir(ev_threadpool_work_t* work)
     const char* path = req->req.as_mkdir.path;
     int mode = req->req.as_mkdir.mode;
 
-    req->result = ev__fs_mkdir(path, mode);
+    req->result = ev_fs_mkdir_sync(path, mode);
 }
 
 int ev_file_init(ev_loop_t* loop, ev_file_t* file)
@@ -432,6 +432,11 @@ int ev_file_open(ev_file_t* file, ev_fs_req_t* token, const char* path, int flag
     return EV_SUCCESS;
 }
 
+int ev_file_open_sync(ev_file_t* file, const char* path, int flags, int mode)
+{
+    return ev__fs_open(&file->file, path, flags, mode);
+}
+
 int ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb)
 {
@@ -455,6 +460,12 @@ int ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     }
 
     return EV_SUCCESS;
+}
+
+ssize_t ev_file_read_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
+    ssize_t offset)
+{
+    return ev__fs_preadv(file->file, bufs, nbuf, offset);
 }
 
 int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
@@ -483,6 +494,12 @@ int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     return EV_SUCCESS;
 }
 
+ssize_t ev_file_write_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
+    ssize_t offset)
+{
+    return ev__fs_pwritev(file->file, bufs, nbuf, offset);
+}
+
 int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_file_cb cb)
 {
     int ret;
@@ -500,6 +517,11 @@ int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_file_cb cb)
     }
 
     return EV_SUCCESS;
+}
+
+int ev_file_stat_sync(ev_file_t* file, ev_fs_stat_t* stat)
+{
+    return ev__fs_fstat(file->file, stat);
 }
 
 int ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
@@ -584,6 +606,11 @@ int ev_fs_mkdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path, int mode,
     }
 
     return EV_SUCCESS;
+}
+
+int ev_fs_mkdir_sync(const char* path, int mode)
+{
+    return ev__fs_mkdir(path, mode);
 }
 
 ev_fs_stat_t* ev_fs_get_statbuf(ev_fs_req_t* req)
