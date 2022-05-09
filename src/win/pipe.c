@@ -1282,6 +1282,8 @@ int ev_pipe_make(ev_os_pipe_t fds[2], int rflags, int wflags)
     static long volatile s_pipe_serial_no = 0;
     char buffer[128];
 
+    fds[0] = EV_OS_PIPE_INVALID;
+    fds[1] = EV_OS_PIPE_INVALID;
     if ((rflags & EV_PIPE_IPC) != (wflags & EV_PIPE_IPC))
     {
         return EV_EINVAL;

@@ -694,10 +694,14 @@ static int _ev_pipe_read_ipc_mode_unix(ev_pipe_t* pipe, ev_pipe_read_req_t* req)
 static int _ev_pipe_make_pipe(ev_os_pipe_t fds[2], int rflags, int wflags)
 {
     int errcode;
+    fds[0] = EV_OS_PIPE_INVALID;
+    fds[1] = EV_OS_PIPE_INVALID;
+
     if (pipe(fds) < 0)
     {
         errcode = errno;
-        return ev__translate_sys_error(errcode);
+        errcode = ev__translate_sys_error(errcode);
+        goto err;
     }
 
     if ((errcode = ev__cloexec(fds[0], 1)) != EV_SUCCESS)
@@ -727,8 +731,17 @@ static int _ev_pipe_make_pipe(ev_os_pipe_t fds[2], int rflags, int wflags)
 
     return EV_SUCCESS;
 
-    err: close(fds[0]);
-    close(fds[1]);
+err:
+    if (fds[0] != EV_OS_PIPE_INVALID)
+    {
+        close(fds[0]);
+        fds[0] = EV_OS_PIPE_INVALID;
+    }
+    if (fds[1] != EV_OS_PIPE_INVALID)
+    {
+        close(fds[1]);
+        fds[1] = EV_OS_PIPE_INVALID;
+    }
     return errcode;
 }
 

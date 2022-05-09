@@ -17,14 +17,15 @@ typedef struct test_pipe_make
     ev_threadpool_work_t    write_token;
     ev_threadpool_work_t    read_token;
 
-    char                    rbuf[8 * 1024 * 1024];
-    char                    wbuf[8 * 1024 * 1024];
+    /* 64MB should exceed most system default underlying cache */
+    char                    rbuf[64 * 1024 * 1024];
+    char                    wbuf[64 * 1024 * 1024];
 
     size_t                  wsize;
     size_t                  rsize;
 }test_pipe_make_t;
 
-test_pipe_make_t g_test_pipe_make;
+test_pipe_make_t            g_test_pipe_make;
 
 TEST_FIXTURE_SETUP(pipe)
 {
@@ -84,7 +85,6 @@ static void _test_pipe_make_block_on_write(ev_threadpool_work_t* work)
 static void _test_pipe_make_block_on_write_done(ev_threadpool_work_t* work, int status)
 {
     (void)work; (void)status;
-
     ASSERT_EQ_U32(g_test_pipe_make.wsize, sizeof(g_test_pipe_make.wbuf));
 }
 
@@ -104,7 +104,9 @@ static void _test_pipe_make_block_on_read(ev_threadpool_work_t* work)
         ASSERT_EQ_D32(ret, TRUE, "GetLastError:%d", (int)GetLastError());
         ASSERT_GT_U64(read_size, 0);
 #else
-        ssize_t read_size = read(g_test_pipe_make.fds[0], g_test_pipe_make.rbuf, 1);
+        void* read_pos = g_test_pipe_make.rbuf + readen_size;
+        size_t max_read_size = sizeof(g_test_pipe_make.rbuf) - readen_size;
+        ssize_t read_size = read(g_test_pipe_make.fds[0], read_pos, max_read_size);
         ASSERT_GT_U64(read_size, 0);
 #endif
         readen_size += (size_t)read_size;
@@ -116,6 +118,7 @@ static void _test_pipe_make_block_on_read(ev_threadpool_work_t* work)
 static void _test_pipe_make_block_on_read_done(ev_threadpool_work_t* work, int status)
 {
     (void)work; (void)status;
+    ASSERT_EQ_U32(g_test_pipe_make.rsize, sizeof(g_test_pipe_make.rbuf));
 }
 
 TEST_F(pipe, make_block)
