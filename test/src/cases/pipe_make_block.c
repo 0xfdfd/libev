@@ -23,6 +23,9 @@ typedef struct test_pipe_make
 
     size_t                  wsize;
     size_t                  rsize;
+
+    int                     rlasterror; /**< Last error code for read */
+    int                     wlasterror; /**< Last error code for write */
 }test_pipe_make_t;
 
 test_pipe_make_t            g_test_pipe_make;
@@ -61,6 +64,10 @@ TEST_FIXTURE_TEAREDOWN(pipe)
 
     ev_threadpool_exit(&g_test_pipe_make.thr_pool);
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// pipe.make_block
+///////////////////////////////////////////////////////////////////////////////
 
 static void _test_pipe_make_block_on_write(ev_threadpool_work_t* work)
 {
@@ -141,3 +148,86 @@ TEST_F(pipe, make_block)
 
     ASSERT_EQ_D32(ev_loop_run(&g_test_pipe_make.loop, EV_LOOP_MODE_DEFAULT), 0);
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// pipe.make_nonblock_unix
+///////////////////////////////////////////////////////////////////////////////
+
+#if !defined(_WIN32)
+
+static void _test_pipe_make_nonblock_on_read(ev_threadpool_work_t* work)
+{
+    (void)work;
+
+    ssize_t read_size;
+    while (g_test_pipe_make.rsize < sizeof(g_test_pipe_make.rbuf))
+    {
+        void* buf_pos = g_test_pipe_make.rbuf + g_test_pipe_make.rsize;
+        size_t buf_size = sizeof(g_test_pipe_make.rbuf) - g_test_pipe_make.rsize;
+        read_size = read(g_test_pipe_make.fds[0], buf_pos, buf_size);
+        if (read_size < 0)
+        {
+            g_test_pipe_make.rlasterror = errno;
+            break;
+        }
+
+        g_test_pipe_make.rsize += read_size;
+    }
+}
+
+static void _test_pipe_make_nonblock_on_read_done(ev_threadpool_work_t* work, int status)
+{
+    (void)work; (void)status;
+}
+
+static void _test_pipe_make_nonblock_on_write(ev_threadpool_work_t* work)
+{
+    (void)work;
+    ssize_t write_size = write(g_test_pipe_make.fds[1], g_test_pipe_make.wbuf,
+            sizeof(g_test_pipe_make.wbuf));
+    ASSERT_GT_U64(write_size, 0);
+    g_test_pipe_make.wsize = write_size;
+}
+
+static void _test_pipe_make_nonblock_on_write_done(ev_threadpool_work_t* work, int status)
+{
+    (void)work; (void)status;
+}
+
+TEST_F(pipe, make_nonblock_unix)
+{
+    int ret;
+
+    ret = ev_pipe_make(g_test_pipe_make.fds, EV_PIPE_NONBLOCK, EV_PIPE_NONBLOCK);
+    ASSERT_EQ_D32(ret, EV_SUCCESS);
+
+    /* Read on nonblock pipe should get nothing. */
+    {
+        ret = ev_threadpool_submit(&g_test_pipe_make.thr_pool,
+                &g_test_pipe_make.loop, &g_test_pipe_make.read_token,
+                EV_THREADPOOL_WORK_IO_FAST, _test_pipe_make_nonblock_on_read,
+                _test_pipe_make_nonblock_on_read_done);
+        ASSERT_EQ_D32(ret, EV_SUCCESS);
+        ASSERT_EQ_D32(ev_loop_run(&g_test_pipe_make.loop, EV_LOOP_MODE_DEFAULT), 0);
+        ASSERT_EQ_U32(g_test_pipe_make.rsize, 0);
+#if EAGAIN == EWOULDBLOCK
+        ASSERT_EQ_D32(g_test_pipe_make.rlasterror, EAGAIN);
+#else
+        ASSERT(g_test_pipe_make.rlasterror == EAGAIN || g_test_pipe_make.rlasterror == EWOULDBLOCK);
+#endif
+    }
+
+    /* Write on nonblock pipe should have fewer bytes than send data */
+    {
+        ret = ev_threadpool_submit(&g_test_pipe_make.thr_pool,
+                &g_test_pipe_make.loop, &g_test_pipe_make.write_token,
+                EV_THREADPOOL_WORK_IO_FAST, _test_pipe_make_nonblock_on_write,
+                _test_pipe_make_nonblock_on_write_done);
+        ASSERT_EQ_D32(ret, EV_SUCCESS);
+        ASSERT_EQ_D32(ev_loop_run(&g_test_pipe_make.loop, EV_LOOP_MODE_DEFAULT), 0);
+        ASSERT_GT_U64(g_test_pipe_make.wsize, 0);
+        ASSERT_LT_U64(g_test_pipe_make.wsize, sizeof(g_test_pipe_make.wbuf));
+    }
+}
+
+#endif
