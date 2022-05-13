@@ -84,3 +84,6 @@ compile_commands.json
 
 # Good Sync
 /_gsdata_
+
+# FreeFileSync
+/sync.ffs_db
