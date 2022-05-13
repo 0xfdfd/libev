@@ -1,10 +1,6 @@
 #ifndef __EV_BACKEND_WIN_H__
 #define __EV_BACKEND_WIN_H__
 
-#ifndef _WIN32_WINNT
-#   define _WIN32_WINNT   0x0600
-#endif
-
 #include "ev/defs.h"
 #include "ev/os_win.h"
 #include "ev/todo.h"

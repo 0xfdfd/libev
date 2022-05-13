@@ -1,6 +1,10 @@
 #ifndef __EV_OS_WIN_H__
 #define __EV_OS_WIN_H__
 
+#ifndef _WIN32_WINNT
+#   define _WIN32_WINNT   0x0600
+#endif
+
 #include <winsock2.h>
 #include <mswsock.h>
 #include <ws2tcpip.h>
