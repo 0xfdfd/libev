@@ -1,5 +1,6 @@
 #include "ev-common.h"
 #include "fs-common.h"
+#include "allocator.h"
 #include "win/loop.h"
 #include "win/winapi.h"
 

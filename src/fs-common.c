@@ -1,5 +1,6 @@
 #include "ev-common.h"
 #include "fs-common.h"
+#include "allocator.h"
 
 typedef struct ev_dirent_record_s
 {

@@ -1,6 +1,7 @@
 #define _GNU_SOURCE 1
 #include "ev-common.h"
 #include "fs-common.h"
+#include "allocator.h"
 #include "unix/io.h"
 #include <string.h>
 #include <unistd.h>

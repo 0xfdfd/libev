@@ -223,13 +223,6 @@ API_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf);
  */
 API_LOCAL void ev__read_exit(ev_read_t* req);
 
-void* ev__malloc(size_t size);
-void* ev__calloc(size_t nmemb, size_t size);
-void* ev__realloc(void* ptr, size_t size);
-void ev__free(void* ptr);
-
-char* ev__strdup(const char* str);
-
 #ifdef __cplusplus
 }
 #endif
