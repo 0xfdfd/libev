@@ -71,8 +71,6 @@ static void _ev_threadpool_cleanup(ev_threadpool_t* pool)
 static void _ev_threadpool_worker(void* arg)
 {
     ev_threadpool_t* pool = arg;
-    ev_sem_wait(&pool->ent_sem);
-    ev_sem_post(&pool->w2p_sem);
 
     while (pool->looping)
     {
@@ -99,19 +97,8 @@ int ev_threadpool_init(ev_threadpool_t* pool, const ev_thread_opt_t* opt,
     {
         return ret;
     }
-    if ((ret = ev_sem_init(&pool->ent_sem, 0)) != EV_SUCCESS)
-    {
-        goto err_release_mutex;
-    }
     if ((ret = ev_sem_init(&pool->p2w_sem, 0)) != EV_SUCCESS)
     {
-        ev_sem_exit(&pool->ent_sem);
-        goto err_release_mutex;
-    }
-    if ((ret = ev_sem_init(&pool->w2p_sem, 0)) != EV_SUCCESS)
-    {
-        ev_sem_exit(&pool->ent_sem);
-        ev_sem_exit(&pool->p2w_sem);
         goto err_release_mutex;
     }
 
@@ -124,30 +111,15 @@ int ev_threadpool_init(ev_threadpool_t* pool, const ev_thread_opt_t* opt,
         }
     }
 
-    for (i = 0; i < idx; i++)
-    {
-        ev_sem_post(&pool->ent_sem);
-    }
-    for (i = 0; i < idx; i++)
-    {
-        ev_sem_wait(&pool->w2p_sem);
-    }
-
     return EV_SUCCESS;
 
 err_release_thread:
     pool->looping = 0;
     for (i = 0; i < idx; i++)
     {
-        ev_sem_post(&pool->ent_sem);
-    }
-    for (i = 0; i < idx; i++)
-    {
         ev_thread_exit(&storage[i], EV_INFINITE_TIMEOUT);
     }
-    ev_sem_exit(&pool->ent_sem);
     ev_sem_exit(&pool->p2w_sem);
-    ev_sem_exit(&pool->w2p_sem);
 err_release_mutex:
     ev_mutex_exit(&pool->mutex);
     return ret;
@@ -236,7 +208,5 @@ void ev_threadpool_exit(ev_threadpool_t* pool)
     }
 
     ev_mutex_exit(&pool->mutex);
-    ev_sem_exit(&pool->ent_sem);
     ev_sem_exit(&pool->p2w_sem);
-    ev_sem_exit(&pool->w2p_sem);
 }

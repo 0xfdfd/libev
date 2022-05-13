@@ -46,9 +46,8 @@ enum ev_threadpool_work_type
 struct ev_threadpool
 {
     ev_mutex_t                      mutex;          /**< Thread pool mutex */
-    ev_sem_t                        ent_sem;        /**< Semaphore for thread entrypoint */
+
     ev_sem_t                        p2w_sem;        /**< Semaphore for pool to worker */
-    ev_sem_t                        w2p_sem;        /**< Semaphore for worker to pool */
 
     ev_os_thread_t*                 threads;        /**< Threads */
     size_t                          thrnum;         /**< The number of threads */
