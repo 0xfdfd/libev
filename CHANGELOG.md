@@ -1,10 +1,11 @@
 # Changelog
 
-## v0.0.5
+## v0.0.5 (2022/05/13)
 
 ### Features
 1. Support mkdir
 2. Support process
+3. file: synchronous operations
 
 ### BREAKING CHANGES
 1. rename #EV_THREAD_WAIT_INFINITE to #EV_INFINITE_TIMEOUT.
