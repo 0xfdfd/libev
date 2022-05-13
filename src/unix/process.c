@@ -470,6 +470,15 @@ static void _ev_process_close_stdout(spawn_helper_t* helper)
     }
 }
 
+static void _ev_process_close_stderr(spawn_helper_t* helper)
+{
+    if (helper->child.fd_stderr != EV_OS_PIPE_INVALID)
+    {
+        close(helper->child.fd_stderr);
+        helper->child.fd_stderr = EV_OS_PIPE_INVALID;
+    }
+}
+
 static int _ev_process_init_spawn_helper(spawn_helper_t* helper, const ev_process_options_t* opt)
 {
     int ret;
@@ -517,6 +526,7 @@ static void _ev_process_exit_spawn_helper(spawn_helper_t* helper)
     _ev_process_close_write_end(helper);
     _ev_process_close_stdin(helper);
     _ev_process_close_stdout(helper);
+    _ev_process_close_stderr(helper);
 }
 
 int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_options_t* opt)
