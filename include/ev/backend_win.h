@@ -296,6 +296,11 @@ typedef struct ev_shm_backend
 }ev_shm_backend_t;
 #define EV_SHM_BACKEND_INVALID          { NULL }
 
+typedef struct ev_process_backend_s
+{
+    HANDLE  wait_handle;
+}ev_process_backend_t;
+
 #ifdef __cplusplus
 }
 #endif

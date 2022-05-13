@@ -23,6 +23,20 @@ extern "C" {
 #define ACCESS_ONCE(TYPE, var)  (*(volatile TYPE*) &(var))
 
 /**
+ * @brief exchange value of \p v1 and \p v2.
+ * @note \p v1 and \p v2 must have the same type.
+ * @param[in] TYPE      Type of \p v1 and \p v2.
+ * @param[in,out] v1    value1
+ * @param[in,out] v2    value2
+ */
+#define EXCHANGE_VALUE(TYPE, v1, v2)    \
+    do {\
+        TYPE _tmp = v1;\
+        v1 = v2;\
+        v2 = _tmp;\
+    } while(0)
+
+/**
  * @def EV_COUNT_ARG
  * @brief Count the number of arguments in macro
  */

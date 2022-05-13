@@ -1,9 +1,9 @@
+#include "unix/loop.h"
+#include "unix/io.h"
 #include <unistd.h>
 #include <errno.h>
 #include <limits.h>
 #include <sys/eventfd.h>
-#include "unix/loop.h"
-#include "unix/io.h"
 
 #if defined(__PASE__)
 /* on IBMi PASE the control message length can not exceed 256. */
@@ -95,6 +95,7 @@ static void _ev_init_once_unix(void)
     _ev_check_layout_unix();
     _ev_init_hwtime();
     _ev_init_iovmax();
+    ev__init_process_unix();
 }
 
 static void _ev_wakeup_clear_eventfd(ev_loop_t* loop)

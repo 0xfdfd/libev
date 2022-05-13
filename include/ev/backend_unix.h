@@ -271,15 +271,23 @@ typedef union ev_pipe_backend
 
 typedef struct ev_shm_backend
 {
-    char                        name[256];
-    int                         map_file;
+    char                                name[256];
+    int                                 map_file;
 
     struct
     {
-        unsigned                is_open : 1;
+        unsigned                        is_open : 1;
     }mask;
 }ev_shm_backend_t;
 #define EV_SHM_BACKEND_INVALID     { 0 }
+
+typedef struct ev_process_backend_s
+{
+    struct
+    {
+        int                             waitpid : 1;     /**< Already call waitpid() */
+    } flags;
+}ev_process_backend_t;
 
 #ifdef __cplusplus
 }

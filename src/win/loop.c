@@ -437,7 +437,12 @@ int ev__ntstatus_to_winsock_error(NTSTATUS status)
 
 void ev__loop_wakeup(ev_loop_t* loop)
 {
-    if (!PostQueuedCompletionStatus(loop->backend.iocp, 0, 0, &loop->backend.wakeup.io.overlapped))
+    ev__iocp_post(loop, &loop->backend.wakeup.io);
+}
+
+void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req)
+{
+    if (!PostQueuedCompletionStatus(loop->backend.iocp, 0, 0, &req->overlapped))
     {
         abort();
     }

@@ -6,12 +6,19 @@ extern "C" {
 
 #include "ev.h"
 #include "cutest.h"
+#include "utils/file.h"
 #if defined(_MSC_VER)
 #   include <windows.h>
 #else
 #   include <pthread.h>
 #endif
+#include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+#if defined(_WIN32)
+#   define strdup(s)    _strdup(s)
+#endif
 
 /**
  * @brief #TEST_F() with timeout
@@ -67,6 +74,11 @@ int test_thread_execute(test_execute_token_t* token, fn_execute callback);
 int test_thread_wait(test_execute_token_t* token);
 
 const char* test_strerror(int errcode);
+
+/**
+ * @brief Same as strdup().
+ */
+char* test_strdup(const char* str);
 
 #ifdef __cplusplus
 }

@@ -43,6 +43,13 @@ API_LOCAL void ev__init_once_win(void);
  */
 API_LOCAL void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg);
 
+/**
+ * @brief Post to specific IOCP request.
+ * @param[in] loop      Event loop
+ * @param[in] req       IOCP request
+ */
+API_LOCAL void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req);
+
 API_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status);
 
 API_LOCAL int ev__reuse_win(SOCKET sock, int opt);
