@@ -11,6 +11,7 @@ struct test_process
     ev_pipe_t       stderr_pipe;    /**< STDERR pipe for child process */
 
     int             flag_stdin_init;
+    int             flag_exit;
 };
 
 struct test_process g_test_process;
@@ -53,6 +54,10 @@ TEST_FIXTURE_TEAREDOWN(process)
     g_test_process.self_exe_path = NULL;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// process.spawn_stdout_ignore
+///////////////////////////////////////////////////////////////////////////////
+
 TEST_F(process, spawn_stdout_ignore)
 {
     int ret;
@@ -67,6 +72,10 @@ TEST_F(process, spawn_stdout_ignore)
     ret = ev_process_spawn(&g_test_process.loop, &g_test_process.process, &opt);
     ASSERT_EQ_D32(ret, EV_SUCCESS);
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// process.redirect_pipe
+///////////////////////////////////////////////////////////////////////////////
 
 static void _test_process_redirect_pipe_on_write_done(ev_pipe_write_req_t* req, size_t size, int stat)
 {
@@ -103,4 +112,36 @@ TEST_F(process, redirect_pipe)
     ASSERT_EQ_D32(ret, EV_SUCCESS);
 
     ASSERT_EQ_D32(ev_loop_run(&g_test_process.loop, EV_LOOP_MODE_DEFAULT), 0);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// process.exit_callback
+///////////////////////////////////////////////////////////////////////////////
+
+static void _test_process_exit_callback(ev_process_t* handle,
+        ev_process_exit_status_t exit_status, int exit_code)
+{
+    ASSERT_EQ_PTR(&g_test_process.process, handle);
+    ASSERT_EQ_D32(exit_status, EV_PROCESS_EXIT_NORMAL);
+    ASSERT_EQ_D32(exit_code, 0);
+    g_test_process.flag_exit = 1;
+}
+
+TEST_F(process, exit_callback)
+{
+    int ret;
+    char* argv[] = { g_test_process.self_exe_path, "--help", NULL };
+
+    ev_process_options_t opt;
+    memset(&opt, 0, sizeof(opt));
+    opt.argv = argv;
+    opt.on_exit = _test_process_exit_callback;
+    opt.stdios[1].flag = EV_PROCESS_STDIO_REDIRECT_NULL;
+
+    ret = ev_process_spawn(&g_test_process.loop, &g_test_process.process, &opt);
+    ASSERT_EQ_D32(ret, EV_SUCCESS);
+
+    ASSERT_EQ_D32(ev_loop_run(&g_test_process.loop, EV_LOOP_MODE_DEFAULT), 0);
+
+    ASSERT_EQ_D32(g_test_process.flag_exit, 1);
 }

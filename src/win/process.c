@@ -417,6 +417,15 @@ static VOID NTAPI _ev_process_on_object_exit(PVOID data, BOOLEAN didTimeout)
     ev_async_wakeup(&process->sigchld);
 }
 
+static void _ev_process_init_win(ev_process_t* handle, const ev_process_options_t* opt)
+{
+    handle->exit_cb = opt->on_exit;
+    handle->pid = EV_OS_PID_INVALID;
+    handle->exit_status = EV_PROCESS_EXIT_UNKNOWN;
+    handle->exit_code = 0;
+    handle->backend.wait_handle = INVALID_HANDLE_VALUE;
+}
+
 int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_options_t* opt)
 {
     int ret;
@@ -430,7 +439,8 @@ int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_opt
         return ret;
     }
 
-    handle->backend.wait_handle = INVALID_HANDLE_VALUE;
+    _ev_process_init_win(handle, opt);
+
     ret = ev_async_init(loop, &handle->sigchld, _ev_process_on_sigchild_win);
     if (ret != EV_SUCCESS)
     {

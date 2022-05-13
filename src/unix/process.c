@@ -309,16 +309,16 @@ static void _ev_process_on_sigchild_unix(ev_async_t* async)
 
     assert(pid_ret == handle->pid);
 
-    if (WIFEXITED(pid_ret))
+    if (WIFEXITED(wstatus))
     {
         handle->exit_status = EV_PROCESS_EXIT_NORMAL;
-        handle->exit_code = WEXITSTATUS(pid_ret);
+        handle->exit_code = WEXITSTATUS(wstatus);
     }
 
-    if (WIFSIGNALED(pid_ret))
+    if (WIFSIGNALED(wstatus))
     {
         handle->exit_status = EV_PROCESS_EXIT_SIGNAL;
-        handle->exit_code = WTERMSIG(pid_ret);
+        handle->exit_code = WTERMSIG(wstatus);
     }
 
 fin:
