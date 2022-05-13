@@ -3,8 +3,8 @@
 #include "utils/random.h"
 #include <string.h>
 
-#define TEST_PACK_NUM_221D      8
-#define TEST_BUFFER_SIZE_221D   (32 * 1024 * 1024)
+#define TEST_PACK_NUM_221D      4
+#define TEST_BUFFER_SIZE_221D   (8 * 1024 * 1024)
 
 struct test_221d
 {
