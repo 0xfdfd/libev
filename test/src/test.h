@@ -54,6 +54,9 @@ extern "C" {
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
+#define TEST_PRINT(fmt, ...)   \
+    printf("[%s:%d] " fmt "\n", cutest_pretty_file(__FILE__), __LINE__, ##__VA_ARGS__)
+
 typedef void (*fn_execute)(void);
 
 typedef struct test_execute_token
