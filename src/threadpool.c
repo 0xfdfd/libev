@@ -210,3 +210,16 @@ void ev_threadpool_exit(ev_threadpool_t* pool)
     ev_mutex_exit(&pool->mutex);
     ev_sem_exit(&pool->p2w_sem);
 }
+
+int ev__loop_submit_threadpool(ev_loop_t* loop, ev_threadpool_work_t* work,
+    ev_threadpool_work_type_t type, ev_threadpool_work_cb work_cb,
+    ev_threadpool_work_done_cb done_cb)
+{
+    ev_threadpool_t* pool = loop->threadpool.pool;
+    if (pool == NULL)
+    {
+        return EV_ENOTHREADPOOL;
+    }
+
+    return ev_threadpool_submit(pool, loop, work, type, work_cb, done_cb);
+}

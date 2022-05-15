@@ -62,7 +62,7 @@ static int _ev_loop_init(ev_loop_t* loop)
     }
 
     ev_map_init(&loop->timer.heap, _ev_cmp_timer, NULL);
-    loop->threadpool = NULL;
+    loop->threadpool.pool = NULL;
     return EV_SUCCESS;
 }
 
@@ -449,12 +449,12 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
 
 int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool)
 {
-    if (loop->threadpool != NULL)
+    if (loop->threadpool.pool != NULL)
     {
         return EV_EBUSY;
     }
 
-    loop->threadpool = pool;
+    loop->threadpool.pool = pool;
     return EV_SUCCESS;
 }
 

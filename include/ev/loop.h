@@ -92,10 +92,14 @@ struct ev_loop
 
     struct
     {
+        ev_threadpool_t*            pool;               /**< Thread pool */
+    }threadpool;
+
+    struct
+    {
         unsigned                    b_stop : 1;         /**< Flag: need to stop */
     }mask;
 
-    ev_threadpool_t*                threadpool;         /**< Thread pool */
     ev_loop_plt_t                   backend;            /**< Platform related implementation */
 };
 

@@ -1,5 +1,5 @@
-#ifndef __EV_THREAD_POOL_H__
-#define __EV_THREAD_POOL_H__
+#ifndef __EV_THREADPOOL_H__
+#define __EV_THREADPOOL_H__
 
 #include "ev/loop_forward.h"
 #include "ev/thread.h"

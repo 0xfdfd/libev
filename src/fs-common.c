@@ -1,5 +1,6 @@
 #include "ev-common.h"
 #include "fs-common.h"
+#include "threadpool.h"
 #include "allocator.h"
 
 typedef struct ev_dirent_record_s
@@ -381,7 +382,7 @@ static void _ev_fs_on_mkdir(ev_threadpool_work_t* work)
 
 int ev_file_init(ev_loop_t* loop, ev_file_t* file)
 {
-    if (loop->threadpool == NULL)
+    if (loop->threadpool.pool == NULL)
     {
         return EV_ENOTHREADPOOL;
     }
@@ -412,7 +413,6 @@ void ev_file_exit(ev_file_t* file, ev_file_close_cb cb)
 int ev_file_open(ev_file_t* file, ev_fs_req_t* token, const char* path, int flags, int mode, ev_file_cb cb)
 {
     ev_loop_t* loop = file->base.data.loop;
-    ev_threadpool_t* pool = loop->threadpool;
 
     int ret = _ev_fs_init_req_as_open(token, file, path, flags, mode, cb);
     if (ret != EV_SUCCESS)
@@ -422,8 +422,8 @@ int ev_file_open(ev_file_t* file, ev_fs_req_t* token, const char* path, int flag
 
     ev__handle_active(&file->base);
 
-    ret = ev_threadpool_submit(pool, loop, &token->work_token, EV_THREADPOOL_WORK_IO_FAST,
-        _ev_file_on_open, _ev_fs_on_done);
+    ret = ev__loop_submit_threadpool(loop, &token->work_token,
+        EV_THREADPOOL_WORK_IO_FAST, _ev_file_on_open, _ev_fs_on_done);
     if (ret != EV_SUCCESS)
     {
         _ev_fs_cleanup_req_as_open(token);
@@ -442,7 +442,6 @@ int ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb)
 {
     ev_loop_t* loop = file->base.data.loop;
-    ev_threadpool_t* pool = loop->threadpool;
 
     int ret = _ev_fs_init_req_as_read(req, file, bufs, nbuf, offset, cb);
     if (ret != EV_SUCCESS)
@@ -452,8 +451,8 @@ int ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
 
     ev__handle_active(&file->base);
 
-    ret = ev_threadpool_submit(pool, loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
-        _ev_file_on_read, _ev_fs_on_done);
+    ret = ev__loop_submit_threadpool(loop, &req->work_token,
+        EV_THREADPOOL_WORK_IO_FAST, _ev_file_on_read, _ev_fs_on_done);
     if (ret != EV_SUCCESS)
     {
         _ev_fs_cleanup_req_as_read(req);
@@ -474,7 +473,6 @@ int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
 {
     int ret;
     ev_loop_t* loop = file->base.data.loop;
-    ev_threadpool_t* pool = loop->threadpool;
 
     ret = _ev_fs_init_req_as_write(req, file, bufs, nbuf, offset, cb);
     if (ret != EV_SUCCESS)
@@ -484,8 +482,8 @@ int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
 
     ev__handle_active(&file->base);
 
-    ret = ev_threadpool_submit(pool, loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
-        _ev_file_on_write, _ev_fs_on_done);
+    ret = ev__loop_submit_threadpool(loop, &req->work_token,
+        EV_THREADPOOL_WORK_IO_FAST, _ev_file_on_write, _ev_fs_on_done);
     if (ret != EV_SUCCESS)
     {
         _ev_fs_cleanup_req_as_write(req);
@@ -505,12 +503,11 @@ int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_file_cb cb)
 {
     int ret;
     ev_loop_t* loop = file->base.data.loop;
-    ev_threadpool_t* pool = loop->threadpool;
 
     _ev_fs_init_req_as_fstat(req, file, cb);
     ev__handle_active(&file->base);
 
-    ret = ev_threadpool_submit(pool, loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
+    ret = ev__loop_submit_threadpool(loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
         _ev_file_on_fstat, _ev_fs_on_done);
     if (ret != EV_SUCCESS)
     {
@@ -529,12 +526,6 @@ int ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
     ev_file_cb cb)
 {
     int ret;
-    ev_threadpool_t* pool = loop->threadpool;
-
-    if (pool == NULL)
-    {
-        return EV_ENOTHREADPOOL;
-    }
 
     ret = _ev_fs_init_req_as_readdir(req, path, cb);
     if (ret != EV_SUCCESS)
@@ -542,7 +533,7 @@ int ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
         return ret;
     }
 
-    ret = ev_threadpool_submit(pool, loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
+    ret = ev__loop_submit_threadpool(loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
         _ev_fs_on_readdir, _ev_fs_on_done);
     if (ret != EV_SUCCESS)
     {
@@ -557,12 +548,6 @@ int ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
     ev_file_cb cb)
 {
     int ret;
-    ev_threadpool_t* pool = loop->threadpool;
-
-    if (pool == NULL)
-    {
-        return EV_ENOTHREADPOOL;
-    }
 
     ret = _ev_fs_init_req_as_readfile(req, path, cb);
     if (ret != EV_SUCCESS)
@@ -570,7 +555,7 @@ int ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
         return ret;
     }
 
-    ret = ev_threadpool_submit(pool, loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
+    ret = ev__loop_submit_threadpool(loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
         _ev_fs_on_readfile, _ev_fs_on_done);
     if (ret != EV_SUCCESS)
     {
@@ -585,12 +570,6 @@ int ev_fs_mkdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path, int mode,
     ev_file_cb cb)
 {
     int ret;
-    ev_threadpool_t* pool = loop->threadpool;
-
-    if (pool == NULL)
-    {
-        return EV_ENOTHREADPOOL;
-    }
 
     ret = _ev_fs_init_req_as_mkdir(req, path, mode, cb);
     if (ret != EV_SUCCESS)
@@ -598,7 +577,7 @@ int ev_fs_mkdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path, int mode,
         return ret;
     }
 
-    ret = ev_threadpool_submit(pool, loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
+    ret = ev__loop_submit_threadpool(loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
         _ev_fs_on_mkdir, _ev_fs_on_done);
     if (ret != EV_SUCCESS)
     {
