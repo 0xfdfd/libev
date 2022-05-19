@@ -53,7 +53,7 @@ static void _memcheck_init(void)
     ev_once_execute(&s_runtime.once_token, _memcheck_on_init);
 }
 
-static void* _memcheck_malloc(size_t size)
+void* memcheck_malloc(size_t size)
 {
     _memcheck_init();
 
@@ -75,11 +75,11 @@ static void* _memcheck_malloc(size_t size)
     return memblock->payload;
 }
 
-static void* _memcheck_calloc(size_t nmemb, size_t size)
+void* memcheck_calloc(size_t nmemb, size_t size)
 {
     size_t calloc_size = nmemb * size;
 
-    void* ptr = _memcheck_malloc(calloc_size);
+    void* ptr = memcheck_malloc(calloc_size);
     if (ptr != NULL)
     {
         memset(ptr, 0, calloc_size);
@@ -88,7 +88,7 @@ static void* _memcheck_calloc(size_t nmemb, size_t size)
     return ptr;
 }
 
-static void _memcheck_free(void* ptr)
+void memcheck_free(void* ptr)
 {
     _memcheck_init();
 
@@ -108,17 +108,17 @@ static void _memcheck_free(void* ptr)
     free(memblock);
 }
 
-static void* _memcheck_realloc(void* ptr, size_t size)
+void* memcheck_realloc(void* ptr, size_t size)
 {
     _memcheck_init();
 
     if (ptr == NULL)
     {
-        return _memcheck_malloc(size);
+        return memcheck_malloc(size);
     }
     if (size == 0)
     {
-        _memcheck_free(ptr);
+        memcheck_free(ptr);
         return NULL;
     }
 
@@ -162,7 +162,7 @@ void dump_memcheck(void)
 void setup_memcheck(void)
 {
     ASSERT_EQ_D32(
-        ev_replace_allocator(_memcheck_malloc, _memcheck_calloc, _memcheck_realloc, _memcheck_free),
+        ev_replace_allocator(memcheck_malloc, memcheck_calloc, memcheck_realloc, memcheck_free),
         EV_SUCCESS
     );
 }

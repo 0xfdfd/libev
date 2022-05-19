@@ -7,6 +7,7 @@ extern "C" {
 #include "ev.h"
 #include "cutest.h"
 #include "utils/file.h"
+#include "tools/memcheck.h"
 #if defined(_MSC_VER)
 #   include <windows.h>
 #else

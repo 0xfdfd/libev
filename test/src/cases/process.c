@@ -1,6 +1,6 @@
 #include "test.h"
 
-struct test_process
+typedef struct test_process
 {
     char*           self_exe_path;  /**< Full path to self */
     ev_process_t    process;        /**< Process handle */
@@ -12,46 +12,49 @@ struct test_process
 
     int             flag_stdin_init;
     int             flag_exit;
-};
+}test_process_t;
 
-struct test_process g_test_process;
+test_process_t*     g_test_process;
 static const char* g_test_process_data = "abcdefghijklmnopqrstuvwxyz1234567890";
 
 static void _close_stdin_pipe(void)
 {
-    if (g_test_process.flag_stdin_init)
+    if (g_test_process->flag_stdin_init)
     {
-        g_test_process.flag_stdin_init = 0;
-        ev_pipe_exit(&g_test_process.stdin_pipe, NULL);
+        g_test_process->flag_stdin_init = 0;
+        ev_pipe_exit(&g_test_process->stdin_pipe, NULL);
     }
 }
 
 TEST_FIXTURE_SETUP(process)
 {
-    memset(&g_test_process, 0, sizeof(g_test_process));
+    g_test_process = memcheck_calloc(1, sizeof(*g_test_process));
 
-    g_test_process.self_exe_path = strdup(test_get_self_exe());
-    ASSERT_NE_PTR(g_test_process.self_exe_path, NULL);
+    g_test_process->self_exe_path = strdup(test_get_self_exe());
+    ASSERT_NE_PTR(g_test_process->self_exe_path, NULL);
 
-    ASSERT_EQ_D32(ev_loop_init(&g_test_process.loop), EV_SUCCESS);
-    ASSERT_EQ_D32(ev_pipe_init(&g_test_process.loop, &g_test_process.stdin_pipe, 0), EV_SUCCESS);
-    ASSERT_EQ_D32(ev_pipe_init(&g_test_process.loop, &g_test_process.stdout_pipe, 0), EV_SUCCESS);
-    ASSERT_EQ_D32(ev_pipe_init(&g_test_process.loop, &g_test_process.stderr_pipe, 0), EV_SUCCESS);
+    ASSERT_EQ_D32(ev_loop_init(&g_test_process->loop), EV_SUCCESS);
+    ASSERT_EQ_D32(ev_pipe_init(&g_test_process->loop, &g_test_process->stdin_pipe, 0), EV_SUCCESS);
+    ASSERT_EQ_D32(ev_pipe_init(&g_test_process->loop, &g_test_process->stdout_pipe, 0), EV_SUCCESS);
+    ASSERT_EQ_D32(ev_pipe_init(&g_test_process->loop, &g_test_process->stderr_pipe, 0), EV_SUCCESS);
 
-    g_test_process.flag_stdin_init = 1;
+    g_test_process->flag_stdin_init = 1;
 }
 
 TEST_FIXTURE_TEAREDOWN(process)
 {
     _close_stdin_pipe();
-    ev_pipe_exit(&g_test_process.stdout_pipe, NULL);
-    ev_pipe_exit(&g_test_process.stderr_pipe, NULL);
-    ASSERT_EQ_D32(ev_loop_run(&g_test_process.loop, EV_LOOP_MODE_DEFAULT), 0);
+    ev_pipe_exit(&g_test_process->stdout_pipe, NULL);
+    ev_pipe_exit(&g_test_process->stderr_pipe, NULL);
+    ASSERT_EQ_D32(ev_loop_run(&g_test_process->loop, EV_LOOP_MODE_DEFAULT), 0);
 
-    ASSERT_EQ_D32(ev_loop_exit(&g_test_process.loop), EV_SUCCESS);
+    ASSERT_EQ_D32(ev_loop_exit(&g_test_process->loop), EV_SUCCESS);
 
-    free(g_test_process.self_exe_path);
-    g_test_process.self_exe_path = NULL;
+    free(g_test_process->self_exe_path);
+    g_test_process->self_exe_path = NULL;
+
+    memcheck_free(g_test_process);
+    g_test_process = NULL;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -62,14 +65,14 @@ TEST_F(process, spawn_stdout_ignore)
 {
     int ret;
 
-    char* argv[] = { g_test_process.self_exe_path, "--help", NULL };
+    char* argv[] = { g_test_process->self_exe_path, "--help", NULL };
 
     ev_process_options_t opt;
     memset(&opt, 0, sizeof(opt));
     opt.argv = argv;
     opt.stdios[1].flag = EV_PROCESS_STDIO_REDIRECT_NULL;
 
-    ret = ev_process_spawn(&g_test_process.loop, &g_test_process.process, &opt);
+    ret = ev_process_spawn(&g_test_process->loop, &g_test_process->process, &opt);
     ASSERT_EQ_D32(ret, EV_SUCCESS);
 }
 
@@ -91,27 +94,27 @@ TEST_F(process, redirect_pipe)
     int ret;
 
     /* start as echo server */
-    char* argv[] = { g_test_process.self_exe_path, "--stdio_echo_server", NULL };
+    char* argv[] = { g_test_process->self_exe_path, "--stdio_echo_server", NULL };
 
     ev_process_options_t opt;
     memset(&opt, 0, sizeof(opt));
     opt.argv = argv;
     opt.stdios[0].flag = EV_PROCESS_STDIO_REDIRECT_PIPE;
-    opt.stdios[0].data.pipe = &g_test_process.stdin_pipe;
+    opt.stdios[0].data.pipe = &g_test_process->stdin_pipe;
     opt.stdios[1].flag = EV_PROCESS_STDIO_REDIRECT_PIPE;
-    opt.stdios[1].data.pipe = &g_test_process.stdout_pipe;
+    opt.stdios[1].data.pipe = &g_test_process->stdout_pipe;
     opt.stdios[2].flag = EV_PROCESS_STDIO_REDIRECT_PIPE;
-    opt.stdios[2].data.pipe = &g_test_process.stderr_pipe;
-    ret = ev_process_spawn(&g_test_process.loop, &g_test_process.process, &opt);
+    opt.stdios[2].data.pipe = &g_test_process->stderr_pipe;
+    ret = ev_process_spawn(&g_test_process->loop, &g_test_process->process, &opt);
     ASSERT_EQ_D32(ret, EV_SUCCESS);
 
     static ev_pipe_write_req_t write_req;
     ev_buf_t write_buf = ev_buf_make((char*)g_test_process_data, strlen(g_test_process_data));
-    ret = ev_pipe_write(&g_test_process.stdin_pipe, &write_req, &write_buf, 1,
+    ret = ev_pipe_write(&g_test_process->stdin_pipe, &write_req, &write_buf, 1,
             _test_process_redirect_pipe_on_write_done);
     ASSERT_EQ_D32(ret, EV_SUCCESS);
 
-    ASSERT_EQ_D32(ev_loop_run(&g_test_process.loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_D32(ev_loop_run(&g_test_process->loop, EV_LOOP_MODE_DEFAULT), 0);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -121,16 +124,16 @@ TEST_F(process, redirect_pipe)
 static void _test_process_exit_callback(ev_process_t* handle,
         ev_process_exit_status_t exit_status, int exit_code)
 {
-    ASSERT_EQ_PTR(&g_test_process.process, handle);
+    ASSERT_EQ_PTR(&g_test_process->process, handle);
     ASSERT_EQ_D32(exit_status, EV_PROCESS_EXIT_NORMAL);
     ASSERT_EQ_D32(exit_code, 0);
-    g_test_process.flag_exit = 1;
+    g_test_process->flag_exit = 1;
 }
 
 TEST_F(process, exit_callback)
 {
     int ret;
-    char* argv[] = { g_test_process.self_exe_path, "--help", NULL };
+    char* argv[] = { g_test_process->self_exe_path, "--help", NULL };
 
     ev_process_options_t opt;
     memset(&opt, 0, sizeof(opt));
@@ -138,10 +141,10 @@ TEST_F(process, exit_callback)
     opt.on_exit = _test_process_exit_callback;
     opt.stdios[1].flag = EV_PROCESS_STDIO_REDIRECT_NULL;
 
-    ret = ev_process_spawn(&g_test_process.loop, &g_test_process.process, &opt);
+    ret = ev_process_spawn(&g_test_process->loop, &g_test_process->process, &opt);
     ASSERT_EQ_D32(ret, EV_SUCCESS);
 
-    ASSERT_EQ_D32(ev_loop_run(&g_test_process.loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_D32(ev_loop_run(&g_test_process->loop, EV_LOOP_MODE_DEFAULT), 0);
 
-    ASSERT_EQ_D32(g_test_process.flag_exit, 1);
+    ASSERT_EQ_D32(g_test_process->flag_exit, 1);
 }
