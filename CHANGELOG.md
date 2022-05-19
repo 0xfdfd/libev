@@ -4,6 +4,7 @@
 
 ### Features
 1. Support unlink threadpool
+2. publish #ev_todo_submit()
 
 ### BREAKING CHANGES
 1. change version code rule

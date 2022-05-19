@@ -301,7 +301,7 @@ static void _ev_tcp_process_connect(ev_tcp_t* sock)
     sock->backend.u.client.cb(sock, sock->backend.u.client.stat);
 }
 
-static void _ev_tcp_on_task_done(ev_todo_t* todo)
+static void _ev_tcp_on_task_done(ev_todo_token_t* todo)
 {
     ev_tcp_t* sock = EV_CONTAINER_OF(todo, ev_tcp_t, backend.token);
     sock->backend.mask.todo_pending = 0;
@@ -327,7 +327,7 @@ static void _ev_tcp_submit_stream_todo(ev_tcp_t* sock)
         return;
     }
 
-    ev__loop_submit_task(sock->base.data.loop, &sock->backend.token, _ev_tcp_on_task_done);
+    ev_todo_submit(sock->base.data.loop, &sock->backend.token, _ev_tcp_on_task_done);
     sock->backend.mask.todo_pending = 1;
 }
 

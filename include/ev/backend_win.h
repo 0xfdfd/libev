@@ -89,7 +89,7 @@ typedef struct ev_tcp_backend
 {
     int                         af;                 /**< AF_INET / AF_INET6 */
     ev_iocp_t                   io;                 /**< IOCP */
-    ev_todo_t                   token;              /**< Todo token */
+    ev_todo_token_t             token;              /**< Todo token */
 
     struct
     {
@@ -131,7 +131,13 @@ typedef struct ev_tcp_backend
         }stream;
     }u;
 }ev_tcp_backend_t;
-#define EV_TCP_BACKEND_INIT     { 0, EV_IOCP_INIT, EV_TODO_INVALID, { 0 }, { { EV_LIST_INIT, EV_LIST_INIT } } }
+#define EV_TCP_BACKEND_INIT     {\
+        0,\
+        EV_IOCP_INIT,\
+        EV_TODO_TOKEN_INVALID,\
+        { 0 },\
+        { { EV_LIST_INIT, EV_LIST_INIT } },\
+    }
 
 typedef int (WSAAPI* ev_wsarecvfrom_fn)(
     SOCKET socket,
@@ -147,7 +153,7 @@ typedef int (WSAAPI* ev_wsarecvfrom_fn)(
 typedef struct ev_udp_write_backend
 {
     ev_iocp_t                   io;                 /**< IOCP handle */
-    ev_todo_t                   token;              /**< Todo token */
+    ev_todo_token_t                   token;              /**< Todo token */
     int                         stat;               /**< Write result */
     ev_udp_t*                   owner;              /**< Owner */
 }ev_udp_write_backend_t;
@@ -156,7 +162,7 @@ typedef struct ev_udp_read_backend
 {
     ev_udp_t*                   owner;              /**< Owner */
     ev_iocp_t                   io;                 /**< IOCP handle */
-    ev_todo_t                   token;              /**< Todo token */
+    ev_todo_token_t                   token;              /**< Todo token */
     int                         stat;               /**< Read result */
 }ev_udp_read_backend_t;
 

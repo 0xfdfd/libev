@@ -340,7 +340,7 @@ static void _ev_udp_on_send_complete_win(ev_udp_t* udp, ev_udp_write_t* req)
     _ev_udp_w_user_callback_win(req, req->base.size, req->backend.stat);
 }
 
-static void _ev_udp_on_send_bypass_iocp(ev_todo_t* todo)
+static void _ev_udp_on_send_bypass_iocp(ev_todo_token_t* todo)
 {
     ev_udp_write_t* req = EV_CONTAINER_OF(todo, ev_udp_write_t, backend.token);
     ev_udp_t* udp = req->backend.owner;
@@ -393,7 +393,7 @@ static void _ev_udp_on_recv_iocp_win(ev_iocp_t* iocp, size_t transferred, void* 
     _ev_udp_do_recv_win(udp, req);
 }
 
-static void _ev_udp_on_recv_bypass_iocp_win(ev_todo_t* todo)
+static void _ev_udp_on_recv_bypass_iocp_win(ev_todo_token_t* todo)
 {
     ev_udp_read_t* req = EV_CONTAINER_OF(todo, ev_udp_read_t, backend.token);
     ev_udp_t* udp = req->backend.owner;
@@ -417,7 +417,7 @@ int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
     int ret = WSARecv(udp->sock, &buf, 1, &bytes, &flags, &req->backend.io.overlapped, NULL);
     if (ret == 0 && (udp->base.data.flags & EV_HANDLE_UDP_BYPASS_IOCP))
     {
-        ev__loop_submit_task(udp->base.data.loop, &req->backend.token, _ev_udp_on_recv_bypass_iocp_win);
+        ev_todo_submit(udp->base.data.loop, &req->backend.token, _ev_udp_on_recv_bypass_iocp_win);
         return EV_SUCCESS;
     }
 
@@ -462,7 +462,7 @@ int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr
     {
         req->base.size += req->base.capacity;
         req->backend.stat = EV_SUCCESS;
-        ev__loop_submit_task(udp->base.data.loop, &req->backend.token, _ev_udp_on_send_bypass_iocp);
+        ev_todo_submit(udp->base.data.loop, &req->backend.token, _ev_udp_on_send_bypass_iocp);
         return EV_SUCCESS;
     }
 

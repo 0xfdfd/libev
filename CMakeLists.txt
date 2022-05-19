@@ -24,6 +24,7 @@ add_library(${PROJECT_NAME}
     "src/shmem-common.c"
     "src/threadpool.c"
     "src/timer.c"
+    "src/todo.c"
     "src/udp-common.c"
     "src/utils.c"
     "src/version.c")

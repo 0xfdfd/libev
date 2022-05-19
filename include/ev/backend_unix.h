@@ -190,7 +190,7 @@ typedef struct ev_tcp_backend
         {
             ev_nonblock_io_t    io;                 /**< IO object */
             ev_tcp_connect_cb   cb;                 /**< Connect callback */
-            ev_todo_t           token;              /**< Todo token */
+            ev_todo_token_t     token;              /**< Todo token */
             int                 stat;               /**< Connect result */
         }client;
     }u;

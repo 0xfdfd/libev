@@ -67,7 +67,7 @@ struct ev_loop
 
     struct
     {
-        ev_list_t                   pending;            /**< (#ev_todo_t::node) Pending task */
+        ev_list_t                   pending;            /**< (#ev_todo_token_t::node) Pending task */
     }todo;
 
     struct
@@ -86,7 +86,7 @@ struct ev_loop
         struct
         {
             ev_mutex_t              mutex;              /**< Mutex */
-            ev_list_t               queue;              /**< #ev_todo_t::node */
+            ev_list_t               queue;              /**< #ev_todo_token_t::node */
         }work;
     }wakeup;
 

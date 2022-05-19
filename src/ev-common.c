@@ -1,5 +1,6 @@
 #include "ev-common.h"
 #include "allocator.h"
+#include "todo.h"
 #include <assert.h>
 #include <string.h>
 
@@ -100,16 +101,6 @@ static int _ev_loop_active_timer(ev_loop_t* loop)
     return ret;
 }
 
-static void _ev_loop_active_todo(ev_loop_t* loop)
-{
-    ev_list_node_t* it;
-    while ((it = ev_list_pop_front(&loop->todo.pending)) != NULL)
-    {
-        ev_todo_t* todo = EV_CONTAINER_OF(it, ev_todo_t, node);
-        todo->cb(todo);
-    }
-}
-
 static uint32_t _ev_backend_timeout_timer(ev_loop_t* loop)
 {
     ev_map_node_t* it = ev_map_begin(&loop->timer.heap);
@@ -151,7 +142,7 @@ static uint32_t _ev_backend_timeout(ev_loop_t* loop)
     return _ev_backend_timeout_timer(loop);
 }
 
-static void _ev_to_close(ev_todo_t* todo)
+static void _ev_to_close(ev_todo_token_t* todo)
 {
     ev_handle_t* handle = EV_CONTAINER_OF(todo, ev_handle_t, data.close_queue);
 
@@ -218,11 +209,11 @@ static void _ev_loop_handle_work(ev_loop_t* loop)
 {
     for (;;)
     {
-        ev_todo_t* todo;
+        ev_todo_token_t* todo;
         ev_mutex_enter(&loop->wakeup.work.mutex);
         {
             ev_list_node_t* it = ev_list_pop_front(&loop->wakeup.work.queue);
-            todo = it != NULL ? EV_CONTAINER_OF(it, ev_todo_t, node) : NULL;
+            todo = it != NULL ? EV_CONTAINER_OF(it, ev_todo_token_t, node) : NULL;
         }
         ev_mutex_leave(&loop->wakeup.work.mutex);
 
@@ -300,7 +291,7 @@ void ev__handle_exit(ev_handle_t* handle, int force)
     if (handle->data.close_cb != NULL && force == 0)
     {
         handle->data.flags |= EV_HANDLE_CLOSING;
-        ev__loop_submit_task(handle->data.loop, &handle->data.close_queue, _ev_to_close);
+        ev_todo_submit(handle->data.loop, &handle->data.close_queue, _ev_to_close);
     }
     else
     {
@@ -350,12 +341,6 @@ ev_loop_t* ev__handle_loop(ev_handle_t* handle)
     return handle->data.loop;
 }
 
-void ev__loop_submit_task(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb)
-{
-    token->cb = cb;
-    ev_list_push_back(&loop->todo.pending, &token->node);
-}
-
 int ev_loop_init(ev_loop_t* loop)
 {
     int ret;
@@ -401,7 +386,7 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
         ev__loop_update_time(loop);
 
         _ev_loop_active_timer(loop);
-        _ev_loop_active_todo(loop);
+        ev__process_todo(loop);
 
         if ((ret = _ev_loop_alive(loop)) == 0)
         {
@@ -430,7 +415,7 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
         }
 
         /* Callback maybe added */
-        _ev_loop_active_todo(loop);
+        ev__process_todo(loop);
 
         if (mode != EV_LOOP_MODE_DEFAULT)
         {
@@ -592,7 +577,7 @@ const char* ev_strerror(int err)
     return "Unknown error";
 }
 
-void ev__loop_submit_task_mt(ev_loop_t* loop, ev_todo_t* token, ev_todo_cb cb)
+void ev__loop_submit_task_mt(ev_loop_t* loop, ev_todo_token_t* token, ev_todo_cb cb)
 {
     token->cb = cb;
 

@@ -251,7 +251,7 @@ static int _ev_tcp_is_listening(ev_tcp_t* sock)
     return sock->base.data.flags & EV_HANDLE_TCP_LISTING;
 }
 
-static void _ev_tcp_to_connect(ev_todo_t* todo)
+static void _ev_tcp_to_connect(ev_todo_token_t* todo)
 {
     ev_tcp_t* sock = EV_CONTAINER_OF(todo, ev_tcp_t, backend.u.client.token);
 
@@ -457,7 +457,7 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_tcp_co
     if ((ret = connect(sock->sock, addr, size)) == 0)
     {/* Connect success immediately */
         sock->backend.u.client.stat = EV_SUCCESS;
-        ev__loop_submit_task(loop, &sock->backend.u.client.token, _ev_tcp_to_connect);
+        ev_todo_submit(loop, &sock->backend.u.client.token, _ev_tcp_to_connect);
         return EV_SUCCESS;
     }
 

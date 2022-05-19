@@ -65,7 +65,7 @@ struct ev_threadpool_work
     ev_handle_t                     base;           /**< Base object */
 
     ev_queue_node_t                 node;           /**< List node */
-    ev_todo_t                       token;          /**< Callback token */
+    ev_todo_token_t                 token;          /**< Callback token */
 
     struct
     {

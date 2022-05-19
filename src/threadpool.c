@@ -1,6 +1,6 @@
 #include "ev-common.h"
 
-static void _ev_threadpool_on_loop(ev_todo_t* todo)
+static void _ev_threadpool_on_loop(ev_todo_token_t* todo)
 {
     ev_threadpool_work_t* work = EV_CONTAINER_OF(todo, ev_threadpool_work_t, token);
     ev__handle_exit(&work->base, 0);

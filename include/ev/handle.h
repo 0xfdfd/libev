@@ -53,7 +53,7 @@ struct ev_handle
         unsigned            flags;              /**< Handle flags */
 
         ev_close_cb         close_cb;           /**< Close callback */
-        ev_todo_t           close_queue;        /**< Close queue token */
+        ev_todo_token_t     close_queue;        /**< Close queue token */
     }data;
 };
 
@@ -62,13 +62,13 @@ struct ev_handle
  */
 #define EV_HANDLE_INVALID       \
     {\
-        EV_LIST_NODE_INIT,      /* .node */\
+        EV_LIST_NODE_INIT,          /* .node */\
         {/* .data */\
-            NULL,               /* .loop */\
-            EV_ROLE_UNKNOWN,    /* .role */\
-            0,                  /* .flags */\
-            NULL,               /* .close_cb */\
-            EV_TODO_INVALID     /* .close_queue */\
+            NULL,                   /* .loop */\
+            EV_ROLE_UNKNOWN,        /* .role */\
+            0,                      /* .flags */\
+            NULL,                   /* .close_cb */\
+            EV_TODO_TOKEN_INVALID,  /* .close_queue */\
         }\
     }
 
