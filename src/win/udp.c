@@ -1,6 +1,7 @@
 #include "win/loop.h"
 #include "win/winapi.h"
 #include "udp-common.h"
+#include "handle.h"
 
 static int _ev_udp_setup_socket_attribute_win(ev_loop_t* loop, ev_udp_t* udp, int family)
 {

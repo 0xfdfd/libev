@@ -6,6 +6,7 @@
 #include "unix/tcp.h"
 #include "unix/stream.h"
 #include "pipe-common.h"
+#include "handle.h"
 #include "log.h"
 
 typedef char ev_ipc_msghdr[CMSG_SPACE(sizeof(int))];

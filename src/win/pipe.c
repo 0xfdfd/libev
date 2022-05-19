@@ -2,6 +2,7 @@
 #include "win/tcp.h"
 #include "win/winapi.h"
 #include "pipe-common.h"
+#include "handle.h"
 #include <stdio.h>
 
 static char s_ev_zero[] = "";

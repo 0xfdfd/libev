@@ -1,4 +1,5 @@
 #include "async.h"
+#include "handle.h"
 #include "ev-common.h"
 
 static void _ev_async_on_close(ev_handle_t* handle)

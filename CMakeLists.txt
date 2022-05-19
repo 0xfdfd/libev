@@ -14,6 +14,7 @@ add_library(${PROJECT_NAME}
     "src/async.c"
     "src/ev-common.c"
     "src/fs-common.c"
+    "src/handle.c"
     "src/list.c"
     "src/log.c"
     "src/map.c"

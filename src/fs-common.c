@@ -2,6 +2,7 @@
 #include "fs-common.h"
 #include "threadpool.h"
 #include "allocator.h"
+#include "handle.h"
 
 typedef struct ev_dirent_record_s
 {
