@@ -24,15 +24,7 @@ typedef void(*ev_todo_cb)(ev_todo_token_t* todo);
 struct ev_todo_token
 {
     ev_list_node_t          node;           /**< List node */
-    ev_loop_t*              loop;           /**< Event loop */
     ev_todo_cb              cb;             /**< Callback */
-
-    /**
-     * @brief Work status.
-     * + EV_EINPROGRESS: Submit but not callback yet
-     * + EV_EBUSY: Going to callback
-     */
-    int                     status;         /**< Status */
 };
 
 /**
@@ -42,8 +34,6 @@ struct ev_todo_token
     {\
         EV_LIST_NODE_INIT,\
         NULL,\
-        NULL,\
-        EV_UNKNOWN,\
     }
 
 /**
@@ -54,15 +44,6 @@ struct ev_todo_token
  * @param[in] cb        A callback when the pending task is active
  */
 void ev_todo_submit(ev_loop_t* loop, ev_todo_token_t* token, ev_todo_cb cb);
-
-/**
- * @brief Cancel task submit by #ev_todo_submit().
- * @note MT-UnSafe. You must use this function in the same thread as \p loop in
- *   #ev_todo_submit().
- * @return EV_SUCCESS:  Operation success.
- * @return EV_EBUSY:    Task is already in callback.
- */
-int ev_todo_cancel(ev_todo_token_t* token);
 
 #ifdef __cplusplus
 }

@@ -77,15 +77,6 @@ struct ev_loop
 
     struct
     {
-        struct
-        {
-            ev_mutex_t              mutex;              /**< Mutex */
-            ev_list_t               queue;              /**< #ev_todo_token_t::node */
-        }work;
-    }wakeup;
-
-    struct
-    {
         ev_threadpool_t*            pool;               /**< Thread pool */
         ev_list_node_t              node;               /**< node for #ev_threadpool_t::loop_table */
     }threadpool;

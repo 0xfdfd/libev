@@ -41,6 +41,38 @@ static int _ev_io_finalize_send_req_unix(ev_write_t* req, size_t write_size)
     return EV_EAGAIN;
 }
 
+static int _ev_cmp_io_unix(const ev_map_node_t* key1, const ev_map_node_t* key2, void* arg)
+{
+    (void)arg;
+    ev_nonblock_io_t* io1 = EV_CONTAINER_OF(key1, ev_nonblock_io_t, node);
+    ev_nonblock_io_t* io2 = EV_CONTAINER_OF(key2, ev_nonblock_io_t, node);
+    return io1->data.fd - io2->data.fd;
+}
+
+void ev__init_io(ev_loop_t* loop)
+{
+    int err;
+    ev_map_init(&loop->backend.io, _ev_cmp_io_unix, NULL);
+
+    if ((loop->backend.pollfd = epoll_create(256)) == -1)
+    {
+        BREAK_ABORT();
+    }
+    if ((err = ev__cloexec(loop->backend.pollfd, 1)) != 0)
+    {
+        BREAK_ABORT();
+    }
+}
+
+void ev__exit_io(ev_loop_t* loop)
+{
+    if (loop->backend.pollfd != -1)
+    {
+        close(loop->backend.pollfd);
+        loop->backend.pollfd = -1;
+    }
+}
+
 void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb, void* arg)
 {
     io->data.fd = fd;

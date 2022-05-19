@@ -1,5 +1,6 @@
 #include "unix/loop.h"
 #include "unix/io.h"
+#include "work.h"
 #include <unistd.h>
 #include <errno.h>
 #include <limits.h>
@@ -31,14 +32,6 @@ static void _ev_init_hwtime(void)
 
 err:
     g_ev_loop_unix_ctx.hwtime_clock_id = CLOCK_MONOTONIC;
-}
-
-static int _ev_cmp_io_unix(const ev_map_node_t* key1, const ev_map_node_t* key2, void* arg)
-{
-    (void)arg;
-    ev_nonblock_io_t* io1 = EV_CONTAINER_OF(key1, ev_nonblock_io_t, node);
-    ev_nonblock_io_t* io2 = EV_CONTAINER_OF(key2, ev_nonblock_io_t, node);
-    return io1->data.fd - io2->data.fd;
 }
 
 static ev_nonblock_io_t* _ev_find_io(ev_loop_t* loop, int fd)
@@ -98,67 +91,6 @@ static void _ev_init_once_unix(void)
     ev__init_process_unix();
 }
 
-static void _ev_wakeup_clear_eventfd(ev_loop_t* loop)
-{
-    uint64_t cnt = 0;
-
-    /* EFD_SEMAPHORE not set, the counter's value is reset to zero. */
-    ssize_t ret = read(loop->backend.wakeup.fd, &cnt, sizeof(cnt));
-    if (ret >= 0)
-    {
-        return;
-    }
-
-    /* In case of failure, the errcode should be EAGAIN */
-    int errcode = errno;
-    assert(errcode == EAGAIN); (void)errcode;
-}
-
-static void _ev_loop_on_wakeup_unix(ev_nonblock_io_t* io, unsigned evts, void* arg)
-{
-    (void)evts;
-    ev_loop_t* loop = EV_CONTAINER_OF(io, ev_loop_t, backend.wakeup.io);
-    ev_loop_on_wakeup_cb wakeup_cb = arg;
-
-    _ev_wakeup_clear_eventfd(loop);
-    wakeup_cb(loop);
-}
-
-/**
- * @brief Initialize #ev_loop_t::backend::wakeup
- * @param[out] loop     Event loop
- * @return              #ev_errno_t
- */
-static int _ev_wakeup_init_loop_unix(ev_loop_t* loop, ev_loop_on_wakeup_cb wakeup_cb)
-{
-    int err;
-    loop->backend.wakeup.fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
-    if (loop->backend.wakeup.fd < 0)
-    {
-        err = errno;
-        return ev__translate_sys_error(err);
-    }
-
-    ev__nonblock_io_init(&loop->backend.wakeup.io, loop->backend.wakeup.fd, _ev_loop_on_wakeup_unix, wakeup_cb);
-    ev__nonblock_io_add(loop, &loop->backend.wakeup.io, EPOLLIN);
-
-    return EV_SUCCESS;
-}
-
-/**
- * @brief Destroy #ev_loop_t::backend::wakeup
- * @param[in] loop  Event loop
- */
-static void _ev_wakeup_exit_loop_unix(ev_loop_t* loop)
-{
-    ev__nonblock_io_del(loop, &loop->backend.wakeup.io, EPOLLIN);
-    if (loop->backend.wakeup.fd != -1)
-    {
-        close(loop->backend.wakeup.fd);
-        loop->backend.wakeup.fd = -1;
-    }
-}
-
 uint64_t ev__clocktime(void)
 {
     struct timespec t;
@@ -176,45 +108,19 @@ void ev__init_once_unix(void)
     ev_once_execute(&once, _ev_init_once_unix);
 }
 
-int ev__loop_init_backend(ev_loop_t* loop, ev_loop_on_wakeup_cb wakeup_cb)
+int ev__loop_init_backend(ev_loop_t* loop)
 {
-    int err = EV_SUCCESS;
     ev__init_once_unix();
-
-    ev_map_init(&loop->backend.io, _ev_cmp_io_unix, NULL);
-
-    if ((loop->backend.pollfd = epoll_create(256)) == -1)
-    {
-        return ev__translate_sys_error(errno);
-    }
-
-    if ((err = ev__cloexec(loop->backend.pollfd, 1)) != 0)
-    {
-        goto err_cloexec;
-    }
-
-    if ((err = _ev_wakeup_init_loop_unix(loop, wakeup_cb)) != EV_SUCCESS)
-    {
-        goto err_cloexec;
-    }
+    ev__init_io(loop);
+    ev__init_work(loop);
 
     return EV_SUCCESS;
-
-err_cloexec:
-    close(loop->backend.pollfd);
-    loop->backend.pollfd = -1;
-    return err;
 }
 
 void ev__loop_exit_backend(ev_loop_t* loop)
 {
-    _ev_wakeup_exit_loop_unix(loop);
-
-    if (loop->backend.pollfd != -1)
-    {
-        close(loop->backend.pollfd);
-        loop->backend.pollfd = -1;
-    }
+    ev__exit_work(loop);
+    ev__exit_io(loop);
 }
 
 void ev__poll(ev_loop_t* loop, uint32_t timeout)
@@ -332,29 +238,4 @@ int ev__translate_sys_error(int syserr)
     }
 
     return syserr;
-}
-
-void ev__loop_wakeup(ev_loop_t* loop)
-{
-    static const uint64_t val = 1;
-    ssize_t write_size;
-    do
-    {
-        write_size = write(loop->backend.wakeup.fd, &val, sizeof(val));
-    } while (write_size < 0 && errno == EINTR);
-
-    if (write_size == sizeof(val))
-    {
-        return;
-    }
-
-    int err = errno;
-    if (write_size == -1)
-    {
-        if (err == EV_EAGAIN || err == EWOULDBLOCK)
-        {
-            return;
-        }
-    }
-    abort();
 }

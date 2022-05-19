@@ -1,5 +1,6 @@
 #include "ev-common.h"
 #include "handle.h"
+#include "work.h"
 
 static void _ev_threadpool_on_loop(ev_todo_token_t* todo)
 {
@@ -10,7 +11,7 @@ static void _ev_threadpool_on_loop(ev_todo_token_t* todo)
 
 static void _ev_threadpool_submit_to_loop(ev_threadpool_work_t* work)
 {
-    ev__loop_submit_task_mt(work->data.loop, &work->token, _ev_threadpool_on_loop);
+    ev__work_submit(work->data.loop, &work->token, _ev_threadpool_on_loop);
 }
 
 static ev_threadpool_work_t* _ev_threadpool_get_work_locked(ev_threadpool_t* pool)

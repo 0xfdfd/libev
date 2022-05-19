@@ -9,6 +9,7 @@
 #include "ev/tcp_forward.h"
 #include "ev/udp_forward.h"
 #include "ev/pipe_forward.h"
+#include "ev/mutex.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,10 +59,13 @@ typedef struct ev_async_plt
 typedef struct ev_loop_plt
 {
     HANDLE                      iocp;               /**< IOCP handle */
+
     struct
     {
         ev_iocp_t               io;                 /**< Wakeup token */
-    }wakeup;
+        ev_mutex_t              mutex;              /**< Mutex */
+        ev_list_t               queue;              /**< #ev_todo_token_t::node */
+    } work;
 }ev_loop_plt_t;
 #define EV_LOOP_PLT_INIT        { NULL }
 

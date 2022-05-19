@@ -43,7 +43,8 @@ if(WIN32)
             "src/win/tcp.c"
             "src/win/udp.c"
             "src/win/thread.c"
-            "src/win/winapi.c")
+            "src/win/winapi.c"
+            "src/win/work.c")
 else()
     target_sources(${PROJECT_NAME}
         PRIVATE
@@ -60,7 +61,8 @@ else()
             "src/unix/stream.c"
             "src/unix/tcp.c"
             "src/unix/thread.c"
-            "src/unix/udp.c")
+            "src/unix/udp.c"
+            "src/unix/work.c")
 endif()
 
 # add library dependencies

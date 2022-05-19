@@ -10,6 +10,10 @@
 extern "C" {
 #endif
 
+API_LOCAL void ev__init_io(ev_loop_t* loop);
+
+API_LOCAL void ev__exit_io(ev_loop_t* loop);
+
 /**
  * @brief Initialize io structure
  * @param[out] io   A pointer to the structure

@@ -106,9 +106,11 @@ typedef struct ev_loop_plt
 
     struct
     {
-        int                     fd;                 /**< Wakeup fd */
-        ev_nonblock_io_t        io;                 /**< Wakeup IO */
-    }wakeup;
+        int                     evtfd[2];           /**< [0] for read, [1] for write. */
+        ev_nonblock_io_t        io;
+        ev_mutex_t              mutex;              /**< Mutex */
+        ev_list_t               queue;              /**< #ev_todo_token_t::node */
+    } work;
 }ev_loop_plt_t;
 #define EV_LOOP_PLT_INIT        \
     {\

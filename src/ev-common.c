@@ -3,6 +3,7 @@
 #include "todo.h"
 #include "timer.h"
 #include "handle.h"
+#include "work.h"
 #include <assert.h>
 #include <string.h>
 
@@ -17,28 +18,9 @@ typedef struct ev_strerror_pair
     const char*     info;           /**< Error string */
 }ev_strerror_pair_t;
 
-static int _ev_loop_init_weakup(ev_loop_t* loop)
-{
-    int ret;
-    if ((ret = ev_mutex_init(&loop->wakeup.work.mutex, 0)) != EV_SUCCESS)
-    {
-        return ret;
-    }
-
-    ev_list_init(&loop->wakeup.work.queue);
-
-    return EV_SUCCESS;
-}
-
 static int _ev_loop_init(ev_loop_t* loop)
 {
     memset(loop, 0, sizeof(*loop));
-
-    int ret = _ev_loop_init_weakup(loop);
-    if (ret != EV_SUCCESS)
-    {
-        return ret;
-    }
 
     ev__init_todo(loop);
     ev__init_timer(loop);
@@ -122,35 +104,6 @@ static size_t _ev_calculate_write_size(const ev_write_t* req)
     return total;
 }
 
-static void _ev_loop_handle_work(ev_loop_t* loop)
-{
-    for (;;)
-    {
-        ev_todo_token_t* todo;
-        ev_mutex_enter(&loop->wakeup.work.mutex);
-        {
-            ev_list_node_t* it = ev_list_pop_front(&loop->wakeup.work.queue);
-            todo = it != NULL ? EV_CONTAINER_OF(it, ev_todo_token_t, node) : NULL;
-        }
-        ev_mutex_leave(&loop->wakeup.work.mutex);
-
-        if (todo == NULL)
-        {
-            break;
-        }
-
-        todo->cb(todo);
-    }
-}
-
-static void _ev_loop_on_wakeup(ev_loop_t* loop)
-{
-    if (ev_list_size(&loop->wakeup.work.queue) != 0)
-    {
-        _ev_loop_handle_work(loop);
-    }
-}
-
 void ev__loop_update_time(ev_loop_t* loop)
 {
     loop->hwtime = ev__clocktime();
@@ -196,7 +149,7 @@ int ev_loop_init(ev_loop_t* loop)
         return ret;
     }
 
-    if ((ret = ev__loop_init_backend(loop, _ev_loop_on_wakeup)) != EV_SUCCESS)
+    if ((ret = ev__loop_init_backend(loop)) != EV_SUCCESS)
     {
         return ret;
     }
@@ -422,19 +375,6 @@ const char* ev_strerror(int err)
     default:                    break;
     }
     return "Unknown error";
-}
-
-void ev__loop_submit_task_mt(ev_loop_t* loop, ev_todo_token_t* token, ev_todo_cb cb)
-{
-    token->cb = cb;
-
-    ev_mutex_enter(&loop->wakeup.work.mutex);
-    {
-        ev_list_push_back(&loop->wakeup.work.queue, &token->node);
-    }
-    ev_mutex_leave(&loop->wakeup.work.mutex);
-
-    ev__loop_wakeup(loop);
 }
 
 socklen_t ev__get_addr_len(const struct sockaddr* addr)

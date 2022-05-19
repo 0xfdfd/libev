@@ -9,6 +9,8 @@ static void _async_on_wakeup_unix(ev_nonblock_io_t* io, unsigned evts, void* arg
 {
     (void)evts; (void)arg;
     ev_async_t* handle = EV_CONTAINER_OF(io, ev_async_t, backend.io);
+
+    ev__async_pend(handle->backend.pipfd[0]);
     handle->active_cb(handle);
 }
 
@@ -51,6 +53,69 @@ void ev__async_exit_force(ev_async_t* handle)
     _ev_async_exit(handle, NULL, 1);
 }
 
+int ev__asyc_eventfd(int evtfd[2])
+{
+    int errcode;
+
+#if defined(__linux__)
+    if ((evtfd[0] = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK)) < 0)
+    {
+        errcode = errno;
+        return ev__translate_sys_error(errcode);
+    }
+
+    if ((evtfd[1] = dup(evtfd[0])) < 0)
+    {
+        errcode = errno;
+        close(evtfd[0]);
+        return ev__translate_sys_error(errcode);
+    }
+#else
+    errcode = ev_pipe_make(evtfd, EV_PIPE_NONBLOCK, EV_PIPE_NONBLOCK);
+    if (errcode != EV_SUCCESS)
+    {
+        return errcode;
+    }
+#endif
+
+    return EV_SUCCESS;
+}
+
+void ev__async_post(int wfd)
+{
+    uint64_t val = 1;
+
+    ssize_t write_size;
+    int errcode;
+
+    do
+    {
+        write_size = write(wfd, &val, sizeof(val));
+    }while(write_size == -1 && (errcode = errno) == EINTR);
+
+    if (write_size < 0)
+    {
+        abort();
+    }
+}
+
+void ev__async_pend(int rfd)
+{
+    uint64_t val;
+    int errcode;
+    ssize_t read_size;
+
+    do
+    {
+        read_size = read(rfd, &val, sizeof(val));
+    }while(read_size == -1 && (errcode = errno) == EINTR);
+
+    if (read_size < 0)
+    {
+        abort();
+    }
+}
+
 int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
 {
     int errcode;
@@ -59,29 +124,11 @@ int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
     handle->close_cb = NULL;
     ev__handle_init(loop, &handle->base, EV_ROLE_EV_ASYNC, _ev_async_on_close);
 
-#if defined(__linux__)
-    if ((handle->backend.pipfd[0] = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK)) < 0)
-    {
-        errcode = errno;
-        errcode = ev__translate_sys_error(errcode);
-        goto err_close_handle;
-    }
-
-    handle->backend.pipfd[1] = dup(handle->backend.pipfd[0]);
-    if (handle->backend.pipfd[1] == -1)
-    {
-        errcode = errno;
-        errcode = ev__translate_sys_error(errcode);
-        close(handle->backend.pipfd[0]);
-        goto err_close_handle;
-    }
-#else
-    errcode = ev_pipe_make(handle->backend.pipfd, EV_PIPE_NONBLOCK, EV_PIPE_NONBLOCK);
+    errcode = ev__asyc_eventfd(handle->backend.pipfd);
     if (errcode != EV_SUCCESS)
     {
         goto err_close_handle;
     }
-#endif
 
     ev__nonblock_io_init(&handle->backend.io, handle->backend.pipfd[0],
         _async_on_wakeup_unix, NULL);
@@ -103,18 +150,5 @@ void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
 
 void ev_async_wakeup(ev_async_t* handle)
 {
-    uint64_t val = 1;
-
-    ssize_t write_size;
-    int errcode;
-
-    do
-    {
-        write_size = write(handle->backend.pipfd[1], &val, sizeof(val));
-    }while(write_size == -1 && (errcode = errno) == EINTR);
-
-    if (write_size < 0)
-    {
-        abort();
-    }
+    ev__async_post(handle->backend.pipfd[1]);
 }
