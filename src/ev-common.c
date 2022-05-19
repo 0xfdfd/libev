@@ -455,6 +455,13 @@ int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool)
     }
 
     loop->threadpool.pool = pool;
+
+    ev_mutex_enter(&pool->mutex);
+    {
+        ev_list_push_back(&pool->loop_table, &loop->threadpool.node);
+    }
+    ev_mutex_leave(&pool->mutex);
+
     return EV_SUCCESS;
 }
 

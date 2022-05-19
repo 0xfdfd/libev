@@ -27,17 +27,17 @@ enum ev_threadpool_work_type
     /**
      * @brief CPU work
      */
-    EV_THREADPOOL_WORK_CPU,
+    EV_THREADPOOL_WORK_CPU      = 0,
 
     /**
      * @brief Fast IO. Typically file system operations.
      */
-    EV_THREADPOOL_WORK_IO_FAST,
+    EV_THREADPOOL_WORK_IO_FAST  = 1,
 
     /**
      * @brief Slow IO. Typically network operations.
      */
-    EV_THREADPOOL_WORK_IO_SLOW,
+    EV_THREADPOOL_WORK_IO_SLOW  = 2,
 };
 
 /**
@@ -45,18 +45,16 @@ enum ev_threadpool_work_type
  */
 struct ev_threadpool
 {
-    ev_mutex_t                      mutex;          /**< Thread pool mutex */
-
-    ev_sem_t                        p2w_sem;        /**< Semaphore for pool to worker */
-
     ev_os_thread_t*                 threads;        /**< Threads */
     size_t                          thrnum;         /**< The number of threads */
 
+    ev_list_t                       loop_table;     /**< Loop table */
+
+    ev_mutex_t                      mutex;          /**< Thread pool mutex */
+    ev_sem_t                        p2w_sem;        /**< Semaphore for pool to worker */
     int                             looping;        /**< Looping flag */
 
-    ev_queue_node_t                 cpu_queue;      /**< work queue for #EV_THREADPOOL_WORK_CPU */
-    ev_queue_node_t                 io_fast_queue;  /**< work queue for #EV_THREADPOOL_WORK_IO_FAST */
-    ev_queue_node_t                 io_slow_queue;  /**< work queue for #EV_THREADPOOL_WORK_IO_SLOW */
+    ev_queue_node_t                 work_queue[3];  /**< Work queue. Index is #ev_threadpool_work_type_t */
 };
 
 /**
@@ -68,6 +66,7 @@ struct ev_threadpool_work
 
     ev_queue_node_t                 node;           /**< List node */
     ev_todo_t                       token;          /**< Callback token */
+
     struct
     {
         ev_threadpool_t*            pool;           /**< Thread pool */

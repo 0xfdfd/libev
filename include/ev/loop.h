@@ -93,6 +93,7 @@ struct ev_loop
     struct
     {
         ev_threadpool_t*            pool;               /**< Thread pool */
+        ev_list_node_t              node;               /**< node for #ev_threadpool_t::loop_table */
     }threadpool;
 
     struct
