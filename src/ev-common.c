@@ -1,6 +1,7 @@
 #include "ev-common.h"
 #include "allocator.h"
 #include "todo.h"
+#include "timer.h"
 #include <assert.h>
 #include <string.h>
 
@@ -14,24 +15,6 @@ typedef struct ev_strerror_pair
     int             errn;           /**< Error number */
     const char*     info;           /**< Error string */
 }ev_strerror_pair_t;
-
-static int _ev_cmp_timer(const ev_map_node_t* key1, const ev_map_node_t* key2, void* arg)
-{
-    (void)arg;
-    ev_timer_t* t1 = EV_CONTAINER_OF(key1, ev_timer_t, node);
-    ev_timer_t* t2 = EV_CONTAINER_OF(key2, ev_timer_t, node);
-
-    if (t1->data.active == t2->data.active)
-    {
-        if (t1 == t2)
-        {
-            return 0;
-        }
-        return t1 < t2 ? -1 : 1;
-    }
-
-    return t1->data.active < t2->data.active ? -1 : 1;
-}
 
 static int _ev_loop_init_weakup(ev_loop_t* loop)
 {
@@ -62,7 +45,7 @@ static int _ev_loop_init(ev_loop_t* loop)
         return ret;
     }
 
-    ev_map_init(&loop->timer.heap, _ev_cmp_timer, NULL);
+    ev__init_timer(loop);
     loop->threadpool.pool = NULL;
     return EV_SUCCESS;
 }
@@ -74,31 +57,6 @@ static int _ev_loop_alive(ev_loop_t* loop)
 {
     return ev_list_size(&loop->handles.active_list)
         || ev_list_size(&loop->todo.pending);
-}
-
-static int _ev_loop_active_timer(ev_loop_t* loop)
-{
-    int ret = 0;
-
-    ev_map_node_t* it;
-    while ((it = ev_map_begin(&loop->timer.heap)) != NULL)
-    {
-        ev_timer_t* timer = EV_CONTAINER_OF(it, ev_timer_t, node);
-        if (timer->data.active > loop->hwtime)
-        {
-            break;
-        }
-
-        ev_timer_stop(timer);
-        if (timer->attr.repeat != 0)
-        {
-            ev_timer_start(timer, timer->attr.cb, timer->attr.repeat, timer->attr.repeat);
-        }
-        timer->attr.cb(timer);
-        ret++;
-    }
-
-    return ret;
 }
 
 static uint32_t _ev_backend_timeout_timer(ev_loop_t* loop)
@@ -385,7 +343,7 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
     {
         ev__loop_update_time(loop);
 
-        _ev_loop_active_timer(loop);
+        ev__process_timer(loop);
         ev__process_todo(loop);
 
         if ((ret = _ev_loop_alive(loop)) == 0)
@@ -411,7 +369,7 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
         if (mode == EV_LOOP_MODE_ONCE)
         {
             ev__loop_update_time(loop);
-            _ev_loop_active_timer(loop);
+            ev__process_timer(loop);
         }
 
         /* Callback maybe added */

@@ -24,7 +24,7 @@ typedef enum ev_role
     EV_ROLE_EV__RANGE_BEG   = EV_ROLE_EV_TIMER,
     EV_ROLE_EV__RANGE_END   = EV_ROLE_EV_FILE,
 
-    EV_ROLE_OS_SOCKET       = 100,              /**< OS socket */
+    EV_ROLE_OS_SOCKET       = 100,                  /**< OS socket */
     EV_ROLE_OS__RANGE_BEG   = EV_ROLE_OS_SOCKET,
     EV_ROLE_OS__RANGE_END   = EV_ROLE_OS_SOCKET,
 }ev_role_t;

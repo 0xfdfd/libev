@@ -1,5 +1,24 @@
+#include "timer.h"
 #include <string.h>
 #include "ev-common.h"
+
+static int _ev_cmp_timer(const ev_map_node_t* key1, const ev_map_node_t* key2, void* arg)
+{
+    (void)arg;
+    ev_timer_t* t1 = EV_CONTAINER_OF(key1, ev_timer_t, node);
+    ev_timer_t* t2 = EV_CONTAINER_OF(key2, ev_timer_t, node);
+
+    if (t1->data.active == t2->data.active)
+    {
+        if (t1 == t2)
+        {
+            return 0;
+        }
+        return t1 < t2 ? -1 : 1;
+    }
+
+    return t1->data.active < t2->data.active ? -1 : 1;
+}
 
 static void _ev_timer_on_close(ev_handle_t* handle)
 {
@@ -7,6 +26,31 @@ static void _ev_timer_on_close(ev_handle_t* handle)
     if (timer->close_cb != NULL)
     {
         timer->close_cb(timer);
+    }
+}
+
+void ev__init_timer(ev_loop_t* loop)
+{
+    ev_map_init(&loop->timer.heap, _ev_cmp_timer, NULL);
+}
+
+void ev__process_timer(ev_loop_t* loop)
+{
+    ev_map_node_t* it;
+    while ((it = ev_map_begin(&loop->timer.heap)) != NULL)
+    {
+        ev_timer_t* timer = EV_CONTAINER_OF(it, ev_timer_t, node);
+        if (timer->data.active > loop->hwtime)
+        {
+            break;
+        }
+
+        ev_timer_stop(timer);
+        if (timer->attr.repeat != 0)
+        {
+            ev_timer_start(timer, timer->attr.cb, timer->attr.repeat, timer->attr.repeat);
+        }
+        timer->attr.cb(timer);
     }
 }
 
