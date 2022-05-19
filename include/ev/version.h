@@ -27,7 +27,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           4
+#define EV_VERSION_PREREL           5
 
 /**
  * @brief Version calculate helper macro.
@@ -36,7 +36,7 @@ extern "C" {
  * @param[in] c     Patch version.
  * @param[in] d     Development version.
  */
-#define EV_VERSION(a, b, c, d)      (((a) << 24) + ((b) << 16) + ((c) << 8) + (d))
+#define EV_VERSION(a, b, c, d)      (((a) << 24) + ((b) << 16) + ((c) << 8) + ((d) ? (d) : 255))
 
 /**
  * @brief Current version code.
