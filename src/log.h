@@ -1,7 +1,7 @@
 #ifndef __EV_LOG_INTERNAL_H__
 #define __EV_LOG_INTERNAL_H__
 
-#include "ev-common.h"
+#include "loop.h"
 
 #ifdef __cplusplus
 extern "C" {

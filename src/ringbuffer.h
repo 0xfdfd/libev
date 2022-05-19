@@ -1,7 +1,7 @@
 #ifndef __EV_RINGBUFFER_INTERNAL_H__
 #define __EV_RINGBUFFER_INTERNAL_H__
 
-#include "ev-common.h"
+#include "loop.h"
 #include <stdint.h>
 
 #ifdef __cplusplus

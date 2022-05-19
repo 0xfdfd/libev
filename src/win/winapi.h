@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-#include "ev-common.h"
+#include "loop.h"
 #include <windows.h>
 
 #ifndef _NTDEF_

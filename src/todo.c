@@ -1,5 +1,5 @@
 #include "todo.h"
-#include "ev-common.h"
+#include "loop.h"
 
 void ev__init_todo(ev_loop_t* loop)
 {
