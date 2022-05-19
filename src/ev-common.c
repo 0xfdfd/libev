@@ -45,8 +45,10 @@ static int _ev_loop_init(ev_loop_t* loop)
         return ret;
     }
 
+    ev__init_todo(loop);
     ev__init_timer(loop);
     loop->threadpool.pool = NULL;
+
     return EV_SUCCESS;
 }
 

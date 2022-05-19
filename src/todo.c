@@ -1,6 +1,11 @@
 #include "todo.h"
 #include "ev-common.h"
 
+void ev__init_todo(ev_loop_t* loop)
+{
+    ev_list_init(&loop->todo.pending);
+}
+
 void ev__process_todo(ev_loop_t* loop)
 {
     ev_list_node_t* it;
