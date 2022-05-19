@@ -80,12 +80,6 @@ struct ev_loop
         struct
         {
             ev_mutex_t              mutex;              /**< Mutex */
-            ev_queue_node_t         queue;              /**< Async handle queue. #ev_async_t::backend::node */
-        }async;
-
-        struct
-        {
-            ev_mutex_t              mutex;              /**< Mutex */
             ev_list_t               queue;              /**< #ev_todo_token_t::node */
         }work;
     }wakeup;

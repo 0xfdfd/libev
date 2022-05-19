@@ -11,7 +11,6 @@ option(EV_ENABLE_COVERAGE "Enable code coverage. GCC/Clang only" OFF)
 # add source files
 add_library(${PROJECT_NAME}
     "src/allocator.c"
-    "src/async.c"
     "src/ev-common.c"
     "src/fs-common.c"
     "src/handle.c"
@@ -32,6 +31,7 @@ add_library(${PROJECT_NAME}
 if(WIN32)
     target_sources(${PROJECT_NAME}
         PRIVATE
+            "src/win/async.c"
             "src/win/fs.c"
             "src/win/loop.c"
             "src/win/mutex.c"
@@ -47,6 +47,7 @@ if(WIN32)
 else()
     target_sources(${PROJECT_NAME}
         PRIVATE
+            "src/unix/async.c"
             "src/unix/fs.c"
             "src/unix/io.c"
             "src/unix/loop.c"

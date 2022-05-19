@@ -87,6 +87,18 @@ struct ev_nonblock_io
         }\
     }
 
+typedef struct ev_async_plt
+{
+    /**
+     * @brief pipefd for wakeup.
+     * To wakeup, write data to pipfd[1].
+     */
+    int                         pipfd[2];
+
+    ev_nonblock_io_t            io;
+}ev_async_plt_t;
+#define EV_ASYNC_PLT_INVALID    { { -1, -1 }, EV_NONBLOCK_IO_INVALID }
+
 typedef struct ev_loop_plt
 {
     int                         pollfd;             /**< Multiplexing */

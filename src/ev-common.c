@@ -20,17 +20,11 @@ typedef struct ev_strerror_pair
 static int _ev_loop_init_weakup(ev_loop_t* loop)
 {
     int ret;
-    if ((ret = ev_mutex_init(&loop->wakeup.async.mutex, 0)) != EV_SUCCESS)
-    {
-        return ret;
-    }
     if ((ret = ev_mutex_init(&loop->wakeup.work.mutex, 0)) != EV_SUCCESS)
     {
-        ev_mutex_exit(&loop->wakeup.async.mutex);
         return ret;
     }
 
-    ev_queue_init(&loop->wakeup.async.queue);
     ev_list_init(&loop->wakeup.work.queue);
 
     return EV_SUCCESS;
@@ -128,33 +122,6 @@ static size_t _ev_calculate_write_size(const ev_write_t* req)
     return total;
 }
 
-static void _ev_loop_handle_async(ev_loop_t* loop)
-{
-    for (;;)
-    {
-        ev_async_t* async;
-        ev_mutex_enter(&loop->wakeup.async.mutex);
-        {
-            ev_queue_node_t* it = ev_queue_pop_front(&loop->wakeup.async.queue);
-            async = it != NULL ? EV_CONTAINER_OF(it, ev_async_t, node) : NULL;
-        }
-        ev_mutex_leave(&loop->wakeup.async.mutex);
-
-        if (async == NULL)
-        {
-            break;
-        }
-
-        ev_mutex_enter(&async->data.mutex);
-        {
-            async->data.pending = 0;
-        }
-        ev_mutex_leave(&async->data.mutex);
-
-        async->data.active_cb(async);
-    }
-}
-
 static void _ev_loop_handle_work(ev_loop_t* loop)
 {
     for (;;)
@@ -178,10 +145,6 @@ static void _ev_loop_handle_work(ev_loop_t* loop)
 
 static void _ev_loop_on_wakeup(ev_loop_t* loop)
 {
-    if (ev_queue_head(&loop->wakeup.async.queue) != NULL)
-    {
-        _ev_loop_handle_async(loop);
-    }
     if (ev_list_size(&loop->wakeup.work.queue) != 0)
     {
         _ev_loop_handle_work(loop);

@@ -48,6 +48,13 @@ struct ev_iocp
 };
 #define EV_IOCP_INIT            { NULL, NULL, { 0, 0, { { 0, 0 } }, NULL } }
 
+typedef struct ev_async_plt
+{
+    LONG volatile               async_sent;
+    ev_iocp_t                   io;
+}ev_async_plt_t;
+#define EV_ASYNC_PLT_INVALID    { 0, EV_IOCP_INIT }
+
 typedef struct ev_loop_plt
 {
     HANDLE                      iocp;               /**< IOCP handle */
