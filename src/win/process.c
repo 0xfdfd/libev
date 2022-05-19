@@ -342,20 +342,41 @@ static void _ev_process_on_async_exit(ev_async_t* async)
     }
 }
 
-static void _ev_process_on_sigchild_win(ev_async_t* async)
+static void _ev_process_unregister_wait_handle(ev_process_t* process)
 {
-    ev_process_t* process = EV_CONTAINER_OF(async, ev_process_t, sigchld);
-
-    if (process->backend.wait_handle != INVALID_HANDLE_VALUE)
+    DWORD status;
+    if (process->backend.wait_handle == INVALID_HANDLE_VALUE)
     {
-        if (!UnregisterWait(process->backend.wait_handle))
-        {
-            BREAK_ABORT();
-        }
-        process->backend.wait_handle = INVALID_HANDLE_VALUE;
+        return;
     }
 
+    if (!UnregisterWait(process->backend.wait_handle))
+    {
+        status = GetLastError();
+
+        /**
+         * https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-unregisterwait
+         * According to remarks, ERROR_IO_PENDING does not means error.
+         */
+        if (status == ERROR_IO_PENDING)
+        {
+            goto fin;
+        }
+        process->exit_code = ev__translate_sys_error(status);
+        BREAK_ABORT();
+    }
+
+fin:
+    process->backend.wait_handle = INVALID_HANDLE_VALUE;
+}
+
+static void _ev_process_on_sigchild_win(ev_async_t* async)
+{
     DWORD status;
+    ev_process_t* process = EV_CONTAINER_OF(async, ev_process_t, sigchld);
+
+    _ev_process_unregister_wait_handle(process);
+
     process->exit_status = EV_PROCESS_EXIT_NORMAL;
     if (GetExitCodeProcess(process->pid, &status))
     {
