@@ -2,6 +2,12 @@
 
 ## v0.0.6
 
+### Features
+1. Support unlink threadpool
+
+### BREAKING CHANGES
+1. change version code rule
+
 
 ## v0.0.5 (2022/05/13)
 
