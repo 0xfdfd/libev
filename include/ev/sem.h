@@ -28,9 +28,8 @@ typedef struct ev_sem_s
  * @brief Initializes the unnamed semaphore at the address pointed to by \p sem.
  * @param[out] sem      Semaphore to be initialized.
  * @param[in] value     Initial value
- * @return              #ev_errno_t
  */
-int ev_sem_init(ev_sem_t* sem, unsigned value);
+void ev_sem_init(ev_sem_t* sem, unsigned value);
 
 /**
  * @brief Destroy the unnamed semaphore at the address pointed to by \p sem.

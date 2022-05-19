@@ -119,11 +119,7 @@ int ev_threadpool_init(ev_threadpool_t* pool, const ev_thread_opt_t* opt,
     pool->thrnum = num;
     pool->looping = 1;
     ev_mutex_init(&pool->mutex, 0);
-
-    if ((ret = ev_sem_init(&pool->p2w_sem, 0)) != EV_SUCCESS)
-    {
-        goto err_release_mutex;
-    }
+    ev_sem_init(&pool->p2w_sem, 0);
 
     for (idx = 0; idx < num; idx++)
     {
@@ -143,7 +139,6 @@ err_release_thread:
         ev_thread_exit(&storage[i], EV_INFINITE_TIMEOUT);
     }
     ev_sem_exit(&pool->p2w_sem);
-err_release_mutex:
     ev_mutex_exit(&pool->mutex);
     return ret;
 }

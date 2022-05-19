@@ -9,6 +9,7 @@
 ### BREAKING CHANGES
 1. change version code rule.
 2. remove return value for `ev_mutex_init()`.
+3. remove return value for `ev_sem_init()`.
 
 ### Bug Fixes
 1. fix: crash when child process exit

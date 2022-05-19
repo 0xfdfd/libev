@@ -1,16 +1,13 @@
 #include "ev/sem.h"
 #include "loop.h"
 
-int ev_sem_init(ev_sem_t* sem, unsigned value)
+void ev_sem_init(ev_sem_t* sem, unsigned value)
 {
     sem->u.r = CreateSemaphore(NULL, value, INT_MAX, NULL);
     if (sem->u.r == NULL)
     {
-        int err = GetLastError();
-        return ev__translate_sys_error(err);
+        abort();
     }
-
-    return EV_SUCCESS;
 }
 
 void ev_sem_exit(ev_sem_t* sem)

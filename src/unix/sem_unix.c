@@ -1,12 +1,11 @@
 #include "loop.h"
 
-int ev_sem_init(ev_sem_t* sem, unsigned value)
+void ev_sem_init(ev_sem_t* sem, unsigned value)
 {
     if (sem_init(&sem->u.r, 0, value))
     {
-        return ev__translate_sys_error(errno);
+        abort();
     }
-    return 0;
 }
 
 void ev_sem_exit(ev_sem_t* sem)
