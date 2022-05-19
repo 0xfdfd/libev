@@ -118,11 +118,8 @@ int ev_threadpool_init(ev_threadpool_t* pool, const ev_thread_opt_t* opt,
     pool->threads = storage;
     pool->thrnum = num;
     pool->looping = 1;
+    ev_mutex_init(&pool->mutex, 0);
 
-    if ((ret = ev_mutex_init(&pool->mutex, 0)) != EV_SUCCESS)
-    {
-        return ret;
-    }
     if ((ret = ev_sem_init(&pool->p2w_sem, 0)) != EV_SUCCESS)
     {
         goto err_release_mutex;

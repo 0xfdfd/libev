@@ -41,9 +41,8 @@ typedef struct ev_mutex
  * @param[in] recursive Force recursive mutex. Set to non-zero to force create a
  *   recursive mutex. However, a value of zero does not means it is a non-
  *   recursive mutex, it is implementation depend.
- * @return              #ev_errno_t
  */
-int ev_mutex_init(ev_mutex_t* handle, int recursive);
+void ev_mutex_init(ev_mutex_t* handle, int recursive);
 
 /**
  * @brief Destroy the mutex object referenced by \p handle

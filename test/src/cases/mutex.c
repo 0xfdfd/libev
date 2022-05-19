@@ -9,7 +9,7 @@ struct test_3b3b g_test_3b3b;
 
 TEST_FIXTURE_SETUP(mutex)
 {
-    ASSERT_EQ_D32(ev_mutex_init(&g_test_3b3b.mutex_r, 1), 0);
+    ev_mutex_init(&g_test_3b3b.mutex_r, 1);
 }
 
 TEST_FIXTURE_TEAREDOWN(mutex)

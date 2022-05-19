@@ -32,11 +32,7 @@ static void _on_work_unix(ev_nonblock_io_t* io, unsigned evts, void* arg)
 
 void ev__init_work(ev_loop_t* loop)
 {
-    int ret;
-    if ((ret = ev_mutex_init(&loop->backend.work.mutex, 0)) != 0)
-    {
-        BREAK_ABORT();
-    }
+    ev_mutex_init(&loop->backend.work.mutex, 0);
 
     ev__asyc_eventfd(loop->backend.work.evtfd);
     ev_list_init(&loop->backend.work.queue);

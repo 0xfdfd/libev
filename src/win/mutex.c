@@ -1,10 +1,9 @@
 #include "ev-common.h"
 
-int ev_mutex_init(ev_mutex_t* handle, int recursive)
+void ev_mutex_init(ev_mutex_t* handle, int recursive)
 {
     (void)recursive;
     InitializeCriticalSection(&handle->u.r);
-    return 0;
 }
 
 void ev_mutex_exit(ev_mutex_t* handle)

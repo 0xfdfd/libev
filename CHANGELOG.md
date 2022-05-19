@@ -7,7 +7,8 @@
 2. publish #ev_todo_submit()
 
 ### BREAKING CHANGES
-1. change version code rule
+1. change version code rule.
+2. remove return value for `ev_mutex_init()`.
 
 ### Bug Fixes
 1. fix: crash when child process exit

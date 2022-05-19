@@ -29,12 +29,8 @@ static void _on_work_win(ev_iocp_t* iocp, size_t transferred, void* arg)
 
 void ev__init_work(ev_loop_t* loop)
 {
-    int ret;
     ev__iocp_init(&loop->backend.work.io, _on_work_win, NULL);
-    if ((ret = ev_mutex_init(&loop->backend.work.mutex, 0)) != EV_SUCCESS)
-    {
-        BREAK_ABORT();
-    }
+    ev_mutex_init(&loop->backend.work.mutex, 0);
     ev_list_init(&loop->backend.work.queue);
 }
 

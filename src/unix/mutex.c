@@ -1,13 +1,14 @@
 #include "ev-common.h"
 
-static int _ev_mutex_init_unix(ev_os_mutex_t* handle)
+static void _ev_mutex_init_unix(ev_os_mutex_t* handle)
 {
 #if defined(NDEBUG) || !defined(PTHREAD_MUTEX_ERRORCHECK)
-    int err = pthread_mutex_init(handle, NULL);
-    return ev__translate_sys_error(err);
+    if (pthread_mutex_init(handle, NULL) != 0)
+    {
+        abort();
+    }
 #else
     pthread_mutexattr_t attr;
-    int err;
 
     if (pthread_mutexattr_init(&attr))
     {
@@ -19,21 +20,21 @@ static int _ev_mutex_init_unix(ev_os_mutex_t* handle)
         abort();
     }
 
-    err = pthread_mutex_init(handle, &attr);
+    if (pthread_mutex_init(handle, &attr) != 0)
+    {
+        abort();
+    }
 
     if (pthread_mutexattr_destroy(&attr))
     {
         abort();
     }
-
-    return ev__translate_sys_error(err);
 #endif
 }
 
-static int _ev_mutex_init_recursive_unix(ev_os_mutex_t* handle)
+static void _ev_mutex_init_recursive_unix(ev_os_mutex_t* handle)
 {
     pthread_mutexattr_t attr;
-    int err;
 
     if (pthread_mutexattr_init(&attr))
     {
@@ -45,19 +46,27 @@ static int _ev_mutex_init_recursive_unix(ev_os_mutex_t* handle)
         abort();
     }
 
-    err = pthread_mutex_init(handle, &attr);
-    if (pthread_mutexattr_destroy(&attr))
+    if (pthread_mutex_init(handle, &attr) != 0)
     {
         abort();
     }
 
-    return ev__translate_sys_error(err);
+    if (pthread_mutexattr_destroy(&attr))
+    {
+        abort();
+    }
 }
 
-int ev_mutex_init(ev_mutex_t* handle, int recursive)
+void ev_mutex_init(ev_mutex_t* handle, int recursive)
 {
-    return recursive ?
-        _ev_mutex_init_recursive_unix(&handle->u.r) : _ev_mutex_init_unix(&handle->u.r);
+    if (recursive)
+    {
+        _ev_mutex_init_recursive_unix(&handle->u.r);
+    }
+    else
+    {
+        _ev_mutex_init_unix(&handle->u.r);
+    }
 }
 
 void ev_mutex_exit(ev_mutex_t* handle)
