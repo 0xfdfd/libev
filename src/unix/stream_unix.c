@@ -1,3 +1,5 @@
+#include "ev/errno.h"
+#include "ev/request.h"
 #include "stream_unix.h"
 
 static ssize_t _ev_stream_do_write_writev_unix(int fd, struct iovec* iov, int iovcnt, void* arg)

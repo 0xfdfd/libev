@@ -1,9 +1,13 @@
+#include "ev/errno.h"
+#include "ev/request.h"
 #include "loop.h"
 #include "allocator.h"
 #include "todo.h"
 #include "timer.h"
 #include "handle.h"
 #include "work.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <string.h>
 
@@ -232,24 +236,6 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
     return ret;
 }
 
-int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool)
-{
-    if (loop->threadpool.pool != NULL)
-    {
-        return EV_EBUSY;
-    }
-
-    loop->threadpool.pool = pool;
-
-    ev_mutex_enter(&pool->mutex);
-    {
-        ev_list_push_back(&pool->loop_table, &loop->threadpool.node);
-    }
-    ev_mutex_leave(&pool->mutex);
-
-    return EV_SUCCESS;
-}
-
 int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf)
 {
     req->nbuf = nbuf;
@@ -315,6 +301,13 @@ void ev__read_exit(ev_read_t* req)
     }
     req->data.bufs = NULL;
     req->data.nbuf = 0;
+}
+
+void ev__abort(const char* file, int line)
+{
+    fprintf(stderr, "%s:%d: abort\n", file, line);
+    fflush(NULL);
+    abort();
 }
 
 const char* ev_strerror(int err)

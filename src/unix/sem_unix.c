@@ -1,10 +1,12 @@
+#include "ev/errno.h"
+#include "ev/sem.h"
 #include "loop.h"
 
 void ev_sem_init(ev_sem_t* sem, unsigned value)
 {
     if (sem_init(&sem->u.r, 0, value))
     {
-        abort();
+        EV_ABORT();
     }
 }
 
@@ -12,7 +14,7 @@ void ev_sem_exit(ev_sem_t* sem)
 {
     if (sem_destroy(&sem->u.r))
     {
-        abort();
+        EV_ABORT();
     }
 }
 
@@ -20,7 +22,7 @@ void ev_sem_post(ev_sem_t* sem)
 {
     if (sem_post(&sem->u.r))
     {
-        abort();
+        EV_ABORT();
     }
 }
 
@@ -34,7 +36,7 @@ void ev_sem_wait(ev_sem_t* sem)
 
     if (r)
     {
-        abort();
+        EV_ABORT();
     }
 }
 
@@ -53,7 +55,7 @@ int ev_sem_try_wait(ev_sem_t* sem)
         {
             return EV_EAGAIN;
         }
-        abort();
+        EV_ABORT();
     }
 
     return 0;

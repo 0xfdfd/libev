@@ -1,3 +1,4 @@
+#include "ev/errno.h"
 #include "thread_win.h"
 #include "loop_win.h"
 #include <process.h>
@@ -28,7 +29,7 @@ static unsigned __stdcall _ev_thread_proxy_proc_win(void* lpThreadParameter)
     ev_tls_set(&g_ev_loop_win_ctx.thread.thread_key, (void*)p_helper->thread_id);
     if (!ReleaseSemaphore(p_helper->start_sem, 1, NULL))
     {
-        abort();
+        EV_ABORT();
     }
 
     helper.cb(helper.arg);
@@ -40,7 +41,7 @@ void ev__thread_init_win(void)
     int ret = ev_tls_init(&g_ev_loop_win_ctx.thread.thread_key);
     if (ret != EV_SUCCESS)
     {
-        abort();
+        EV_ABORT();
     }
 }
 
@@ -71,7 +72,7 @@ int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
     if (ResumeThread(helper.thread_id) == -1)
     {
         err = GetLastError();
-        abort();
+        EV_ABORT();
     }
 
     int ret = WaitForSingleObject(helper.start_sem, INFINITE);
@@ -97,7 +98,8 @@ int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
     case WAIT_TIMEOUT:
         return EV_ETIMEDOUT;
     case WAIT_ABANDONED:
-        abort();    // should not happen
+        EV_ABORT();    // should not happen
+        break;
     case WAIT_FAILED:
         ret = GetLastError();
         return ret == WAIT_TIMEOUT ? EV_ETIMEDOUT : ev__translate_sys_error(ret);
@@ -148,7 +150,7 @@ void ev_tls_exit(ev_tls_t* tls)
 {
     if (TlsFree(tls->tls) == FALSE)
     {
-        abort();
+        EV_ABORT();
     }
     tls->tls = TLS_OUT_OF_INDEXES;
 }
@@ -157,7 +159,7 @@ void ev_tls_set(ev_tls_t* tls, void* val)
 {
     if (TlsSetValue(tls->tls, val) == FALSE)
     {
-        abort();
+        EV_ABORT();
     }
 }
 
@@ -169,7 +171,7 @@ void* ev_tls_get(ev_tls_t* tls)
         int err = GetLastError();
         if (err != ERROR_SUCCESS)
         {
-            abort();
+            EV_ABORT();
         }
     }
     return val;

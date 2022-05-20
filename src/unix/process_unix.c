@@ -1,6 +1,8 @@
 #define _GNU_SOURCE
+#include "ev/errno.h"
 #include "loop_unix.h"
 #include "io_unix.h"
+#include "pipe.h"
 #include "process_unix.h"
 #include <stdlib.h>
 #include <string.h>
@@ -237,7 +239,7 @@ static int _ev_spawn_parent(ev_process_t* handle, spawn_helper_t* spawn_helper)
     }
 
     /* unknown error */
-    abort();
+    EV_ABORT();
 
     return EV_UNKNOWN;
 }
@@ -252,14 +254,14 @@ void ev__init_process_unix(void)
 
     if (sigfillset(&sa.sa_mask) != 0)
     {
-        abort();
+        EV_ABORT();
     }
 
     sa.sa_handler = ev_process_sigchld;
 
     if (sigaction(SIGCHLD, &sa, NULL) != 0)
     {
-        abort();
+        EV_ABORT();
     }
 }
 
@@ -564,7 +566,7 @@ int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_opt
     }
 
     /* should not reach here. */
-    abort();
+    EV_ABORT();
     return EV_UNKNOWN;
 
 finish:

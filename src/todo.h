@@ -2,7 +2,7 @@
 #define __EV_TODO_INTERNAL_H__
 
 #include "ev/todo.h"
-#include "ev-platform.h"
+#include "defs.h"
 
 #ifdef __cplusplus
 extern "C" {

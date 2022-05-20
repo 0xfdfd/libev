@@ -4,8 +4,6 @@
 #ifndef __EV_DEFINES_H__
 #define __EV_DEFINES_H__
 
-#include <stddef.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif

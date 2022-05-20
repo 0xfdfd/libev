@@ -2,7 +2,7 @@
 #define __EV_TIMER_INTERNAL_H__
 
 #include "ev/timer.h"
-#include "ev-platform.h"
+#include "defs.h"
 
 #ifdef __cplusplus
 extern "C" {

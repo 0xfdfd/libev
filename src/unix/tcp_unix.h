@@ -2,7 +2,7 @@
 #define __EV_TCP_UNIX_H__
 
 #include "ev/tcp.h"
-#include "ev-platform.h"
+#include "defs.h"
 
 #ifdef __cplusplus
 extern "C" {

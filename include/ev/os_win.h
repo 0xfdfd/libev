@@ -11,6 +11,8 @@
 #include <windows.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

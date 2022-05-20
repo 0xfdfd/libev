@@ -2,6 +2,8 @@
 #define __EV_TCP_H__
 
 #include "ev/backend.h"
+#include "ev/handle.h"
+#include "ev/request.h"
 
 #ifdef __cplusplus
 extern "C" {

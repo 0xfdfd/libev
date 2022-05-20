@@ -1,3 +1,4 @@
+#include "ev/errno.h"
 #include "loop.h"
 
 void ev_mutex_init(ev_mutex_t* handle, int recursive)

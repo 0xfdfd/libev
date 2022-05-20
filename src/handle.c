@@ -1,3 +1,4 @@
+#include "loop.h"
 #include "handle.h"
 #include <assert.h>
 

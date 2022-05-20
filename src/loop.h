@@ -1,65 +1,14 @@
-#ifndef __EV_LOOP_COMMON_H__
-#define __EV_LOOP_COMMON_H__
+#ifndef __EV_LOOP_INTERNAL_H__
+#define __EV_LOOP_INTERNAL_H__
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "ev.h"
-#include "ev-platform.h"
-#include <stdlib.h>
-#include <assert.h>
-
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
-#define EV_MIN(a, b)    ((a) < (b) ? (a) : (b))
-
-/**
- * @brief Align \p size to \p align, who's value is larger or equal to \p size
- *   and can be divided with no remainder by \p align.
- * @note \p align must equal to 2^n
- */
-#define ALIGN_SIZE(size, align) \
-    (((uintptr_t)(size) + ((uintptr_t)(align) - 1)) & ~((uintptr_t)(align) - 1))
-
-#define ACCESS_ONCE(TYPE, var)  (*(volatile TYPE*) &(var))
-
-/**
- * @brief exchange value of \p v1 and \p v2.
- * @note \p v1 and \p v2 must have the same type.
- * @param[in] TYPE      Type of \p v1 and \p v2.
- * @param[in,out] v1    value1
- * @param[in,out] v2    value2
- */
-#define EXCHANGE_VALUE(TYPE, v1, v2)    \
-    do {\
-        TYPE _tmp = v1;\
-        v1 = v2;\
-        v2 = _tmp;\
-    } while(0)
-
-/**
- * @def EV_COUNT_ARG
- * @brief Count the number of arguments in macro
- */
-#ifdef _MSC_VER // Microsoft compilers
-#   define EV_COUNT_ARG(...)  _EV_INTERNAL_EXPAND_ARGS_PRIVATE(_EV_INTERNAL_ARGS_AUGMENTER(__VA_ARGS__))
-/**@cond DOXYGEN_INTERNAL*/
-#   define _EV_INTERNAL_ARGS_AUGMENTER(...) unused, __VA_ARGS__
-#   define _EV_INTERNAL_EXPAND_ARGS_PRIVATE(...) EAF_EXPAND(_EV_INTERNAL_GET_ARG_COUNT_PRIVATE(__VA_ARGS__, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0))
-#   define _EV_INTERNAL_GET_ARG_COUNT_PRIVATE(_1_, _2_, _3_, _4_, _5_, _6_, _7_, _8_, _9_, _10_, _11_, _12_, _13_, _14_, _15_, _16_, count, ...) count
-/**@endcond*/
-#else // Non-Microsoft compilers
-#   define EV_COUNT_ARG(...) _EV_INTERNAL_GET_ARG_COUNT_PRIVATE(0, ## __VA_ARGS__, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
-/**@cond DOXYGEN_INTERNAL*/
-#   define _EV_INTERNAL_GET_ARG_COUNT_PRIVATE(_0, _1_, _2_, _3_, _4_, _5_, _6_, _7_, _8_, _9_, _10_, _11_, _12_, _13_, _14_, _15_, _16_, count, ...) count
-/**@endcond*/
-#endif
-
-#define ENSURE_LAYOUT(TYPE_A, FIELD_A_1, FIELD_A_2, TYPE_B, FIELD_B_1, FIELD_B_2)   \
-    assert(sizeof(TYPE_A) == sizeof(TYPE_B));\
-    assert(offsetof(TYPE_A, FIELD_A_1) == offsetof(TYPE_B, FIELD_B_1));\
-    assert(sizeof(((TYPE_A*)0)->FIELD_A_1) == sizeof(((TYPE_B*)0)->FIELD_B_1));\
-    assert(offsetof(TYPE_A, FIELD_A_2) == offsetof(TYPE_B, FIELD_B_2));\
-    assert(sizeof(((TYPE_A*)0)->FIELD_A_2) == sizeof(((TYPE_B*)0)->FIELD_B_2))
+#include "ev/loop.h"
+#include "ev/handle.h"
+#include "ev/buf.h"
+#include "ev/request.h"
+#include "defs.h"
 
 typedef enum ev_ipc_frame_flag
 {
@@ -133,6 +82,44 @@ API_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf);
  * @param[in] req   read request
  */
 API_LOCAL void ev__read_exit(ev_read_t* req);
+
+/**
+ * @brief Initialize backend
+ * @param[in] loop      loop handler
+ * @return              #ev_errno_t
+ */
+API_LOCAL int ev__loop_init_backend(ev_loop_t* loop);
+
+/**
+ * @brief Destroy backend
+ * @param[in] loop  loop handler
+ */
+API_LOCAL void ev__loop_exit_backend(ev_loop_t* loop);
+
+/**
+ * @brief Wait for IO event and process
+ * @param[in] loop  loop handler
+ * @param[in] timeout   timeout in milliseconds
+ */
+API_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout);
+
+/**
+ * @brief Translate system error into #ev_errno_t
+ * @param[in] syserr    System error
+ * @return              #ev_errno_t
+ */
+API_LOCAL int ev__translate_sys_error(int syserr);
+
+/**
+ * @brief Get clocktime
+ * @return      Clock time
+ */
+API_LOCAL uint64_t ev__clocktime(void);
+
+/**
+ * @brief Same as abort(3)
+ */
+API_LOCAL EV_NORETURN void ev__abort(const char* file, int line);
 
 #ifdef __cplusplus
 }

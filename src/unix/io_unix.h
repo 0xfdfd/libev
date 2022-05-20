@@ -1,6 +1,7 @@
 #ifndef __EV_IO_UNIX_H__
 #define __EV_IO_UNIX_H__
 
+#include "ev/buf.h"
 #include "loop_unix.h"
 #include <sys/epoll.h>
 #define EV_IO_IN            EPOLLIN     /**< The associated file is available for read(2) operations. */

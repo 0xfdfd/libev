@@ -2,6 +2,7 @@
 #define __EV_THREADPOOL_INTERNAL_H__
 
 #include "ev/threadpool.h"
+#include "defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,9 +17,9 @@ extern "C" {
  * @param[in] done_cb   Work done callback.
  * @return              #ev_errno_t
  */
-int ev__loop_submit_threadpool(ev_loop_t* loop, ev_threadpool_work_t* work,
-    ev_threadpool_work_type_t type, ev_threadpool_work_cb work_cb,
-    ev_threadpool_work_done_cb done_cb);
+API_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
+    ev_threadpool_work_t* work, ev_threadpool_work_type_t type,
+    ev_threadpool_work_cb work_cb, ev_threadpool_work_done_cb done_cb);
 
 #ifdef __cplusplus
 }

@@ -1,3 +1,4 @@
+#include "ev/errno.h"
 #include "loop.h"
 
 static void _ev_mutex_init_unix(ev_os_mutex_t* handle)
@@ -5,29 +6,29 @@ static void _ev_mutex_init_unix(ev_os_mutex_t* handle)
 #if defined(NDEBUG) || !defined(PTHREAD_MUTEX_ERRORCHECK)
     if (pthread_mutex_init(handle, NULL) != 0)
     {
-        abort();
+        EV_ABORT();
     }
 #else
     pthread_mutexattr_t attr;
 
     if (pthread_mutexattr_init(&attr))
     {
-        abort();
+        EV_ABORT();
     }
 
     if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK))
     {
-        abort();
+        EV_ABORT();
     }
 
     if (pthread_mutex_init(handle, &attr) != 0)
     {
-        abort();
+        EV_ABORT();
     }
 
     if (pthread_mutexattr_destroy(&attr))
     {
-        abort();
+        EV_ABORT();
     }
 #endif
 }
@@ -38,22 +39,22 @@ static void _ev_mutex_init_recursive_unix(ev_os_mutex_t* handle)
 
     if (pthread_mutexattr_init(&attr))
     {
-        abort();
+        EV_ABORT();
     }
 
     if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE))
     {
-        abort();
+        EV_ABORT();
     }
 
     if (pthread_mutex_init(handle, &attr) != 0)
     {
-        abort();
+        EV_ABORT();
     }
 
     if (pthread_mutexattr_destroy(&attr))
     {
-        abort();
+        EV_ABORT();
     }
 }
 
@@ -73,7 +74,7 @@ void ev_mutex_exit(ev_mutex_t* handle)
 {
     if (pthread_mutex_destroy(&handle->u.r))
     {
-        abort();
+        EV_ABORT();
     }
 }
 
@@ -81,7 +82,7 @@ void ev_mutex_enter(ev_mutex_t* handle)
 {
     if (pthread_mutex_lock(&handle->u.r))
     {
-        abort();
+        EV_ABORT();
     }
 }
 
@@ -89,7 +90,7 @@ void ev_mutex_leave(ev_mutex_t* handle)
 {
     if (pthread_mutex_unlock(&handle->u.r))
     {
-        abort();
+        EV_ABORT();
     }
 }
 
@@ -103,7 +104,7 @@ int ev_mutex_try_enter(ev_mutex_t* handle)
 
     if (err != EBUSY && err != EAGAIN)
     {
-        abort();
+        EV_ABORT();
     }
 
     return EV_EBUSY;

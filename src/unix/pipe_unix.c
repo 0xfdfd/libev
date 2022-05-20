@@ -1,13 +1,15 @@
 #define _GNU_SOURCE
-#include <fcntl.h>
-#include <unistd.h>
-#include <string.h>
+#include "ev/errno.h"
 #include "loop_unix.h"
 #include "tcp_unix.h"
 #include "stream_unix.h"
 #include "pipe.h"
 #include "handle.h"
 #include "log.h"
+#include <assert.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
 
 typedef char ev_ipc_msghdr[CMSG_SPACE(sizeof(int))];
 

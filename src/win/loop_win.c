@@ -1,8 +1,11 @@
-#include <assert.h>
+#include "ev/errno.h"
+#include "ev/once.h"
+#include "ev/utils.h"
 #include "loop_win.h"
 #include "thread_win.h"
-#include "win/winapi.h"
+#include "winapi.h"
 #include "work.h"
+#include <assert.h>
 
 ev_loop_win_ctx_t g_ev_loop_win_ctx;
 
@@ -417,7 +420,7 @@ void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req)
 {
     if (!PostQueuedCompletionStatus(loop->backend.iocp, 0, 0, &req->overlapped))
     {
-        abort();
+        EV_ABORT();
     }
 }
 

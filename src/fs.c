@@ -1,8 +1,11 @@
+#include "ev/errno.h"
+#include "ev/utils.h"
 #include "loop.h"
 #include "fs.h"
 #include "threadpool.h"
 #include "allocator.h"
 #include "handle.h"
+#include <assert.h>
 
 typedef struct ev_dirent_record_s
 {
@@ -632,7 +635,7 @@ void ev_fs_req_cleanup(ev_fs_req_t* req)
         break;
 
     default:
-        abort();
+        EV_ABORT();
     }
 }
 

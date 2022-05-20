@@ -1,3 +1,4 @@
+#include "ev/errno.h"
 #include "shmem.h"
 #include "loop.h"
 

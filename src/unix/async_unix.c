@@ -1,6 +1,8 @@
+#include "ev/errno.h"
 #include "io_unix.h"
-#include "async_unix.h"
+#include "loop.h"
 #include "handle.h"
+#include "async_unix.h"
 #include <unistd.h>
 #include <assert.h>
 #include <sys/eventfd.h>
@@ -95,7 +97,7 @@ void ev__async_post(int wfd)
 
     if (write_size < 0)
     {
-        abort();
+        EV_ABORT();
     }
 }
 
@@ -112,7 +114,7 @@ void ev__async_pend(int rfd)
 
     if (read_size < 0)
     {
-        abort();
+        EV_ABORT();
     }
 }
 

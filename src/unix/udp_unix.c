@@ -1,3 +1,5 @@
+#include "ev/errno.h"
+#include "ev/utils.h"
 #include "io_unix.h"
 #include "udp.h"
 #include "handle.h"
@@ -382,7 +384,7 @@ static int _ev_udp_maybe_deferred_bind_unix(ev_udp_t* udp, int domain, int flags
         break;
     }
 
-    abort();
+    EV_ABORT();
 }
 
 static int _ev_udp_convert_interface_addr4_unix(struct ip_mreq* dst,
@@ -912,7 +914,7 @@ int ev_udp_set_multicast_interface(ev_udp_t* udp, const char* interface_addr)
     }
     else
     {
-        abort();
+        EV_ABORT();
     }
 
     if (setsockopt(udp->sock, level, optname, optval, optlen) != 0)

@@ -2,7 +2,8 @@
 #define __EV_PROCESS_UNIX_H__
 
 #include "ev/process.h"
-#include "loop.h"
+#include "ev/mutex.h"
+#include "defs.h"
 
 #ifdef __cplusplus
 extern "C" {

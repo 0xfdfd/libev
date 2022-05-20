@@ -1,7 +1,10 @@
+#include "ev/errno.h"
+#include "ev/utils.h"
 #include "loop_win.h"
-#include "win/winapi.h"
+#include "winapi.h"
 #include "udp.h"
 #include "handle.h"
+#include <assert.h>
 
 static int _ev_udp_setup_socket_attribute_win(ev_loop_t* loop, ev_udp_t* udp, int family)
 {

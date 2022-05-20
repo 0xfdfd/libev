@@ -1,3 +1,4 @@
+#include "ev/version.h"
 #include "loop.h"
 
 #define _TOSTR(x)       #x

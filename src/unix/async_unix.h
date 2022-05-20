@@ -2,7 +2,6 @@
 #define __EV_ASYNC_UNIX_INTERNAL_H__
 
 #include "async.h"
-#include "ev-platform.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,6 +1,9 @@
+#include "ev/errno.h"
 #include "loop.h"
 #include "handle.h"
 #include "work.h"
+#include "threadpool.h"
+#include <assert.h>
 
 static void _ev_threadpool_on_loop(ev_todo_token_t* todo)
 {
@@ -233,7 +236,7 @@ void ev_threadpool_exit(ev_threadpool_t* pool)
     {
         if (ev_thread_exit(&pool->threads[i], EV_INFINITE_TIMEOUT) != EV_SUCCESS)
         {
-            abort();
+            EV_ABORT();
         }
     }
 
@@ -255,6 +258,24 @@ int ev__loop_submit_threadpool(ev_loop_t* loop, ev_threadpool_work_t* work,
     }
 
     return ev_threadpool_submit(pool, loop, work, type, work_cb, done_cb);
+}
+
+int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool)
+{
+    if (loop->threadpool.pool != NULL)
+    {
+        return EV_EBUSY;
+    }
+
+    loop->threadpool.pool = pool;
+
+    ev_mutex_enter(&pool->mutex);
+    {
+        ev_list_push_back(&pool->loop_table, &loop->threadpool.node);
+    }
+    ev_mutex_leave(&pool->mutex);
+
+    return EV_SUCCESS;
 }
 
 int ev_loop_unlink_threadpool(ev_loop_t* loop)

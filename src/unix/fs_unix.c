@@ -1,8 +1,10 @@
 #define _GNU_SOURCE 1
+#include "ev/errno.h"
 #include "loop.h"
 #include "fs.h"
 #include "allocator.h"
 #include "io_unix.h"
+#include <assert.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>

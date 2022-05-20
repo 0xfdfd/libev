@@ -2,7 +2,7 @@
 #define __EV_ASYNC_COMMON_H__
 
 #include "ev/async.h"
-#include "ev-platform.h"
+#include "defs.h"
 
 #ifdef __cplusplus
 extern "C" {

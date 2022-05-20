@@ -4,6 +4,7 @@
 #include "ev/backend.h"
 #include "ev/pipe_forward.h"
 #include "ev/process_forward.h"
+#include "ev/async.h"
 
 #ifdef __cplusplus
 extern "C" {

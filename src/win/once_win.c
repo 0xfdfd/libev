@@ -1,4 +1,5 @@
-#include "ev.h"
+#include "ev/once.h"
+#include "loop_win.h"
 
 static BOOL WINAPI _ev_once_proxy(PINIT_ONCE InitOnce, PVOID Parameter, PVOID *Context)
 {
@@ -12,6 +13,6 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
 {
     if (InitOnceExecuteOnce(&guard->guard, _ev_once_proxy, (PVOID)cb, NULL) == 0)
     {
-        abort();
+        EV_ABORT();
     }
 }

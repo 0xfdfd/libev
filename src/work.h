@@ -1,7 +1,7 @@
 #ifndef __EV_WORK_INTERNAL_H__
 #define __EV_WORK_INTERNAL_H__
 
-#include "ev-platform.h"
+#include "defs.h"
 
 #ifdef __cplusplus
 extern "C" {

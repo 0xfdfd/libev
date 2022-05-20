@@ -1,6 +1,9 @@
+#include "ev/errno.h"
+#include "ev/once.h"
 #include "loop_unix.h"
 #include "io_unix.h"
 #include "work.h"
+#include <assert.h>
 #include <unistd.h>
 #include <errno.h>
 #include <limits.h>

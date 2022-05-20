@@ -1,7 +1,8 @@
-#ifndef __EV_FILE_COMMON_H__
-#define __EV_FILE_COMMON_H__
+#ifndef __EV_FILE_INTERNAL_H__
+#define __EV_FILE_INTERNAL_H__
 
-#include "ev-platform.h"
+#include "ev/fs.h"
+#include "defs.h"
 
 #ifdef __cplusplus
 extern "C" {

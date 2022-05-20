@@ -1,7 +1,8 @@
 #ifndef __EV_PIPE_COMMON_INTERNAL_H__
 #define __EV_PIPE_COMMON_INTERNAL_H__
 
-#include "loop.h"
+#include "ev/pipe.h"
+#include "defs.h"
 
 #ifdef __cplusplus
 extern "C" {

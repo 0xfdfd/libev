@@ -1,5 +1,8 @@
-#include "loop.h"
+#include "ev/errno.h"
 #include "async.h"
+#include "loop.h"
+#include "pipe_win.h"
+#include "process_win.h"
 #include <stdlib.h>
 #include <assert.h>
 

@@ -1,3 +1,5 @@
+#include "ev/errno.h"
+#include "ev/tcp.h"
 #include "loop.h"
 #include "pipe.h"
 

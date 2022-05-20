@@ -1,7 +1,8 @@
 #ifndef __EV_TCP_WIN_INTERNAL_H__
 #define __EV_TCP_WIN_INTERNAL_H__
 
-#include "ev-platform.h"
+#include "ev/tcp.h"
+#include "defs.h"
 
 #ifdef __cplusplus
 extern "C" {

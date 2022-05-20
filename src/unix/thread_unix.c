@@ -1,4 +1,6 @@
 #define _GNU_SOURCE
+#include "ev/errno.h"
+#include "ev/thread.h"
 #include "loop.h"
 #include <semaphore.h>
 #include <pthread.h>
@@ -19,7 +21,7 @@ static void* _ev_thread_proxy_unix(void* arg)
 
     if (sem_post(&p_helper->sem) != 0)
     {
-        abort();
+        EV_ABORT();
     }
 
     helper.cb(helper.arg);
@@ -143,7 +145,7 @@ void ev_thread_sleep(uint32_t timeout)
         ret = errno;
         if (ret != EINTR)
         {
-            abort();
+            EV_ABORT();
         }
         t_req = t_rem;
     }
@@ -164,7 +166,7 @@ void ev_tls_exit(ev_tls_t* tls)
     int ret = pthread_key_delete(tls->tls);
     if (ret != 0)
     {
-        abort();
+        EV_ABORT();
     }
 }
 
@@ -173,7 +175,7 @@ void ev_tls_set(ev_tls_t* tls, void* val)
     int ret = pthread_setspecific(tls->tls, val);
     if (ret != 0)
     {
-        abort();
+        EV_ABORT();
     }
 }
 

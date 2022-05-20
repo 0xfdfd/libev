@@ -1,6 +1,8 @@
+#include "ev/errno.h"
 #include "async.h"
 #include "handle.h"
 #include "loop_win.h"
+#include <assert.h>
 
 static void _async_on_iocp_win(ev_iocp_t* iocp, size_t transferred, void* arg)
 {

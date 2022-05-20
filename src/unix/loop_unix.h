@@ -1,7 +1,7 @@
 #ifndef __EV_LOOP_UNIX_H__
 #define __EV_LOOP_UNIX_H__
 
-#include "ev-platform.h"
+#include "loop.h"
 #include "process_unix.h"
 
 #ifdef __cplusplus

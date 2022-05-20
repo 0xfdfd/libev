@@ -1,7 +1,8 @@
 #ifndef __EV_UDP_COMMON_INTERNAL_H__
 #define __EV_UDP_COMMON_INTERNAL_H__
 
-#include "loop.h"
+#include "ev/udp.h"
+#include "defs.h"
 
 #ifdef __cplusplus
 extern "C" {

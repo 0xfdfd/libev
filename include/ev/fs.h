@@ -4,6 +4,7 @@
 #ifndef __EV_FILESYSTEM_H__
 #define __EV_FILESYSTEM_H__
 
+#include "ev/buf.h"
 #include "ev/handle.h"
 #include "ev/fs_forward.h"
 #include "ev/loop_forward.h"

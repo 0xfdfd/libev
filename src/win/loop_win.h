@@ -5,6 +5,7 @@ extern "C" {
 #endif
 
 #include "loop.h"
+#include "ev/thread.h"
 
 #define EV_INVALID_PID_WIN  0
 
