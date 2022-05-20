@@ -12,8 +12,6 @@ extern "C" {
  * @{
  */
 
-struct ev_once;
-
 /**
  * @brief Typedef of #ev_once.
  */
@@ -32,7 +30,8 @@ typedef void(*ev_once_cb)(void);
  * No other threads that specify the same one-time initialization structure can
  * execute the specified function while it is being executed by the current thread.
  *
- * @param[in] guard     A pointer to the one-time initialization #EV_ONCE_INIT structure.
+ * @see #EV_ONCE_INIT
+ * @param[in] guard     A pointer to the one-time initialized structure.
  * @param[in] cb        A pointer to an application-defined #ev_once_cb function.
  */
 void ev_once_execute(ev_once_t* guard, ev_once_cb cb);

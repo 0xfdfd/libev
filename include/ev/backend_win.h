@@ -1,3 +1,6 @@
+/**
+ * @file
+ */
 #ifndef __EV_BACKEND_WIN_H__
 #define __EV_BACKEND_WIN_H__
 
@@ -24,15 +27,29 @@ struct ev_buf
     ULONG                       size;               /**< Data size */
     CHAR*                       data;               /**< Data address */
 };
+
+/**
+ * @brief Initialize #ev_buf_t.
+ * @param[in] buf   Data address.
+ * @param[in] len   Data length.
+ */
 #define EV_BUF_INIT(buf, len)   { (ULONG)len, (CHAR*)buf }
 
 struct ev_once
 {
     INIT_ONCE                   guard;              /**< Once token */
 };
+
+/**
+ * @brief Initialize #ev_once_t to Windows specific structure.
+ */
 #define EV_ONCE_INIT            { INIT_ONCE_STATIC_INIT }
 
 struct ev_iocp;
+
+/**
+ * @brief Typedef of #ev_iocp.
+ */
 typedef struct ev_iocp ev_iocp_t;
 
 /**
@@ -41,19 +58,33 @@ typedef struct ev_iocp ev_iocp_t;
  */
 typedef void(*ev_iocp_cb)(ev_iocp_t* iocp, size_t transferred, void* arg);
 
+/**
+ * @brief IOCP structure.
+ */
 struct ev_iocp
 {
     void*                       arg;                /**< Index */
     ev_iocp_cb                  cb;                 /**< Callback */
     OVERLAPPED                  overlapped;         /**< IOCP field */
 };
+
+/**
+ * @brief Initialize #ev_iocp_t to invalid value.
+ */
 #define EV_IOCP_INIT            { NULL, NULL, { 0, 0, { { 0, 0 } }, NULL } }
 
+/**
+ * @brief Windows backend for #ev_async_t.
+ */
 typedef struct ev_async_plt
 {
     LONG volatile               async_sent;
     ev_iocp_t                   io;
-}ev_async_plt_t;
+} ev_async_plt_t;
+
+/**
+ * @brief Initialize #ev_async_plt_t to an Windows specific invalid value.
+ */
 #define EV_ASYNC_PLT_INVALID    { 0, EV_IOCP_INIT }
 
 typedef struct ev_loop_plt
@@ -67,35 +98,35 @@ typedef struct ev_loop_plt
         ev_list_t               queue;              /**< #ev_todo_token_t::node */
     } work;
 }ev_loop_plt_t;
+
+/**
+ * @brief Initialize #ev_loop_plt_t to Windows specific invalid value.
+ */
 #define EV_LOOP_PLT_INIT        { NULL }
 
-typedef struct ev_read_backend
-{
-    void*                       owner;              /**< Owner */
-    ev_iocp_t*                  io;                 /**< IOCP list */
-    int                         stat;               /**< Write result */
-    ev_iocp_t                   iosml[EV_IOV_MAX];  /**< IOCP backend */
-}ev_read_backend_t;
-#define EV_READ_BACKEND_INIT    \
-    {\
-        NULL, NULL, 0,\
-        { EV_INIT_REPEAT(EV_IOV_MAX, EV_IOCP_INIT), }\
-    }
-
+/**
+ * @brief Windows backend for #ev_tcp_read_req_t.
+ */
 typedef struct ev_tcp_read_backend
 {
     ev_tcp_t*                   owner;              /**< Owner */
     ev_iocp_t                   io;                 /**< IOCP */
     int                         stat;               /**< Read result */
-}ev_tcp_read_backend_t;
+} ev_tcp_read_backend_t;
 
+/**
+ * @brief  Windows backend for #ev_tcp_write_req_t.
+ */
 typedef struct ev_tcp_write_backend
 {
     void*                       owner;              /**< Owner */
     int                         stat;               /**< Write result */
     ev_iocp_t                   io;                 /**< IOCP backend */
-}ev_tcp_write_backend_t;
+} ev_tcp_write_backend_t;
 
+/**
+ * @brief Windows backend for #ev_tcp_t.
+ */
 typedef struct ev_tcp_backend
 {
     int                         af;                 /**< AF_INET / AF_INET6 */
@@ -111,13 +142,13 @@ typedef struct ev_tcp_backend
     {
         struct
         {
-            ev_list_t           a_queue;            /**< (#ev_tcp_t::backend::u::accept::node) Accept queue */
-            ev_list_t           a_queue_done;       /**< (#ev_tcp_t::backend::u::accept::node) Accept done queue */
+            ev_list_t           a_queue;            /**< (#ev_tcp_backend::u::accept::node) Accept queue */
+            ev_list_t           a_queue_done;       /**< (#ev_tcp_backend::u::accept::node) Accept done queue */
         }listen;
         struct
         {
             ev_tcp_accept_cb    cb;                 /**< Accept callback */
-            ev_list_node_t      node;               /**< (#ev_tcp_t::backend::u::listen) Accept queue node */
+            ev_list_node_t      node;               /**< (#ev_tcp_backend::u::listen) Accept queue node */
             ev_tcp_t*           listen;             /**< Listen socket */
             int                 stat;               /**< Accept result */
             /**
@@ -142,7 +173,12 @@ typedef struct ev_tcp_backend
         }stream;
     }u;
 }ev_tcp_backend_t;
-#define EV_TCP_BACKEND_INIT     {\
+
+/**
+ * @brief Initialize #ev_tcp_backend_t to Windows specific invalid value.
+ */
+#define EV_TCP_BACKEND_INIT     \
+    {\
         0,\
         EV_IOCP_INIT,\
         EV_TODO_TOKEN_INVALID,\
@@ -161,6 +197,9 @@ typedef int (WSAAPI* ev_wsarecvfrom_fn)(
     LPWSAOVERLAPPED overlapped,
     LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine);
 
+/**
+ * @brief Windows backend for #ev_udp_write_t.
+ */
 typedef struct ev_udp_write_backend
 {
     ev_iocp_t                   io;                 /**< IOCP handle */
@@ -169,6 +208,9 @@ typedef struct ev_udp_write_backend
     ev_udp_t*                   owner;              /**< Owner */
 }ev_udp_write_backend_t;
 
+/**
+ * @brief Windows backend for #ev_udp_read_t.
+ */
 typedef struct ev_udp_read_backend
 {
     ev_udp_t*                   owner;              /**< Owner */
@@ -177,6 +219,9 @@ typedef struct ev_udp_read_backend
     int                         stat;               /**< Read result */
 }ev_udp_read_backend_t;
 
+/**
+ * @brief Windows backend for #ev_udp_t.
+ */
 typedef struct ev_udp_backend
 {
     ev_wsarecvfrom_fn           fn_wsarecvfrom;     /**< WSARecvFrom() */
@@ -188,6 +233,9 @@ typedef enum ev_pipe_win_ipc_info_type
     EV_PIPE_WIN_IPC_INFO_TYPE_PROTOCOL_INFO,        /**< #ev_pipe_win_ipc_info_t::data::as_protocol_info */
 }ev_pipe_win_ipc_info_type_t;
 
+/**
+ * @brief Windows IPC frame information.
+ */
 typedef struct ev_pipe_win_ipc_info
 {
     ev_pipe_win_ipc_info_type_t type;               /**< Type */
@@ -200,7 +248,7 @@ typedef struct ev_pipe_win_ipc_info
 
         WSAPROTOCOL_INFOW       as_protocol_info;   /**< Protocol info */
     }data;
-}ev_pipe_win_ipc_info_t;
+} ev_pipe_win_ipc_info_t;
 
 typedef struct ev_pipe_write_backend
 {
@@ -208,11 +256,14 @@ typedef struct ev_pipe_write_backend
     int                         stat;               /**< Write result */
 }ev_pipe_write_backend_t;
 
+/**
+ * @brief Windows backend for #ev_pipe_read_req_t.
+ */
 typedef struct ev_pipe_read_backend
 {
     ev_pipe_t*                  owner;              /**< Owner */
     int                         stat;               /**< Read result */
-}ev_pipe_read_backend_t;
+} ev_pipe_read_backend_t;
 
 typedef union ev_pipe_backend
 {
@@ -301,17 +352,31 @@ typedef union ev_pipe_backend
 #undef EV_PIPE_BACKEND_BUFFER_SIZE
     } ipc_mode;
 }ev_pipe_backend_t;
+
+/**
+ * @brief Initialize #ev_pipe_backend_t to Windows specific invalid value.
+ */
 #define EV_PIPE_BACKEND_INVALID         { 0 }
 
+/**
+ * @brief Windows backend for #ev_shm_t.
+ */
 typedef struct ev_shm_backend
 {
-    HANDLE                      map_file;           /**< Shared memory file */
+    HANDLE                              map_file;           /**< Shared memory file */
 }ev_shm_backend_t;
+
+/**
+ * @brief Initialize #ev_shm_backend_t to Windows specific invalid value.
+ */
 #define EV_SHM_BACKEND_INVALID          { NULL }
 
+/**
+ * @brief Windows backend for #ev_process_t.
+ */
 typedef struct ev_process_backend_s
 {
-    HANDLE  wait_handle;
+    HANDLE                              wait_handle;
 }ev_process_backend_t;
 
 #ifdef __cplusplus

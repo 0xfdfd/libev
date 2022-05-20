@@ -24,7 +24,7 @@ typedef struct ev_async ev_async_t;
 
 /**
  * @brief Type definition for callback passed to #ev_async_init().
- * @param[in] handle    A pointer to #ev_async_t structure
+ * @param[in] async     A pointer to #ev_async_t structure
  */
 typedef void(*ev_async_cb)(ev_async_t* async);
 

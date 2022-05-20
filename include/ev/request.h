@@ -23,7 +23,7 @@ struct ev_read
         size_t              capacity;           /**< Total bytes of buffer */
         size_t              size;               /**< Data size */
         ev_buf_t            bufsml[EV_IOV_MAX]; /**< Bound buffer list */
-    }data;
+    }data;                                      /**< Data field */
 };
 
 /**

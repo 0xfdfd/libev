@@ -20,7 +20,7 @@ extern "C" {
 struct ev_timer
 {
     ev_handle_t             base;               /**< Base object */
-    ev_map_node_t           node;               /**< (#ev_loop_t::timer::heap) */
+    ev_map_node_t           node;               /**< #ev_loop_t::timer::heap */
 
     ev_timer_cb             close_cb;           /**< Close callback */
 

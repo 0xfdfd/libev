@@ -54,7 +54,7 @@ struct ev_handle
 
         ev_close_cb         close_cb;           /**< Close callback */
         ev_todo_token_t     close_queue;        /**< Close queue token */
-    }data;
+    }data;                                      /**< Data field */
 };
 
 /**

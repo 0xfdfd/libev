@@ -63,6 +63,9 @@ enum ev_process_stdio_flags_e
     EV_PROCESS_STDIO_REDIRECT_PIPE  = 0x04,
 };
 
+/**
+ * @brief Process stdio container.
+ */
 struct ev_process_stdio_container_s
 {
     /**
@@ -77,14 +80,14 @@ struct ev_process_stdio_container_s
     union
     {
         /**
-         * @brief Valid if #ev_process_stdio_flags_t::flag set to
+         * @brief Valid if #ev_process_stdio_container_t::flag set to
          *   #EV_PROCESS_STDIO_REDIRECT_FD.
          * You must close it when no longer needed.
          */
         ev_os_pipe_t                fd;
 
         /**
-         * @brief Valid if #ev_process_stdio_flags_t::flag set to
+         * @brief Valid if #ev_process_stdio_container_t::flag set to
          *   #EV_PROCESS_STDIO_REDIRECT_PIPE.
          */
         ev_pipe_t*                  pipe;
@@ -117,6 +120,9 @@ struct ev_process_options_s
     ev_process_stdio_container_t    stdios[3];
 };
 
+/**
+ * @brief Process context.
+ */
 struct ev_process_s
 {
     ev_list_node_t                  node;           /**< List node */

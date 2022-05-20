@@ -100,7 +100,14 @@ typedef intptr_t ssize_t;
  */
 #define EV_FS_S_IRWXU           (EV_FS_S_IRUSR | EV_FS_S_IWUSR | EV_FS_S_IXUSR)
 
+/**
+ * @brief Windows system define of file.
+ */
 typedef HANDLE                  ev_os_file_t;
+
+/**
+ * @brief Invalid valid of #ev_os_file_t.
+ */
 #define EV_OS_FILE_INVALID      INVALID_HANDLE_VALUE
 
  /**

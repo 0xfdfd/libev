@@ -63,16 +63,19 @@ struct ev_loop
     {
         ev_list_t                   idle_list;          /**< (#ev_handle::node) All idle handles */
         ev_list_t                   active_list;        /**< (#ev_handle::node) All active handles */
-    }handles;
+    }handles;                                           /**< table for handles */
 
     struct
     {
         ev_list_t                   pending;            /**< (#ev_todo_token_t::node) Pending task */
     }todo;
 
+    /**
+     * @brief Timer context
+     */
     struct
     {
-        ev_map_t                    heap;               /**< (#ev_timer_t::node) Timer heap */
+        ev_map_t                    heap;               /**< #ev_timer_t::node. Timer heap */
     }timer;
 
     struct

@@ -33,7 +33,7 @@ typedef struct ev_process_stdio_container_s ev_process_stdio_container_t;
 struct ev_process_options_s;
 
 /**
- * @brief Typedef of #ev_exec_opt_s.
+ * @brief Typedef of #ev_process_options_s.
  */
 typedef struct ev_process_options_s ev_process_options_t;
 

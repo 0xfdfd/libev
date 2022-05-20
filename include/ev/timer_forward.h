@@ -18,7 +18,7 @@ typedef struct ev_timer ev_timer_t;
 
 /**
  * @brief Type definition for callback passed to #ev_timer_start().
- * @param[in] handle    A pointer to #ev_timer_t structure
+ * @param[in] timer     A pointer to #ev_timer_t structure
  */
 typedef void(*ev_timer_cb)(ev_timer_t* timer);
 

@@ -13,6 +13,10 @@ extern "C" {
  */
 
 struct ev_shm;
+
+/**
+ * @brief Typedef of #ev_shm.
+ */
 typedef struct ev_shm ev_shm_t;
 
 /**
