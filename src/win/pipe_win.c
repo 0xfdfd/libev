@@ -16,7 +16,7 @@ static int _ev_pipe_make_s(HANDLE* pip_handle, const char* name, int flags)
     r_open_mode |= (flags & EV_PIPE_WRITABLE) ? PIPE_ACCESS_OUTBOUND : 0;
     r_open_mode |= (flags & EV_PIPE_NONBLOCK) ? FILE_FLAG_OVERLAPPED : 0;
 
-    HANDLE pip_r = CreateNamedPipe(name, r_open_mode,
+    HANDLE pip_r = CreateNamedPipeA(name, r_open_mode,
         PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 65535, 65535, 0, NULL);
     if (pip_r != INVALID_HANDLE_VALUE)
     {

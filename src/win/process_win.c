@@ -1,9 +1,9 @@
 #include "ev/errno.h"
 #include "async.h"
 #include "loop.h"
+#include "allocator.h"
 #include "pipe_win.h"
 #include "process_win.h"
-#include <stdlib.h>
 #include <assert.h>
 
 typedef struct ev_startup_info
@@ -22,13 +22,13 @@ typedef struct stdio_pair_s
 
 static int _dup_cmd(char** buf, char* const argv[])
 {
-    char* cmdline = malloc(MAX_PATH + 1);
+    char* cmdline = ev__malloc(MAX_PATH + 1);
     if (cmdline == NULL)
     {
         return EV_ENOMEM;
     }
 
-    cmdline[0]    = '\0';
+    cmdline[0] = '\0';
 
     strcat_s(cmdline, MAX_PATH, argv[0]);
     for (int i = 1; argv[i] != NULL; i++)
@@ -57,7 +57,7 @@ static int _dup_envp(char**buf, char* const envp[])
         malloc_size += strlen(envp[idx]) + 1;
     }
 
-    char* envline = malloc(malloc_size);
+    char* envline = ev__malloc(malloc_size);
     if (envline == NULL)
     {
         return EV_ENOMEM;
@@ -235,7 +235,7 @@ static void _ev_process_cleanup_cmdline(ev_startup_info_t* start_info)
 {
     if (start_info->cmdline != NULL)
     {
-        free(start_info->cmdline);
+        ev__free(start_info->cmdline);
         start_info->cmdline = NULL;
     }
 }
@@ -244,7 +244,7 @@ static void _ev_process_cleanup_envp(ev_startup_info_t* start_info)
 {
     if (start_info->envline != NULL)
     {
-        free(start_info->envline);
+        ev__free(start_info->envline);
         start_info->envline = NULL;
     }
 }
