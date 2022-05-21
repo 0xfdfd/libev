@@ -87,3 +87,6 @@ compile_commands.json
 
 # FreeFileSync
 /sync.ffs_db
+
+# JetBrains
+/.idea
