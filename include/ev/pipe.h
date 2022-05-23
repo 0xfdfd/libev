@@ -13,14 +13,6 @@ extern "C" {
  * @{
  */
 
-enum ev_pipe_flags_e
-{
-    EV_PIPE_READABLE    = 0x01, /**< Pipe is readable */
-    EV_PIPE_WRITABLE    = 0x02, /**< Pipe is writable */
-    EV_PIPE_NONBLOCK    = 0x04, /**< Pipe is nonblock */
-    EV_PIPE_IPC         = 0x08, /**< Enable IPC */
-};
-
 /**
  * @brief PIPE
  */

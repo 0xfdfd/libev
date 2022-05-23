@@ -14,24 +14,6 @@ extern "C" {
  */
 
 /**
- * @brief Multicast operation.
- */
-enum ev_udp_membership
-{
-    EV_UDP_LEAVE_GROUP  = 0,    /**< Leave multicast group */
-    EV_UDP_ENTER_GROUP  = 1,    /**< Join multicast group */
-};
-
-/**
- * @brief UDP socket flags.
- */
-enum ev_udp_flags
-{
-    EV_UDP_IPV6_ONLY    = 1,    /**< Do not bound to IPv4 address */
-    EV_UDP_REUSEADDR    = 2,    /**< Reuse address. Only the last one can receive message. */
-};
-
-/**
  * @brief UDP socket type.
  */
 struct ev_udp

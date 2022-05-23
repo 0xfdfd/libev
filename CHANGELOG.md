@@ -2,6 +2,9 @@
 
 ## v0.0.7
 
+### Bug Fixes
+1. fix: use of enum without previous declaration
+
 
 ## v0.0.6 (2022/05/23)
 

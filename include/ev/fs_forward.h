@@ -9,14 +9,40 @@ extern "C" {
  * @{
  */
 
-enum ev_dirent_type_e;
+/**
+ * @brief Directory type.
+ */
+enum ev_dirent_type_e
+{
+    EV_DIRENT_UNKNOWN,
+    EV_DIRENT_FILE,
+    EV_DIRENT_DIR,
+    EV_DIRENT_LINK,
+    EV_DIRENT_FIFO,
+    EV_DIRENT_SOCKET,
+    EV_DIRENT_CHR,
+    EV_DIRENT_BLOCK
+};
 
 /**
  * @brief Typedef of #ev_dirent_type_e.
  */
 typedef enum ev_dirent_type_e ev_dirent_type_t;
 
-enum ev_fs_req_type_e;
+/**
+ * @brief File system request type.
+ */
+enum ev_fs_req_type_e
+{
+    EV_FS_REQ_UNKNOWN,
+    EV_FS_REQ_OPEN,
+    EV_FS_REQ_READ,
+    EV_FS_REQ_WRITE,
+    EV_FS_REQ_FSTAT,
+    EV_FS_REQ_READDIR,
+    EV_FS_REQ_READFILE,
+    EV_FS_REQ_MKDIR,
+};
 
 /**
  * @brief Typedef of #ev_fs_req_type_e.

@@ -9,7 +9,27 @@ extern "C" {
  * @{
  */
 
-enum ev_threadpool_work_type;
+/**
+ * @brief Work type.
+ */
+enum ev_threadpool_work_type
+{
+    /**
+     * @brief CPU work
+     */
+    EV_THREADPOOL_WORK_CPU      = 0,
+
+    /**
+     * @brief Fast IO. Typically file system operations.
+     */
+    EV_THREADPOOL_WORK_IO_FAST  = 1,
+
+    /**
+     * @brief Slow IO. Typically network operations.
+     */
+    EV_THREADPOOL_WORK_IO_SLOW  = 2,
+};
+
 typedef enum ev_threadpool_work_type ev_threadpool_work_type_t;
 
 struct ev_threadpool;

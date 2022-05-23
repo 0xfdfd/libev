@@ -20,27 +20,6 @@ extern "C" {
  */
 
 /**
- * @brief Work type.
- */
-enum ev_threadpool_work_type
-{
-    /**
-     * @brief CPU work
-     */
-    EV_THREADPOOL_WORK_CPU      = 0,
-
-    /**
-     * @brief Fast IO. Typically file system operations.
-     */
-    EV_THREADPOOL_WORK_IO_FAST  = 1,
-
-    /**
-     * @brief Slow IO. Typically network operations.
-     */
-    EV_THREADPOOL_WORK_IO_SLOW  = 2,
-};
-
-/**
  * @brief Thread pool handle type.
  */
 struct ev_threadpool
