@@ -1,10 +1,10 @@
 # Changelog
 
-## v0.0.6
+## v0.0.6 (2022/05/23)
 
 ### Features
 1. Support unlink threadpool
-2. publish #ev_todo_submit()
+2. publish `ev_todo_submit()`
 
 ### BREAKING CHANGES
 1. change version code rule.
@@ -23,8 +23,8 @@
 3. file: synchronous operations
 
 ### BREAKING CHANGES
-1. rename #EV_THREAD_WAIT_INFINITE to #EV_INFINITE_TIMEOUT.
-2. #ev_pipe_make() now have flags.
+1. rename `EV_THREAD_WAIT_INFINITE` to `EV_INFINITE_TIMEOUT`.
+2. `ev_pipe_make()` now have flags.
 
 
 ## v0.0.4 (2022/04/12)
