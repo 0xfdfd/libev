@@ -22,42 +22,6 @@ typedef struct file_open_info_win_s
     DWORD   disposition;
 }file_open_info_win_t;
 
-/**
- * @brief Maps a character string to a UTF-16 (wide character) string.
- * @param[out] dst  Pointer to store wide string. Use #ev__free() to release it.
- * @param[in] src   Source string.
- * @return          The number of characters (not bytes) of \p dst, or #ev_errno_t if error.
- */
-static ssize_t _ev_fs_utf8_to_wide(WCHAR** dst, const char* src)
-{
-    int errcode;
-    ssize_t pathw_len = MultiByteToWideChar(CP_UTF8, 0, src, -1, NULL, 0);
-    if (pathw_len == 0)
-    {
-        errcode = GetLastError();
-        return ev__translate_sys_error(errcode);
-    }
-
-    size_t buf_sz = pathw_len * sizeof(WCHAR);
-    WCHAR* buf = ev__malloc(buf_sz);
-    if (buf == NULL)
-    {
-        return EV_ENOMEM;
-    }
-
-    int cchwidechar = (int)pathw_len;
-
-    // check if truncate happen.
-    assert((ssize_t)cchwidechar == pathw_len);
-
-    DWORD r = MultiByteToWideChar(CP_UTF8, 0, src, -1, buf, cchwidechar);
-    assert(r == (DWORD)pathw_len); (void)r;
-
-    *dst = buf;
-
-    return pathw_len;
-}
-
 static int _ev_fs_wide_to_utf8(WCHAR* w_source_ptr, DWORD w_source_len,
     char** target_ptr, uint64_t* target_len_ptr)
 {
@@ -431,7 +395,14 @@ static int _ev_fs_readlink_handle(HANDLE handle, char** target_ptr,
         return -1;
     }
 
-    return _ev_fs_wide_to_utf8(w_target, w_target_len, target_ptr, target_len_ptr);
+    ssize_t utf8_len = ev__wide_to_utf8(target_ptr, w_target);
+    if (utf8_len < 0)
+    {
+        return -1;
+    }
+
+    *target_len_ptr = utf8_len;
+    return 0;
 }
 
 static void _ev_filetime_to_timespec(ev_timespec_t* ts, int64_t filetime)
@@ -719,7 +690,7 @@ int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
 int ev__fs_mkdir(const char* path, int mode)
 {
     WCHAR* copy_wpath;
-    ssize_t ret = _ev_fs_utf8_to_wide(&copy_wpath, path);
+    ssize_t ret = ev__utf8_to_wide(&copy_wpath, path);
     if (ret < 0)
     {
         return (int)ret;

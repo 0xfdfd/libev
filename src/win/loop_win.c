@@ -1,6 +1,7 @@
 #include "ev/errno.h"
 #include "ev/once.h"
 #include "ev/utils.h"
+#include "allocator.h"
 #include "loop_win.h"
 #include "thread_win.h"
 #include "winapi.h"
@@ -451,4 +452,54 @@ int ev__ipv6only_win(SOCKET sock, int opt)
     }
 
     return EV_SUCCESS;
+}
+
+ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src)
+{
+    int errcode;
+    int pathw_len = MultiByteToWideChar(CP_UTF8, 0, src, -1, NULL, 0);
+    if (pathw_len == 0)
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    size_t buf_sz = pathw_len * sizeof(WCHAR);
+    WCHAR* buf = ev__malloc(buf_sz);
+    if (buf == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    int r = MultiByteToWideChar(CP_UTF8, 0, src, -1, buf, pathw_len);
+    assert(r == pathw_len);
+
+    *dst = buf;
+
+    return r;
+}
+
+ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src)
+{
+    int errcode;
+    int target_len = WideCharToMultiByte(CP_UTF8, 0, src, -1, NULL, 0,
+        NULL, NULL);
+    if (target_len == 0)
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    char* buf = ev__malloc(target_len);
+    if (buf == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    int ret = WideCharToMultiByte(CP_UTF8, 0, src, -1, buf, target_len, NULL,
+        NULL);
+    assert(ret == target_len);
+    *dst = buf;
+
+    return (ssize_t)ret;
 }
