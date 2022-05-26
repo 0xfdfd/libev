@@ -684,6 +684,8 @@ int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
         }
     } while (FindNextFile(dir_handle, &info));
 
+    FindClose(dir_handle);
+
     return ret;
 }
 
