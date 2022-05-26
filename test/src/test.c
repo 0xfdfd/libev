@@ -1,84 +1,23 @@
 #define _GNU_SOURCE
 #include "test.h"
 #include "tools/memcheck.h"
+#include "tools/init.h"
 #include "utils/config.h"
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <string.h>
 
 #if !defined(_WIN32)
 #   include <unistd.h>
 #endif
 
-static void _start_as_stdio_echo_server(void)
-{
-    char buffer[1024];
-
-#if defined(_WIN32)
-    BOOL bSuccess;
-    DWORD errcode;
-    HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-    HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
-    if (hStdout == INVALID_HANDLE_VALUE || hStdin == INVALID_HANDLE_VALUE)
-    {
-        fprintf(stderr, "invalid stdio handle.\n");
-        exit(EXIT_SUCCESS);
-    }
-
-    for (;;)
-    {
-        DWORD dwread;
-        bSuccess = ReadFile(hStdin, buffer, sizeof(buffer), &dwread, NULL);
-        if (!bSuccess)
-        {
-            errcode = GetLastError();
-            fprintf(stderr, "ReadFile failed: %d.\n", (long)errcode);
-            exit(EXIT_SUCCESS);
-        }
-
-        DWORD dwwrite;
-        bSuccess = WriteFile(hStdout, buffer, dwread, &dwwrite, NULL);
-        if (!bSuccess)
-        {
-            errcode = GetLastError();
-            fprintf(stderr, "WriteFile failed: %d.\n", (long)errcode);
-            exit(EXIT_SUCCESS);
-        }
-    }
-#else
-    for (;;)
-    {
-        ssize_t read_size = read(STDIN_FILENO, buffer, sizeof(buffer));
-        if (read_size == 0)
-        {
-            fprintf(stderr, "stdin EOF.\n");
-            exit(EXIT_SUCCESS);
-        }
-        if (read_size < 0)
-        {
-            fprintf(stderr, "stdin error: %s(%d).\n", strerror(errno), errno);
-            exit(EXIT_SUCCESS);
-        }
-
-        ssize_t write_size = write(STDOUT_FILENO, buffer, read_size);
-        if (write_size < 0)
-        {
-            fprintf(stderr, "stdout error: %s(%d).\n", strerror(errno), errno);
-            exit(EXIT_SUCCESS);
-        }
-    }
-
-#endif
-}
-
 static void _before_all_test(int argc, char* argv[])
 {
     test_config_setup(argc, argv);
 
-    if (test_config.flag_as_stdio_echo_server)
+    if (test_config.argvt != NULL)
     {
-        _start_as_stdio_echo_server();
+        exit(tool_exec(test_config.argct, test_config.argvt));
     }
 
     if (!test_config.flag_no_memcheck)
@@ -95,6 +34,8 @@ static void _after_all_test(void)
     {
         dump_memcheck();
     }
+
+    test_config_cleanup();
 }
 
 static const char* _cutest_get_log_level_str(cutest_log_level_t level)
@@ -165,14 +106,5 @@ const char* test_strerror(int errcode)
     return buffer;
 #else
     return strerror(errcode);
-#endif
-}
-
-char* test_strdup(const char* str)
-{
-#if defined(_WIN32)
-    return _strdup(str);
-#else
-    return strdup(str);
 #endif
 }

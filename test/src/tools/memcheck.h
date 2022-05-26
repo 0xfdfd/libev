@@ -37,6 +37,12 @@ void memcheck_free(void* ptr);
  */
 void* memcheck_realloc(void* ptr, size_t size);
 
+/**
+ * @brief Same as [strdup(3)](https://man7.org/linux/man-pages/man3/strdup.3.html).
+ * Use #memcheck_free() to free duplicated string.
+ */
+char* memcheck_strdup(const char* str);
+
 #ifdef __cplusplus
 }
 #endif

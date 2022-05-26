@@ -79,11 +79,6 @@ int test_thread_wait(test_execute_token_t* token);
 
 const char* test_strerror(int errcode);
 
-/**
- * @brief Same as strdup().
- */
-char* test_strdup(const char* str);
-
 #ifdef __cplusplus
 }
 #endif

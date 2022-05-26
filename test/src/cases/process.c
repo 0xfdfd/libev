@@ -94,7 +94,7 @@ TEST_F(process, redirect_pipe)
     int ret;
 
     /* start as echo server */
-    char* argv[] = { g_test_process->self_exe_path, "--stdio_echo_server", NULL };
+    char* argv[] = { g_test_process->self_exe_path, "-- echoserver", NULL };
 
     ev_process_options_t opt;
     memset(&opt, 0, sizeof(opt));

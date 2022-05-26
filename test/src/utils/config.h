@@ -21,10 +21,9 @@ typedef struct test_config_s
      */
     int     flag_no_memcheck;
 
-    /**
-     * @brief Start as stdio echo server and do not run tests.
-     */
-    int     flag_as_stdio_echo_server;
+    int     argct;
+
+    char**  argvt;
 } test_config_t;
 
 extern test_config_t test_config;

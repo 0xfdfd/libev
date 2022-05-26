@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.2)
 
 add_executable(ev_test
+    "src/tools/echoserver.c"
+    "src/tools/help.c"
+    "src/tools/init.c"
+    "src/tools/ls.c"
     "src/tools/memcheck.c"
     "src/utils/config.c"
     "src/utils/file.c"

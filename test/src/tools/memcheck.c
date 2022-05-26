@@ -148,6 +148,17 @@ void* memcheck_realloc(void* ptr, size_t size)
     return dst_memblock != new_memblock ? NULL : dst_memblock;
 }
 
+char* memcheck_strdup(const char* str)
+{
+    size_t len = strlen(str) + 1;
+    char* m = memcheck_malloc(len);
+    if (m == NULL)
+    {
+        return NULL;
+    }
+    return memcpy(m, str, len);
+}
+
 void dump_memcheck(void)
 {
     size_t left_block = ev_list_size(&s_runtime.mem_queue);
