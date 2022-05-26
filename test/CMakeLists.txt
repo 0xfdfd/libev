@@ -5,6 +5,7 @@ add_executable(ev_test
     "src/tools/help.c"
     "src/tools/init.c"
     "src/tools/ls.c"
+    "src/tools/pwd.c"
     "src/utils/config.c"
     "src/utils/file.c"
     "src/utils/hash.c"

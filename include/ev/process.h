@@ -67,6 +67,11 @@ struct ev_process_options_s
     char* const*                    envp;
 
     /**
+     * @brief (Optional) Current working directory.
+     */
+    const char*                     cwd;
+
+    /**
      * @brief (Optional) Pipe for redirect stdin / stdout / stderr.
      */
     ev_process_stdio_container_t    stdios[3];
@@ -112,6 +117,7 @@ void ev_process_sigchld(int signum);
 
 /**
  * @brief Get current working directory.
+ * @note The trailing slash is always removed.
  * @param[out] buffer   Buffer to store string. The terminating null byte is
  *   always appended.
  * @param[in] size      Buffer size.

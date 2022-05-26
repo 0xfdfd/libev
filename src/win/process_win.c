@@ -474,8 +474,8 @@ int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_opt
         return ret;
     }
 
-    ret = CreateProcess(NULL, start_info.cmdline, NULL, NULL, TRUE, 0,
-        start_info.envline, NULL, &start_info.start_info, &piProcInfo);
+    ret = CreateProcessA(NULL, start_info.cmdline, NULL, NULL, TRUE, 0,
+        start_info.envline, opt->cwd, &start_info.start_info, &piProcInfo);
 
     handle->pid = piProcInfo.hProcess;
     _ev_process_cleanup_start_info(&start_info);

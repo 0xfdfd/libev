@@ -2,6 +2,7 @@
 #include "file.h"
 #include "config.h"
 #include "cutest.h"
+#include "memcheck.h"
 #include <stdio.h>
 #include <errno.h>
 #include <assert.h>
@@ -132,4 +133,32 @@ const char* test_self_exe_name(void)
 {
     _init_file_once();
     return test_file_name(s_test_file.exe_path);
+}
+
+char* file_parrent_dir(const char* path)
+{
+    size_t i = 0;
+    const char* last_slash = NULL;
+
+    for (; path[i] != '\0'; i++)
+    {
+        if (path[i] == '\\' || path[i] == '/')
+        {
+            last_slash = &path[i];
+        }
+    }
+
+    if (last_slash == NULL)
+    {
+        return mmc_strdup("");
+    }
+
+    size_t str_size = last_slash - path;
+    char* buffer = mmc_malloc(str_size + 1);
+    ASSERT_NE_PTR(buffer, NULL);
+
+    memcpy(buffer, path, str_size);
+    buffer[str_size] = '\0';
+
+    return buffer;
 }

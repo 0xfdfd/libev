@@ -185,7 +185,14 @@ err_dup:
 
 static void _ev_spawn_child(spawn_helper_t* helper, const ev_process_options_t* opt)
 {
+    int errcode;
     _ev_spawn_dup_stdio(helper);
+
+    if (opt->cwd != NULL && chdir(opt->cwd))
+    {
+        errcode = errno;
+        _ev_spawn_write_errno_and_exit(helper, errcode);
+    }
 
     if (opt->envp == NULL)
     {
@@ -197,7 +204,7 @@ static void _ev_spawn_child(spawn_helper_t* helper, const ev_process_options_t* 
     }
 
     /* Error */
-    int errcode = errno;
+    errcode = errno;
     _ev_spawn_write_errno_and_exit(helper, errcode);
 }
 

@@ -1,6 +1,7 @@
 #include "echoserver.h"
 #include "help.h"
 #include "ls.h"
+#include "pwd.h"
 #include "init.h"
 #include "test.h"
 #include <string.h>
@@ -10,6 +11,7 @@
 static test_tool_t* g_command_table[] = {
     &test_tool_echoserver,
     &test_tool_ls,
+    &test_tool_pwd,
     &test_tool_help,
 };
 

@@ -181,3 +181,59 @@ TEST_F(process, exepath)
 
     ASSERT_EQ_U32(ret, ev_exepath(NULL, 0));
 }
+
+//////////////////////////////////////////////////////////////////////////
+// process.cwd
+//////////////////////////////////////////////////////////////////////////
+
+typedef struct process_cwd_path
+{
+    char buffer[4096];
+    ev_pipe_read_req_t req;
+}process_cwd_path_t;
+
+static void _process_cwd_on_read(ev_pipe_read_req_t* req, size_t size, int stat)
+{
+    ASSERT_EQ_D32(stat, EV_SUCCESS);
+    process_cwd_path_t* cwd_path = EV_CONTAINER_OF(req, process_cwd_path_t, req);
+
+    cwd_path->buffer[size] = '\0';
+
+    size--;
+    while (cwd_path->buffer[size] == '\r' || cwd_path->buffer[size] == '\n')
+    {
+        cwd_path->buffer[size] = '\0';
+        size--;
+    }
+}
+
+TEST_F(process, cwd)
+{
+    int ret;
+    
+    char* dir_path = file_parrent_dir(test_get_self_dir());
+    char* argv[] = { g_test_process->self_exe_path, "--", "pwd", NULL };
+
+    ev_process_options_t opt;
+    memset(&opt, 0, sizeof(opt));
+    opt.argv = argv;
+    opt.cwd = dir_path;
+    opt.stdios[1].flag = EV_PROCESS_STDIO_REDIRECT_PIPE;
+    opt.stdios[1].data.pipe = &g_test_process->stdout_pipe;
+
+    ret = ev_process_spawn(&g_test_process->loop, &g_test_process->process, &opt);
+    ASSERT_EQ_D32(ret, EV_SUCCESS);
+
+    process_cwd_path_t cwd_path;
+    memset(&cwd_path, 0, sizeof(cwd_path));
+    ev_buf_t buf = ev_buf_make(cwd_path.buffer, sizeof(cwd_path.buffer));
+
+    ret = ev_pipe_read(&g_test_process->stdout_pipe, &cwd_path.req, &buf, 1,
+        _process_cwd_on_read);
+    ASSERT_EQ_D32(ret, EV_SUCCESS);
+
+    ASSERT_EQ_D32(ev_loop_run(&g_test_process->loop, EV_LOOP_MODE_DEFAULT), 0);
+
+    ASSERT_EQ_STR(cwd_path.buffer, dir_path);
+    mmc_free(dir_path);
+}

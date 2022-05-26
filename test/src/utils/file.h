@@ -48,6 +48,11 @@ const char* test_self_exe_name(void);
  */
 const char* test_file_name(const char* file);
 
+/**
+ * Use #mmc_free() to release result.
+ */
+char* file_parrent_dir(const char* path);
+
 #ifdef __cplusplus
 }
 #endif
