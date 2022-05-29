@@ -148,3 +148,16 @@ TEST_F(process, exit_callback)
 
     ASSERT_EQ_D32(g_test_process->flag_exit, 1);
 }
+
+//////////////////////////////////////////////////////////////////////////
+// process.getcwd
+//////////////////////////////////////////////////////////////////////////
+TEST_F(process, getcwd)
+{
+    char buffer[4096];
+
+    ssize_t ret = ev_getcwd(buffer, sizeof(buffer));
+    ASSERT_GT_U32(ret, 0);
+
+    ASSERT(buffer[ret - 1] != '/' && buffer[ret - 1] != '\\');
+}

@@ -111,6 +111,18 @@ int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_opt
 void ev_process_sigchld(int signum);
 
 /**
+ * @brief Get current working directory.
+ * @param[out] buffer   Buffer to store string. The terminating null byte is
+ *   always appended.
+ * @param[in] size      Buffer size.
+ * @return The number of bytes would have been written to the buffer (excluding
+ *   the terminating null byte). Thus, a return value of \p size or more means
+ *   that the output was truncated.
+ * @return #ev_errno_t if error occur.
+ */
+ssize_t ev_getcwd(char* buffer, size_t size);
+
+/**
  * @}
  */
 

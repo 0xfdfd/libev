@@ -496,3 +496,62 @@ int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_opt
 
     return EV_SUCCESS;
 }
+
+ssize_t ev_getcwd(char* buffer, size_t size)
+{
+    DWORD errcode;
+    DWORD wide_size = GetCurrentDirectoryW(0, NULL);
+    if (wide_size == 0)
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    WCHAR* tmp_buf = ev__malloc(wide_size * sizeof(WCHAR));
+    if (tmp_buf == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    wide_size = GetCurrentDirectoryW(wide_size, tmp_buf);
+    if (wide_size == 0)
+    {
+        errcode = GetLastError();
+        ev__free(tmp_buf);
+        return ev__translate_sys_error(errcode);
+    }
+
+    /* remove trailing slash */
+    if (wide_size == 3 && tmp_buf[2] == L':' && tmp_buf[3] == L'\\')
+    {
+        wide_size = 2;
+        tmp_buf[3] = L'\0';
+    }
+
+    /* check how many  */
+    int required_size = WideCharToMultiByte(CP_UTF8, 0, tmp_buf, -1, NULL, 0,
+        NULL, NULL);
+    if (required_size == 0)
+    {
+        errcode = GetLastError();
+        ev__free(tmp_buf);
+        return ev__translate_sys_error(errcode);
+    }
+
+    int write_size = WideCharToMultiByte(CP_UTF8, 0, tmp_buf, -1, buffer,
+        (int)size, NULL, NULL);
+    ev__free(tmp_buf);
+
+    if (write_size == 0)
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    if (write_size < required_size)
+    {
+        buffer[write_size - 1] = '\0';
+    }
+
+    return (ssize_t)write_size - 1;
+}

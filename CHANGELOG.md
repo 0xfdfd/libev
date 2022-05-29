@@ -2,6 +2,9 @@
 
 ## v0.0.7
 
+### Features
+1. Support `ev_getcwd()`
+
 ### Bug Fixes
 1. fix: use of enum without previous declaration
 2. fix: `FindFirstFile()` handle leak

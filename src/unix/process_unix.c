@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include "ev/errno.h"
+#include "allocator.h"
 #include "loop_unix.h"
 #include "io_unix.h"
 #include "pipe.h"
@@ -9,6 +10,8 @@
 #include <assert.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <limits.h>
+#include <stdio.h>
 
 typedef struct dup_pair_s
 {
@@ -586,3 +589,49 @@ void ev_process_sigchld(int signum)
     }
 }
 
+ssize_t ev_getcwd(char* buffer, size_t size)
+{
+    size_t str_len;
+    int errcode;
+
+    if (buffer != NULL && getcwd(buffer, size) != NULL)
+    {
+        str_len = strlen(buffer);
+        if (buffer[str_len - 1] == '/')
+        {
+            buffer[str_len - 1] = '\0';
+            str_len -= 1;
+        }
+
+        return str_len;
+    }
+
+    const size_t max_path_size = PATH_MAX + 1;
+    char* tmp_buf = ev__malloc(max_path_size);
+    if (tmp_buf == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    if (getcwd(tmp_buf, max_path_size) == NULL)
+    {
+        errcode = errno;
+        ev__free(tmp_buf);
+        return ev__translate_sys_error(errcode);
+    }
+
+    str_len = strlen(tmp_buf);
+    if (tmp_buf[str_len - 1] == '/')
+    {
+        tmp_buf[str_len - 1] = '\0';
+        str_len -= 1;
+    }
+
+    if (buffer != NULL)
+    {
+        snprintf(buffer, size, "%s", tmp_buf);
+    }
+
+    ev__free(tmp_buf);
+    return str_len;
+}
