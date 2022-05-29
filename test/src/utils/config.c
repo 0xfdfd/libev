@@ -1,5 +1,5 @@
 #include "config.h"
-#include "tools/memcheck.h"
+#include "utils/memcheck.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

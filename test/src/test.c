@@ -1,6 +1,5 @@
 #define _GNU_SOURCE
 #include "test.h"
-#include "tools/memcheck.h"
 #include "tools/init.h"
 #include "utils/config.h"
 #include <string.h>
