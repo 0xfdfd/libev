@@ -21,7 +21,7 @@ static void _before_all_test(int argc, char* argv[])
 
     if (!test_config.flag_no_memcheck)
     {
-        setup_memcheck();
+        mmc_setup();
     }
 }
 
@@ -31,7 +31,7 @@ static void _after_all_test(void)
 
     if (!test_config.flag_no_memcheck)
     {
-        dump_memcheck();
+        mmc_dump_exit();
     }
 
     test_config_cleanup();

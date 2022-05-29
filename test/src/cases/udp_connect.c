@@ -19,7 +19,7 @@ struct test_5295*   g_test_5295 = NULL;
 
 TEST_FIXTURE_SETUP(udp)
 {
-    g_test_5295 = memcheck_calloc(1, sizeof(*g_test_5295));
+    g_test_5295 = mmc_calloc(1, sizeof(*g_test_5295));
 
     test_random(&g_test_5295->w_buf, sizeof(g_test_5295->w_buf));
 
@@ -36,7 +36,7 @@ TEST_FIXTURE_TEAREDOWN(udp)
     ASSERT_EQ_D32(ev_loop_run(&g_test_5295->loop, EV_LOOP_MODE_DEFAULT), 0);
     ASSERT_EQ_D32(ev_loop_exit(&g_test_5295->loop), 0);
 
-    memcheck_free(g_test_5295);
+    mmc_free(g_test_5295);
     g_test_5295 = NULL;
 }
 

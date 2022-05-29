@@ -53,7 +53,7 @@ static void _memcheck_init(void)
     ev_once_execute(&s_runtime.once_token, _memcheck_on_init);
 }
 
-void* memcheck_malloc(size_t size)
+void* mmc_malloc(size_t size)
 {
     _memcheck_init();
 
@@ -75,11 +75,11 @@ void* memcheck_malloc(size_t size)
     return memblock->payload;
 }
 
-void* memcheck_calloc(size_t nmemb, size_t size)
+void* mmc_calloc(size_t nmemb, size_t size)
 {
     size_t calloc_size = nmemb * size;
 
-    void* ptr = memcheck_malloc(calloc_size);
+    void* ptr = mmc_malloc(calloc_size);
     if (ptr != NULL)
     {
         memset(ptr, 0, calloc_size);
@@ -88,7 +88,7 @@ void* memcheck_calloc(size_t nmemb, size_t size)
     return ptr;
 }
 
-void memcheck_free(void* ptr)
+void mmc_free(void* ptr)
 {
     _memcheck_init();
 
@@ -108,17 +108,17 @@ void memcheck_free(void* ptr)
     free(memblock);
 }
 
-void* memcheck_realloc(void* ptr, size_t size)
+void* mmc_realloc(void* ptr, size_t size)
 {
     _memcheck_init();
 
     if (ptr == NULL)
     {
-        return memcheck_malloc(size);
+        return mmc_malloc(size);
     }
     if (size == 0)
     {
-        memcheck_free(ptr);
+        mmc_free(ptr);
         return NULL;
     }
 
@@ -148,10 +148,10 @@ void* memcheck_realloc(void* ptr, size_t size)
     return dst_memblock != new_memblock ? NULL : dst_memblock;
 }
 
-char* memcheck_strdup(const char* str)
+char* mmc_strdup(const char* str)
 {
     size_t len = strlen(str) + 1;
-    char* m = memcheck_malloc(len);
+    char* m = mmc_malloc(len);
     if (m == NULL)
     {
         return NULL;
@@ -159,7 +159,7 @@ char* memcheck_strdup(const char* str)
     return memcpy(m, str, len);
 }
 
-void dump_memcheck(void)
+void mmc_dump_exit(void)
 {
     size_t left_block = ev_list_size(&s_runtime.mem_queue);
     if (left_block != 0)
@@ -170,10 +170,12 @@ void dump_memcheck(void)
     }
 }
 
-void setup_memcheck(void)
+void mmc_setup(void)
 {
+    _memcheck_init();
+
     ASSERT_EQ_D32(
-        ev_replace_allocator(memcheck_malloc, memcheck_calloc, memcheck_realloc, memcheck_free),
+        ev_replace_allocator(mmc_malloc, mmc_calloc, mmc_realloc, mmc_free),
         EV_SUCCESS
     );
 }

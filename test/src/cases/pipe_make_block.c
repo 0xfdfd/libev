@@ -32,7 +32,7 @@ test_pipe_make_t*           g_test_pipe_make = NULL;
 
 TEST_FIXTURE_SETUP(pipe)
 {
-    g_test_pipe_make = memcheck_calloc(1, sizeof(*g_test_pipe_make));
+    g_test_pipe_make = mmc_calloc(1, sizeof(*g_test_pipe_make));
 
     size_t i;
     for (i = 0; i < ARRAY_SIZE(g_test_pipe_make->fds); i++)
@@ -64,7 +64,7 @@ TEST_FIXTURE_TEAREDOWN(pipe)
 
     ev_threadpool_exit(&g_test_pipe_make->thr_pool);
 
-    memcheck_free(g_test_pipe_make);
+    mmc_free(g_test_pipe_make);
     g_test_pipe_make = NULL;
 }
 

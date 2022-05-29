@@ -46,7 +46,7 @@ struct test_a548*           g_test_a548 = NULL;
 
 TEST_FIXTURE_SETUP(pipe)
 {
-    g_test_a548 = memcheck_calloc(1, sizeof(*g_test_a548));
+    g_test_a548 = mmc_calloc(1, sizeof(*g_test_a548));
 
     ASSERT_EQ_D32(ev_loop_init(&g_test_a548->loop), 0);
     ASSERT_EQ_D32(ev_pipe_init(&g_test_a548->loop, &g_test_a548->s_pipe, 1), 0);
@@ -77,7 +77,7 @@ TEST_FIXTURE_TEAREDOWN(pipe)
     ASSERT_EQ_D32(ev_loop_run(&g_test_a548->loop, EV_LOOP_MODE_DEFAULT), 0);
     ASSERT_EQ_D32(ev_loop_exit(&g_test_a548->loop), 0);
 
-    memcheck_free(g_test_a548);
+    mmc_free(g_test_a548);
     g_test_a548 = NULL;
 }
 

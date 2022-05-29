@@ -28,7 +28,7 @@ static void _close_stdin_pipe(void)
 
 TEST_FIXTURE_SETUP(process)
 {
-    g_test_process = memcheck_calloc(1, sizeof(*g_test_process));
+    g_test_process = mmc_calloc(1, sizeof(*g_test_process));
 
     g_test_process->self_exe_path = strdup(test_get_self_exe());
     ASSERT_NE_PTR(g_test_process->self_exe_path, NULL);
@@ -53,7 +53,7 @@ TEST_FIXTURE_TEAREDOWN(process)
     free(g_test_process->self_exe_path);
     g_test_process->self_exe_path = NULL;
 
-    memcheck_free(g_test_process);
+    mmc_free(g_test_process);
     g_test_process = NULL;
 }
 
