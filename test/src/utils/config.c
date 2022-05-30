@@ -18,13 +18,6 @@ void test_config_setup(int argc, char* argv[])
 
     for (i = 0; i < argc; i++)
     {
-        opt = "--no_memcheck";
-        if (strcmp(argv[i], opt) == 0)
-        {
-            test_config.flag_no_memcheck=1;
-            continue;
-        }
-
         opt = "--";
         if (strcmp(argv[i], opt) == 0)
         {

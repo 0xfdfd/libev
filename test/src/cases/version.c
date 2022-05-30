@@ -1,7 +1,17 @@
 #include "ev.h"
 #include "test.h"
 
-TEST(version, str)
+TEST_FIXTURE_SETUP(version)
+{
+
+}
+
+TEST_FIXTURE_TEAREDOWN(version)
+{
+
+}
+
+TEST_F(version, str)
 {
     char buffer[64];
 #if EV_VERSION_PREREL
@@ -13,12 +23,12 @@ TEST(version, str)
     ASSERT_EQ_STR(buffer, ev_version_str());
 }
 
-TEST(version, code)
+TEST_F(version, code)
 {
     ASSERT_EQ_U32(EV_VERSION_CODE, ev_version_code());
 }
 
-TEST(version, compare)
+TEST_F(version, compare)
 {
     /* patch version compare */
     ASSERT_GT_U32(EV_VERSION(0, 0, 2, 0), EV_VERSION(0, 0, 1, 0));

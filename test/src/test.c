@@ -10,30 +10,29 @@
 #   include <unistd.h>
 #endif
 
+typedef struct test_ctx
+{
+    mmc_snapshot_t* mm_snapshot[2];
+}test_ctx_t;
+
+static test_ctx_t g_test_ctx = {
+    { NULL, NULL },
+};
+
 static void _before_all_test(int argc, char* argv[])
 {
+    mmc_init();
     test_config_setup(argc, argv);
 
     if (test_config.argvt != NULL)
     {
         exit(tool_exec(test_config.argct, test_config.argvt));
     }
-
-    if (!test_config.flag_no_memcheck)
-    {
-        mmc_setup();
-    }
 }
 
 static void _after_all_test(void)
 {
-    fflush(NULL);
-
-    if (!test_config.flag_no_memcheck)
-    {
-        mmc_dump_exit();
-    }
-
+    mmc_dump_exit();
     test_config_cleanup();
 }
 
@@ -65,20 +64,52 @@ static void _on_log(cutest_log_meta_t* info, const char* fmt, va_list ap, FILE* 
     fprintf(out, "\n");
 }
 
+static void _on_mem_leak(memblock_t* block, void* arg)
+{
+    (void)arg;
+    size_t* p_leak_size = arg;
+    *p_leak_size += block->size;
+}
+
+static void _before_fixture_setup(const char* fixture_name)
+{
+    (void)fixture_name;
+    mmc_snapshot_take(&g_test_ctx.mm_snapshot[0]);
+}
+
+static void _after_fixture_teardown(const char* fixture_name, int ret)
+{
+    (void)fixture_name; (void)ret;
+
+    mmc_snapshot_take(&g_test_ctx.mm_snapshot[1]);
+
+    size_t leak_size = 0;
+    mmc_snapshot_compare(g_test_ctx.mm_snapshot[0], g_test_ctx.mm_snapshot[1],
+        _on_mem_leak, &leak_size);
+
+    mmc_snapshot_free(&g_test_ctx.mm_snapshot[0]);
+    mmc_snapshot_free(&g_test_ctx.mm_snapshot[1]);
+
+    if (leak_size != 0)
+    {
+        TEST_LOG_F("memory leak: %zu byte%s", leak_size, leak_size > 1 ? "s" : "");
+    }
+}
+
 cutest_hook_t test_hook = {
-    _before_all_test,   /* .before_all_test */
-    _after_all_test,    /* .after_all_test */
-    NULL,               /* .before_fixture_setup */
-    NULL,               /* .after_fixture_setup */
-    NULL,               /* .before_fixture_teardown */
-    NULL,               /* .after_fixture_teardown */
-    NULL,               /* .before_fixture_test */
-    NULL,               /* .after_fixture_test */
-    NULL,               /* .before_parameterized_test */
-    NULL,               /* .after_parameterized_test */
-    NULL,               /* .before_simple_test */
-    NULL,               /* .after_simple_test */
-    _on_log,            /* .on_log_print */
+    _before_all_test,           /* .before_all_test */
+    _after_all_test,            /* .after_all_test */
+    _before_fixture_setup,      /* .before_fixture_setup */
+    NULL,                       /* .after_fixture_setup */
+    NULL,                       /* .before_fixture_teardown */
+    _after_fixture_teardown,    /* .after_fixture_teardown */
+    NULL,                       /* .before_fixture_test */
+    NULL,                       /* .after_fixture_test */
+    NULL,                       /* .before_parameterized_test */
+    NULL,                       /* .after_parameterized_test */
+    NULL,                       /* .before_simple_test */
+    NULL,                       /* .after_simple_test */
+    _on_log,                    /* .on_log_print */
 };
 
 static void _test_proxy(void* arg)

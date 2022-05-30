@@ -8,6 +8,8 @@ static void _at_exit(void)
 {
     /* ensure all output was done. */
     fflush(NULL);
+
+    mmc_exit();
 }
 
 int main(int argc, char* argv[])

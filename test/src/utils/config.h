@@ -16,11 +16,6 @@ typedef struct test_config_s
      */
     char**  argv;
 
-    /**
-     * @brief Disable builtin memory leak check.
-     */
-    int     flag_no_memcheck;
-
     int     argct;
 
     char**  argvt;
