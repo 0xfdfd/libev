@@ -30,7 +30,7 @@ TEST_FIXTURE_SETUP(process)
 {
     g_test_process = mmc_calloc(1, sizeof(*g_test_process));
 
-    g_test_process->self_exe_path = strdup(test_get_self_exe());
+    g_test_process->self_exe_path = mmc_strdup(test_get_self_exe());
     ASSERT_NE_PTR(g_test_process->self_exe_path, NULL);
 
     ASSERT_EQ_D32(ev_loop_init(&g_test_process->loop), EV_SUCCESS);
@@ -50,7 +50,7 @@ TEST_FIXTURE_TEAREDOWN(process)
 
     ASSERT_EQ_D32(ev_loop_exit(&g_test_process->loop), EV_SUCCESS);
 
-    free(g_test_process->self_exe_path);
+    mmc_free(g_test_process->self_exe_path);
     g_test_process->self_exe_path = NULL;
 
     mmc_free(g_test_process);

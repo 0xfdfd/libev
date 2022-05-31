@@ -17,10 +17,6 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 
-#if defined(_WIN32)
-#   define strdup(s)    _strdup(s)
-#endif
-
 /**
  * @brief #TEST_F() with timeout
  */
