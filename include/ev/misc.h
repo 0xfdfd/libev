@@ -1,5 +1,5 @@
-#ifndef __EV_UTILS_H__
-#define __EV_UTILS_H__
+#ifndef __EV_MISC_H__
+#define __EV_MISC_H__
 
 #include "ev/defs.h"
 #include "ev/os.h"
@@ -11,12 +11,12 @@ extern "C" {
 #endif
 
 /**
- * @defgroup EV_UTILS Miscellaneous utilities
+ * @defgroup EV_MISC Miscellaneous utilities
  * @{
  */
 
 /**
- * @defgroup EV_UTILS_NET Network
+ * @defgroup EV_MISC_NET Network
  * @{
  */
 
@@ -59,7 +59,7 @@ int ev_ipv4_name(const struct sockaddr_in* addr, int* port, char* ip, size_t len
 int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t len);
 
 /**
- * @} EV_UTILS_NET
+ * @} EV_MISC_NET
  */
 
 /**
@@ -106,7 +106,7 @@ void ev_buf_make_n(ev_buf_t bufs[], size_t nbuf, ...);
 void ev_buf_make_v(ev_buf_t bufs[], size_t nbuf, va_list ap);
 
 /**
- * @} EV_UTILS
+ * @} EV_MISC
  */
 
 #ifdef __cplusplus

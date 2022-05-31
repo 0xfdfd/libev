@@ -18,6 +18,7 @@ add_library(${PROJECT_NAME}
     "src/loop.c"
     "src/map.c"
     "src/map_low.c"
+    "src/misc.c"
     "src/pipe.c"
     "src/queue.c"
     "src/ringbuffer.c"
@@ -26,7 +27,6 @@ add_library(${PROJECT_NAME}
     "src/timer.c"
     "src/todo.c"
     "src/udp.c"
-    "src/utils.c"
     "src/version.c")
 if(WIN32)
     target_sources(${PROJECT_NAME}

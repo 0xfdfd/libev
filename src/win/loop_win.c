@@ -1,6 +1,6 @@
 #include "ev/errno.h"
 #include "ev/once.h"
-#include "ev/utils.h"
+#include "misc.h"
 #include "allocator.h"
 #include "loop_win.h"
 #include "thread_win.h"

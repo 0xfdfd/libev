@@ -50,6 +50,7 @@
 #include "ev/list.h"
 #include "ev/loop.h"
 #include "ev/map.h"
+#include "ev/misc.h"
 #include "ev/mutex.h"
 #include "ev/once.h"
 #include "ev/pipe.h"
@@ -64,7 +65,6 @@
 #include "ev/timer.h"
 #include "ev/todo.h"
 #include "ev/udp.h"
-#include "ev/utils.h"
 #include "ev/version.h"
 
 #endif
