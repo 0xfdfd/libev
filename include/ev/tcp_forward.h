@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 /**
- * @defgroup EV_TCP TCP
+ * @addtogroup EV_TCP
  * @{
  */
 

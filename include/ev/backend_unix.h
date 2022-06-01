@@ -162,8 +162,10 @@ typedef struct ev_loop_plt
         -1,\
         EV_MAP_INIT(NULL, NULL),\
         {\
-            -1,\
+            { EV_OS_PIPE_INVALID, EV_OS_PIPE_INVALID },\
             EV_NONBLOCK_IO_INVALID,\
+            EV_MUTEX_INVALID,\
+            EV_LIST_INIT,\
         }\
     }
 

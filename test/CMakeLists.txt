@@ -52,11 +52,7 @@ target_include_directories(ev_test
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-    target_compile_options(ev_test PRIVATE /W4 /WX)
-else ()
-    target_compile_options(ev_test PRIVATE -Wall -Wextra -Werror)
-endif ()
+ev_setup_target_wall(ev_test)
 
 function(EV_SETUP_EXPORT_PGO name)
     get_target_property(TEMP ${name} LINK_FLAGS)

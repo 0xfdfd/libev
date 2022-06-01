@@ -68,9 +68,9 @@ struct ev_loop
         0,                                      /* .hwtime */\
         { EV_LIST_INIT, EV_LIST_INIT },         /* .handles */\
         { EV_LIST_INIT },                       /* .todo */\
-        { EV_MAP_INIT(NULL, NULL) },            /* .timer */\
+        { EV_MAP_INIT(NULL, NULL) },            /* .timer */ \
+        { NULL, EV_LIST_NODE_INIT },            /* .threadpool */\
         { 0 },                                  /* .mask */\
-        NULL,                                   /* .threadpool */\
         EV_LOOP_PLT_INIT,                       /* .backend */\
     }
 

@@ -10,8 +10,16 @@ extern "C" {
 #endif
 
 /**
- * @addtogroup EV_TCP
+ * @defgroup EV_TCP TCP
+ *
+ * TCP layer.
+ *
  * @{
+ */
+
+/**
+ * @example tcp_echo_server.c
+ * This is an example for how to use #ev_tcp_t as tcp server.
  */
 
 /**
@@ -145,7 +153,7 @@ int ev_tcp_write(ev_tcp_t* sock, ev_tcp_write_req_t* req,
  * 
  * @param[in] sock  Socket handle
  * @param[in] req   Read request
- *  * @param[in] bufs  Buffer list
+ * @param[in] bufs  Buffer list
  * @param[in] nbuf  Buffer number
  * @param[in] cb    Read result callback
  * @return          #ev_errno_t

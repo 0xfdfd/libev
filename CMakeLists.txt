@@ -89,12 +89,16 @@ target_include_directories(${PROJECT_NAME}
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
+function(ev_setup_target_wall name)
+    if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+        target_compile_options(${name} PRIVATE /W4 /WX)
+    else ()
+        target_compile_options(${name} PRIVATE -Wall -Wextra -Werror)
+    endif ()
+endfunction()
+
 # add warning check
-if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-    target_compile_options(${PROJECT_NAME} PRIVATE /W4 /WX)
-else ()
-    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror)
-endif ()
+ev_setup_target_wall(${PROJECT_NAME})
 
 # PGO
 if (EV_PGO_IMPORT)
@@ -121,6 +125,9 @@ if (EV_ENABLE_COVERAGE AND CMAKE_C_COMPILER_ID MATCHES "(GNU|Clang)")
     target_compile_options(${PROJECT_NAME} PRIVATE -fprofile-arcs -ftest-coverage)
     set(EV_HAVE_COVERAGE true)
 endif ()
+
+# build examples
+add_subdirectory(example)
 
 # build test
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
