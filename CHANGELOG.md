@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.0.7
+## v0.0.7 (2022/06/07)
 
 ### Features
 1. Support `ev_getcwd()`
