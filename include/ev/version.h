@@ -22,12 +22,12 @@ extern "C" {
 /**
  * @brief Patch version.
  */
-#define EV_VERSION_PATCH            7
+#define EV_VERSION_PATCH            8
 
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           0
+#define EV_VERSION_PREREL           1
 
 /**
  * @brief Version calculate helper macro.
