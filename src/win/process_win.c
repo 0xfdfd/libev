@@ -2,6 +2,7 @@
 #include "async.h"
 #include "loop.h"
 #include "allocator.h"
+#include "defs.h"
 #include "pipe_win.h"
 #include "process_win.h"
 #include <assert.h>
@@ -554,4 +555,57 @@ ssize_t ev_getcwd(char* buffer, size_t size)
     }
 
     return (ssize_t)write_size - 1;
+}
+
+ssize_t ev_exepath(char* buffer, size_t size)
+{
+    int utf8_len;
+    int err;
+
+    DWORD utf16_buffer_len = WIN32_UNICODE_PATH_MAX;
+    WCHAR* utf16_buffer = (WCHAR*) ev__malloc(sizeof(WCHAR) * utf16_buffer_len);
+    if (!utf16_buffer)
+    {
+        return EV_ENOMEM;
+    }
+
+    /* Get the path as UTF-16. */
+    DWORD utf16_len = GetModuleFileNameW(NULL, utf16_buffer, utf16_buffer_len);
+    if (utf16_len == 0)
+    {
+        err = GetLastError();
+        goto error;
+    }
+
+    /* utf16_len contains the length, *not* including the terminating null. */
+    utf16_buffer[utf16_len] = L'\0';
+
+    /* Convert to UTF-8 */
+    utf8_len = WideCharToMultiByte(CP_UTF8,
+                                   0,
+                                   utf16_buffer,
+                                   -1,
+                                   buffer,
+                                   (int) size,
+                                   NULL,
+                                   NULL);
+    if (utf8_len == 0)
+    {
+        err = GetLastError();
+        goto error;
+    }
+
+    ev__free(utf16_buffer);
+
+    /* utf8_len *does* include the terminating null at this point, but the
+     * returned size shouldn't. */
+    return utf8_len - 1;
+
+error:
+    if (buffer != NULL && size > 0)
+    {
+        *buffer = '\0';
+    }
+    ev__free(utf16_buffer);
+    return ev__translate_sys_error(err);
 }

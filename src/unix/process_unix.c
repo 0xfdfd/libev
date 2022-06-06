@@ -635,3 +635,39 @@ ssize_t ev_getcwd(char* buffer, size_t size)
     ev__free(tmp_buf);
     return str_len;
 }
+
+ssize_t ev_exepath(char* buffer, size_t size)
+{
+    int errcode;
+
+    size_t tmp_size = PATH_MAX;
+    char* tmp_buffer = ev__malloc(tmp_size);
+    if (tmp_buffer == NULL)
+    {
+        errcode = EV_ENOMEM;
+        goto error;
+    }
+
+    ssize_t ret = readlink("/proc/self/exe", tmp_buffer, tmp_size);
+    if (ret < 0)
+    {
+        errcode = ev__translate_sys_error(errno);
+        goto error;
+    }
+
+    if (buffer != NULL)
+    {
+        ret = snprintf(buffer, size, "%s", tmp_buffer);
+    }
+    ev__free(tmp_buffer);
+
+    return ret;
+
+error:
+    if (buffer != NULL && size > 0)
+    {
+        buffer[0] = '\0';
+    }
+    ev__free(tmp_buffer);
+    return errcode;
+}

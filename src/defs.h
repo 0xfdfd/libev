@@ -111,6 +111,20 @@ extern "C" {
 #   define EV_NORETURN
 #endif
 
+/**
+ * @brief The maximum length for a path.
+ * In Windows API, the Ansi version of `MAX_PATH` is defined as 260.
+ * The unicode version does not define macro as `MAX_PATH`, but NTFS does
+ * support up to 32768 characters in length, but only when using the Unicode
+ * APIs.
+ *
+ * @see https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
+ * @see https://docs.microsoft.com/en-us/cpp/c-runtime-library/path-field-limits?view=msvc-170
+ */
+#if defined(_WIN32)
+#   define WIN32_UNICODE_PATH_MAX 32768
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -74,12 +74,14 @@ static void _on_mem_leak(memblock_t* block, void* arg)
 static void _before_fixture_setup(const char* fixture_name)
 {
     (void)fixture_name;
+    fflush(NULL);
     mmc_snapshot_take(&g_test_ctx.mm_snapshot[0]);
 }
 
 static void _after_fixture_teardown(const char* fixture_name, int ret)
 {
     (void)fixture_name; (void)ret;
+    fflush(NULL);
 
     mmc_snapshot_take(&g_test_ctx.mm_snapshot[1]);
 

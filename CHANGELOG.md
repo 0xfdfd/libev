@@ -4,6 +4,7 @@
 
 ### Features
 1. Support `ev_getcwd()`
+2. Support `ev_exepath()`
 
 ### Bug Fixes
 1. fix: use of enum without previous declaration

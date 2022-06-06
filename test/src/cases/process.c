@@ -161,3 +161,22 @@ TEST_F(process, getcwd)
 
     ASSERT(buffer[ret - 1] != '/' && buffer[ret - 1] != '\\');
 }
+
+//////////////////////////////////////////////////////////////////////////
+// process.exepath
+//////////////////////////////////////////////////////////////////////////
+TEST_F(process, exepath)
+{
+    char buffer[4096];
+    ssize_t ret = ev_exepath(buffer, sizeof(buffer));
+    ASSERT_GT_U32(ret, 0);
+    ASSERT_LT_U32(ret, sizeof(buffer));
+    ASSERT_NE_D32(buffer[0], '\0');
+    ASSERT_EQ_D32(buffer[ret], '\0');
+
+    /* Path should not terminal with '/' or '\' */
+    ASSERT_NE_D32(buffer[ret - 1], '/');
+    ASSERT_NE_D32(buffer[ret - 1], '\\');
+
+    ASSERT_EQ_U32(ret, ev_exepath(NULL, 0));
+}
