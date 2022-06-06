@@ -219,9 +219,21 @@ char* mmc_strdup(const char* str)
     return memcpy(m, str, len);
 }
 
-void mmc_dump_exit(void)
+static void _mmc_dump_add_snapshot(mmc_info_t* info, mmc_snapshot_t* snapshot)
 {
-    size_t left_block = 0;
+    ev_mutex_enter(&snapshot->guard);
+    ev_list_node_t* it = ev_list_begin(&snapshot->mmlist);
+    for (; it != NULL; it = ev_list_next(it))
+    {
+        memblock_t* block = EV_CONTAINER_OF(it, memblock_t, node);
+        info->bytes += block->size;
+    }
+    ev_mutex_leave(&snapshot->guard);
+}
+
+void mmc_dump(mmc_info_t* info)
+{
+    memset(info, 0, sizeof(*info));
 
     ev_mutex_enter(&s_mmc_rt.mutex);
     {
@@ -229,17 +241,11 @@ void mmc_dump_exit(void)
         for (; it != NULL; it = ev_list_next(it))
         {
             mmc_snapshot_t* snapshot = container_of(it, mmc_snapshot_t, node);
-            left_block += ev_list_size(&snapshot->mmlist);
+            info->blocks += ev_list_size(&snapshot->mmlist);
+            _mmc_dump_add_snapshot(info, snapshot);
         }
     }
     ev_mutex_leave(&s_mmc_rt.mutex);
-
-    if (left_block != 0)
-    {
-        fprintf(stderr, "[  ERROR   ] memory leak detected: %zu block%s not free.\n",
-            left_block, left_block == 1 ? "" : "s");
-        exit(EXIT_FAILURE);
-    }
 }
 
 void mmc_init(void)

@@ -19,6 +19,21 @@ static test_ctx_t g_test_ctx = {
     { NULL, NULL },
 };
 
+static void _check_mmc_leak(void)
+{
+    mmc_info_t info;
+    mmc_dump(&info);
+
+    if (info.blocks == 0)
+    {
+        return;
+    }
+
+    fprintf(stderr, "[  ERROR   ] memory leak detected: %zu block%s not free.\n",
+            info.blocks, info.blocks == 1 ? "" : "s");
+    exit(EXIT_FAILURE);
+}
+
 static void _before_all_test(int argc, char* argv[])
 {
     mmc_init();
@@ -26,14 +41,16 @@ static void _before_all_test(int argc, char* argv[])
 
     if (test_config.argvt != NULL)
     {
-        exit(tool_exec(test_config.argct, test_config.argvt));
+        int ret = tool_exec(test_config.argct, test_config.argvt);
+        _check_mmc_leak();
+        exit(ret);
     }
 }
 
 static void _after_all_test(void)
 {
-    mmc_dump_exit();
     test_config_cleanup();
+    _check_mmc_leak();
 }
 
 static const char* _cutest_get_log_level_str(cutest_log_level_t level)

@@ -39,6 +39,12 @@ typedef struct mmc_snapshot_s
     uint64_t        idx;    /**< Index */
 } mmc_snapshot_t;
 
+typedef struct mmc_info
+{
+    size_t bytes;     /**< Total memory in bytes */
+    size_t blocks;    /**< Total memory in blocks */
+}mmc_info_t;
+
 typedef void (*mmc_cmp_cb)(memblock_t*, void*);
 
 /**
@@ -54,7 +60,7 @@ void mmc_exit(void);
 /**
  * @brief Dump memory leak check result.
  */
-void mmc_dump_exit(void);
+void mmc_dump(mmc_info_t* info);
 
 /**
  * @brief same as malloc.
