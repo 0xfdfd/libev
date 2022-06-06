@@ -29,6 +29,7 @@ typedef enum ev_errno
     EV_EBUSY            = -16,                  /**< Device or resource busy (POSIX.1-2001) */
     EV_EEXIST           = -17,                  /**< File exists (POSIX.1-2001) */
     EV_EXDEV            = -18,                  /**< Improper link (POSIX.1-2001) */
+    EV_ENOTDIR          = -20,                  /**< Not a directory (POSIX.1-2001) */
     EV_EISDIR           = -21,                  /**< Is a directory (POSIX.1-2001) */
     EV_EINVAL           = -22,                  /**< Invalid argument (POSIX.1-2001) */
     EV_EMFILE           = -24,                  /**< Too many open files (POSIX.1-2001) */

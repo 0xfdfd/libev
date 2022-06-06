@@ -21,6 +21,11 @@ struct ev_timespec_s
     uint64_t    tv_sec;     /**< seconds */
     uint32_t    tv_nsec;    /**< nanoseconds */
 };
+#define EV_TIMESPEC_INVALID \
+    {\
+        0,\
+        0,\
+    }
 
 /**
  * @} EV_TIME

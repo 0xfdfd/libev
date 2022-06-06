@@ -2,6 +2,7 @@
 #include "io_unix.h"
 #include "loop.h"
 #include "handle.h"
+#include "misc_unix.h"
 #include "async_unix.h"
 #include <unistd.h>
 #include <assert.h>

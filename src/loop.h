@@ -104,13 +104,6 @@ API_LOCAL void ev__loop_exit_backend(ev_loop_t* loop);
 API_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout);
 
 /**
- * @brief Translate system error into #ev_errno_t
- * @param[in] syserr    System error
- * @return              #ev_errno_t
- */
-API_LOCAL int ev__translate_sys_error(int syserr);
-
-/**
  * @brief Get clocktime
  * @return      Clock time
  */

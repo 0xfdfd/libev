@@ -1,9 +1,10 @@
 #include "ev/errno.h"
 #include "loop.h"
-#include "fs_win.h"
 #include "allocator.h"
 #include "loop_win.h"
 #include "winapi.h"
+#include "misc_win.h"
+#include "fs_win.h"
 #include <assert.h>
 
 #define MILLION ((int64_t) 1000 * 1000)

@@ -23,6 +23,7 @@ typedef struct ev_sem_s
         ev_os_sem_t r;
     }u;
 }ev_sem_t;
+#define EV_SEM_INVALID { { 0 } }
 
 /**
  * @brief Initializes the unnamed semaphore at the address pointed to by \p sem.

@@ -4,6 +4,7 @@
 #include "allocator.h"
 #include "defs.h"
 #include "pipe_win.h"
+#include "misc_win.h"
 #include "process_win.h"
 #include <assert.h>
 

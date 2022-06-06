@@ -4,6 +4,7 @@
 #include "loop_unix.h"
 #include "io_unix.h"
 #include "pipe.h"
+#include "misc_unix.h"
 #include "process_unix.h"
 #include <stdlib.h>
 #include <string.h>

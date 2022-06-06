@@ -1,8 +1,9 @@
 #include "ev/errno.h"
+#include "handle.h"
 #include "loop_win.h"
 #include "winapi.h"
+#include "misc_win.h"
 #include "tcp_win.h"
-#include "handle.h"
 #include <WinSock2.h>
 #include <assert.h>
 

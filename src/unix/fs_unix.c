@@ -3,6 +3,7 @@
 #include "loop.h"
 #include "fs.h"
 #include "allocator.h"
+#include "misc_unix.h"
 #include "io_unix.h"
 #include <assert.h>
 #include <string.h>

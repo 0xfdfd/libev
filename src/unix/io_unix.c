@@ -1,5 +1,6 @@
 #include "ev/errno.h"
 #include "ev/request.h"
+#include "misc_unix.h"
 #include "io_unix.h"
 #include <assert.h>
 #include <string.h>

@@ -2,7 +2,8 @@
 #include "misc.h"
 #include "loop_win.h"
 #include "winapi.h"
-#include "udp.h"
+#include "misc_win.h"
+#include "udp_win.h"
 #include "handle.h"
 #include <assert.h>
 

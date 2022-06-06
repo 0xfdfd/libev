@@ -36,6 +36,21 @@ struct ev_threadpool
     ev_queue_node_t                 work_queue[3];  /**< Work queue. Index is #ev_threadpool_work_type_t */
 };
 
+#define EV_THREADPOOL_INVALID   \
+    {\
+        NULL,\
+        0,\
+        EV_LIST_INIT,\
+        EV_MUTEX_INVALID,\
+        EV_SEM_INVALID,\
+        0,\
+        {\
+            EV_QUEUE_NODE_INVALID,\
+            EV_QUEUE_NODE_INVALID,\
+            EV_QUEUE_NODE_INVALID,\
+        },\
+    }
+
 /**
  * @brief Thread pool work token.
  */
@@ -64,6 +79,14 @@ struct ev_threadpool_work
         ev_threadpool_work_done_cb  done_cb;        /**< done callback */
     }data;
 };
+
+#define EV_THREADPOOL_WORK_INVALID \
+    {\
+        EV_HANDLE_INVALID,\
+        EV_QUEUE_NODE_INVALID,\
+        EV_TODO_TOKEN_INVALID,\
+        { NULL, NULL, EV_UNKNOWN, NULL, NULL },\
+    }
 
 /**
  * @brief Initialize thread pool

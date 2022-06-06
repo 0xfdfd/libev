@@ -12,6 +12,11 @@ extern "C" {
  */
 
 /**
+ * @brief Static initializer for #ev_queue_node_t.
+ * @note A static initialized queue node is not a valid node.
+ */
+
+/**
  * @brief Queue node type.
  */
 typedef struct ev_queue_node
@@ -19,11 +24,6 @@ typedef struct ev_queue_node
     struct ev_queue_node* p_prev;
     struct ev_queue_node* p_next;
 } ev_queue_node_t;
-
-/**
- * @brief Static initializer for #ev_queue_node_t.
- * @note A static initialized queue node is not a valid node.
- */
 #define EV_QUEUE_NODE_INVALID  \
     {\
         NULL,\

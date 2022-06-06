@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include "ev/errno.h"
 #include "ev/thread.h"
+#include "misc_unix.h"
 #include "loop.h"
 #include <semaphore.h>
 #include <pthread.h>

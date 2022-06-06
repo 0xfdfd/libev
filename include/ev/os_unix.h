@@ -87,6 +87,8 @@ typedef int                     ev_os_file_t;
 #define EV_OS_FILE_INVALID      (-1)
 
 typedef pthread_t               ev_os_thread_t;
+#define EV_OS_THREAD_INVALID    ((pthread_t)(-1))
+
 typedef pthread_key_t           ev_os_tls_t;
 typedef pthread_mutex_t         ev_os_mutex_t;
 typedef sem_t                   ev_os_sem_t;

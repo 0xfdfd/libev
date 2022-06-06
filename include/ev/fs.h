@@ -57,6 +57,14 @@ struct ev_fs_stat_s
     ev_timespec_t               st_ctim;        /**< Time of last status change */
     ev_timespec_t               st_birthtim;    /**< Time of file creation */
 };
+#define EV_FS_STAT_INVALID  \
+    {\
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,\
+        EV_TIMESPEC_INVALID,\
+        EV_TIMESPEC_INVALID,\
+        EV_TIMESPEC_INVALID,\
+        EV_TIMESPEC_INVALID,\
+    }
 
 /**
  * @brief Directory entry.
@@ -124,6 +132,18 @@ struct ev_fs_req_s
         ev_buf_t                filecontent;    /**< File content */
     }rsp;
 };
+
+#define EV_FS_REQ_INVALID \
+    {\
+        EV_FS_REQ_UNKNOWN,\
+        EV_LIST_NODE_INIT,\
+        EV_THREADPOOL_WORK_INVALID,\
+        NULL,\
+        NULL,\
+        EV_UNKNOWN,\
+        { { NULL, 0, 0 } },\
+        { EV_FS_STAT_INVALID },\
+    }
 
 /**
  * @brief Initialize a file handle

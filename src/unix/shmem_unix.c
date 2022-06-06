@@ -1,6 +1,7 @@
 #include "ev/errno.h"
 #include "shmem.h"
 #include "loop.h"
+#include "misc_unix.h"
 #include <assert.h>
 #include <sys/mman.h>
 #include <sys/stat.h>        /* For mode constants */

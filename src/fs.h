@@ -67,7 +67,7 @@ API_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf);
 
 /**
  * @brief Same as [readdir(3)](https://man7.org/linux/man-pages/man3/readdir.3.html)
- * @param[in] path      Directory path.
+ * @param[in] path      Directory path. The path can be end with or without '/'.
  * @param[in] cb        Dirent callback.
  * @param[in] arg       User defined data.
  * @return              The number of dirent count or #ev_errno_t.

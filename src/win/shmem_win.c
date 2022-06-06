@@ -1,6 +1,7 @@
 #include "ev/errno.h"
-#include "shmem.h"
+#include "misc_win.h"
 #include "loop.h"
+#include "shmem.h"
 
 int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
 {

@@ -1,6 +1,7 @@
 #include "ev/errno.h"
 #include "ev/misc.h"
 #include "io_unix.h"
+#include "misc_unix.h"
 #include "udp.h"
 #include "handle.h"
 #include <unistd.h>

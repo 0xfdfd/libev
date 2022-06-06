@@ -1,6 +1,7 @@
 #include "ev/errno.h"
-#include "thread_win.h"
 #include "loop_win.h"
+#include "misc_win.h"
+#include "thread_win.h"
 #include <process.h>
 
 typedef struct ev_thread_helper_win

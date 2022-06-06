@@ -3,6 +3,7 @@
 #include "loop_unix.h"
 #include "tcp_unix.h"
 #include "stream_unix.h"
+#include "misc_unix.h"
 #include "pipe.h"
 #include "handle.h"
 #include "log.h"
