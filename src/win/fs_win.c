@@ -6,6 +6,7 @@
 #include "misc_win.h"
 #include "fs_win.h"
 #include <assert.h>
+#include <stdio.h>
 
 #define MILLION ((int64_t) 1000 * 1000)
 #define BILLION ((int64_t) 1000 * 1000 * 1000)
@@ -582,7 +583,7 @@ static int _ev_file_fstat_win(HANDLE handle, ev_fs_stat_t* statbuf, int do_lstat
     return EV_SUCCESS;
 }
 
-static ev_dirent_type_t _ev_fs_get_dirent_type_win(WIN32_FIND_DATAA* info)
+static ev_dirent_type_t _ev_fs_get_dirent_type_win(WIN32_FIND_DATAW* info)
 {
     if (info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
     {
@@ -656,37 +657,81 @@ int ev__fs_close(ev_os_file_t file)
 
 int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
 {
-    DWORD errcode;
-    WIN32_FIND_DATAA info;
+    WIN32_FIND_DATAW info;
     ev_dirent_t dirent_info;
 
-    HANDLE dir_handle = FindFirstFile(path, &info);
-    if (dir_handle == INVALID_HANDLE_VALUE)
+    int ret = 0;
+    HANDLE dir_handle = INVALID_HANDLE_VALUE;
+    WCHAR* wide_path = NULL;
+    WCHAR* fixed_wide_path = NULL;
+
+    size_t wide_path_len = ev__utf8_to_wide(&wide_path, path);
+    if (wide_path_len < 0)
     {
-        errcode = GetLastError();
-        return ev__translate_sys_error(errcode);
+        return (int)wide_path_len;
     }
 
-    int ret = 0;
-    do 
+    size_t fixed_wide_path_len = wide_path_len + 4;
+    fixed_wide_path = ev__malloc(sizeof(WCHAR) * fixed_wide_path_len);
+    if (fixed_wide_path == NULL)
     {
-        if (strcmp(info.cFileName, ".") == 0 || strcmp(info.cFileName, "..") == 0)
+        ret = EV_ENOMEM;
+        goto cleanup;
+    }
+
+    const WCHAR* fmt = L"%s\\*";
+    if (wide_path[wide_path_len - 1] == L'/' || wide_path[wide_path_len - 1] == L'\\')
+    {
+        fmt = L"%s*";
+    }
+    _snwprintf_s(fixed_wide_path, fixed_wide_path_len, _TRUNCATE, fmt, wide_path);
+
+    dir_handle = FindFirstFileW(fixed_wide_path, &info);
+    if (dir_handle == INVALID_HANDLE_VALUE)
+    {
+        ret = ev__translate_sys_error(GetLastError());
+        goto cleanup;
+    }
+
+    do
+    {
+        if (wcscmp(info.cFileName, L".") == 0 || wcscmp(info.cFileName, L"..") == 0)
         {
             continue;
         }
 
-        dirent_info.name = info.cFileName;
         dirent_info.type = _ev_fs_get_dirent_type_win(&info);
+        ssize_t convert_ret = ev__wide_to_utf8(&dirent_info.name, info.cFileName);
+        if (convert_ret < 0)
+        {
+            ret = (int)convert_ret;
+            break;
+        }
+
         ret++;
 
-        if (cb(&dirent_info, arg) != 0)
+        int need_break = cb(&dirent_info, arg);
+        ev__free(dirent_info.name);
+
+        if (need_break)
         {
             break;
         }
-    } while (FindNextFile(dir_handle, &info));
+    } while (FindNextFileW(dir_handle, &info));
 
-    FindClose(dir_handle);
-
+cleanup:
+    if (dir_handle != INVALID_HANDLE_VALUE)
+    {
+        FindClose(dir_handle);
+    }
+    if (wide_path != NULL)
+    {
+        ev__free(wide_path);
+    }
+    if (fixed_wide_path != NULL)
+    {
+        ev__free(fixed_wide_path);
+    }
     return ret;
 }
 

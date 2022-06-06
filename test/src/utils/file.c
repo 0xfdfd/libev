@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <assert.h>
+#include <string.h>
 
 #if defined(_WIN32)
 #   include <windows.h>
@@ -13,7 +14,31 @@
 #   include <dirent.h>
 #endif
 
+typedef struct test_file_ctx
+{
+    char exe_path[4096];
+    char exe_dir[4096];
+}test_file_ctx_t;
+
+static test_file_ctx_t s_test_file;
+
 extern int ev__translate_sys_error(int errcode);
+
+static void _on_init_file(void)
+{
+    ASSERT_GT_U32(ev_exepath(s_test_file.exe_path, sizeof(s_test_file.exe_path)), 0);
+
+    const char* p_exe_pos = test_file_name(s_test_file.exe_path);
+    size_t exe_dir_len = p_exe_pos - s_test_file.exe_path;
+    memcpy(s_test_file.exe_dir, s_test_file.exe_path, exe_dir_len);
+    s_test_file.exe_dir[exe_dir_len - 1] = '\0';
+}
+
+static void _init_file_once(void)
+{
+    static ev_once_t once_token = EV_ONCE_INIT;
+    ev_once_execute(&once_token, _on_init_file);
+}
 
 int test_write_file(const char* path, const void* data, size_t size)
 {
@@ -79,35 +104,32 @@ int test_access_dir(const char* path)
 
 const char* test_get_self_exe(void)
 {
-#if defined(_WIN32)
+    _init_file_once();
+    return s_test_file.exe_path;
+}
 
-    char* path;
-    errno_t errcode = _get_pgmptr(&path);
-    ASSERT_EQ_D32(errcode, 0);
+const char* test_get_self_dir(void)
+{
+    _init_file_once();
+    return s_test_file.exe_dir;
+}
 
-    return path;
-#else
+const char* test_file_name(const char* file)
+{
+    const char* pos = file;
 
-    static char buffer[4096];
-    const char* path = "/proc/self/exe";
-#   if defined(__FreeBSD__)
-    path = "/proc/curproc/file";
-#elif defined(__sun)
-    path = "/proc/self/path/a.out";
-#   endif
-
-    ssize_t ret = readlink(path, buffer, sizeof(buffer));
-    if (ret == -1 && errno == ENOENT)
+    for (; *file; ++file)
     {
-        /* argv[0] is not a reliable executable path */
-        if(test_config.argv != NULL && test_config.argv[0][0] == '\\')
+        if (*file == '\\' || *file == '/')
         {
-            return test_config.argv[0];
+            pos = file + 1;
         }
-        assert(0);
-        return NULL;
     }
+    return pos;
+}
 
-    return buffer;
-#endif
+const char* test_self_exe_name(void)
+{
+    _init_file_once();
+    return test_file_name(s_test_file.exe_path);
 }

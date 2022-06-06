@@ -237,6 +237,45 @@ TEST_F(fs, fstat)
 }
 
 //////////////////////////////////////////////////////////////////////////
+// fs.readdir
+//////////////////////////////////////////////////////////////////////////
+
+static void _test_file_readdir_on_readdir(ev_fs_req_t* req)
+{
+    int flag_have_exe = 0;
+    ASSERT_GT_D64(req->result, 0);
+
+    ev_dirent_t* info = ev_fs_get_first_dirent(req);
+    ASSERT_NE_PTR(info, NULL);
+
+    for (; info != NULL; info = ev_fs_get_next_dirent(info))
+    {
+        if (strcmp(info->name, test_self_exe_name()) == 0)
+        {
+            flag_have_exe = 1;
+            break;
+        }
+    }
+
+    ASSERT_EQ_D32(flag_have_exe, 1);
+    ev_fs_req_cleanup(req);
+}
+
+TEST_F(fs, readdir)
+{
+    int ret;
+
+    const char* exe_dir = test_get_self_dir();
+
+    ret = ev_fs_readdir(&g_test_file.loop, &g_test_file.token, exe_dir,
+        _test_file_readdir_on_readdir);
+    ASSERT_EQ_D32(ret, 0);
+
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ASSERT_EQ_D32(ret, EV_SUCCESS);
+}
+
+//////////////////////////////////////////////////////////////////////////
 // fs.readdir_nonexist
 //////////////////////////////////////////////////////////////////////////
 

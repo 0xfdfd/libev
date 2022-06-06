@@ -330,6 +330,7 @@ const char* ev_strerror(int err)
     case EV_EBUSY:              return "Device or resource busy";
     case EV_EEXIST:             return "File exists";
     case EV_EXDEV:              return "Improper link";
+    case EV_ENOTDIR:            return "Not a directory";
     case EV_EISDIR:             return "Is a directory";
     case EV_EINVAL:             return "Invalid argument";
     case EV_EMFILE:             return "Too many open files";

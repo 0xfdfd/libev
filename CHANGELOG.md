@@ -9,6 +9,7 @@
 ### Bug Fixes
 1. fix: use of enum without previous declaration
 2. fix: `FindFirstFile()` handle leak
+3. fix: `ev_fs_readdir()` not working on windows
 
 
 ## v0.0.6 (2022/05/23)

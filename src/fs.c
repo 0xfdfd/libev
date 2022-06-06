@@ -328,17 +328,10 @@ static void _ev_file_on_fstat(ev_threadpool_work_t* work)
 
 static void _ev_fs_on_readdir(ev_threadpool_work_t* work)
 {
-    int ret;
     ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
 
-    req->result = EV_SUCCESS;
-    ret = ev__fs_readdir(req->req.as_readdir.path,
+    req->result = ev__fs_readdir(req->req.as_readdir.path,
         _ev_fs_on_readdir_entry, req);
-
-    if (req->result == EV_SUCCESS)
-    {
-        req->result = ret;
-    }
 }
 
 static void _ev_fs_on_readfile(ev_threadpool_work_t* work)

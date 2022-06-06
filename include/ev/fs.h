@@ -71,7 +71,7 @@ struct ev_fs_stat_s
  */
 struct ev_dirent_s
 {
-    const char*                 name;           /**< Entry name */
+    char*                       name;           /**< Entry name */
     ev_dirent_type_t            type;           /**< Entry type */
 };
 
