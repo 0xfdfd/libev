@@ -6,6 +6,8 @@
 
 static void _at_exit(void)
 {
+    ev_library_shutdown();
+
     /* ensure all output was done. */
     fflush(NULL);
 

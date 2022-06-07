@@ -106,6 +106,15 @@ void ev_buf_make_n(ev_buf_t bufs[], size_t nbuf, ...);
 void ev_buf_make_v(ev_buf_t bufs[], size_t nbuf, va_list ap);
 
 /**
+ * @brief Release any global state that holding onto.
+ * @warning Only call #ev_library_shutdown() once.
+ * @warning Don’t call #ev_library_shutdown() when there are still event loops
+ *   or I/O requests active.
+ * @warning Don’t call libev functions after calling #ev_library_shutdown().
+ */
+void ev_library_shutdown(void);
+
+/**
  * @} EV_MISC
  */
 

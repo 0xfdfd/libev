@@ -6,6 +6,7 @@
 
 ### Features
 1. add detail information for `ev_fs_readfile()`
+2. use `ev_library_shutdown()` to cleanup global resources
 
 ### Bug Fixes
 

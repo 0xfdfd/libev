@@ -2,7 +2,11 @@
 #include "winapi.h"
 #include <assert.h>
 
-ev_winapi_t ev_winapi;
+ev_winapi_t ev_winapi = {
+    NULL,
+    NULL,
+    NULL,
+};
 
 void ev__winapi_init(void)
 {

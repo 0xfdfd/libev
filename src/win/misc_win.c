@@ -281,3 +281,8 @@ int ev__translate_sys_error(int err)
         default:                                BREAK_ABORT(); return err;
     }
 }
+
+void ev_library_shutdown(void)
+{
+
+}
