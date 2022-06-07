@@ -29,8 +29,10 @@ static void _check_mmc_leak(void)
         return;
     }
 
+    fflush(NULL);
     fprintf(stderr, "[  ERROR   ] memory leak detected: %zu block%s not free.\n",
             info.blocks, info.blocks == 1 ? "" : "s");
+
     exit(EXIT_FAILURE);
 }
 

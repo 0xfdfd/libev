@@ -11,7 +11,13 @@ typedef struct ev_dirent_record_s
 {
     ev_list_node_t      node;   /**< List node */
     ev_dirent_t         data;   /**< Dirent info */
-}ev_dirent_record_t;
+} ev_dirent_record_t;
+
+typedef struct fs_readdir_helper
+{
+    ev_fs_req_t*        req;    /**< File system request */
+    ssize_t             cnt;    /**< Dirent counter */
+} fs_readdir_helper_t;
 
 static void _ev_fs_erase_req(ev_file_t* file, ev_fs_req_t* req)
 {
@@ -246,7 +252,7 @@ static void _ev_file_smart_deactive(ev_file_t* file)
 
 static int _ev_fs_on_readdir_entry(ev_dirent_t* info, void* arg)
 {
-    ev_fs_req_t* req = arg;
+    fs_readdir_helper_t* helper = arg;
 
     ev_dirent_record_t* rec = ev__malloc(sizeof(ev_dirent_record_t));
     if (rec == NULL)
@@ -261,12 +267,17 @@ static int _ev_fs_on_readdir_entry(ev_dirent_t* info, void* arg)
         goto err_nomem;
     }
 
-    ev_list_push_back(&req->rsp.dirents, &rec->node);
+    ev_list_push_back(&helper->req->rsp.dirents, &rec->node);
+    helper->cnt++;
 
     return 0;
 
 err_nomem:
-    req->result = EV_ENOMEM;
+    if (rec != NULL)
+    {
+        ev__free(rec);
+    }
+    helper->req->result = EV_ENOMEM;
     return -1;
 }
 
@@ -330,8 +341,15 @@ static void _ev_fs_on_readdir(ev_threadpool_work_t* work)
 {
     ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
 
+    fs_readdir_helper_t helper = { req, 0 };
     req->result = ev__fs_readdir(req->req.as_readdir.path,
-        _ev_fs_on_readdir_entry, req);
+        _ev_fs_on_readdir_entry, &helper);
+
+    /* If operation success, replace result with dirent counter */
+    if (req->result == EV_SUCCESS)
+    {
+        req->result = helper.cnt;
+    }
 }
 
 static void _ev_fs_on_readfile(ev_threadpool_work_t* work)
@@ -520,11 +538,11 @@ int ev_file_stat_sync(ev_file_t* file, ev_fs_stat_t* stat)
 }
 
 int ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
-    ev_file_cb cb)
+    ev_file_cb callback)
 {
     int ret;
 
-    ret = _ev_fs_init_req_as_readdir(req, path, cb);
+    ret = _ev_fs_init_req_as_readdir(req, path, callback);
     if (ret != EV_SUCCESS)
     {
         return ret;

@@ -270,7 +270,7 @@ ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t o
 
 int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
 {
-    int ret;
+    int ret = 0;
     DIR* dir = opendir(path);
 
     if (dir == NULL)
@@ -282,7 +282,6 @@ int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
     struct dirent* res;
     ev_dirent_t info;
 
-    ret = 0;
     while ((res = readdir(dir)) != NULL)
     {
         if (strcmp(res->d_name, ".") == 0 || strcmp(res->d_name, "..") == 0)
@@ -293,7 +292,6 @@ int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
         info.name = res->d_name;
         info.type = _ev_fs_get_dirent_type(res);
 
-        ret++;
         if (cb(&info, arg) != 0)
         {
             break;

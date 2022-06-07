@@ -70,7 +70,7 @@ API_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf);
  * @param[in] path      Directory path. The path can be end with or without '/'.
  * @param[in] cb        Dirent callback.
  * @param[in] arg       User defined data.
- * @return              The number of dirent count or #ev_errno_t.
+ * @return              #ev_errno_t.
  */
 API_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg);
 

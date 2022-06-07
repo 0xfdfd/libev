@@ -277,14 +277,20 @@ int ev_file_stat_sync(ev_file_t* file, ev_fs_stat_t* stat);
  * Use #ev_fs_get_first_dirent() and #ev_fs_get_next_dirent() to traverse all
  * the dirent information.
  *
+ * The #ev_fs_req_t::result in \p cb means:
+ * | Range | Means                      |
+ * | ----- | -------------------------- |
+ * | >= 0  | The number of dirent nodes |
+ * | < 0   | #ev_errno_t                |
+ * 
  * @param[in] loop      Event loop.
  * @param[in] req       File system request
  * @param[in] path      Directory path.
- * @param[in] cb        Result callback.
+ * @param[in] callback  Result callback.
  * @return              #ev_errno_t
  */
 int ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
-    ev_file_cb cb);
+    ev_file_cb callback);
 
 /**
  * @brief Read file content.

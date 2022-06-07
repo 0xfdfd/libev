@@ -22,7 +22,14 @@ typedef struct file_open_info_win_s
     DWORD   share;
     DWORD   attributes;
     DWORD   disposition;
-}file_open_info_win_t;
+} file_open_info_win_t;
+
+typedef struct fs_readdir_win_helper
+{
+    ev_fs_readdir_cb    cb;
+    void*               arg;
+    int                 errcode;
+} fs_readdir_win_helper_t;
 
 static int _ev_fs_wide_to_utf8(WCHAR* w_source_ptr, DWORD w_source_len,
     char** target_ptr, uint64_t* target_len_ptr)
@@ -147,118 +154,6 @@ static int _ev_file_get_open_attributes(int flags, int mode, file_open_info_win_
     }
 
     return EV_SUCCESS;
-}
-
-int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mode)
-{
-    int ret;
-    DWORD errcode;
-
-    file_open_info_win_t info;
-    ret = _ev_file_get_open_attributes(flags, mode, &info);
-    if (ret != EV_SUCCESS)
-    {
-        return ret;
-    }
-
-    HANDLE filehandle = CreateFile(path, info.access, info.share, NULL,
-        info.disposition, info.attributes, NULL);
-    if (filehandle == INVALID_HANDLE_VALUE)
-    {
-        errcode = GetLastError();
-        if (errcode == ERROR_FILE_EXISTS && (flags & EV_FS_O_CREAT) && !(flags & EV_FS_O_EXCL))
-        {
-            return EV_EISDIR;
-        }
-
-        return ev__translate_sys_error(errcode);
-    }
-
-    *file = filehandle;
-    return EV_SUCCESS;
-}
-
-ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
-{
-    if (file == INVALID_HANDLE_VALUE)
-    {
-        return ev__translate_sys_error(ERROR_INVALID_HANDLE);
-    }
-
-    OVERLAPPED overlapped;
-    memset(&overlapped, 0, sizeof(overlapped));
-
-    size_t idx;
-    LARGE_INTEGER offset_;
-    DWORD bytes = 0;
-    BOOL read_ret = TRUE;
-    for (idx = 0; read_ret && idx < nbuf; idx++)
-    {
-        offset_.QuadPart = offset + bytes;
-        overlapped.Offset = offset_.LowPart;
-        overlapped.OffsetHigh = offset_.HighPart;
-
-        DWORD incremental_bytes;
-        read_ret = ReadFile(file, bufs[idx].data, bufs[idx].size,
-            &incremental_bytes, &overlapped);
-        bytes += incremental_bytes;
-    }
-
-    if (read_ret || bytes > 0)
-    {
-        return bytes;
-    }
-
-    DWORD err = GetLastError();
-    if (err == ERROR_HANDLE_EOF || err == ERROR_BROKEN_PIPE)
-    {
-        return bytes;
-    }
-
-    if (err == ERROR_ACCESS_DENIED)
-    {
-        err = ERROR_INVALID_FLAGS;
-    }
-    return ev__translate_sys_error(err);
-}
-
-ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
-{
-    if (file == INVALID_HANDLE_VALUE)
-    {
-        return ev__translate_sys_error(ERROR_INVALID_HANDLE);
-    }
-
-    OVERLAPPED overlapped;
-    memset(&overlapped, 0, sizeof(overlapped));
-
-    size_t idx;
-    LARGE_INTEGER offset_;
-    DWORD bytes = 0;
-    BOOL write_ret = TRUE;
-    for (idx = 0; write_ret && idx < nbuf; idx++)
-    {
-        offset_.QuadPart = offset + bytes;
-        overlapped.Offset = offset_.LowPart;
-        overlapped.OffsetHigh = offset_.HighPart;
-
-        DWORD incremental_bytes;
-        write_ret = WriteFile(file, bufs[idx].data,
-            bufs[idx].size, &incremental_bytes, &overlapped);
-        bytes += incremental_bytes;
-    }
-
-    if (write_ret || bytes > 0)
-    {
-        return bytes;
-    }
-
-    DWORD err = GetLastError();
-    if (err == ERROR_ACCESS_DENIED)
-    {
-        err = ERROR_INVALID_FLAGS;
-    }
-    return ev__translate_sys_error(err);
 }
 
 static int _ev_fs_readlink_handle(HANDLE handle, char** target_ptr,
@@ -639,6 +534,137 @@ static int _ev_fs_wmkdir(WCHAR* path, int mode)
     return ev__translate_sys_error(errcode);
 }
 
+static int _ev_fs_readdir_w_on_dirent(ev_dirent_w_t* info, void* arg)
+{
+    fs_readdir_win_helper_t* helper = arg;
+
+    ev_dirent_t wrap_info;
+    wrap_info.type = info->type;
+    ssize_t ret = ev__wide_to_utf8(&wrap_info.name, info->name);
+    if (ret < 0)
+    {
+        helper->errcode = (int)ret;
+        return -1;
+    }
+
+    ret = helper->cb(&wrap_info, helper->arg);
+    ev__free(wrap_info.name);
+
+    return (int)ret;
+}
+
+int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mode)
+{
+    int ret;
+    DWORD errcode;
+
+    file_open_info_win_t info;
+    ret = _ev_file_get_open_attributes(flags, mode, &info);
+    if (ret != EV_SUCCESS)
+    {
+        return ret;
+    }
+
+    HANDLE filehandle = CreateFile(path, info.access, info.share, NULL,
+        info.disposition, info.attributes, NULL);
+    if (filehandle == INVALID_HANDLE_VALUE)
+    {
+        errcode = GetLastError();
+        if (errcode == ERROR_FILE_EXISTS && (flags & EV_FS_O_CREAT) && !(flags & EV_FS_O_EXCL))
+        {
+            return EV_EISDIR;
+        }
+
+        return ev__translate_sys_error(errcode);
+    }
+
+    *file = filehandle;
+    return EV_SUCCESS;
+}
+
+ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
+{
+    if (file == INVALID_HANDLE_VALUE)
+    {
+        return ev__translate_sys_error(ERROR_INVALID_HANDLE);
+    }
+
+    OVERLAPPED overlapped;
+    memset(&overlapped, 0, sizeof(overlapped));
+
+    size_t idx;
+    LARGE_INTEGER offset_;
+    DWORD bytes = 0;
+    BOOL read_ret = TRUE;
+    for (idx = 0; read_ret && idx < nbuf; idx++)
+    {
+        offset_.QuadPart = offset + bytes;
+        overlapped.Offset = offset_.LowPart;
+        overlapped.OffsetHigh = offset_.HighPart;
+
+        DWORD incremental_bytes;
+        read_ret = ReadFile(file, bufs[idx].data, bufs[idx].size,
+            &incremental_bytes, &overlapped);
+        bytes += incremental_bytes;
+    }
+
+    if (read_ret || bytes > 0)
+    {
+        return bytes;
+    }
+
+    DWORD err = GetLastError();
+    if (err == ERROR_HANDLE_EOF || err == ERROR_BROKEN_PIPE)
+    {
+        return bytes;
+    }
+
+    if (err == ERROR_ACCESS_DENIED)
+    {
+        err = ERROR_INVALID_FLAGS;
+    }
+    return ev__translate_sys_error(err);
+}
+
+ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
+{
+    if (file == INVALID_HANDLE_VALUE)
+    {
+        return ev__translate_sys_error(ERROR_INVALID_HANDLE);
+    }
+
+    OVERLAPPED overlapped;
+    memset(&overlapped, 0, sizeof(overlapped));
+
+    size_t idx;
+    LARGE_INTEGER offset_;
+    DWORD bytes = 0;
+    BOOL write_ret = TRUE;
+    for (idx = 0; write_ret && idx < nbuf; idx++)
+    {
+        offset_.QuadPart = offset + bytes;
+        overlapped.Offset = offset_.LowPart;
+        overlapped.OffsetHigh = offset_.HighPart;
+
+        DWORD incremental_bytes;
+        write_ret = WriteFile(file, bufs[idx].data,
+            bufs[idx].size, &incremental_bytes, &overlapped);
+        bytes += incremental_bytes;
+    }
+
+    if (write_ret || bytes > 0)
+    {
+        return bytes;
+    }
+
+    DWORD err = GetLastError();
+    if (err == ERROR_ACCESS_DENIED)
+    {
+        err = ERROR_INVALID_FLAGS;
+    }
+    return ev__translate_sys_error(err);
+}
+
 int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
 {
     return _ev_file_fstat_win(file, statbuf, 0);
@@ -655,38 +681,31 @@ int ev__fs_close(ev_os_file_t file)
     return EV_SUCCESS;
 }
 
-int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
+int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg)
 {
     WIN32_FIND_DATAW info;
-    ev_dirent_t dirent_info;
+    ev_dirent_w_t dirent_info;
 
-    int ret = 0;
+    int ret = EV_SUCCESS;
     HANDLE dir_handle = INVALID_HANDLE_VALUE;
-    WCHAR* wide_path = NULL;
-    WCHAR* fixed_wide_path = NULL;
+    WCHAR* fixed_path = NULL;
 
-    size_t wide_path_len = ev__utf8_to_wide(&wide_path, path);
-    if (wide_path_len < 0)
+    size_t path_len = wcslen(path);
+    size_t fixed_path_len = path_len + 3;
+    fixed_path = ev__malloc(sizeof(WCHAR) * fixed_path_len);
+    if (fixed_path == NULL)
     {
-        return (int)wide_path_len;
-    }
-
-    size_t fixed_wide_path_len = wide_path_len + 4;
-    fixed_wide_path = ev__malloc(sizeof(WCHAR) * fixed_wide_path_len);
-    if (fixed_wide_path == NULL)
-    {
-        ret = EV_ENOMEM;
-        goto cleanup;
+        return EV_ENOMEM;
     }
 
     const WCHAR* fmt = L"%s\\*";
-    if (wide_path[wide_path_len - 1] == L'/' || wide_path[wide_path_len - 1] == L'\\')
+    if (path[path_len - 1] == L'/' || path[path_len - 1] == L'\\')
     {
         fmt = L"%s*";
     }
-    _snwprintf_s(fixed_wide_path, fixed_wide_path_len, _TRUNCATE, fmt, wide_path);
+    _snwprintf_s(fixed_path, fixed_path_len, _TRUNCATE, fmt, path);
 
-    dir_handle = FindFirstFileW(fixed_wide_path, &info);
+    dir_handle = FindFirstFileW(fixed_path, &info);
     if (dir_handle == INVALID_HANDLE_VALUE)
     {
         ret = ev__translate_sys_error(GetLastError());
@@ -701,19 +720,9 @@ int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
         }
 
         dirent_info.type = _ev_fs_get_dirent_type_win(&info);
-        ssize_t convert_ret = ev__wide_to_utf8(&dirent_info.name, info.cFileName);
-        if (convert_ret < 0)
-        {
-            ret = (int)convert_ret;
-            break;
-        }
+        dirent_info.name = info.cFileName;
 
-        ret++;
-
-        int need_break = cb(&dirent_info, arg);
-        ev__free(dirent_info.name);
-
-        if (need_break)
+        if (cb(&dirent_info, arg))
         {
             break;
         }
@@ -724,15 +733,27 @@ cleanup:
     {
         FindClose(dir_handle);
     }
-    if (wide_path != NULL)
+    if (fixed_path != NULL)
     {
-        ev__free(wide_path);
-    }
-    if (fixed_wide_path != NULL)
-    {
-        ev__free(fixed_wide_path);
+        ev__free(fixed_path);
     }
     return ret;
+}
+
+int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
+{
+    WCHAR* wide_path = NULL;
+    size_t wide_path_len = ev__utf8_to_wide(&wide_path, path);
+    if (wide_path_len < 0)
+    {
+        return (int)wide_path_len;
+    }
+
+    fs_readdir_win_helper_t helper = { cb, arg, 0 };
+    int ret = ev__fs_readdir_w(wide_path, _ev_fs_readdir_w_on_dirent, &helper);
+
+    ev__free(wide_path);
+    return helper.errcode != EV_SUCCESS ? helper.errcode : ret;
 }
 
 int ev__fs_mkdir(const char* path, int mode)

@@ -5,6 +5,7 @@
 ### BREAKING CHANGES
 
 ### Features
+1. add detail information for `ev_fs_readfile()`
 
 ### Bug Fixes
 
