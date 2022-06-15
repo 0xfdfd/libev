@@ -2,7 +2,6 @@
 #include "ev/request.h"
 #include "loop.h"
 #include "allocator.h"
-#include "todo.h"
 #include "timer.h"
 #include "handle.h"
 #include "work.h"
@@ -26,11 +25,26 @@ static int _ev_loop_init(ev_loop_t* loop)
 {
     memset(loop, 0, sizeof(*loop));
 
-    ev__init_todo(loop);
+    loop->hwtime = 0;
+    ev_list_init(&loop->handles.idle_list);
+    ev_list_init(&loop->handles.active_list);
+
+    ev_list_init(&loop->backlog_queue);
+    ev_list_init(&loop->endgame_queue);
+
     ev__init_timer(loop);
+
     loop->threadpool.pool = NULL;
+    loop->threadpool.node = (ev_list_node_t)EV_LIST_NODE_INIT;
+    ev_mutex_init(&loop->threadpool.mutex, 0);
+    ev_list_init(&loop->threadpool.work_queue);
 
     return EV_SUCCESS;
+}
+
+static void _ev_loop_exit(ev_loop_t* loop)
+{
+    ev_mutex_exit(&loop->threadpool.mutex);
 }
 
 /**
@@ -39,7 +53,8 @@ static int _ev_loop_init(ev_loop_t* loop)
 static int _ev_loop_alive(ev_loop_t* loop)
 {
     return ev_list_size(&loop->handles.active_list)
-        || ev_list_size(&loop->todo.pending);
+        || ev_list_size(&loop->backlog_queue)
+        || ev_list_size(&loop->endgame_queue);
 }
 
 static uint32_t _ev_backend_timeout_timer(ev_loop_t* loop)
@@ -74,8 +89,7 @@ static uint32_t _ev_backend_timeout(ev_loop_t* loop)
         return 0;
     }
 
-    /* todo queue must be process now */
-    if (ev_list_size(&loop->todo.pending) != 0)
+    if (ev_list_size(&loop->backlog_queue) != 0 || ev_list_size(&loop->endgame_queue) != 0)
     {
         return 0;
     }
@@ -142,7 +156,7 @@ void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr, uint8_t flags, uint16_t exs
 
 ev_loop_t* ev__handle_loop(ev_handle_t* handle)
 {
-    return handle->data.loop;
+    return handle->loop;
 }
 
 int ev_loop_init(ev_loop_t* loop)
@@ -155,6 +169,7 @@ int ev_loop_init(ev_loop_t* loop)
 
     if ((ret = ev__loop_init_backend(loop)) != EV_SUCCESS)
     {
+        _ev_loop_exit(loop);
         return ret;
     }
 
@@ -165,13 +180,14 @@ int ev_loop_init(ev_loop_t* loop)
 int ev_loop_exit(ev_loop_t* loop)
 {
     if (ev_list_size(&loop->handles.active_list)
-        || ev_list_size(&loop->todo.pending)
         || ev_map_size(&loop->timer.heap))
     {
         return EV_EBUSY;
     }
 
     ev__loop_exit_backend(loop);
+    _ev_loop_exit(loop);
+
     return EV_SUCCESS;
 }
 
@@ -190,7 +206,8 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
         ev__loop_update_time(loop);
 
         ev__process_timer(loop);
-        ev__process_todo(loop);
+        ev__process_backlog(loop);
+        ev__process_endgame(loop);
 
         if ((ret = _ev_loop_alive(loop)) == 0)
         {
@@ -219,7 +236,8 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
         }
 
         /* Callback maybe added */
-        ev__process_todo(loop);
+        ev__process_backlog(loop);
+        ev__process_endgame(loop);
 
         if (mode != EV_LOOP_MODE_DEFAULT)
         {
@@ -389,4 +407,26 @@ socklen_t ev__get_addr_len(const struct sockaddr* addr)
 #endif
 
     return (socklen_t)-1;
+}
+
+void ev_loop_walk(ev_loop_t* loop, ev_walk_cb cb, void* arg)
+{
+    ev_list_t* walk_lists[] = {
+        &loop->handles.active_list,
+        &loop->handles.idle_list,
+    };
+
+    size_t i;
+    for (i = 0; i < ARRAY_SIZE(walk_lists); i++)
+    {
+        ev_list_node_t* it = ev_list_begin(walk_lists[i]);
+        for (; it != NULL; it = ev_list_next(it))
+        {
+            ev_handle_t* handle = EV_CONTAINER_OF(it, ev_handle_t, handle_queue);
+            if (cb(handle, arg) != 0)
+            {
+                return;
+            }
+        }
+    }
 }

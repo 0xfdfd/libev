@@ -23,15 +23,16 @@ static void _ev_async_on_close_win(ev_handle_t* handle)
     }
 }
 
-static void _ev_asyc_exit_win(ev_async_t* handle, ev_async_cb close_cb, int is_force)
+static void _ev_asyc_exit_win(ev_async_t* handle, ev_async_cb close_cb)
 {
     handle->close_cb = close_cb;
-    ev__handle_exit(&handle->base, is_force);
+    ev__handle_event_dec(&handle->base);
+    ev__handle_exit(&handle->base, close_cb != NULL ? _ev_async_on_close_win : NULL);
 }
 
 void ev__async_exit_force(ev_async_t* handle)
 {
-    _ev_asyc_exit_win(handle, NULL, 1);
+    _ev_asyc_exit_win(handle, NULL);
 }
 
 int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
@@ -41,21 +42,21 @@ int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
     handle->backend.async_sent = 0;
 
     ev__iocp_init(&handle->backend.io, _async_on_iocp_win, NULL);
-    ev__handle_init(loop, &handle->base, EV_ROLE_EV_ASYNC, _ev_async_on_close_win);
-    ev__handle_active(&handle->base);
+    ev__handle_init(loop, &handle->base, EV_ROLE_EV_ASYNC);
+    ev__handle_event_add(&handle->base);
 
     return EV_SUCCESS;
 }
 
 void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
 {
-    _ev_asyc_exit_win(handle, close_cb, 0);
+    _ev_asyc_exit_win(handle, close_cb);
 }
 
 void ev_async_wakeup(ev_async_t* handle)
 {
     if (!InterlockedOr(&handle->backend.async_sent, 1))
     {
-        ev__iocp_post(handle->base.data.loop, &handle->backend.io);
+        ev__iocp_post(handle->base.loop, &handle->backend.io);
     }
 }

@@ -218,7 +218,11 @@ static void _ev_file_do_close_callback(ev_file_t* file)
 
 static void _ev_file_do_close_callback_if_necessary(ev_file_t* file)
 {
-    if (ev__handle_is_closing(&file->base) && !_ev_file_have_pending(file))
+    if (file == NULL)
+    {
+        return;
+    }
+    if (file->close_cb != NULL && !_ev_file_have_pending(file))
     {
         _ev_file_do_close_callback(file);
     }
@@ -227,27 +231,22 @@ static void _ev_file_do_close_callback_if_necessary(ev_file_t* file)
 static void _ev_file_on_close(ev_handle_t* handle)
 {
     ev_file_t* file = EV_CONTAINER_OF(handle, ev_file_t, base);
-    _ev_file_do_close_callback_if_necessary(file);
+    _ev_file_do_close_callback(file);
 }
 
-static void _ev_file_cancel_all_pending_task(ev_file_t* file)
+static void _ev_file_cancel_all_pending_task(ev_file_t* file, size_t* failure_count)
 {
+    *failure_count = 0;
+
     ev_list_node_t* it = ev_list_begin(&file->work_queue);
     for (; it != NULL; it = ev_list_next(it))
     {
         ev_fs_req_t* req = EV_CONTAINER_OF(it, ev_fs_req_t, node);
-        ev_threadpool_cancel(&req->work_token);
+        if (ev_threadpool_cancel(&req->work_token) != EV_SUCCESS)
+        {
+            *failure_count += 1;
+        }
     }
-}
-
-static void _ev_file_smart_deactive(ev_file_t* file)
-{
-    if (ev_list_size(&file->work_queue) == 0)
-    {
-        ev__handle_deactive(&file->base);
-    }
-
-    _ev_file_do_close_callback_if_necessary(file);
 }
 
 static int _ev_fs_on_readdir_entry(ev_dirent_t* info, void* arg)
@@ -294,10 +293,15 @@ static void _ev_fs_on_done(ev_threadpool_work_t* work, int status)
 
     if (file != NULL)
     {
+        ev__handle_event_dec(&file->base);
         _ev_fs_erase_req(file, req);
-        _ev_file_smart_deactive(file);
     }
     req->cb(req);
+
+    /**
+     * As describe in #ev_file_exit(), we have to check close status.
+     */
+    _ev_file_do_close_callback_if_necessary(file);
 }
 
 static void _ev_file_on_open(ev_threadpool_work_t* work)
@@ -404,7 +408,7 @@ int ev_file_init(ev_loop_t* loop, ev_file_t* file)
 
     file->file = EV_OS_FILE_INVALID;
     file->close_cb = NULL;
-    ev__handle_init(loop, &file->base, EV_ROLE_EV_FILE, _ev_file_on_close);
+    ev__handle_init(loop, &file->base, EV_ROLE_EV_FILE);
     ev_list_init(&file->work_queue);
 
     return EV_SUCCESS;
@@ -412,9 +416,18 @@ int ev_file_init(ev_loop_t* loop, ev_file_t* file)
 
 void ev_file_exit(ev_file_t* file, ev_file_close_cb cb)
 {
-    _ev_file_cancel_all_pending_task(file);
+    size_t failure_count;
 
-    /* It should be safe to close handle. */
+    /**
+     * Cancel all pending task. Do note that some tasks might be cancel failed
+     * as they are currently executing.
+     */
+    _ev_file_cancel_all_pending_task(file, &failure_count);
+
+    /**
+     * It should be safe to close handle, event there are some works in
+     * progress.
+     */
     if (file->file != EV_OS_FILE_INVALID)
     {
         ev__fs_close(file->file);
@@ -422,12 +435,32 @@ void ev_file_exit(ev_file_t* file, ev_file_close_cb cb)
     }
 
     file->close_cb = cb;
-    ev__handle_exit(&file->base, 0);
+
+    /**
+     * If all pending task was cancel, it is safe to close handle, because they
+     * are in the backlog queue.
+     */
+    if (failure_count == 0)
+    {
+        ev__handle_exit(&file->base, _ev_file_on_close);
+        return;
+    }
+
+    /**
+     * Now we have some problem, because some task is executing.
+     *
+     * We cannot close handle directly as these tasks will surely callback after
+     * this handle closed.
+     *
+     * So we have to check close status in file operations callback. Once no
+     * pending tasks, we can close this handle.
+     */
 }
 
-int ev_file_open(ev_file_t* file, ev_fs_req_t* token, const char* path, int flags, int mode, ev_file_cb cb)
+int ev_file_open(ev_file_t* file, ev_fs_req_t* token, const char* path,
+    int flags, int mode, ev_file_cb cb)
 {
-    ev_loop_t* loop = file->base.data.loop;
+    ev_loop_t* loop = file->base.loop;
 
     int ret = _ev_fs_init_req_as_open(token, file, path, flags, mode, cb);
     if (ret != EV_SUCCESS)
@@ -435,13 +468,14 @@ int ev_file_open(ev_file_t* file, ev_fs_req_t* token, const char* path, int flag
         return ret;
     }
 
-    ev__handle_active(&file->base);
+    ev__handle_event_add(&file->base);
 
     ret = ev__loop_submit_threadpool(loop, &token->work_token,
         EV_THREADPOOL_WORK_IO_FAST, _ev_file_on_open, _ev_fs_on_done);
     if (ret != EV_SUCCESS)
     {
         _ev_fs_cleanup_req_as_open(token);
+        ev__handle_event_dec(&file->base);
         return ret;
     }
 
@@ -456,7 +490,7 @@ int ev_file_open_sync(ev_file_t* file, const char* path, int flags, int mode)
 int ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb)
 {
-    ev_loop_t* loop = file->base.data.loop;
+    ev_loop_t* loop = file->base.loop;
 
     int ret = _ev_fs_init_req_as_read(req, file, bufs, nbuf, offset, cb);
     if (ret != EV_SUCCESS)
@@ -464,13 +498,14 @@ int ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
         return ret;
     }
 
-    ev__handle_active(&file->base);
+    ev__handle_event_add(&file->base);
 
     ret = ev__loop_submit_threadpool(loop, &req->work_token,
         EV_THREADPOOL_WORK_IO_FAST, _ev_file_on_read, _ev_fs_on_done);
     if (ret != EV_SUCCESS)
     {
         _ev_fs_cleanup_req_as_read(req);
+        ev__handle_event_dec(&file->base);
         return ret;
     }
 
@@ -487,7 +522,7 @@ int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb)
 {
     int ret;
-    ev_loop_t* loop = file->base.data.loop;
+    ev_loop_t* loop = file->base.loop;
 
     ret = _ev_fs_init_req_as_write(req, file, bufs, nbuf, offset, cb);
     if (ret != EV_SUCCESS)
@@ -495,13 +530,14 @@ int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
         return ret;
     }
 
-    ev__handle_active(&file->base);
+    ev__handle_event_add(&file->base);
 
     ret = ev__loop_submit_threadpool(loop, &req->work_token,
         EV_THREADPOOL_WORK_IO_FAST, _ev_file_on_write, _ev_fs_on_done);
     if (ret != EV_SUCCESS)
     {
         _ev_fs_cleanup_req_as_write(req);
+        ev__handle_event_dec(&file->base);
         return ret;
     }
 
@@ -517,15 +553,17 @@ ssize_t ev_file_write_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
 int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_file_cb cb)
 {
     int ret;
-    ev_loop_t* loop = file->base.data.loop;
+    ev_loop_t* loop = file->base.loop;
 
     _ev_fs_init_req_as_fstat(req, file, cb);
-    ev__handle_active(&file->base);
+    ev__handle_event_add(&file->base);
 
     ret = ev__loop_submit_threadpool(loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
         _ev_file_on_fstat, _ev_fs_on_done);
     if (ret != EV_SUCCESS)
     {
+        _ev_fs_cleanup_req_as_fstat(req);
+        ev__handle_event_dec(&file->base);
         return ret;
     }
 

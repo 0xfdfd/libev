@@ -63,7 +63,6 @@
 #include "ev/threadpool.h"
 #include "ev/time.h"
 #include "ev/timer.h"
-#include "ev/todo.h"
 #include "ev/udp.h"
 #include "ev/version.h"
 

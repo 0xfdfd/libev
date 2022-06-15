@@ -7,7 +7,6 @@
 #include "ev/sem.h"
 #include "ev/list.h"
 #include "ev/async.h"
-#include "ev/todo.h"
 #include "ev/threadpool_forward.h"
 
 #ifdef __cplusplus
@@ -57,14 +56,11 @@ struct ev_threadpool
 struct ev_threadpool_work
 {
     ev_handle_t                     base;           /**< Base object */
-
     ev_queue_node_t                 node;           /**< List node */
-    ev_todo_token_t                 token;          /**< Callback token */
 
     struct
     {
         ev_threadpool_t*            pool;           /**< Thread pool */
-        ev_loop_t*                  loop;           /**< Event loop */
 
         /**
          * @brief Work status.
@@ -84,8 +80,7 @@ struct ev_threadpool_work
     {\
         EV_HANDLE_INVALID,\
         EV_QUEUE_NODE_INVALID,\
-        EV_TODO_TOKEN_INVALID,\
-        { NULL, NULL, EV_UNKNOWN, NULL, NULL },\
+        { NULL, EV_UNKNOWN, NULL, NULL },\
     }
 
 /**

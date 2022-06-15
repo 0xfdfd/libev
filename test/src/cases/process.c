@@ -46,8 +46,9 @@ TEST_FIXTURE_TEAREDOWN(process)
     _close_stdin_pipe();
     ev_pipe_exit(&g_test_process->stdout_pipe, NULL);
     ev_pipe_exit(&g_test_process->stderr_pipe, NULL);
-    ASSERT_EQ_D32(ev_loop_run(&g_test_process->loop, EV_LOOP_MODE_DEFAULT), 0);
 
+    ASSERT_EQ_D32(ev_loop_run(&g_test_process->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_LOOP_EMPTY(&g_test_process->loop);
     ASSERT_EQ_D32(ev_loop_exit(&g_test_process->loop), EV_SUCCESS);
 
     mmc_free(g_test_process->self_exe_path);

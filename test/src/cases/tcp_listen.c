@@ -33,6 +33,7 @@ TEST_FIXTURE_SETUP(tcp)
 
 TEST_FIXTURE_TEAREDOWN(tcp)
 {
+    ASSERT_LOOP_EMPTY(&g_test_ec8c.s_loop);
     ASSERT_EQ_D32(ev_loop_exit(&g_test_ec8c.s_loop), 0);
 }
 

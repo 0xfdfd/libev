@@ -5,16 +5,28 @@
 #include "threadpool.h"
 #include <assert.h>
 
-static void _ev_threadpool_on_loop(ev_todo_token_t* todo)
+static void _ev_threadpool_on_loop(ev_handle_t* handle)
 {
-    ev_threadpool_work_t* work = EV_CONTAINER_OF(todo, ev_threadpool_work_t, token);
-    ev__handle_exit(&work->base, 0);
+    ev_threadpool_work_t* work = EV_CONTAINER_OF(handle, ev_threadpool_work_t, base);
+
+    ev__handle_event_dec(&work->base);
+    ev__handle_exit(&work->base, NULL);
+
     work->data.done_cb(work, work->data.status);
 }
 
 static void _ev_threadpool_submit_to_loop(ev_threadpool_work_t* work)
 {
-    ev__work_submit(work->data.loop, &work->token, _ev_threadpool_on_loop);
+    ev_loop_t* loop = work->base.loop;
+
+    work->base.backlog.cb = _ev_threadpool_on_loop;
+    ev_mutex_enter(&loop->threadpool.mutex);
+    {
+        ev_list_push_back(&loop->threadpool.work_queue, &work->base.backlog.node);
+    }
+    ev_mutex_leave(&loop->threadpool.mutex);
+
+    ev__threadpool_wakeup(loop);
 }
 
 static ev_threadpool_work_t* _ev_threadpool_get_work_locked(ev_threadpool_t* pool)
@@ -96,7 +108,7 @@ static void _cancel_work_queue_for_loop(ev_threadpool_t* pool,
             ev_threadpool_work_t* work = EV_CONTAINER_OF(it, ev_threadpool_work_t, node);
             it = ev_queue_next(wqueue, it);
 
-            if (work->data.loop != loop)
+            if (work->base.loop != loop)
             {
                 continue;
             }
@@ -156,10 +168,9 @@ int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
     }
     assert(type < ARRAY_SIZE(pool->work_queue));
 
-    ev__handle_init(loop, &work->base, EV_ROLE_EV_WORK, NULL);
-    ev__handle_active(&work->base);
+    ev__handle_init(loop, &work->base, EV_ROLE_EV_WORK);
+    ev__handle_event_add(&work->base);
     work->data.pool = pool;
-    work->data.loop = loop;
     work->data.status = EV_ELOOP;
     work->data.work_cb = work_cb;
     work->data.done_cb = done_cb;
@@ -302,4 +313,25 @@ int ev_loop_unlink_threadpool(ev_loop_t* loop)
     }
 
     return EV_SUCCESS;
+}
+
+void ev__threadpool_process(ev_loop_t* loop)
+{
+    ev_list_node_t* node;
+    for (;;)
+    {
+        ev_mutex_enter(&loop->threadpool.mutex);
+        {
+            node = ev_list_pop_front(&loop->threadpool.work_queue);
+        }
+        ev_mutex_leave(&loop->threadpool.mutex);
+
+        if (node == NULL)
+        {
+            break;
+        }
+
+        ev_handle_t* handle = EV_CONTAINER_OF(node, ev_handle_t, backlog.node);
+        handle->backlog.cb(handle);
+    }
 }

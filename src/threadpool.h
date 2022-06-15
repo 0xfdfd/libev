@@ -21,6 +21,18 @@ API_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
     ev_threadpool_work_t* work, ev_threadpool_work_type_t type,
     ev_threadpool_work_cb work_cb, ev_threadpool_work_done_cb done_cb);
 
+/**
+ * @brief Process thread pool events.
+ * @param[in] loop Event loop.
+ */
+API_LOCAL void ev__threadpool_process(ev_loop_t* loop);
+
+/**
+ * @brief Wakeup event loop.
+ * @param[in] loop Event loop.
+ */
+API_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop);
+
 #ifdef __cplusplus
 }
 #endif

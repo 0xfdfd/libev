@@ -55,6 +55,9 @@ static int _ev_pipe_make_c(HANDLE* pipe_handle, const char* name, int flags)
 
 static void _ev_pipe_r_user_callback_win(ev_pipe_read_req_t* req, size_t size, int stat)
 {
+    ev_pipe_t* pipe = req->backend.owner;
+    ev__handle_event_dec(&pipe->base);
+
     ev__read_exit(&req->base);
     req->ucb(req, size, stat);
 }
@@ -109,6 +112,9 @@ static void _ev_pipe_cancel_all_r(ev_pipe_t* pipe, int stat)
 
 static void _ev_pipe_w_user_callback_win(ev_pipe_write_req_t* req, size_t size, int stat)
 {
+    ev_pipe_t* pipe = req->backend.owner;
+    ev__handle_event_dec(&pipe->base);
+
     ev__write_exit(&req->base);
     req->ucb(req, size, stat);
 }
@@ -161,54 +167,37 @@ static void _ev_pipe_cancel_all_w(ev_pipe_t* pipe, int stat)
     }
 }
 
+static void _ev_pipe_close_pipe(ev_pipe_t* pipe)
+{
+    if (pipe->pipfd != EV_OS_PIPE_INVALID)
+    {
+        CloseHandle(pipe->pipfd);
+        pipe->pipfd = EV_OS_PIPE_INVALID;
+    }
+}
+
+/**
+ * @brief Abort all pending task and close pipe.
+ * The pipe is no longer usable.
+ */
+static void _ev_pipe_abort(ev_pipe_t* pipe, int stat)
+{
+    _ev_pipe_close_pipe(pipe);
+
+    _ev_pipe_cancel_all_r(pipe, stat);
+    _ev_pipe_cancel_all_w(pipe, stat);
+}
+
 static void _ev_pipe_on_close_win(ev_handle_t* handle)
 {
     ev_pipe_t* pipe = EV_CONTAINER_OF(handle, ev_pipe_t, base);
+
+    _ev_pipe_abort(pipe, EV_ECANCELED);
 
     if (pipe->close_cb != NULL)
     {
         pipe->close_cb(pipe);
     }
-}
-
-static void _ev_pipe_smart_deactive_win(ev_pipe_t* pipe)
-{
-    if (pipe->pipfd == EV_OS_PIPE_INVALID)
-    {
-        ev__handle_deactive(&pipe->base);
-        return;
-    }
-
-    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
-    {
-        if (pipe->backend.ipc_mode.rio.reading.reading != NULL
-            || ev_list_size(&pipe->backend.ipc_mode.rio.pending) != 0
-            || pipe->backend.ipc_mode.rio.mask.rio_pending)
-        {
-            return;
-        }
-        if (pipe->backend.ipc_mode.wio.sending.w_req != NULL
-            || ev_list_size(&pipe->backend.ipc_mode.wio.pending) != 0
-            || pipe->backend.ipc_mode.wio.mask.iocp_pending)
-        {
-            return;
-        }
-    }
-    else
-    {
-        if (pipe->backend.data_mode.rio.r_doing != NULL
-            || ev_list_size(&pipe->backend.data_mode.rio.r_pending) != 0)
-        {
-            return;
-        }
-        if (pipe->backend.data_mode.wio.w_half != NULL
-            || ev_list_size(&pipe->backend.data_mode.wio.w_pending) != 0)
-        {
-            return;
-        }
-    }
-
-    ev__handle_deactive(&pipe->base);
 }
 
 static int _ev_pipe_read_into_req(HANDLE file, ev_pipe_read_req_t* req, size_t minimum_size,
@@ -257,34 +246,14 @@ static int _ev_pipe_read_into_req(HANDLE file, ev_pipe_read_req_t* req, size_t m
     return ret;
 }
 
-static void _ev_pipe_close(ev_pipe_t* pipe)
-{
-    if (pipe->pipfd != EV_OS_PIPE_INVALID)
-    {
-        CloseHandle(pipe->pipfd);
-        pipe->pipfd = EV_OS_PIPE_INVALID;
-    }
-}
-
-static void _ev_pipe_cancel_all_rw(ev_pipe_t* pipe, int stat)
-{
-    _ev_pipe_cancel_all_r(pipe, stat);
-    _ev_pipe_cancel_all_w(pipe, stat);
-}
-
-static void _ev_pipe_abort(ev_pipe_t* pipe, int stat)
-{
-    _ev_pipe_close(pipe);
-    _ev_pipe_cancel_all_rw(pipe, stat);
-    ev__handle_deactive(&pipe->base);
-}
-
 static int _ev_pipe_data_mode_want_read(ev_pipe_t* pipe)
 {
-    int ret = ReadFile(pipe->pipfd, s_ev_zero, 0, NULL, &pipe->backend.data_mode.rio.io.overlapped);
+    int ret = ReadFile(pipe->pipfd, s_ev_zero, 0, NULL,
+        &pipe->backend.data_mode.rio.io.overlapped);
+
     if (!ret)
     {
-        int err = GetLastError();
+        DWORD err = GetLastError();
         if (err != ERROR_IO_PENDING)
         {
             return ev__translate_sys_error(err);
@@ -391,20 +360,20 @@ static void _ev_pipe_on_data_mode_read_win(ev_iocp_t* iocp, size_t transferred, 
         return;
     }
 
+    /* Do actual read */
     ret = _ev_pipe_on_data_mode_read_recv(pipe);
     if (ret != EV_SUCCESS)
     {
         _ev_pipe_abort(pipe, ret);
         return;
     }
+
+    /* If there are pending read request, we submit another IOCP request */
     if (pipe->backend.data_mode.rio.r_doing != NULL
         || ev_list_size(&pipe->backend.data_mode.rio.r_pending) != 0)
     {
         _ev_pipe_data_mode_want_read(pipe);
-    }
-    else
-    {
-        _ev_pipe_smart_deactive_win(pipe);
+        return;
     }
 }
 
@@ -526,7 +495,6 @@ static void _ev_pipe_on_data_mode_write(ev_iocp_t* iocp, size_t transferred, voi
     {
         _ev_pipe_abort(pipe, submit_ret);
     }
-    _ev_pipe_smart_deactive_win(pipe);
 }
 
 static void _ev_pipe_init_data_mode_r(ev_pipe_t* pipe)
@@ -796,8 +764,6 @@ static void _ev_pipe_on_ipc_mode_read(ev_iocp_t* iocp, size_t transferred, void*
         _ev_pipe_ipc_mode_want_read(pipe);
         return;
     }
-
-    _ev_pipe_smart_deactive_win(pipe);
 }
 
 /**
@@ -930,7 +896,6 @@ finish_request:
         return ret;
     }
 
-    _ev_pipe_smart_deactive_win(pipe);
     return EV_SUCCESS;
 }
 
@@ -1111,7 +1076,7 @@ static int _ev_pipe_data_mode_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
         ev_list_push_back(&pipe->backend.data_mode.wio.w_doing, &req->base.node);
     }
 
-    ev__handle_active(&pipe->base);
+    ev__handle_event_add(&pipe->base);
     return EV_SUCCESS;
 }
 
@@ -1146,6 +1111,7 @@ static int _ev_pipe_ipc_mode_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
 
 static int _ev_pipe_read_ipc_mode(ev_pipe_t* pipe, ev_pipe_read_req_t* req)
 {
+    int ret;
     if (pipe->backend.ipc_mode.iner_err != EV_SUCCESS)
     {
         return pipe->backend.ipc_mode.iner_err;
@@ -1153,7 +1119,12 @@ static int _ev_pipe_read_ipc_mode(ev_pipe_t* pipe, ev_pipe_read_req_t* req)
 
     ev_list_push_back(&pipe->backend.ipc_mode.rio.pending, &req->base.node);
 
-    return _ev_pipe_ipc_mode_want_read(pipe);
+    if ((ret = _ev_pipe_ipc_mode_want_read(pipe)) != EV_SUCCESS)
+    {
+        ev_list_erase(&pipe->backend.ipc_mode.rio.pending, &req->base.node);
+    }
+
+    return ret;
 }
 
 static int _ev_pipe_read_data_mode(ev_pipe_t* pipe, ev_pipe_read_req_t* req)
@@ -1316,7 +1287,7 @@ int ev_pipe_make(ev_os_pipe_t fds[2], int rflags, int wflags)
 
 int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe, int ipc)
 {
-    ev__handle_init(loop, &pipe->base, EV_ROLE_EV_PIPE, _ev_pipe_on_close_win);
+    ev__handle_init(loop, &pipe->base, EV_ROLE_EV_PIPE);
     pipe->close_cb = NULL;
     pipe->pipfd = EV_OS_PIPE_INVALID;
     pipe->base.data.flags |= ipc ? EV_HANDLE_PIPE_IPC : 0;
@@ -1335,10 +1306,10 @@ int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe, int ipc)
 
 void ev_pipe_exit(ev_pipe_t* pipe, ev_pipe_cb cb)
 {
-    _ev_pipe_close(pipe);
+    _ev_pipe_close_pipe(pipe);
 
     pipe->close_cb = cb;
-    ev__handle_exit(&pipe->base, 0);
+    ev__handle_exit(&pipe->base, _ev_pipe_on_close_win);
 }
 
 int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
@@ -1350,7 +1321,7 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
         return ret;
     }
 
-    if (CreateIoCompletionPort(handle, pipe->base.data.loop->backend.iocp, (ULONG_PTR)pipe, 0) == NULL)
+    if (CreateIoCompletionPort(handle, pipe->base.loop->backend.iocp, (ULONG_PTR)pipe, 0) == NULL)
     {
         return ev__translate_sys_error(GetLastError());
     }
@@ -1361,8 +1332,6 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
         return EV_SUCCESS;
     }
 
-    ev__handle_active(&pipe->base);
-
     /**
      * TODO:
      * In IPC mode, we need to setup communication.
@@ -1371,7 +1340,7 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
      * cannot unbind IOCP beacuse windows not support that.
      * 
      * There are may ways to avoid it:
-     * 1. Avoid handeshake procedure. We need handeshake beacuse we need child
+     * 1. Avoid handeshake procedure. We need handeshake because we need child
      *   process information to call DuplicateHandle(). But accroding to
      *   https://stackoverflow.com/questions/46348163/how-to-transfer-the-duplicated-handle-to-the-child-process
      *   we can call DuplicateHandle() in child process, as long as we wait for
@@ -1410,6 +1379,9 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
         return ret;
     }
 
+    req->backend.owner = pipe;
+    ev__handle_event_add(&pipe->base);
+
     if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
         ret = _ev_pipe_ipc_mode_write(pipe, req);
@@ -1419,13 +1391,10 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
         ret = _ev_pipe_data_mode_write(pipe, req);
     }
 
-    if (ret == EV_SUCCESS)
-    {
-        ev__handle_active(&pipe->base);
-    }
-    else
+    if (ret != EV_SUCCESS)
     {
         ev__write_exit(&req->base);
+        ev__handle_event_dec(&pipe->base);
     }
 
     return ret;
@@ -1445,6 +1414,8 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
         return ret;
     }
 
+    ev__handle_event_add(&pipe->base);
+
     if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
         ret = _ev_pipe_read_ipc_mode(pipe, req);
@@ -1454,12 +1425,9 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
         ret = _ev_pipe_read_data_mode(pipe, req);
     }
 
-    if (ret == EV_SUCCESS)
+    if (ret != EV_SUCCESS)
     {
-        ev__handle_active(&pipe->base);
-    }
-    else
-    {
+        ev__handle_event_dec(&pipe->base);
         ev__read_exit(&req->base);
     }
 

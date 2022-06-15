@@ -6,6 +6,7 @@
 #include "ev/queue.h"
 #include "ev/mutex.h"
 #include "ev/backend.h"
+#include "ev/handle.h"
 #include "ev/threadpool_forward.h"
 #include "ev/loop_forward.h"
 
@@ -17,6 +18,14 @@ extern "C" {
  * @addtogroup EV_EVENT_LOOP
  * @{
  */
+
+/**
+ * @brief Type definition for callback passed to #ev_loop_walk().
+ * @param[in] handle    Object handle.
+ * @param[in] arg       User defined argument.
+ * @return              0 to continue, otherwise stop walk.
+ */
+typedef int (*ev_walk_cb)(ev_handle_t* handle, void* arg);
 
 /**
  * @brief Event loop type.
@@ -31,10 +40,8 @@ struct ev_loop
         ev_list_t                   active_list;        /**< (#ev_handle::node) All active handles */
     }handles;                                           /**< table for handles */
 
-    struct
-    {
-        ev_list_t                   pending;            /**< (#ev_todo_token_t::node) Pending task */
-    }todo;
+    ev_list_t                       backlog_queue;      /**< Backlog queue */
+    ev_list_t                       endgame_queue;      /**< Close queue */
 
     /**
      * @brief Timer context
@@ -48,7 +55,10 @@ struct ev_loop
     {
         ev_threadpool_t*            pool;               /**< Thread pool */
         ev_list_node_t              node;               /**< node for #ev_threadpool_t::loop_table */
-    }threadpool;
+
+        ev_mutex_t                  mutex;              /**< Work queue lock */
+        ev_list_t                   work_queue;         /**< Work queue */
+    } threadpool;
 
     struct
     {
@@ -67,9 +77,15 @@ struct ev_loop
     {\
         0,                                      /* .hwtime */\
         { EV_LIST_INIT, EV_LIST_INIT },         /* .handles */\
-        { EV_LIST_INIT },                       /* .todo */\
+        EV_LIST_INIT,                           /* .backlog_queue */\
+        EV_LIST_INIT,                           /* .endgame_queue */\
         { EV_MAP_INIT(NULL, NULL) },            /* .timer */ \
-        { NULL, EV_LIST_NODE_INIT },            /* .threadpool */\
+        {/* .threadpool */\
+            NULL,                               /* .pool */\
+            EV_LIST_NODE_INIT,                  /* .node */\
+            EV_MUTEX_INVALID,                   /* .mutex */\
+            EV_LIST_INIT,                       /* .work_queue */\
+        },\
         { 0 },                                  /* .mask */\
         EV_LOOP_PLT_INIT,                       /* .backend */\
     }
@@ -126,6 +142,15 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode);
  * @return              #ev_errno_t
  */
 int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool);
+
+/**
+ * @brief Walk the list of handles.
+ * \p cb will be executed with the given arg.
+ * @param[in] loop      The event loop.
+ * @param[in] cb        Walk callback.
+ * @param[in] arg       User defined argument.
+ */
+void ev_loop_walk(ev_loop_t* loop, ev_walk_cb cb, void* arg);
 
 /**
  * @} EV_EVENT_LOOP

@@ -90,7 +90,7 @@ static int _ev_udp_maybe_deferred_socket_win(ev_udp_t* udp, int domain)
         return ev__translate_sys_error(ret);
     }
 
-    if ((ret = _ev_udp_setup_socket_attribute_win(udp->base.data.loop, udp, domain)) != EV_SUCCESS)
+    if ((ret = _ev_udp_setup_socket_attribute_win(udp->base.loop, udp, domain)) != EV_SUCCESS)
     {
         closesocket(udp->sock);
         udp->sock = EV_OS_SOCKET_INVALID;
@@ -100,7 +100,7 @@ static int _ev_udp_maybe_deferred_socket_win(ev_udp_t* udp, int domain)
     return EV_SUCCESS;
 }
 
-static void _ev_udp_close_win(ev_udp_t* udp)
+static void _ev_udp_close_socket_win(ev_udp_t* udp)
 {
     if (udp->sock != EV_OS_SOCKET_INVALID)
     {
@@ -306,48 +306,37 @@ static int _ev_udp_set_source_membership_ipv6(ev_udp_t* udp,
     return EV_SUCCESS;
 }
 
-static void _ev_udp_smart_deactive_win(ev_udp_t* udp)
-{
-    int flag_send_idle = 0;
-    int flag_recv_idle = 0;
-    if (ev_list_size(&udp->send_list) == 0)
-    {
-        flag_send_idle = 1;
-    }
-    if (ev_list_size(&udp->recv_list) == 0)
-    {
-        flag_recv_idle = 1;
-    }
-
-    if (flag_recv_idle && flag_send_idle)
-    {
-        ev__handle_deactive(&udp->base);
-    }
-}
-
 static void _ev_udp_w_user_callback_win(ev_udp_write_t* req, size_t size, int stat)
 {
+    ev_udp_t* udp = req->backend.owner;
+    ev__handle_event_dec(&udp->base);
+
     ev__write_exit(&req->base);
+    ev__handle_exit(&req->handle, NULL);
+
     req->usr_cb(req, size, stat);
 }
 
 static void _ev_udp_r_user_callback_win(ev_udp_read_t* req, size_t size, int stat)
 {
+    ev_udp_t* udp = req->backend.owner;
+    ev__handle_event_dec(&udp->base);
+
     ev__read_exit(&req->base);
+    ev__handle_exit(&req->handle, NULL);
+
     req->usr_cb(req, size, stat);
 }
 
 static void _ev_udp_on_send_complete_win(ev_udp_t* udp, ev_udp_write_t* req)
 {
     ev_list_erase(&udp->send_list, &req->base.node);
-    _ev_udp_smart_deactive_win(udp);
-
     _ev_udp_w_user_callback_win(req, req->base.size, req->backend.stat);
 }
 
-static void _ev_udp_on_send_bypass_iocp(ev_todo_token_t* todo)
+static void _ev_udp_on_send_bypass_iocp(ev_handle_t* handle)
 {
-    ev_udp_write_t* req = EV_CONTAINER_OF(todo, ev_udp_write_t, backend.token);
+    ev_udp_write_t* req = EV_CONTAINER_OF(handle, ev_udp_write_t, handle);
     ev_udp_t* udp = req->backend.owner;
 
     _ev_udp_on_send_complete_win(udp, req);
@@ -385,7 +374,6 @@ static void _ev_udp_do_recv_win(ev_udp_t* udp, ev_udp_read_t* req)
     }
 
     ev_list_erase(&udp->recv_list, &req->base.node);
-    _ev_udp_smart_deactive_win(udp);
     _ev_udp_r_user_callback_win(req, req->base.data.size, req->backend.stat);
 }
 
@@ -398,9 +386,9 @@ static void _ev_udp_on_recv_iocp_win(ev_iocp_t* iocp, size_t transferred, void* 
     _ev_udp_do_recv_win(udp, req);
 }
 
-static void _ev_udp_on_recv_bypass_iocp_win(ev_todo_token_t* todo)
+static void _ev_udp_on_recv_bypass_iocp_win(ev_handle_t* handle)
 {
-    ev_udp_read_t* req = EV_CONTAINER_OF(todo, ev_udp_read_t, backend.token);
+    ev_udp_read_t* req = EV_CONTAINER_OF(handle, ev_udp_read_t, handle);
     ev_udp_t* udp = req->backend.owner;
 
     _ev_udp_do_recv_win(udp, req);
@@ -419,10 +407,12 @@ int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
     req->backend.stat = EV_EINPROGRESS;
     ev__iocp_init(&req->backend.io, _ev_udp_on_recv_iocp_win, udp);
 
+    ev__handle_event_add(&udp->base);
+
     int ret = WSARecv(udp->sock, &buf, 1, &bytes, &flags, &req->backend.io.overlapped, NULL);
     if (ret == 0 && (udp->base.data.flags & EV_HANDLE_UDP_BYPASS_IOCP))
     {
-        ev_todo_submit(udp->base.data.loop, &req->backend.token, _ev_udp_on_recv_bypass_iocp_win);
+        ev__backlog_submit(&req->handle, _ev_udp_on_recv_bypass_iocp_win);
         return EV_SUCCESS;
     }
 
@@ -432,11 +422,12 @@ int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
         return EV_SUCCESS;
     }
 
-    _ev_udp_smart_deactive_win(udp);
+    ev__handle_event_dec(&udp->base);
     return ev__translate_sys_error(err);
 }
 
-int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr, socklen_t addrlen)
+int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
+    const struct sockaddr* addr, socklen_t addrlen)
 {
     int ret, err;
 
@@ -459,7 +450,7 @@ int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr
 
     DWORD send_bytes;
 
-    ev__handle_active(&udp->base);
+    ev__handle_event_add(&udp->base);
     ret = WSASendTo(udp->sock, (WSABUF*)req->base.bufs, (DWORD)req->base.nbuf,
         &send_bytes, 0, addr, addrlen, &req->backend.io.overlapped, NULL);
 
@@ -467,7 +458,7 @@ int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr
     {
         req->base.size += req->base.capacity;
         req->backend.stat = EV_SUCCESS;
-        ev_todo_submit(udp->base.data.loop, &req->backend.token, _ev_udp_on_send_bypass_iocp);
+        ev__backlog_submit(&req->handle, _ev_udp_on_send_bypass_iocp);
         return EV_SUCCESS;
     }
 
@@ -477,7 +468,7 @@ int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr
         return EV_SUCCESS;
     }
 
-    _ev_udp_smart_deactive_win(udp);
+    ev__handle_event_dec(&udp->base);
     return ev__translate_sys_error(err);
 }
 
@@ -489,13 +480,13 @@ int ev_udp_init(ev_loop_t* loop, ev_udp_t* udp, int domain)
     udp->close_cb = NULL;
     ev_list_init(&udp->send_list);
     ev_list_init(&udp->recv_list);
-    ev__handle_init(loop, &udp->base, EV_ROLE_EV_UDP, _ev_udp_on_close_win);
+    ev__handle_init(loop, &udp->base, EV_ROLE_EV_UDP);
 
     if (domain != AF_UNSPEC)
     {
         if ((err = _ev_udp_maybe_deferred_socket_win(udp, domain)) != EV_SUCCESS)
         {
-            ev__handle_exit(&udp->base, 1);
+            ev__handle_exit(&udp->base, NULL);
             return err;
         }
     }
@@ -507,10 +498,10 @@ int ev_udp_init(ev_loop_t* loop, ev_udp_t* udp, int domain)
 
 void ev_udp_exit(ev_udp_t* udp, ev_udp_cb close_cb)
 {
-    _ev_udp_close_win(udp);
-
     udp->close_cb = close_cb;
-    ev__handle_exit(&udp->base, 0);
+
+    _ev_udp_close_socket_win(udp);
+    ev__handle_exit(&udp->base, _ev_udp_on_close_win);
 }
 
 int ev_udp_open(ev_udp_t* udp, ev_os_socket_t sock)
@@ -530,7 +521,8 @@ int ev_udp_open(ev_udp_t* udp, ev_os_socket_t sock)
     }
 
     udp->sock = sock;
-    if ((ret = _ev_udp_setup_socket_attribute_win(udp->base.data.loop, udp, protocol_info.iAddressFamily)) != EV_SUCCESS)
+    if ((ret = _ev_udp_setup_socket_attribute_win(udp->base.loop, udp,
+        protocol_info.iAddressFamily)) != EV_SUCCESS)
     {
         udp->sock = EV_OS_SOCKET_INVALID;
         return ret;
@@ -602,7 +594,7 @@ int ev_udp_bind(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags)
 err:
     if (flag_have_orig_sock)
     {
-        _ev_udp_close_win(udp);
+        _ev_udp_close_socket_win(udp);
     }
     return ret;
 }

@@ -25,7 +25,6 @@ add_library(${PROJECT_NAME}
     "src/shmem.c"
     "src/threadpool.c"
     "src/timer.c"
-    "src/todo.c"
     "src/udp.c"
     "src/version.c")
 if(WIN32)
@@ -44,8 +43,8 @@ if(WIN32)
             "src/win/tcp_win.c"
             "src/win/udp_win.c"
             "src/win/thread_win.c"
-            "src/win/winapi.c"
-            "src/win/work_win.c")
+            "src/win/threadpool_win.c"
+            "src/win/winapi.c")
 else()
     target_sources(${PROJECT_NAME}
         PRIVATE
@@ -63,8 +62,8 @@ else()
             "src/unix/stream_unix.c"
             "src/unix/tcp_unix.c"
             "src/unix/thread_unix.c"
-            "src/unix/udp_unix.c"
-            "src/unix/work_unix.c")
+            "src/unix/threadpool_unix.c"
+            "src/unix/udp_unix.c")
 endif()
 
 # add library dependencies

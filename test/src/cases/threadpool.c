@@ -28,6 +28,7 @@ TEST_FIXTURE_TEAREDOWN(threadpool)
 {
     ev_threadpool_exit(&g_test_757a.pool);
     ASSERT_EQ_D32(ev_loop_run(&g_test_757a.loop, EV_LOOP_MODE_ONCE), 0);
+    ASSERT_LOOP_EMPTY(&g_test_757a.loop);
     ASSERT_EQ_D32(ev_loop_exit(&g_test_757a.loop), 0);
 }
 

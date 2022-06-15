@@ -32,6 +32,7 @@ TEST_FIXTURE_SETUP(timer)
 
 TEST_FIXTURE_TEAREDOWN(timer)
 {
+    ASSERT_LOOP_EMPTY(&g_test_6f93.s_loop);
     ASSERT_EQ_D32(ev_loop_exit(&g_test_6f93.s_loop), 0);
 }
 

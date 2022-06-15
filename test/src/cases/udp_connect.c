@@ -34,6 +34,7 @@ TEST_FIXTURE_TEAREDOWN(udp)
     ev_udp_exit(&g_test_5295->server, NULL);
 
     ASSERT_EQ_D32(ev_loop_run(&g_test_5295->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_LOOP_EMPTY(&g_test_5295->loop);
     ASSERT_EQ_D32(ev_loop_exit(&g_test_5295->loop), 0);
 
     mmc_free(g_test_5295);

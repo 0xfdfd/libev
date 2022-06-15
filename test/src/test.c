@@ -159,3 +159,26 @@ const char* test_strerror(int errcode)
     return strerror(errcode);
 #endif
 }
+
+static int _test_loop_on_walk(ev_handle_t* handle, void* arg)
+{
+    (void)handle;
+
+    size_t* p_counter = arg;
+    *p_counter += 1;
+
+    if (*p_counter == 1)
+    {
+        fprintf(stderr, "             leak handle:\n");
+    }
+    fprintf(stderr, "             |- %p\n", handle);
+
+    return 0;
+}
+
+size_t test_loop_count_handle(ev_loop_t* loop)
+{
+    size_t counter = 0;
+    ev_loop_walk(loop, _test_loop_on_walk, &counter);
+    return counter;
+}

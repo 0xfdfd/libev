@@ -24,7 +24,9 @@ TEST_FIXTURE_TEAREDOWN(tcp)
     ev_tcp_exit(&g_test_43e2.l_sock, NULL);
     ev_tcp_exit(&g_test_43e2.s_sock, NULL);
     ev_tcp_exit(&g_test_43e2.c_sock, NULL);
+
     ASSERT_EQ_D32(ev_loop_run(&g_test_43e2.s_loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_LOOP_EMPTY(&g_test_43e2.s_loop);
     ASSERT_EQ_D32(ev_loop_exit(&g_test_43e2.s_loop), 0);
 }
 

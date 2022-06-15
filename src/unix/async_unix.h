@@ -13,6 +13,8 @@ extern "C" {
  */
 API_LOCAL int ev__asyc_eventfd(int evtfd[2]);
 
+API_LOCAL void ev__async_eventfd_close(int fd);
+
 /**
  * @brief Post event to eventfd.
  */

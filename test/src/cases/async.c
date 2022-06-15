@@ -29,6 +29,7 @@ TEST_FIXTURE_SETUP(async)
 TEST_FIXTURE_TEAREDOWN(async)
 {
     ASSERT_EQ_D32(ev_loop_run(&g_test_sync->s_loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_LOOP_EMPTY(&g_test_sync->s_loop);
     ev_loop_exit(&g_test_sync->s_loop);
 
     mmc_free(g_test_sync);

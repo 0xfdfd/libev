@@ -22,6 +22,7 @@ TEST_FIXTURE_TEAREDOWN(udp)
 {
     ev_udp_exit(&g_test_6e87.client, NULL);
     ASSERT_EQ_D32(ev_loop_run(&g_test_6e87.loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_LOOP_EMPTY(&g_test_6e87.loop);
     ASSERT_EQ_D32(ev_loop_exit(&g_test_6e87.loop), 0);
 }
 

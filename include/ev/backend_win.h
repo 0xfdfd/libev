@@ -6,13 +6,13 @@
 
 #include "ev/defs.h"
 #include "ev/os_win.h"
-#include "ev/todo.h"
 #include "ev/ipc-protocol.h"
 #include "ev/map.h"
 #include "ev/tcp_forward.h"
 #include "ev/udp_forward.h"
 #include "ev/pipe_forward.h"
 #include "ev/mutex.h"
+#include "ev/list.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,15 +94,13 @@ typedef struct ev_loop_plt
     struct
     {
         ev_iocp_t               io;                 /**< Wakeup token */
-        ev_mutex_t              mutex;              /**< Mutex */
-        ev_list_t               queue;              /**< #ev_todo_token_t::node */
-    } work;
+    } threadpool;
 }ev_loop_plt_t;
 
 /**
  * @brief Initialize #ev_loop_plt_t to Windows specific invalid value.
  */
-#define EV_LOOP_PLT_INIT        { NULL }
+#define EV_LOOP_PLT_INIT        { NULL, { EV_IOCP_INIT } }
 
 /**
  * @brief Windows backend for #ev_tcp_read_req_t.
@@ -131,7 +129,6 @@ typedef struct ev_tcp_backend
 {
     int                         af;                 /**< AF_INET / AF_INET6 */
     ev_iocp_t                   io;                 /**< IOCP */
-    ev_todo_token_t             token;              /**< Todo token */
 
     struct
     {
@@ -181,7 +178,6 @@ typedef struct ev_tcp_backend
     {\
         0,\
         EV_IOCP_INIT,\
-        EV_TODO_TOKEN_INVALID,\
         { 0 },\
         { { EV_LIST_INIT, EV_LIST_INIT } },\
     }
@@ -203,7 +199,6 @@ typedef int (WSAAPI* ev_wsarecvfrom_fn)(
 typedef struct ev_udp_write_backend
 {
     ev_iocp_t                   io;                 /**< IOCP handle */
-    ev_todo_token_t                   token;              /**< Todo token */
     int                         stat;               /**< Write result */
     ev_udp_t*                   owner;              /**< Owner */
 }ev_udp_write_backend_t;
@@ -215,7 +210,6 @@ typedef struct ev_udp_read_backend
 {
     ev_udp_t*                   owner;              /**< Owner */
     ev_iocp_t                   io;                 /**< IOCP handle */
-    ev_todo_token_t                   token;              /**< Todo token */
     int                         stat;               /**< Read result */
 }ev_udp_read_backend_t;
 

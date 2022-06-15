@@ -33,6 +33,7 @@ struct ev_udp
  */
 struct ev_udp_write
 {
+    ev_handle_t             handle;             /**< Base object */
     ev_write_t              base;               /**< Base request */
     ev_udp_write_cb         usr_cb;             /**< User callback */
     ev_udp_write_backend_t  backend;            /**< Backend */
@@ -43,6 +44,7 @@ struct ev_udp_write
  */
 struct ev_udp_read
 {
+    ev_handle_t             handle;             /**< Base object */
     ev_read_t               base;               /**< Base request */
     ev_udp_recv_cb          usr_cb;             /**< User callback */
     struct sockaddr_storage addr;               /**< Peer address */

@@ -67,6 +67,7 @@ TEST_FIXTURE_TEAREDOWN(pipe)
     ev_tcp_exit(&g_test_19f1->c_tcp, NULL);
     ev_tcp_exit(&g_test_19f1->d_tcp, NULL);
     ASSERT_EQ_D32(ev_loop_run(&g_test_19f1->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_LOOP_EMPTY(&g_test_19f1->loop);
     ASSERT_EQ_D32(ev_loop_exit(&g_test_19f1->loop), 0);
 
     mmc_free(g_test_19f1);

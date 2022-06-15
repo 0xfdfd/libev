@@ -75,6 +75,13 @@ int test_thread_wait(test_execute_token_t* token);
 
 const char* test_strerror(int errcode);
 
+/**
+ * @brief Verify whether \p loop is empty.
+ */
+#define ASSERT_LOOP_EMPTY(loop)    ASSERT_EQ_U64(test_loop_count_handle(loop), 0)
+
+size_t test_loop_count_handle(ev_loop_t* loop);
+
 #ifdef __cplusplus
 }
 #endif

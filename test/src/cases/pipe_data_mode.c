@@ -82,6 +82,7 @@ TEST_FIXTURE_TEAREDOWN(pipe)
     ev_pipe_exit(&g_test_pipe_data->pipe_r, NULL);
     ASSERT_EQ_D32(ev_loop_run(&g_test_pipe_data->loop, EV_LOOP_MODE_DEFAULT), 0);
 
+    ASSERT_LOOP_EMPTY(&g_test_pipe_data->loop);
     ev_loop_exit(&g_test_pipe_data->loop);
 
     mmc_free(g_test_pipe_data);

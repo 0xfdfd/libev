@@ -31,37 +31,48 @@ typedef enum ev_handle_flag
     /* #EV_ROLE_EV_PIPE */
     EV_HANDLE_PIPE_IPC          = 0x01 << 0x08,     /**< 256. This pipe is support IPC */
     EV_HANDLE_PIPE_STREAMING    = 0x01 << 0x09,     /**< 512. This pipe is initialized by #ev_stream_t */
-}ev_handle_flag_t;
+} ev_handle_flag_t;
 
 /**
- * @brief Initialize a handle
+ * @brief Initialize a handle.
+ *
+ * A initialized handle will be linked with \p loop. By default the \p handle
+ * is in #ev_loop_t::handles::idle_list. If the \p handle is active (The event
+ * counter is non-zero), the handle is moved into #ev_loop_t::handles::active_list.
+ *
+ * @note Once a handle is initialized, it must call #ev__handle_exit() when no
+ *   longer needed.
  * @param[in] loop      The loop own the handle
  * @param[out] handle   A pointer to the structure
  * @param[in] role      Who we are
- * @param[in] close_cb  A callback when handle is closed
  */
-API_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t role, ev_close_cb close_cb);
+API_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t role);
 
 /**
  * @brief Close the handle
  * @note The handle will not closed until close_cb was called, which was given
  *   by #ev__handle_init()
+ * @note #ev__handle_exit() never reset active_events counter for you. You always
+ *   need to balance active_events counter yourself.
  * @param[in] handle    handler
- * @param[in] force     Force exit, without async callback
+ * @param[in] close_cb  Close callback. If non-null, the \p close_cb will be
+ *   called in next event loop. If null, the handle will be closed synchronously.
  */
-API_LOCAL void ev__handle_exit(ev_handle_t* handle, int force);
+API_LOCAL void ev__handle_exit(ev_handle_t* handle, ev_handle_cb close_cb);
 
 /**
- * @brief Set handle as active
- * @param[in] handle    handler
+ * @brief Add active event counter. If active event counter is non-zero,
+ *   #EV_HANDLE_ACTIVE is appended.
+ * @param[in] handle    Handler.
  */
-API_LOCAL void ev__handle_active(ev_handle_t* handle);
+API_LOCAL void ev__handle_event_add(ev_handle_t* handle);
 
 /**
- * @brief Set handle as inactive
- * @param[in] handle    handler
+ * @brief Decrease active event counter. If active event counter is zero,
+ *   #EV_HANDLE_ACTIVE is removed.
+ * @param[in] handle    Handler.
  */
-API_LOCAL void ev__handle_deactive(ev_handle_t* handle);
+API_LOCAL void ev__handle_event_dec(ev_handle_t* handle);
 
 /**
  * @brief Check if the handle is in active state
@@ -76,6 +87,27 @@ API_LOCAL int ev__handle_is_active(ev_handle_t* handle);
  * @return              bool
  */
 API_LOCAL int ev__handle_is_closing(ev_handle_t* handle);
+
+/**
+ * @brief Queue a task.
+ * This task will be execute in next loop.
+ * @param[in] handle    handler.
+ * @param[in] callback  Task callback
+ * @return              #ev_errno_t
+ */
+API_LOCAL int ev__backlog_submit(ev_handle_t* handle, ev_handle_cb callback);
+
+/**
+ * @brief Process backlog events.
+ * @param[in] loop Event loop.
+ */
+API_LOCAL void ev__process_backlog(ev_loop_t* loop);
+
+/**
+ * @brief Process endgame events.
+ * @param[in] loop Event loop.
+ */
+API_LOCAL void ev__process_endgame(ev_loop_t* loop);
 
 #ifdef __cplusplus
 }

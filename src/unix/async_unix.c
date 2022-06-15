@@ -41,19 +41,20 @@ static void _async_close_pipe(ev_async_t* handle)
     }
 }
 
-static void _ev_async_exit(ev_async_t* handle, ev_async_cb close_cb, int is_force)
+static void _ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
 {
     assert(!ev__handle_is_closing(&handle->base));
 
     handle->close_cb = close_cb;
     _async_close_pipe(handle);
 
-    ev__handle_exit(&handle->base, is_force);
+    ev__handle_event_dec(&handle->base);
+    ev__handle_exit(&handle->base, close_cb != NULL ? _ev_async_on_close : NULL);
 }
 
 void ev__async_exit_force(ev_async_t* handle)
 {
-    _ev_async_exit(handle, NULL, 1);
+    _ev_async_exit(handle, NULL);
 }
 
 int ev__asyc_eventfd(int evtfd[2])
@@ -82,6 +83,11 @@ int ev__asyc_eventfd(int evtfd[2])
 #endif
 
     return EV_SUCCESS;
+}
+
+void ev__async_eventfd_close(int fd)
+{
+    close(fd);
 }
 
 void ev__async_post(int wfd)
@@ -125,7 +131,7 @@ int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
 
     handle->active_cb = cb;
     handle->close_cb = NULL;
-    ev__handle_init(loop, &handle->base, EV_ROLE_EV_ASYNC, _ev_async_on_close);
+    ev__handle_init(loop, &handle->base, EV_ROLE_EV_ASYNC);
 
     errcode = ev__asyc_eventfd(handle->backend.pipfd);
     if (errcode != EV_SUCCESS)
@@ -136,19 +142,19 @@ int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
     ev__nonblock_io_init(&handle->backend.io, handle->backend.pipfd[0],
         _async_on_wakeup_unix, NULL);
     ev__nonblock_io_add(loop, &handle->backend.io, EV_IO_IN);
-    ev__handle_active(&handle->base);
+    ev__handle_event_add(&handle->base);
 
     return EV_SUCCESS;
 
 err_close_handle:
     _async_close_pipe(handle);
-    ev__handle_exit(&handle->base, 1);
+    ev__handle_exit(&handle->base, NULL);
     return errcode;
 }
 
 void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
 {
-    _ev_async_exit(handle, close_cb, 0);
+    _ev_async_exit(handle, close_cb);
 }
 
 void ev_async_wakeup(ev_async_t* handle)

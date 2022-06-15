@@ -1,6 +1,7 @@
 #include "ev/errno.h"
 #include "ev/misc.h"
 #include "loop.h"
+#include "handle.h"
 #include "udp.h"
 #include <string.h>
 
@@ -60,19 +61,26 @@ int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf, 
     }
 
     req->usr_cb = cb;
+    ev__handle_init(udp->base.loop, &req->handle, EV_ROLE_EV_REQ_UDP_R);
+
     if ((ret = ev__read_init(&req->base, bufs, nbuf)) != EV_SUCCESS)
     {
-        return ret;
+        goto err;
     }
     ev_list_push_back(&udp->recv_list, &req->base.node);
 
     if ((ret = ev__udp_recv(udp, req)) != EV_SUCCESS)
     {
+        ev__read_exit(&req->base);
         ev_list_erase(&udp->recv_list, &req->base.node);
-        return ret;
+        goto err;
     }
 
     return EV_SUCCESS;
+
+err:
+    ev__handle_exit(&req->handle, NULL);
+    return ret;
 }
 
 int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
@@ -81,18 +89,26 @@ int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
     int ret;
 
     req->usr_cb = cb;
+    ev__handle_init(udp->base.loop, &req->handle, EV_ROLE_EV_REQ_UDP_W);
+
     if ((ret = ev__write_init(&req->base, bufs, nbuf)) != EV_SUCCESS)
     {
-        return ret;
+        goto err;
     }
     ev_list_push_back(&udp->send_list, &req->base.node);
 
     socklen_t addrlen = addr != NULL ? ev__get_addr_len(addr) : 0;
     if ((ret = ev__udp_send(udp, req, addr, addrlen)) != EV_SUCCESS)
     {
-        ev_list_erase(&udp->send_list, &req->base.node);
-        return ret;
+        goto err_cleanup_write;
     }
 
     return EV_SUCCESS;
+
+err_cleanup_write:
+    ev_list_erase(&udp->send_list, &req->base.node);
+    ev__write_exit(&req->base);
+err:
+    ev__handle_exit(&req->handle, NULL);
+    return ret;
 }

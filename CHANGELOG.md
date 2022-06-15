@@ -3,10 +3,12 @@
 ## v0.0.8
 
 ### BREAKING CHANGES
+1. remove `ev_todo_token_t`
 
 ### Features
 1. add detail information for `ev_fs_readfile()`
 2. use `ev_library_shutdown()` to cleanup global resources
+3. use `ev_loop_walk()` to walk through all handles
 
 ### Bug Fixes
 

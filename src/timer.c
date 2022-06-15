@@ -60,7 +60,7 @@ int ev_timer_init(ev_loop_t* loop, ev_timer_t* handle)
 {
     memset(handle, 0, sizeof(*handle));
 
-    ev__handle_init(loop, &handle->base, EV_ROLE_EV_TIMER, _ev_timer_on_close);
+    ev__handle_init(loop, &handle->base, EV_ROLE_EV_TIMER);
     return EV_SUCCESS;
 }
 
@@ -69,12 +69,12 @@ void ev_timer_exit(ev_timer_t* handle, ev_timer_cb close_cb)
     handle->close_cb = close_cb;
 
     ev_timer_stop(handle);
-    ev__handle_exit(&handle->base, 0);
+    ev__handle_exit(&handle->base, _ev_timer_on_close);
 }
 
 int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_t repeat)
 {
-    ev_loop_t* loop = handle->base.data.loop;
+    ev_loop_t* loop = handle->base.loop;
     if (ev__handle_is_active(&handle->base))
     {
         ev_timer_stop(handle);
@@ -89,7 +89,7 @@ int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_
     {
         BREAK_ABORT();
     }
-    ev__handle_active(&handle->base);
+    ev__handle_event_add(&handle->base);
 
     return EV_SUCCESS;
 }
@@ -101,6 +101,6 @@ void ev_timer_stop(ev_timer_t* handle)
         return;
     }
 
-    ev__handle_deactive(&handle->base);
-    ev_map_erase(&handle->base.data.loop->timer.heap, &handle->node);
+    ev__handle_event_dec(&handle->base);
+    ev_map_erase(&handle->base.loop->timer.heap, &handle->node);
 }

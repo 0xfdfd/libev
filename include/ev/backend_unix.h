@@ -6,7 +6,6 @@
 
 #include "ev/defs.h"
 #include "ev/os_unix.h"
-#include "ev/todo.h"
 #include "ev/map.h"
 #include "ev/list.h"
 #include "ev/ipc-protocol.h"
@@ -149,9 +148,7 @@ typedef struct ev_loop_plt
     {
         int                     evtfd[2];           /**< [0] for read, [1] for write. */
         ev_nonblock_io_t        io;
-        ev_mutex_t              mutex;              /**< Mutex */
-        ev_list_t               queue;              /**< #ev_todo_token_t::node */
-    } work;
+    } threadpool;
 }ev_loop_plt_t;
 
 /**
@@ -164,8 +161,6 @@ typedef struct ev_loop_plt
         {\
             { EV_OS_PIPE_INVALID, EV_OS_PIPE_INVALID },\
             EV_NONBLOCK_IO_INVALID,\
-            EV_MUTEX_INVALID,\
-            EV_LIST_INIT,\
         }\
     }
 
@@ -267,7 +262,6 @@ typedef struct ev_tcp_backend
         {
             ev_nonblock_io_t            io;                 /**< IO object */
             ev_tcp_connect_cb           cb;                 /**< Connect callback */
-            ev_todo_token_t             token;              /**< Todo token */
             int                         stat;               /**< Connect result */
         }client;
     }u;

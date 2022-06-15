@@ -87,6 +87,7 @@ TEST_FIXTURE_TEAREDOWN(fs)
         g_test_file.flags.file_init = 0;
     }
 
+    ASSERT_LOOP_EMPTY(&g_test_file.loop);
     ASSERT_EQ_D32(ev_loop_exit(&g_test_file.loop), EV_SUCCESS);
     ev_threadpool_exit(&g_test_file.pool);
 

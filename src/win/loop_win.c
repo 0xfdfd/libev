@@ -4,6 +4,7 @@
 #include "allocator.h"
 #include "loop_win.h"
 #include "thread_win.h"
+#include "threadpool_win.h"
 #include "winapi.h"
 #include "work.h"
 #include <assert.h>
@@ -158,7 +159,7 @@ void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg)
 
 void ev__loop_exit_backend(ev_loop_t* loop)
 {
-    ev__exit_work(loop);
+    ev__threadpool_exit_win(loop);
 
     if (loop->backend.iocp != NULL)
     {
@@ -184,7 +185,7 @@ int ev__loop_init_backend(ev_loop_t* loop)
         return ev__translate_sys_error(err);
     }
 
-    ev__init_work(loop);
+    ev__threadpool_init_win(loop);
 
     return EV_SUCCESS;
 }
