@@ -4,6 +4,7 @@
 #include "allocator.h"
 #include "timer.h"
 #include "handle.h"
+#include "threadpool.h"
 #include "work.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,6 +46,16 @@ static int _ev_loop_init(ev_loop_t* loop)
 static void _ev_loop_exit(ev_loop_t* loop)
 {
     ev_mutex_exit(&loop->threadpool.mutex);
+
+    if (loop->threadpool.pool != NULL)
+    {
+        ev_mutex_enter(&loop->threadpool.pool->mutex);
+        {
+            ev_list_erase(&loop->threadpool.pool->loop_table, &loop->threadpool.node);
+        }
+        ev_mutex_leave(&loop->threadpool.pool->mutex);
+        loop->threadpool.pool = NULL;
+    }
 }
 
 /**
@@ -180,7 +191,7 @@ int ev_loop_init(ev_loop_t* loop)
 int ev_loop_exit(ev_loop_t* loop)
 {
     if (ev_list_size(&loop->handles.active_list)
-        || ev_map_size(&loop->timer.heap))
+        || ev_list_size(&loop->handles.idle_list))
     {
         return EV_EBUSY;
     }
