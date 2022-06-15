@@ -649,12 +649,13 @@ ssize_t ev_exepath(char* buffer, size_t size)
         goto error;
     }
 
-    ssize_t ret = readlink("/proc/self/exe", tmp_buffer, tmp_size);
+    ssize_t ret = readlink("/proc/self/exe", tmp_buffer, tmp_size - 1);
     if (ret < 0)
     {
         errcode = ev__translate_sys_error(errno);
         goto error;
     }
+    tmp_buffer[ret] = '\0';
 
     if (buffer != NULL)
     {

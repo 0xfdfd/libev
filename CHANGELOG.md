@@ -11,6 +11,7 @@
 3. use `ev_loop_walk()` to walk through all handles
 
 ### Bug Fixes
+1. fix: use uninitialised value in `ev_exepath()` on Unix
 
 
 ## v0.0.7 (2022/06/07)
