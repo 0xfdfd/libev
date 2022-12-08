@@ -55,28 +55,8 @@ target_include_directories(ev_test
 
 ev_setup_target_wall(ev_test)
 
-function(EV_SETUP_EXPORT_PGO name)
-    get_target_property(TEMP ${name} LINK_FLAGS)
-    if(TEMP STREQUAL "TEMP-NOTFOUND")
-        SET(TEMP "") # Set to empty string
-    else()
-        SET(TEMP "${TEMP} ") # A space to cleanly separate from existing content
-    endif()
-    # Append our values
-    SET(TEMP "${TEMP}-fprofile-generate" )
-    set_target_properties(${name} PROPERTIES LINK_FLAGS ${TEMP} )
-endfunction()
-
-if (EV_PGO_EXPORT)
-    if (CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "GNU")
-        EV_SETUP_EXPORT_PGO(ev_test)
-    elseif (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-    endif ()
-endif ()
-
 target_link_libraries(ev_test PRIVATE ev cutest)
-add_test(NAME ev_test
-    COMMAND $<TARGET_FILE:ev_test>)
+add_test(NAME ev_test COMMAND $<TARGET_FILE:ev_test>)
 
 if(EV_HAVE_COVERAGE)
     setup_target_for_coverage_lcov(

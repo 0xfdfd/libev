@@ -4,8 +4,6 @@ project(ev)
 # add custom cmake files
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/third_party/cmake-modules")
 
-option(EV_PGO_EXPORT "Export Profile Guided Optimization" OFF)
-option(EV_PGO_IMPORT "Import Profile Guided Optimization" OFF)
 option(EV_ENABLE_COVERAGE "Enable code coverage. GCC/Clang only" OFF)
 
 # add source files
@@ -68,18 +66,11 @@ endif()
 
 # add library dependencies
 find_package(Threads REQUIRED)
-target_link_libraries(${PROJECT_NAME}
-    PRIVATE
-        Threads::Threads)
+target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
 if(WIN32)
-    target_link_libraries(${PROJECT_NAME}
-        PRIVATE
-            Ws2_32
-            Mswsock)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Ws2_32 Mswsock)
 else()
-    target_link_libraries(${PROJECT_NAME}
-        PRIVATE
-            rt)
+    target_link_libraries(${PROJECT_NAME} PRIVATE rt)
 endif()
 
 # define target include search paths
@@ -100,26 +91,6 @@ endfunction()
 
 # add warning check
 ev_setup_target_wall(${PROJECT_NAME})
-
-# PGO
-if (EV_PGO_IMPORT)
-    if (CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "GNU")
-        target_compile_options(${PROJECT_NAME}
-            PRIVATE
-                -fprofile-use=$<TARGET_FILE_DIR:${PROJECT_NAME}>)
-    elseif (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-    endif ()
-elseif (EV_PGO_EXPORT)
-    if (CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "GNU")
-        target_compile_options(${PROJECT_NAME}
-            PRIVATE
-                -fprofile-generate=$<TARGET_FILE_DIR:${PROJECT_NAME}>)
-        target_link_libraries(${PROJECT_NAME}
-            PRIVATE
-                gcov)
-    elseif (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-    endif ()
-endif ()
 
 if (EV_ENABLE_COVERAGE AND CMAKE_C_COMPILER_ID MATCHES "(GNU|Clang)")
     include(CodeCoverage)
