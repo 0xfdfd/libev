@@ -234,6 +234,7 @@ static void _ev_threadpool_cancel_all(ev_threadpool_t* pool)
 void ev_threadpool_exit(ev_threadpool_t* pool)
 {
     size_t i;
+    int errcode;
 
     /* stop loop */
     pool->looping = 0;
@@ -245,9 +246,10 @@ void ev_threadpool_exit(ev_threadpool_t* pool)
     /* exit thread */
     for (i = 0; i < pool->thrnum; i++)
     {
-        if (ev_thread_exit(&pool->threads[i], EV_INFINITE_TIMEOUT) != EV_SUCCESS)
+        errcode = ev_thread_exit(&pool->threads[i], EV_INFINITE_TIMEOUT);
+        if (errcode != EV_SUCCESS)
         {
-            EV_ABORT();
+            EV_ABORT("ev_thread_exit:%d", errcode);
         }
     }
 

@@ -96,10 +96,13 @@ static void _ev_init_once_unix(void)
 
 uint64_t ev__clocktime(void)
 {
+    int errcode;
     struct timespec t;
+
     if (clock_gettime(g_ev_loop_unix_ctx.hwtime_clock_id, &t) != 0)
     {
-        BREAK_ABORT();
+        errcode = errno;
+        EV_ABORT("errno:%d", errcode);
     }
 
     return t.tv_sec * 1000 + t.tv_nsec / 1000 / 1000;
@@ -129,6 +132,7 @@ void ev__loop_exit_backend(ev_loop_t* loop)
 void ev__poll(ev_loop_t* loop, uint32_t timeout)
 {
     int nevts;
+    int errcode;
     struct epoll_event events[128];
 
     /**
@@ -170,9 +174,9 @@ void ev__poll(ev_loop_t* loop, uint32_t timeout)
         }
 
         /* If errno is not EINTR, something must wrong in the program */
-        if (errno != EINTR)
+        if ((errcode = errno) != EINTR)
         {
-            BREAK_ABORT();
+            EV_ABORT("errno:%d", errcode);
         }
 
         ev__loop_update_time(loop);

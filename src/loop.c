@@ -332,13 +332,6 @@ void ev__read_exit(ev_read_t* req)
     req->data.nbuf = 0;
 }
 
-void ev__abort(const char* file, int line)
-{
-    fprintf(stderr, "%s:%d: abort\n", file, line);
-    fflush(NULL);
-    abort();
-}
-
 const char* ev_strerror(int err)
 {
     switch (err)

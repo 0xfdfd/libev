@@ -33,6 +33,7 @@ static void _ev_net_init_win(void)
 
 static void _ev_time_init_win(void)
 {
+    DWORD errcode;
     LARGE_INTEGER perf_frequency;
 
     /* Retrieve high-resolution timer frequency
@@ -44,7 +45,8 @@ static void _ev_time_init_win(void)
     }
     else
     {
-        BREAK_ABORT();
+        errcode = GetLastError();
+        EV_ABORT("GetLastError:%lu", errcode);
     }
 }
 
@@ -53,11 +55,13 @@ static uint64_t _ev_hrtime_win(unsigned int scale)
     LARGE_INTEGER counter;
     double scaled_freq;
     double result;
+    DWORD errcode;
 
     assert(scale != 0);
     if (!QueryPerformanceCounter(&counter))
     {
-        BREAK_ABORT();
+        errcode = GetLastError();
+        EV_ABORT("GetLastError:%lu", errcode);
     }
     assert(counter.QuadPart != 0);
 
@@ -107,6 +111,7 @@ void ev__poll(ev_loop_t* loop, uint32_t timeout)
     int repeat;
     BOOL success;
     ULONG count;
+    DWORD errcode;
     OVERLAPPED_ENTRY overlappeds[128];
 
     uint64_t timeout_time = loop->hwtime + timeout;
@@ -124,9 +129,10 @@ void ev__poll(ev_loop_t* loop, uint32_t timeout)
         }
 
         /* Cannot handle any other error */
-        if (GetLastError() != WAIT_TIMEOUT)
+        errcode = GetLastError();
+        if (errcode != WAIT_TIMEOUT)
         {
-            BREAK_ABORT();
+            EV_ABORT("GetLastError:%lu", (unsigned long)errcode);
         }
 
         if (timeout == 0)
@@ -192,9 +198,11 @@ int ev__loop_init_backend(ev_loop_t* loop)
 
 void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req)
 {
+    DWORD errcode;
     if (!PostQueuedCompletionStatus(loop->backend.iocp, 0, 0, &req->overlapped))
     {
-        EV_ABORT();
+        errcode = GetLastError();
+        EV_ABORT("GetLastError:%lu", errcode);
     }
 }
 

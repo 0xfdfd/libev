@@ -368,7 +368,7 @@ static void _ev_process_unregister_wait_handle(ev_process_t* process)
             goto fin;
         }
         process->exit_code = ev__translate_sys_error(status);
-        BREAK_ABORT();
+        EV_ABORT("GetLastError:%lu", (unsigned long)status);
     }
 
 fin:
@@ -455,6 +455,7 @@ static void _ev_process_init_win(ev_process_t* handle, const ev_process_options_
 int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_options_t* opt)
 {
     int ret;
+    DWORD errcode;
     PROCESS_INFORMATION piProcInfo;
     ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
 
@@ -482,7 +483,7 @@ int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_opt
 
     if (!ret)
     {
-        DWORD errcode = GetLastError();
+        errcode = GetLastError();
         ev__async_exit_force(&handle->sigchld);
         return ev__translate_sys_error(errcode);
     }
@@ -491,7 +492,8 @@ int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_opt
         _ev_process_on_object_exit, handle, INFINITE, WT_EXECUTEINWAITTHREAD | WT_EXECUTEONLYONCE);
     if (!ret)
     {
-        BREAK_ABORT();
+        errcode = GetLastError();
+        EV_ABORT("GetLastError:%lu", (unsigned long)errcode);
     }
 
     CloseHandle(piProcInfo.hThread);

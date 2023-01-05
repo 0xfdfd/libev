@@ -11,8 +11,10 @@ static BOOL WINAPI _ev_once_proxy(PINIT_ONCE InitOnce, PVOID Parameter, PVOID *C
 
 void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
 {
+    DWORD errcode;
     if (InitOnceExecuteOnce(&guard->guard, _ev_once_proxy, (PVOID)cb, NULL) == 0)
     {
-        EV_ABORT();
+        errcode = GetLastError();
+        EV_ABORT("GetLastError:%lu", (unsigned long)errcode);
     }
 }

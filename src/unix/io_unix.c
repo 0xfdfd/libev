@@ -60,11 +60,13 @@ void ev__init_io(ev_loop_t* loop)
 
     if ((loop->backend.pollfd = epoll_create(256)) == -1)
     {
-        BREAK_ABORT();
+        err = errno;
+        EV_ABORT("errno:%d", err);
     }
     if ((err = ev__cloexec(loop->backend.pollfd, 1)) != 0)
     {
-        BREAK_ABORT();
+        err = errno;
+        EV_ABORT("errno:%d", err);
     }
 }
 
@@ -88,6 +90,7 @@ void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb, vo
 
 void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
 {
+    int errcode;
     struct epoll_event poll_event;
 
     io->data.n_events |= evts;
@@ -104,7 +107,8 @@ void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
 
     if (epoll_ctl(loop->backend.pollfd, op, io->data.fd, &poll_event) != 0)
     {
-        BREAK_ABORT();
+        errcode = errno;
+        EV_ABORT("errno:%d", errcode);
     }
 
     io->data.c_events = io->data.n_events;
@@ -116,6 +120,7 @@ void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
 
 void ev__nonblock_io_del(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
 {
+    int errcode;
     struct epoll_event poll_event;
     io->data.n_events &= ~evts;
     if (io->data.n_events == io->data.c_events)
@@ -128,10 +133,10 @@ void ev__nonblock_io_del(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
     poll_event.data.fd = io->data.fd;
 
     int op = io->data.n_events == 0 ? EPOLL_CTL_DEL : EPOLL_CTL_MOD;
-
     if (epoll_ctl(loop->backend.pollfd, op, io->data.fd, &poll_event) != 0)
     {
-        BREAK_ABORT();
+        errcode = errno;
+        EV_ABORT("errno:%d", errcode);
     }
 
     io->data.c_events = io->data.n_events;

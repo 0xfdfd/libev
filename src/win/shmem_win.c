@@ -72,11 +72,11 @@ void ev_shm_exit(ev_shm_t* shm)
 {
     if (!UnmapViewOfFile(shm->addr))
     {
-        BREAK_ABORT();
+        EV_ABORT("GetLastError:%lu", (unsigned long)GetLastError());
     }
 
     if (!CloseHandle(shm->backend.map_file))
     {
-        BREAK_ABORT();
+        EV_ABORT("GetLastError:%lu", (unsigned long)GetLastError());
     }
 }

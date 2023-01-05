@@ -684,7 +684,7 @@ void ev_fs_req_cleanup(ev_fs_req_t* req)
         break;
 
     default:
-        EV_ABORT();
+        EV_ABORT("req:%d", req->req_type);
     }
 }
 

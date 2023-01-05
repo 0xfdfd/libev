@@ -109,11 +109,6 @@ API_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout);
  */
 API_LOCAL uint64_t ev__clocktime(void);
 
-/**
- * @brief Same as abort(3)
- */
-API_LOCAL EV_NORETURN void ev__abort(const char* file, int line);
-
 #ifdef __cplusplus
 }
 #endif
