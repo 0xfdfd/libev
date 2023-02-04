@@ -1,7 +1,7 @@
 #ifndef __EV_FILE_INTERNAL_H__
 #define __EV_FILE_INTERNAL_H__
 
-#include "ev/fs.h"
+#include "ev.h"
 #include "defs.h"
 
 #ifdef __cplusplus

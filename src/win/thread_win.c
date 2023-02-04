@@ -1,4 +1,4 @@
-#include "ev/errno.h"
+#include "ev.h"
 #include "loop_win.h"
 #include "misc_win.h"
 #include "thread_win.h"
@@ -39,7 +39,7 @@ static unsigned __stdcall _ev_thread_proxy_proc_win(void* lpThreadParameter)
     return 0;
 }
 
-void ev__thread_init_win(void)
+API_LOCAL void ev__thread_init_win(void)
 {
     int ret = ev_tls_init(&g_ev_loop_win_ctx.thread.thread_key);
     if (ret != EV_SUCCESS)

@@ -1,5 +1,5 @@
-#define _GNU_SOURCE 1
-#include "ev/errno.h"
+#define _GNU_SOURCE
+#include "ev.h"
 #include "loop.h"
 #include "fs.h"
 #include "allocator.h"
@@ -83,7 +83,7 @@ static int _ev_fs_mkpath(char* file_path, int mode)
     return EV_SUCCESS;
 }
 
-int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
+API_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
 {
     int ret;
     int errcode;
@@ -206,7 +206,7 @@ err_errno:
     return ev__translate_sys_error(errcode);
 }
 
-int ev__fs_close(ev_os_file_t file)
+API_LOCAL int ev__fs_close(ev_os_file_t file)
 {
     int errcode;
     if (close(file) != 0)
@@ -217,7 +217,7 @@ int ev__fs_close(ev_os_file_t file)
     return EV_SUCCESS;
 }
 
-int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mode)
+API_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mode)
 {
     int errcode;
 
@@ -244,7 +244,7 @@ int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mode)
     return EV_SUCCESS;
 }
 
-ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
+API_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
 {
     ssize_t read_size = preadv(file, (struct iovec*)bufs, nbuf, offset);
     if (read_size >= 0)
@@ -256,7 +256,7 @@ ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t of
     return ev__translate_sys_error(errcode);
 }
 
-ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
+API_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
 {
     ssize_t write_size = pwritev(file, (struct iovec*)bufs, nbuf, offset);
     if (write_size >= 0)
@@ -268,7 +268,7 @@ ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t o
     return ev__translate_sys_error(errcode);
 }
 
-int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
+API_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
 {
     int ret = 0;
     DIR* dir = opendir(path);
@@ -303,7 +303,7 @@ int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
     return ret;
 }
 
-int ev__fs_mkdir(const char* path, int mode)
+API_LOCAL int ev__fs_mkdir(const char* path, int mode)
 {
     char* dup_path = ev__strdup(path);
     if (dup_path == NULL)

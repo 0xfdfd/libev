@@ -1,7 +1,6 @@
-#include "ev/errno.h"
+#include "ev.h"
 #include "loop.h"
 #include "handle.h"
-#include "work.h"
 #include "threadpool.h"
 #include <assert.h>
 
@@ -260,7 +259,8 @@ void ev_threadpool_exit(ev_threadpool_t* pool)
     ev_sem_exit(&pool->p2w_sem);
 }
 
-int ev__loop_submit_threadpool(ev_loop_t* loop, ev_threadpool_work_t* work,
+API_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
+    ev_threadpool_work_t* work,
     ev_threadpool_work_type_t type, ev_threadpool_work_cb work_cb,
     ev_threadpool_work_done_cb done_cb)
 {
@@ -317,7 +317,7 @@ int ev_loop_unlink_threadpool(ev_loop_t* loop)
     return EV_SUCCESS;
 }
 
-void ev__threadpool_process(ev_loop_t* loop)
+API_LOCAL void ev__threadpool_process(ev_loop_t* loop)
 {
     ev_list_node_t* node;
     for (;;)

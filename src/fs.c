@@ -1,5 +1,4 @@
-#include "ev/errno.h"
-#include "ev/misc.h"
+#include "ev.h"
 #include "loop.h"
 #include "fs.h"
 #include "threadpool.h"
@@ -361,14 +360,14 @@ static void _ev_fs_on_readfile(ev_threadpool_work_t* work)
     ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
     const char* path = req->req.as_readfile.path;
 
-    ev_os_file_t file;
+    ev_os_file_t file = EV_OS_FILE_INVALID;
     req->result = ev__fs_open(&file, path, EV_FS_O_RDONLY, 0);
     if (req->result != EV_SUCCESS)
     {
         return;
     }
 
-    ev_fs_stat_t statbuf;
+    ev_fs_stat_t statbuf = EV_FS_STAT_INVALID;
     req->result = ev__fs_fstat(file, &statbuf);
     if (req->result != EV_SUCCESS)
     {

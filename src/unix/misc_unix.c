@@ -1,8 +1,8 @@
-#include "ev/errno.h"
+#include "ev.h"
 #include "misc_unix.h"
 #include <errno.h>
 
-int ev__translate_sys_error(int syserr)
+API_LOCAL int ev__translate_sys_error(int syserr)
 {
     switch (syserr) {
         /* Success */

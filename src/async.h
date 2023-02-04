@@ -1,7 +1,7 @@
 #ifndef __EV_ASYNC_COMMON_H__
 #define __EV_ASYNC_COMMON_H__
 
-#include "ev/async.h"
+#include "ev.h"
 #include "defs.h"
 
 #ifdef __cplusplus

@@ -1,7 +1,7 @@
 #ifndef __EV_TCP_WIN_INTERNAL_H__
 #define __EV_TCP_WIN_INTERNAL_H__
 
-#include "ev/tcp.h"
+#include "ev.h"
 #include "defs.h"
 
 #ifdef __cplusplus

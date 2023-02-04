@@ -1,4 +1,4 @@
-#include "ev/errno.h"
+#include "ev.h"
 #include "misc.h"
 #include "loop_win.h"
 #include "winapi.h"
@@ -394,7 +394,7 @@ static void _ev_udp_on_recv_bypass_iocp_win(ev_handle_t* handle)
     _ev_udp_do_recv_win(udp, req);
 }
 
-int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
+API_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
 {
     WSABUF buf;
     buf.buf = g_ev_loop_win_ctx.net.zero_;
@@ -426,7 +426,7 @@ int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
     return ev__translate_sys_error(err);
 }
 
-int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
+API_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
     const struct sockaddr* addr, socklen_t addrlen)
 {
     int ret, err;

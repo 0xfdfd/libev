@@ -1,5 +1,5 @@
 #define _GNU_SOURCE
-#include "ev/errno.h"
+#include "ev.h"
 #include "allocator.h"
 #include "loop_unix.h"
 #include "io_unix.h"
@@ -255,7 +255,7 @@ static int _ev_spawn_parent(ev_process_t* handle, spawn_helper_t* spawn_helper)
     return EV_UNKNOWN;
 }
 
-void ev__init_process_unix(void)
+API_LOCAL void ev__init_process_unix(void)
 {
     ev_list_init(&g_ev_loop_unix_ctx.process.wait_queue);
     ev_mutex_init(&g_ev_loop_unix_ctx.process.wait_queue_mutex, 0);

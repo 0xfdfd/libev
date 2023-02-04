@@ -70,6 +70,7 @@ dkms.conf
 /.vs
 /out
 *.tmp
+/CMakeSettings.json
 
 # Html document files
 /docs/html

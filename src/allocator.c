@@ -1,5 +1,5 @@
+#include "ev.h"
 #include "allocator.h"
-#include "ev/errno.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -54,27 +54,27 @@ int ev_replace_allocator(ev_malloc_fn malloc_func, ev_calloc_fn calloc_func,
     return EV_SUCCESS;
 }
 
-void* ev__calloc(size_t nmemb, size_t size)
+API_LOCAL void* ev__calloc(size_t nmemb, size_t size)
 {
     return ev__allocator.calloc_func(nmemb, size);
 }
 
-void* ev__malloc(size_t size)
+API_LOCAL void* ev__malloc(size_t size)
 {
     return ev__allocator.malloc_func(size);
 }
 
-void* ev__realloc(void* ptr, size_t size)
+API_LOCAL void* ev__realloc(void* ptr, size_t size)
 {
     return ev__allocator.realloc_func(ptr, size);
 }
 
-void ev__free(void* ptr)
+API_LOCAL void ev__free(void* ptr)
 {
     ev__allocator.free_func(ptr);
 }
 
-char* ev__strdup(const char* s)
+API_LOCAL char* ev__strdup(const char* s)
 {
     size_t len = strlen(s) + 1;
     char* m = ev__malloc(len);

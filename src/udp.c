@@ -1,11 +1,10 @@
-#include "ev/errno.h"
-#include "ev/misc.h"
+#include "ev.h"
 #include "loop.h"
 #include "handle.h"
 #include "udp.h"
 #include <string.h>
 
-int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
+API_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
     const char* interface_addr, int is_ipv6)
 {
     struct sockaddr_in* addr_4 = (struct sockaddr_in*)dst;

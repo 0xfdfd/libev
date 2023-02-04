@@ -1,5 +1,4 @@
-#include "ev/errno.h"
-#include "ev/sem.h"
+#include "ev.h"
 #include "loop.h"
 
 void ev_sem_init(ev_sem_t* sem, unsigned value)

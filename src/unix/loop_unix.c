@@ -1,5 +1,4 @@
-#include "ev/errno.h"
-#include "ev/once.h"
+#include "ev.h"
 #include "loop_unix.h"
 #include "io_unix.h"
 #include "work.h"
@@ -94,7 +93,7 @@ static void _ev_init_once_unix(void)
     ev__init_process_unix();
 }
 
-uint64_t ev__clocktime(void)
+API_LOCAL uint64_t ev__clocktime(void)
 {
     int errcode;
     struct timespec t;
@@ -108,13 +107,13 @@ uint64_t ev__clocktime(void)
     return t.tv_sec * 1000 + t.tv_nsec / 1000 / 1000;
 }
 
-void ev__init_once_unix(void)
+API_LOCAL void ev__init_once_unix(void)
 {
     static ev_once_t once = EV_ONCE_INIT;
     ev_once_execute(&once, _ev_init_once_unix);
 }
 
-int ev__loop_init_backend(ev_loop_t* loop)
+API_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
 {
     ev__init_once_unix();
     ev__init_io(loop);
@@ -123,13 +122,13 @@ int ev__loop_init_backend(ev_loop_t* loop)
     return EV_SUCCESS;
 }
 
-void ev__loop_exit_backend(ev_loop_t* loop)
+API_LOCAL void ev__loop_exit_backend(ev_loop_t* loop)
 {
     ev__exit_work(loop);
     ev__exit_io(loop);
 }
 
-void ev__poll(ev_loop_t* loop, uint32_t timeout)
+API_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
 {
     int nevts;
     int errcode;

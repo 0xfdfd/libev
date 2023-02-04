@@ -1,11 +1,9 @@
-#include "ev/errno.h"
-#include "ev/request.h"
+#include "ev.h"
 #include "loop.h"
 #include "allocator.h"
 #include "timer.h"
 #include "handle.h"
 #include "threadpool.h"
-#include "work.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -133,12 +131,12 @@ static size_t _ev_calculate_write_size(const ev_write_t* req)
     return total;
 }
 
-void ev__loop_update_time(ev_loop_t* loop)
+API_LOCAL void ev__loop_update_time(ev_loop_t* loop)
 {
     loop->hwtime = ev__clocktime();
 }
 
-int ev__ipc_check_frame_hdr(const void* buffer, size_t size)
+API_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size)
 {
     const ev_ipc_frame_hdr_t* hdr = buffer;
     if (size < sizeof(ev_ipc_frame_hdr_t))
@@ -154,7 +152,7 @@ int ev__ipc_check_frame_hdr(const void* buffer, size_t size)
     return 1;
 }
 
-void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr, uint8_t flags, uint16_t exsz, uint32_t dtsz)
+API_LOCAL void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr, uint8_t flags, uint16_t exsz, uint32_t dtsz)
 {
     hdr->hdr_magic = EV_IPC_FRAME_HDR_MAGIC;
     hdr->hdr_flags = flags;
@@ -165,7 +163,7 @@ void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr, uint8_t flags, uint16_t exs
     hdr->reserved = 0;
 }
 
-ev_loop_t* ev__handle_loop(ev_handle_t* handle)
+API_LOCAL ev_loop_t* ev__handle_loop(ev_handle_t* handle)
 {
     return handle->loop;
 }
@@ -265,7 +263,7 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
     return ret;
 }
 
-int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf)
+API_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf)
 {
     req->nbuf = nbuf;
 
@@ -288,7 +286,7 @@ int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf)
     return EV_SUCCESS;
 }
 
-void ev__write_exit(ev_write_t* req)
+API_LOCAL void ev__write_exit(ev_write_t* req)
 {
     if (req->bufs != req->bufsml)
     {
@@ -299,7 +297,7 @@ void ev__write_exit(ev_write_t* req)
     req->nbuf = 0;
 }
 
-int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf)
+API_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf)
 {
     req->data.nbuf = nbuf;
 
@@ -322,7 +320,7 @@ int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf)
     return EV_SUCCESS;
 }
 
-void ev__read_exit(ev_read_t* req)
+API_LOCAL void ev__read_exit(ev_read_t* req)
 {
     if (req->data.bufs != req->data.bufsml)
     {
@@ -393,7 +391,7 @@ const char* ev_strerror(int err)
     return "Unknown error";
 }
 
-socklen_t ev__get_addr_len(const struct sockaddr* addr)
+API_LOCAL socklen_t ev__get_addr_len(const struct sockaddr* addr)
 {
     if (addr->sa_family == AF_INET)
     {

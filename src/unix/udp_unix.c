@@ -1,5 +1,4 @@
-#include "ev/errno.h"
-#include "ev/misc.h"
+#include "ev.h"
 #include "io_unix.h"
 #include "misc_unix.h"
 #include "udp.h"
@@ -607,7 +606,7 @@ static int _ev_udp_set_ttl_unix(ev_udp_t* udp, int ttl, int option4, int option6
     return EV_SUCCESS;
 }
 
-int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
+API_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
 {
     (void)req;
     if (ev_list_size(&udp->recv_list) == 1)
@@ -620,7 +619,8 @@ int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
     return EV_SUCCESS;
 }
 
-int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req, const struct sockaddr* addr, socklen_t addrlen)
+API_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
+    const struct sockaddr* addr, socklen_t addrlen)
 {
     int ret;
 

@@ -1,8 +1,7 @@
 #ifndef __EV_PROCESS_UNIX_H__
 #define __EV_PROCESS_UNIX_H__
 
-#include "ev/process.h"
-#include "ev/mutex.h"
+#include "ev.h"
 #include "defs.h"
 
 #ifdef __cplusplus

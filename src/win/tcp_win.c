@@ -1,4 +1,4 @@
-#include "ev/errno.h"
+#include "ev.h"
 #include "handle.h"
 #include "loop_win.h"
 #include "winapi.h"
@@ -745,7 +745,7 @@ int ev_tcp_read(ev_tcp_t* sock, ev_tcp_read_req_t* req,
     return EV_SUCCESS;
 }
 
-int ev__tcp_open_win(ev_tcp_t* tcp, SOCKET fd)
+API_LOCAL int ev__tcp_open_win(ev_tcp_t* tcp, SOCKET fd)
 {
     tcp->sock = fd;
     if (!(tcp->base.data.flags & EV_HANDLE_TCP_STREAMING))

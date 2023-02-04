@@ -23,8 +23,6 @@ typedef struct test_file_ctx
 
 static test_file_ctx_t s_test_file;
 
-extern int ev__translate_sys_error(int errcode);
-
 static void _on_init_file(void)
 {
     ASSERT_GT_U32(ev_exepath(s_test_file.exe_path, sizeof(s_test_file.exe_path)), 0);
@@ -76,8 +74,7 @@ int test_access_dir(const char* path)
     DWORD ret = GetFileAttributesA(path);
     if (ret == INVALID_FILE_ATTRIBUTES)
     {
-        ret = GetLastError();
-        return ev__translate_sys_error(ret);
+        return EV_ENOENT;
     }
 
     switch (ret)
@@ -94,8 +91,8 @@ int test_access_dir(const char* path)
     DIR* dir = opendir(path);
     if (dir == NULL)
     {
-        errcode = errno;
-        return ev__translate_sys_error(errcode);
+        errcode = errno; (void)errcode;
+        return EV_ENOENT;
     }
 
     closedir(dir);

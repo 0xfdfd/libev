@@ -1,4 +1,4 @@
-#include "ev/errno.h"
+#include "ev.h"
 #include "io_unix.h"
 #include "loop.h"
 #include "handle.h"
@@ -52,12 +52,12 @@ static void _ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
     ev__handle_exit(&handle->base, close_cb != NULL ? _ev_async_on_close : NULL);
 }
 
-void ev__async_exit_force(ev_async_t* handle)
+API_LOCAL void ev__async_exit_force(ev_async_t* handle)
 {
     _ev_async_exit(handle, NULL);
 }
 
-int ev__asyc_eventfd(int evtfd[2])
+API_LOCAL int ev__asyc_eventfd(int evtfd[2])
 {
     int errcode;
 
@@ -85,12 +85,12 @@ int ev__asyc_eventfd(int evtfd[2])
     return EV_SUCCESS;
 }
 
-void ev__async_eventfd_close(int fd)
+API_LOCAL void ev__async_eventfd_close(int fd)
 {
     close(fd);
 }
 
-void ev__async_post(int wfd)
+API_LOCAL void ev__async_post(int wfd)
 {
     uint64_t val = 1;
 
@@ -108,7 +108,7 @@ void ev__async_post(int wfd)
     }
 }
 
-void ev__async_pend(int rfd)
+API_LOCAL void ev__async_pend(int rfd)
 {
     uint64_t val;
     int errcode;

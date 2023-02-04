@@ -1,7 +1,7 @@
 #ifndef __EV_THREAD_WIN_INTERNAL_H__
 #define __EV_THREAD_WIN_INTERNAL_H__
 
-#include "ev/thread.h"
+#include "ev.h"
 #include "defs.h"
 
 #ifdef __cplusplus

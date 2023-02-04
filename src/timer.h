@@ -1,7 +1,7 @@
 #ifndef __EV_TIMER_INTERNAL_H__
 #define __EV_TIMER_INTERNAL_H__
 
-#include "ev/timer.h"
+#include "ev.h"
 #include "defs.h"
 
 #ifdef __cplusplus

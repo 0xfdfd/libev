@@ -27,7 +27,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           7
+#define EV_VERSION_PREREL           8
 
 /**
  * @brief Version calculate helper macro.

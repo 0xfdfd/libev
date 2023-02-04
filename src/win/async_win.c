@@ -1,4 +1,4 @@
-#include "ev/errno.h"
+#include "ev.h"
 #include "async_win.h"
 #include "handle.h"
 #include "loop_win.h"
@@ -30,7 +30,7 @@ static void _ev_asyc_exit_win(ev_async_t* handle, ev_async_cb close_cb)
     ev__handle_exit(&handle->base, close_cb != NULL ? _ev_async_on_close_win : NULL);
 }
 
-void ev__async_exit_force(ev_async_t* handle)
+API_LOCAL void ev__async_exit_force(ev_async_t* handle)
 {
     _ev_asyc_exit_win(handle, NULL);
 }

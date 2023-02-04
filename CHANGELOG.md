@@ -10,6 +10,7 @@
 2. use `ev_library_shutdown()` to cleanup global resources
 3. use `ev_loop_walk()` to walk through all handles
 4. process: support change cwd
+5. add amalgamate support
 
 ### Bug Fixes
 1. fix: use uninitialised value in `ev_exepath()` on Unix

@@ -1,7 +1,7 @@
 #ifndef __EV_HANDLE_INTERNAL_H__
 #define __EV_HANDLE_INTERNAL_H__
 
-#include "ev/handle.h"
+#include "ev.h"
 #include "defs.h"
 
 #ifdef __cplusplus

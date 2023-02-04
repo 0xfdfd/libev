@@ -1,8 +1,7 @@
 #ifndef __EV_DEFINES_INTERNAL_H__
 #define __EV_DEFINES_INTERNAL_H__
 
-#include "ev/defs.h"
-#include "ev/os.h"
+#include "ev.h"
 
 #if defined(_WIN32)
 #   include <WS2tcpip.h>
@@ -17,7 +16,13 @@
 extern "C" {
 #endif
 
-#if (defined(__GNUC__) || defined(__clang__)) && !defined(_WIN32)
+#if defined(EV_AMALGAMATE_BUILD)
+#   if defined(__GNUC__) || defined(__clang__)
+#       define API_LOCAL    static __attribute__((unused))
+#   else
+#       define API_LOCAL    static
+#   endif
+#elif (defined(__GNUC__) || defined(__clang__)) && !defined(_WIN32)
 #   define API_LOCAL    __attribute__((visibility ("hidden")))
 #else
 #   define API_LOCAL

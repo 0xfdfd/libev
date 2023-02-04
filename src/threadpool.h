@@ -1,7 +1,7 @@
 #ifndef __EV_THREADPOOL_INTERNAL_H__
 #define __EV_THREADPOOL_INTERNAL_H__
 
-#include "ev/threadpool.h"
+#include "ev.h"
 #include "defs.h"
 
 #ifdef __cplusplus

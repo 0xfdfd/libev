@@ -1,4 +1,4 @@
-#include "ev/once.h"
+#include "ev.h"
 #include "loop_win.h"
 
 static BOOL WINAPI _ev_once_proxy(PINIT_ONCE InitOnce, PVOID Parameter, PVOID *Context)

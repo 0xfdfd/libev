@@ -1,4 +1,4 @@
-#include "ev/queue.h"
+#include "ev.h"
 #include <stdlib.h>
 
 #define EV_QUEUE_NEXT(node)         ((node)->p_next)

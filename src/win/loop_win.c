@@ -1,12 +1,10 @@
-#include "ev/errno.h"
-#include "ev/once.h"
+#include "ev.h"
 #include "misc.h"
 #include "allocator.h"
 #include "loop_win.h"
 #include "thread_win.h"
 #include "threadpool_win.h"
 #include "winapi.h"
-#include "work.h"
 #include <assert.h>
 
 ev_loop_win_ctx_t g_ev_loop_win_ctx;
@@ -101,12 +99,12 @@ static void _ev_init_once_win(void)
     ev__thread_init_win();
 }
 
-uint64_t ev__clocktime(void)
+API_LOCAL uint64_t ev__clocktime(void)
 {
     return _ev_hrtime_win(1000);
 }
 
-void ev__poll(ev_loop_t* loop, uint32_t timeout)
+API_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
 {
     int repeat;
     BOOL success;
@@ -156,14 +154,14 @@ void ev__poll(ev_loop_t* loop, uint32_t timeout)
     }
 }
 
-void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg)
+API_LOCAL void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg)
 {
     req->cb = callback;
     req->arg = arg;
     memset(&req->overlapped, 0, sizeof(req->overlapped));
 }
 
-void ev__loop_exit_backend(ev_loop_t* loop)
+API_LOCAL void ev__loop_exit_backend(ev_loop_t* loop)
 {
     ev__threadpool_exit_win(loop);
 
@@ -174,13 +172,13 @@ void ev__loop_exit_backend(ev_loop_t* loop)
     }
 }
 
-void ev__init_once_win(void)
+API_LOCAL void ev__init_once_win(void)
 {
     static ev_once_t once = EV_ONCE_INIT;
     ev_once_execute(&once, _ev_init_once_win);
 }
 
-int ev__loop_init_backend(ev_loop_t* loop)
+API_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
 {
     ev__init_once_win();
 
@@ -196,7 +194,7 @@ int ev__loop_init_backend(ev_loop_t* loop)
     return EV_SUCCESS;
 }
 
-void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req)
+API_LOCAL void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req)
 {
     DWORD errcode;
     if (!PostQueuedCompletionStatus(loop->backend.iocp, 0, 0, &req->overlapped))
@@ -206,7 +204,7 @@ void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req)
     }
 }
 
-int ev__reuse_win(SOCKET sock, int opt)
+API_LOCAL int ev__reuse_win(SOCKET sock, int opt)
 {
     DWORD optval = !!opt;
     int optlen = sizeof(optval);
@@ -221,7 +219,7 @@ int ev__reuse_win(SOCKET sock, int opt)
     return EV_SUCCESS;
 }
 
-int ev__ipv6only_win(SOCKET sock, int opt)
+API_LOCAL int ev__ipv6only_win(SOCKET sock, int opt)
 {
     DWORD optval = !!opt;
     int optlen = sizeof(optval);

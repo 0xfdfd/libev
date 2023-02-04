@@ -8,7 +8,7 @@ ev_winapi_t ev_winapi = {
     NULL,
 };
 
-void ev__winapi_init(void)
+API_LOCAL void ev__winapi_init(void)
 {
 #define GET_NTDLL_FUNC(name)  \
     do {\

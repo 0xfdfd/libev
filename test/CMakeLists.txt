@@ -27,7 +27,6 @@ add_executable(ev_test
     "src/cases/pipe_make_block.c"
     "src/cases/process.c"
     "src/cases/queue.c"
-    "src/cases/ringbuffer.c"
     "src/cases/shm.c"
     "src/cases/tcp_connect_non_exist.c"
     "src/cases/tcp_idle_client.c"

@@ -1,10 +1,10 @@
-#include "ev/errno.h"
+#include "ev.h"
 #include "allocator.h"
 #include "winapi.h"
 #include "misc_win.h"
 #include <assert.h>
 
-ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src)
+API_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src)
 {
     int errcode;
     int pathw_len = MultiByteToWideChar(CP_UTF8, 0, src, -1, NULL, 0);
@@ -29,7 +29,7 @@ ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src)
     return r;
 }
 
-ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src)
+API_LOCAL ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src)
 {
     int errcode;
     int target_len = WideCharToMultiByte(CP_UTF8, 0, src, -1, NULL, 0,
@@ -54,7 +54,7 @@ ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src)
     return (ssize_t)ret;
 }
 
-int ev__ntstatus_to_winsock_error(NTSTATUS status)
+API_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status)
 {
     switch (status)
     {
@@ -175,7 +175,7 @@ int ev__ntstatus_to_winsock_error(NTSTATUS status)
     }
 }
 
-int ev__translate_sys_error(int err)
+API_LOCAL int ev__translate_sys_error(int err)
 {
     switch (err)
     {

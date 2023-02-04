@@ -1,5 +1,4 @@
-#include "ev/errno.h"
-#include "ev/request.h"
+#include "ev.h"
 #include "misc_unix.h"
 #include "io_unix.h"
 #include <assert.h>
@@ -53,7 +52,7 @@ static int _ev_cmp_io_unix(const ev_map_node_t* key1, const ev_map_node_t* key2,
     return io1->data.fd - io2->data.fd;
 }
 
-void ev__init_io(ev_loop_t* loop)
+API_LOCAL void ev__init_io(ev_loop_t* loop)
 {
     int err;
     ev_map_init(&loop->backend.io, _ev_cmp_io_unix, NULL);
@@ -70,7 +69,7 @@ void ev__init_io(ev_loop_t* loop)
     }
 }
 
-void ev__exit_io(ev_loop_t* loop)
+API_LOCAL void ev__exit_io(ev_loop_t* loop)
 {
     if (loop->backend.pollfd != -1)
     {
@@ -79,7 +78,7 @@ void ev__exit_io(ev_loop_t* loop)
     }
 }
 
-void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb, void* arg)
+API_LOCAL void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb, void* arg)
 {
     io->data.fd = fd;
     io->data.c_events = 0;
@@ -88,7 +87,7 @@ void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb, vo
     io->data.arg = arg;
 }
 
-void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
+API_LOCAL void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
 {
     int errcode;
     struct epoll_event poll_event;
@@ -118,7 +117,7 @@ void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
     }
 }
 
-void ev__nonblock_io_del(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
+API_LOCAL void ev__nonblock_io_del(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
 {
     int errcode;
     struct epoll_event poll_event;
@@ -146,7 +145,7 @@ void ev__nonblock_io_del(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
     }
 }
 
-int ev__cloexec(int fd, int set)
+API_LOCAL int ev__cloexec(int fd, int set)
 {
 #if defined(_AIX) || \
     defined(__APPLE__) || \
@@ -207,7 +206,7 @@ int ev__cloexec(int fd, int set)
 #endif
 }
 
-int ev__nonblock(int fd, int set)
+API_LOCAL int ev__nonblock(int fd, int set)
 {
 #if defined(_AIX) || \
     defined(__APPLE__) || \
@@ -268,7 +267,7 @@ int ev__nonblock(int fd, int set)
 #endif
 }
 
-int ev__reuse_unix(int fd)
+API_LOCAL int ev__reuse_unix(int fd)
 {
     int yes;
     yes = 1;
@@ -313,7 +312,7 @@ err:
     return ev__translate_sys_error(yes);
 }
 
-int ev__fcntl_getfl_unix(int fd)
+API_LOCAL int ev__fcntl_getfl_unix(int fd)
 {
     int mode;
     do
@@ -323,7 +322,7 @@ int ev__fcntl_getfl_unix(int fd)
     return mode;
 }
 
-int ev__fcntl_getfd_unix(int fd)
+API_LOCAL int ev__fcntl_getfd_unix(int fd)
 {
     int flags;
 
@@ -335,7 +334,7 @@ int ev__fcntl_getfd_unix(int fd)
     return flags;
 }
 
-ssize_t ev__readv_unix(int fd, ev_buf_t* iov, int iovcnt)
+API_LOCAL ssize_t ev__readv_unix(int fd, ev_buf_t* iov, int iovcnt)
 {
     ssize_t read_size;
     do
@@ -361,7 +360,7 @@ ssize_t ev__readv_unix(int fd, ev_buf_t* iov, int iovcnt)
     return ev__translate_sys_error(err);
 }
 
-ssize_t ev__writev_unix(int fd, ev_buf_t* iov, int iovcnt)
+API_LOCAL ssize_t ev__writev_unix(int fd, ev_buf_t* iov, int iovcnt)
 {
     ssize_t write_size;
     do
@@ -383,7 +382,7 @@ ssize_t ev__writev_unix(int fd, ev_buf_t* iov, int iovcnt)
     return ev__translate_sys_error(err);
 }
 
-ssize_t ev__write_unix(int fd, void* buffer, size_t size)
+API_LOCAL ssize_t ev__write_unix(int fd, void* buffer, size_t size)
 {
     ssize_t send_size;
     do
@@ -405,7 +404,7 @@ ssize_t ev__write_unix(int fd, void* buffer, size_t size)
     return ev__translate_sys_error(err);
 }
 
-int ev__send_unix(int fd, ev_write_t* req,
+API_LOCAL int ev__send_unix(int fd, ev_write_t* req,
     ssize_t(*do_write)(int fd, struct iovec* iov, int iovcnt, void* arg), void* arg)
 {
     ev_buf_t* iov = req->bufs;

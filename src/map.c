@@ -1,4 +1,4 @@
-#include "ev/map.h"
+#include "ev.h"
 
 void ev_map_init(ev_map_t* handler, ev_map_cmp_fn cmp, void* arg)
 {

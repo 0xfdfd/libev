@@ -1,16 +1,16 @@
 /**
  * @mainpage libev
  *
- * \section Overview
+ * \section EV_OVERVIEW Overview
  *
- * libev is a rework of [libuv](https://github.com/libuv/libuv), with following
- * advantages:
+ * [libev](https://github.com/qgymib/libev) is a rework of
+ * [libuv](https://github.com/libuv/libuv), with following advantages:
  * 1. Strong types without static casts any more.
  * 2. Enhanced IPC features.
  * 3. Easy to use file system operations.
  *
  *
- * \section Documentation
+ * \section EV_DOCUMENTATION Documentation
  *
  * Located in the docs/ subdirectory. It use [Doxygen](http://www.doxygen.nl/)
  * to build documents, which means the source code is well documented and can
@@ -24,7 +24,7 @@
  * Also documents can be browsed online [here](https://qgymib.github.io/libev/).
  *
  *
- * \section Build Instructions
+ * \section EV_BUILD_INSTRUCTIONS Build Instructions
  *
  * [CMake](https://cmake.org/) is currently the prefer way to build:
  *
@@ -37,6 +37,24 @@
  * # Run tests:
  * $ (cd build && ctest -C Debug --output-on-failure)
  * ```
+ *
+ * \section EV_AMALGAMATE Amalgamate
+ * 
+ * [libev](https://github.com/qgymib/libev) support amalgamate build, which
+ * allow to distribute libev's source code using only two files(`ev.h` and `ev.c`).
+ *
+ * > Note: Amalgamate requires python3.
+ *
+ * To use amalgamation, add `-DEV_AMALGAMATE_BUILD=on` when configurate cmake:
+ *
+ * ```bash
+ * $ cmake -DEV_AMALGAMATE_BUILD=on /path/to/libev
+ * $ cmake --build .
+ * ```
+ *
+ * In `${CMAKE_CURRENT_BINARY_DIR}/amalgamate` directory, you will find the
+ * generated files.
+ *
  */
 #ifndef __EV_H__
 #define __EV_H__

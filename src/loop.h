@@ -4,10 +4,7 @@
 extern "C" {
 #endif
 
-#include "ev/loop.h"
-#include "ev/handle.h"
-#include "ev/buf.h"
-#include "ev/request.h"
+#include "ev.h"
 #include "defs.h"
 
 typedef enum ev_ipc_frame_flag
