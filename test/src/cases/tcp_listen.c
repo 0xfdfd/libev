@@ -27,33 +27,33 @@ static void _on_close_socket(ev_tcp_t* sock)
 TEST_FIXTURE_SETUP(tcp)
 {
     g_test_ec8c.s_flag_socket_close = 0;
-    ASSERT_EQ_D32(ev_loop_init(&g_test_ec8c.s_loop), 0);
-    ASSERT_EQ_D32(ev_tcp_init(&g_test_ec8c.s_loop, &g_test_ec8c.s_sock), 0);
+    ASSERT_EQ_INT(ev_loop_init(&g_test_ec8c.s_loop), 0);
+    ASSERT_EQ_INT(ev_tcp_init(&g_test_ec8c.s_loop, &g_test_ec8c.s_sock), 0);
 }
 
 TEST_FIXTURE_TEAREDOWN(tcp)
 {
-    ASSERT_LOOP_EMPTY(&g_test_ec8c.s_loop);
-    ASSERT_EQ_D32(ev_loop_exit(&g_test_ec8c.s_loop), 0);
+    ASSERT_EQ_EVLOOP(&g_test_ec8c.s_loop, &empty_loop);
+    ASSERT_EQ_INT(ev_loop_exit(&g_test_ec8c.s_loop), 0);
 }
 
 TEST_F(tcp, bind)
 {
     struct sockaddr_in addr;
-    ASSERT_EQ_D32(ev_ipv4_addr("127.0.0.1", 0, &addr), 0);
+    ASSERT_EQ_INT(ev_ipv4_addr("127.0.0.1", 0, &addr), 0);
 
     /* 1st bind should success */
-    ASSERT_EQ_D32(ev_tcp_bind(&g_test_ec8c.s_sock, (struct sockaddr*)&addr, sizeof(addr)), 0);
+    ASSERT_EQ_INT(ev_tcp_bind(&g_test_ec8c.s_sock, (struct sockaddr*)&addr, sizeof(addr)), 0);
     /* 1st bind should failure */
-    ASSERT_NE_D32(ev_tcp_bind(&g_test_ec8c.s_sock, (struct sockaddr*)&addr, sizeof(addr)), 0);
+    ASSERT_NE_INT(ev_tcp_bind(&g_test_ec8c.s_sock, (struct sockaddr*)&addr, sizeof(addr)), 0);
 
     /* 1st listen should success */
-    ASSERT_EQ_D32(ev_tcp_listen(&g_test_ec8c.s_sock, 1), 0);
+    ASSERT_EQ_INT(ev_tcp_listen(&g_test_ec8c.s_sock, 1), 0);
     /* 2st listen should failure */
-    ASSERT_NE_D32(ev_tcp_listen(&g_test_ec8c.s_sock, 1), 0);
+    ASSERT_NE_INT(ev_tcp_listen(&g_test_ec8c.s_sock, 1), 0);
 
     ev_tcp_exit(&g_test_ec8c.s_sock, _on_close_socket);
-    ASSERT_EQ_D32(ev_loop_run(&g_test_ec8c.s_loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_ec8c.s_loop, EV_LOOP_MODE_DEFAULT), 0);
 
-    ASSERT_EQ_D32(g_test_ec8c.s_flag_socket_close, 1);
+    ASSERT_EQ_INT(g_test_ec8c.s_flag_socket_close, 1);
 }

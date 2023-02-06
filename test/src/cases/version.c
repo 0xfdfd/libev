@@ -23,24 +23,24 @@ TEST_F(version, str)
 
 TEST_F(version, code)
 {
-    ASSERT_EQ_U32(EV_VERSION_CODE, ev_version_code());
+    ASSERT_EQ_UINT(EV_VERSION_CODE, ev_version_code());
 }
 
 TEST_F(version, compare)
 {
     /* patch version compare */
-    ASSERT_GT_U32(EV_VERSION(0, 0, 2, 0), EV_VERSION(0, 0, 1, 0));
+    ASSERT_GT_UINT(EV_VERSION(0, 0, 2, 0), EV_VERSION(0, 0, 1, 0));
 
     /* prerelease version always littler that release version */
-    ASSERT_GT_U32(EV_VERSION(0, 0, 2, 0), EV_VERSION(0, 0, 2, 1));
+    ASSERT_GT_UINT(EV_VERSION(0, 0, 2, 0), EV_VERSION(0, 0, 2, 1));
 
     /* major version is larger than minor version */
-    ASSERT_GT_U32(EV_VERSION(2, 0, 0, 0), EV_VERSION(1, 2, 0, 0));
+    ASSERT_GT_UINT(EV_VERSION(2, 0, 0, 0), EV_VERSION(1, 2, 0, 0));
 
     /* version macro should support compare in pre-process stage */
 #if EV_VERSION(0, 0, 2, 0) > EV_VERSION(0, 0, 2, 1)
-    ASSERT(1);
+    /* do nothing */
 #else
-    ASSERT(0);
+    cutest_porting_abort("");
 #endif
 }

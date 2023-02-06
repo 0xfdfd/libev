@@ -27,9 +27,9 @@ TEST_FIXTURE_TEAREDOWN(misc)
 
 TEST_F(misc, once)
 {
-    ASSERT_EQ_D32(g_test_b380.s_count, 0);
+    ASSERT_EQ_INT(g_test_b380.s_count, 0);
     ev_once_execute(&g_test_b380.s_once_token, _once_callback);
-    ASSERT_EQ_D32(g_test_b380.s_count, 1);
+    ASSERT_EQ_INT(g_test_b380.s_count, 1);
     ev_once_execute(&g_test_b380.s_once_token, _once_callback);
-    ASSERT_EQ_D32(g_test_b380.s_count, 1);
+    ASSERT_EQ_INT(g_test_b380.s_count, 1);
 }

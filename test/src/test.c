@@ -55,34 +55,6 @@ static void _after_all_test(void)
     _check_mmc_leak();
 }
 
-static const char* _cutest_get_log_level_str(cutest_log_level_t level)
-{
-    switch (level)
-    {
-    case CUTEST_LOG_DEBUG:
-        return "D";
-    case CUTEST_LOG_INFO:
-        return "I";
-    case CUTEST_LOG_WARN:
-        return "W";
-    case CUTEST_LOG_ERROR:
-        return "E";
-    case CUTEST_LOG_FATAL:
-        return "F";
-    default:
-        break;
-    }
-    return "U";
-}
-
-static void _on_log(cutest_log_meta_t* info, const char* fmt, va_list ap, FILE* out)
-{
-    fprintf(out, "[%s %u %s:%d] ", _cutest_get_log_level_str(info->leve),
-        (unsigned)ev_thread_id(), info->file, info->line);
-    vfprintf(out, fmt, ap);
-    fprintf(out, "\n");
-}
-
 static void _on_mem_leak(memblock_t* block, void* arg)
 {
     (void)arg;
@@ -113,25 +85,22 @@ static void _after_fixture_teardown(const char* fixture_name, int ret)
 
     if (leak_size != 0)
     {
-        TEST_LOG_F("memory leak: %zu byte%s", leak_size, leak_size > 1 ? "s" : "");
+        cutest_porting_abort("memory leak: %zu byte%s", leak_size, leak_size > 1 ? "s" : "");
     }
 }
 
 cutest_hook_t test_hook = {
     _before_all_test,           /* .before_all_test */
     _after_all_test,            /* .after_all_test */
-    _before_fixture_setup,      /* .before_fixture_setup */
-    NULL,                       /* .after_fixture_setup */
-    NULL,                       /* .before_fixture_teardown */
-    _after_fixture_teardown,    /* .after_fixture_teardown */
-    NULL,                       /* .before_fixture_test */
-    NULL,                       /* .after_fixture_test */
-    NULL,                       /* .before_parameterized_test */
-    NULL,                       /* .after_parameterized_test */
-    NULL,                       /* .before_simple_test */
-    NULL,                       /* .after_simple_test */
-    _on_log,                    /* .on_log_print */
+    _before_fixture_setup,      /* .before_setup */
+    NULL,                       /* .after_setup */
+    NULL,                       /* .before_teardown */
+    _after_fixture_teardown,    /* .after_teardown */
+    NULL,                       /* .before_test */
+    NULL,                       /* .after_test */
 };
+
+ev_loop_t empty_loop = EV_LOOP_INVALID;
 
 static void _test_proxy(void* arg)
 {
@@ -158,27 +127,4 @@ const char* test_strerror(int errcode)
 #else
     return strerror(errcode);
 #endif
-}
-
-static int _test_loop_on_walk(ev_handle_t* handle, void* arg)
-{
-    (void)handle;
-
-    size_t* p_counter = arg;
-    *p_counter += 1;
-
-    if (*p_counter == 1)
-    {
-        fprintf(stderr, "             leak handle:\n");
-    }
-    fprintf(stderr, "             |- %p\n", handle);
-
-    return 0;
-}
-
-size_t test_loop_count_handle(ev_loop_t* loop)
-{
-    size_t counter = 0;
-    ev_loop_walk(loop, _test_loop_on_walk, &counter);
-    return counter;
 }

@@ -1,4 +1,5 @@
 #include "test.h"
+#include "type/__init__.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,6 +20,9 @@ int main(int argc, char* argv[])
 #if defined(SIGPIPE)
     signal(SIGPIPE, SIG_IGN);
 #endif
+
     atexit(_at_exit);
-    return cutest_run_tests(argc, argv, &test_hook);
+    register_types();
+
+    return cutest_run_tests(argc, argv, stdout, &test_hook);
 }

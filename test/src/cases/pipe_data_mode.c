@@ -32,8 +32,8 @@ test_pipe_data_mode_t*      g_test_pipe_data = NULL;
 
 static void _on_write_callback_221d(ev_pipe_write_req_t* req, size_t size, int stat)
 {
-    ASSERT_EQ_D32(stat, EV_SUCCESS);
-    ASSERT_EQ_U64(size, TEST_BUFFER_SIZE_221D);
+    ASSERT_EQ_INT(stat, EV_SUCCESS);
+    ASSERT_EQ_SIZE(size, TEST_BUFFER_SIZE_221D);
 
     if (req == &g_test_pipe_data->w_pack[TEST_PACK_NUM_221D - 1].write_req)
     {
@@ -49,10 +49,10 @@ static void _on_read_callback_221d(ev_pipe_read_req_t* req, size_t size, int sta
     {
         return;
     }
-    ASSERT_EQ_D32(stat, EV_SUCCESS);
+    ASSERT_EQ_INT(stat, EV_SUCCESS);
 
     g_test_pipe_data->r_pack.buf = ev_buf_make((char*)g_test_pipe_data->r_pack.buf.data + size, g_test_pipe_data->r_pack.buf.size - size);
-    ASSERT_EQ_D32(ev_pipe_read(&g_test_pipe_data->pipe_r, &g_test_pipe_data->r_pack.read_req,
+    ASSERT_EQ_INT(ev_pipe_read(&g_test_pipe_data->pipe_r, &g_test_pipe_data->r_pack.read_req,
         &g_test_pipe_data->r_pack.buf, 1, _on_read_callback_221d), 0);
 }
 
@@ -66,23 +66,23 @@ TEST_FIXTURE_SETUP(pipe)
         test_random(g_test_pipe_data->w_pack[i].buffer, sizeof(g_test_pipe_data->w_pack[i].buffer));
     }
 
-    ASSERT_EQ_D32(ev_loop_init(&g_test_pipe_data->loop), 0);
-    ASSERT_EQ_D32(ev_pipe_init(&g_test_pipe_data->loop, &g_test_pipe_data->pipe_r, 0), 0);
-    ASSERT_EQ_D32(ev_pipe_init(&g_test_pipe_data->loop, &g_test_pipe_data->pipe_w, 0), 0);
+    ASSERT_EQ_INT(ev_loop_init(&g_test_pipe_data->loop), 0);
+    ASSERT_EQ_INT(ev_pipe_init(&g_test_pipe_data->loop, &g_test_pipe_data->pipe_r, 0), 0);
+    ASSERT_EQ_INT(ev_pipe_init(&g_test_pipe_data->loop, &g_test_pipe_data->pipe_w, 0), 0);
 
     int rwflags = EV_PIPE_READABLE | EV_PIPE_WRITABLE | EV_PIPE_NONBLOCK;
     ev_os_pipe_t fds[2];
-    ASSERT_EQ_D32(ev_pipe_make(fds, rwflags, rwflags), 0);
-    ASSERT_EQ_D32(ev_pipe_open(&g_test_pipe_data->pipe_r, fds[0]), 0);
-    ASSERT_EQ_D32(ev_pipe_open(&g_test_pipe_data->pipe_w, fds[1]), 0);
+    ASSERT_EQ_INT(ev_pipe_make(fds, rwflags, rwflags), 0);
+    ASSERT_EQ_INT(ev_pipe_open(&g_test_pipe_data->pipe_r, fds[0]), 0);
+    ASSERT_EQ_INT(ev_pipe_open(&g_test_pipe_data->pipe_w, fds[1]), 0);
 }
 
 TEST_FIXTURE_TEAREDOWN(pipe)
 {
     ev_pipe_exit(&g_test_pipe_data->pipe_r, NULL);
-    ASSERT_EQ_D32(ev_loop_run(&g_test_pipe_data->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_data->loop, EV_LOOP_MODE_DEFAULT), 0);
 
-    ASSERT_LOOP_EMPTY(&g_test_pipe_data->loop);
+    ASSERT_EQ_EVLOOP(&g_test_pipe_data->loop, &empty_loop);
     ev_loop_exit(&g_test_pipe_data->loop);
 
     mmc_free(g_test_pipe_data);
@@ -97,21 +97,21 @@ TEST_F(pipe, data_mode)
         g_test_pipe_data->w_pack[i].buf =
             ev_buf_make(g_test_pipe_data->w_pack[i].buffer, sizeof(g_test_pipe_data->w_pack[i].buffer));
 
-        ASSERT_EQ_D32(ev_pipe_write(&g_test_pipe_data->pipe_w, &g_test_pipe_data->w_pack[i].write_req,
+        ASSERT_EQ_INT(ev_pipe_write(&g_test_pipe_data->pipe_w, &g_test_pipe_data->w_pack[i].write_req,
             &g_test_pipe_data->w_pack[i].buf, 1, _on_write_callback_221d), 0);
     }
 
     g_test_pipe_data->r_pack.buf =
         ev_buf_make(g_test_pipe_data->r_pack.buffer, sizeof(g_test_pipe_data->r_pack.buffer));
-    ASSERT_EQ_D32(ev_pipe_read(&g_test_pipe_data->pipe_r, &g_test_pipe_data->r_pack.read_req,
+    ASSERT_EQ_INT(ev_pipe_read(&g_test_pipe_data->pipe_r, &g_test_pipe_data->r_pack.read_req,
         &g_test_pipe_data->r_pack.buf, 1, _on_read_callback_221d), 0);
 
-    ASSERT_EQ_D32(ev_loop_run(&g_test_pipe_data->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_data->loop, EV_LOOP_MODE_DEFAULT), 0);
     for(i = 0; i < TEST_PACK_NUM_221D; i++)
     {
         void* buf1 = g_test_pipe_data->w_pack[i].buffer;
         void* buf2 = (uint8_t*)g_test_pipe_data->r_pack.buffer + TEST_BUFFER_SIZE_221D;
         int ret = memcmp(buf1, buf2, sizeof(g_test_pipe_data->w_pack[i].buffer));
-        ASSERT_EQ_D32(ret, 0);
+        ASSERT_EQ_INT(ret, 0);
     }
 }

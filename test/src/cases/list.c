@@ -12,8 +12,8 @@ TEST(list, migrate)
 
     ev_list_migrate(&dst, &src);
 
-    ASSERT_EQ_D32(ev_list_size(&dst), 2);
-    ASSERT_EQ_D32(ev_list_size(&src), 0);
+    ASSERT_EQ_SIZE(ev_list_size(&dst), 2);
+    ASSERT_EQ_SIZE(ev_list_size(&src), 0);
 }
 
 TEST(list, migrate_empty)
@@ -23,8 +23,8 @@ TEST(list, migrate_empty)
 
     ev_list_migrate(&dst, &src);
 
-    ASSERT_EQ_D32(ev_list_size(&dst), 0);
-    ASSERT_EQ_D32(ev_list_size(&src), 0);
+    ASSERT_EQ_SIZE(ev_list_size(&dst), 0);
+    ASSERT_EQ_SIZE(ev_list_size(&src), 0);
 }
 
 TEST(list, migrate_empty_src)
@@ -36,8 +36,8 @@ TEST(list, migrate_empty_src)
     ev_list_push_back(&dst, &node);
     ev_list_migrate(&dst, &src);
 
-    ASSERT_EQ_D32(ev_list_size(&dst), 1);
-    ASSERT_EQ_D32(ev_list_size(&src), 0);
+    ASSERT_EQ_SIZE(ev_list_size(&dst), 1);
+    ASSERT_EQ_SIZE(ev_list_size(&src), 0);
 }
 
 TEST(list, migrate_empty_dst)
@@ -49,6 +49,6 @@ TEST(list, migrate_empty_dst)
     ev_list_push_back(&src, &node);
     ev_list_migrate(&dst, &src);
 
-    ASSERT_EQ_D32(ev_list_size(&dst), 1);
-    ASSERT_EQ_D32(ev_list_size(&src), 0);
+    ASSERT_EQ_SIZE(ev_list_size(&dst), 1);
+    ASSERT_EQ_SIZE(ev_list_size(&src), 0);
 }

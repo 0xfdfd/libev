@@ -20,7 +20,7 @@ TEST_FIXTURE_TEAREDOWN(queue)
 
 TEST_F(queue, empty)
 {
-    ASSERT_EQ_D32(ev_queue_empty(&g_test_223a.q), 1);
+    ASSERT_EQ_INT(ev_queue_empty(&g_test_223a.q), 1);
 }
 
 TEST_F(queue, head)

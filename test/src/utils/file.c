@@ -25,7 +25,7 @@ static test_file_ctx_t s_test_file;
 
 static void _on_init_file(void)
 {
-    ASSERT_GT_U32(ev_exepath(s_test_file.exe_path, sizeof(s_test_file.exe_path)), 0);
+    ASSERT_GT_INT64(ev_exepath(s_test_file.exe_path, sizeof(s_test_file.exe_path)), 0);
 
     const char* p_exe_pos = test_file_name(s_test_file.exe_path);
     size_t exe_dir_len = p_exe_pos - s_test_file.exe_path;

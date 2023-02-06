@@ -17,8 +17,8 @@ TEST_FIXTURE_SETUP(shm)
 
     memset(&g_test_3b5b, 0, sizeof(g_test_3b5b));
 
-    ASSERT_EQ_D32(ev_shm_init(&g_test_3b5b.smt_token_1, key, mem_size), 0);
-    ASSERT_EQ_D32(ev_shm_open(&g_test_3b5b.smt_token_2, key), 0);
+    ASSERT_EQ_INT(ev_shm_init(&g_test_3b5b.smt_token_1, key, mem_size), 0);
+    ASSERT_EQ_INT(ev_shm_open(&g_test_3b5b.smt_token_2, key), 0);
 
     ASSERT_EQ_SIZE(ev_shm_size(&g_test_3b5b.smt_token_1), mem_size);
     ASSERT_EQ_SIZE(ev_shm_size(&g_test_3b5b.smt_token_2), mem_size);

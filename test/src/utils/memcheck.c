@@ -35,7 +35,7 @@ static void _mmc_create_new_snapshot_layer(void)
     mmc_snapshot_t* snapshot = malloc(sizeof(mmc_snapshot_t));
     if (snapshot == NULL)
     {
-        TEST_LOG_F("out of memory");
+        cutest_porting_abort("out of memory");
         exit(EXIT_FAILURE);
     }
 
@@ -252,7 +252,7 @@ void mmc_init(void)
 {
     _memcheck_init();
 
-    ASSERT_EQ_D32(
+    ASSERT_EQ_INT(
         ev_replace_allocator(mmc_malloc, mmc_calloc, mmc_realloc, mmc_free),
         EV_SUCCESS
     );
