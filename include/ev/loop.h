@@ -144,6 +144,26 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode);
 int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool);
 
 /**
+ * @brief Submit task into thread pool.
+ * @param[in] loop      Event loop.
+ * @param[in] token     Work token.
+ * @param[in] work_cb   Work callback in thread pool.
+ * @param[in] done_cb   Work done callback in event loop.
+ * @return              #ev_errno_t
+ */
+int ev_loop_queue_work(ev_loop_t* loop, ev_threadpool_work_t* token,
+    ev_threadpool_work_cb work_cb, ev_threadpool_work_done_cb done_cb);
+
+/**
+ * @brief Cancel task.
+ * @note No matter the task is canceled or not, the task always callback in the
+ *   event loop.
+ * @param[in] token     Work token
+ * @return              #ev_errno_t
+ */
+int ev_loop_cancel(ev_threadpool_work_t* token);
+
+/**
  * @brief Walk the list of handles.
  * \p cb will be executed with the given arg.
  * @param[in] loop      The event loop.

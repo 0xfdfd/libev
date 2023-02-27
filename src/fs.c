@@ -241,7 +241,7 @@ static void _ev_file_cancel_all_pending_task(ev_file_t* file, size_t* failure_co
     for (; it != NULL; it = ev_list_next(it))
     {
         ev_fs_req_t* req = EV_CONTAINER_OF(it, ev_fs_req_t, node);
-        if (ev_threadpool_cancel(&req->work_token) != EV_SUCCESS)
+        if (ev_loop_cancel(&req->work_token) != EV_SUCCESS)
         {
             *failure_count += 1;
         }

@@ -44,16 +44,7 @@ static int _ev_loop_init(ev_loop_t* loop)
 static void _ev_loop_exit(ev_loop_t* loop)
 {
     ev_mutex_exit(&loop->threadpool.mutex);
-
-    if (loop->threadpool.pool != NULL)
-    {
-        ev_mutex_enter(&loop->threadpool.pool->mutex);
-        {
-            ev_list_erase(&loop->threadpool.pool->loop_table, &loop->threadpool.node);
-        }
-        ev_mutex_leave(&loop->threadpool.pool->mutex);
-        loop->threadpool.pool = NULL;
-    }
+    ev_loop_unlink_threadpool(loop);
 }
 
 /**

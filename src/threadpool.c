@@ -185,7 +185,7 @@ int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
     return EV_SUCCESS;
 }
 
-int ev_threadpool_cancel(ev_threadpool_work_t* work)
+int ev_loop_cancel(ev_threadpool_work_t* work)
 {
     ev_threadpool_t* pool = work->data.pool;
 
@@ -300,9 +300,6 @@ int ev_loop_unlink_threadpool(ev_loop_t* loop)
         return EV_ENOTHREADPOOL;
     }
 
-    /* From now there should no futher work from loop incoming. */
-    loop->threadpool.pool = NULL;
-
     /**
      * Cancel all pending task from target loop.
      * However, due to #ev_threadpool_submit() is a public API, there might be
@@ -314,7 +311,27 @@ int ev_loop_unlink_threadpool(ev_loop_t* loop)
         _cancel_work_queue_for_loop(pool, &pool->work_queue[i], loop);
     }
 
+    /* From now there should no futher work from loop incoming. */
+    loop->threadpool.pool = NULL;
+    ev_mutex_enter(&pool->mutex);
+    {
+        ev_list_erase(&pool->loop_table, &loop->threadpool.node);
+    }
+    ev_mutex_leave(&pool->mutex);
+
     return EV_SUCCESS;
+}
+
+int ev_loop_queue_work(ev_loop_t* loop, ev_threadpool_work_t* token,
+    ev_threadpool_work_cb work_cb, ev_threadpool_work_done_cb done_cb)
+{
+    if (loop->threadpool.pool == NULL)
+    {
+        return EV_ENOTHREADPOOL;
+    }
+
+    return ev_threadpool_submit(loop->threadpool.pool, loop, token,
+        EV_THREADPOOL_WORK_CPU, work_cb, done_cb);
 }
 
 API_LOCAL void ev__threadpool_process(ev_loop_t* loop)

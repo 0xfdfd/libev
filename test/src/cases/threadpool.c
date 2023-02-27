@@ -22,14 +22,15 @@ TEST_FIXTURE_SETUP(threadpool)
 
     ASSERT_EQ_INT(ev_loop_init(&g_test_757a.loop), 0);
     ASSERT_EQ_INT(ev_threadpool_init(&g_test_757a.pool, NULL, g_test_757a.threads, ARRAY_SIZE(g_test_757a.threads)), 0);
+    ASSERT_EQ_INT(ev_loop_link_threadpool(&g_test_757a.loop, &g_test_757a.pool), 0);
 }
 
 TEST_FIXTURE_TEAREDOWN(threadpool)
 {
-    ev_threadpool_exit(&g_test_757a.pool);
     ASSERT_EQ_INT(ev_loop_run(&g_test_757a.loop, EV_LOOP_MODE_ONCE), 0);
     ASSERT_EQ_EVLOOP(&g_test_757a.loop, &empty_loop);
     ASSERT_EQ_INT(ev_loop_exit(&g_test_757a.loop), 0);
+    ev_threadpool_exit(&g_test_757a.pool);
 }
 
 static void _test_threadpool_on_work(ev_threadpool_work_t* work)
@@ -55,8 +56,7 @@ TEST_F(threadpool, normal)
     ASSERT_EQ_INT(g_test_757a.cnt_work, 0);
 
     {
-        int submit_ret = ev_threadpool_submit(&g_test_757a.pool, &g_test_757a.loop,
-            &g_test_757a.token, EV_THREADPOOL_WORK_CPU,
+        int submit_ret = ev_loop_queue_work(&g_test_757a.loop, &g_test_757a.token,
             _test_threadpool_on_work, _test_threadpool_on_work_done);
         ASSERT_EQ_INT(submit_ret, 0);
     }

@@ -101,31 +101,6 @@ int ev_threadpool_init(ev_threadpool_t* pool, const ev_thread_opt_t* opt,
 void ev_threadpool_exit(ev_threadpool_t* pool);
 
 /**
- * @brief Submit task into thread pool
- * @warning This function is NOT MT-Safe and must be called in the thread where
- *   \p loop is running.
- * @param[in] pool      Thread pool
- * @param[in] loop      Which event loop to call \p done_cb
- * @param[in] token     Work token
- * @param[in] type      Work type
- * @param[in] work_cb   Work callback
- * @param[in] done_cb   Work done callback
- * @return              #ev_errno_t
- */
-int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
-    ev_threadpool_work_t* token, ev_threadpool_work_type_t type,
-    ev_threadpool_work_cb work_cb, ev_threadpool_work_done_cb done_cb);
-
-/**
- * @brief Cancel task.
- * @note No matter the task is canceled or not, the task always callback in the
- *   event loop.
- * @param[in] token     Work token
- * @return              #ev_errno_t
- */
-int ev_threadpool_cancel(ev_threadpool_work_t* token);
-
-/**
  * @} EV_THREAD_POOL
  */
 

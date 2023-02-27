@@ -43,6 +43,7 @@ TEST_FIXTURE_SETUP(pipe)
     ASSERT_EQ_INT(ev_loop_init(&g_test_pipe_make->loop), 0);
     ASSERT_EQ_INT(ev_threadpool_init(&g_test_pipe_make->thr_pool, NULL,
         g_test_pipe_make->thr, ARRAY_SIZE(g_test_pipe_make->thr)), 0);
+    ASSERT_EQ_INT(ev_loop_link_threadpool(&g_test_pipe_make->loop, &g_test_pipe_make->thr_pool), 0);
 
     test_random(g_test_pipe_make->wbuf, sizeof(g_test_pipe_make->wbuf));
 }
@@ -140,13 +141,11 @@ TEST_F(pipe, make_block)
     ASSERT_NE_UINTPTR((uintptr_t)g_test_pipe_make->fds[0], (uintptr_t)EV_OS_PIPE_INVALID);
     ASSERT_NE_UINTPTR((uintptr_t)g_test_pipe_make->fds[1], (uintptr_t)EV_OS_PIPE_INVALID);
 
-    ret = ev_threadpool_submit(&g_test_pipe_make->thr_pool, &g_test_pipe_make->loop,
-        &g_test_pipe_make->write_token, EV_THREADPOOL_WORK_IO_FAST,
+    ret = ev_loop_queue_work(&g_test_pipe_make->loop, &g_test_pipe_make->write_token,
         _test_pipe_make_block_on_write, _test_pipe_make_block_on_write_done);
     ASSERT_EQ_INT(ret, EV_SUCCESS);
 
-    ret = ev_threadpool_submit(&g_test_pipe_make->thr_pool, &g_test_pipe_make->loop,
-        &g_test_pipe_make->read_token, EV_THREADPOOL_WORK_IO_FAST,
+    ret = ev_loop_queue_work(&g_test_pipe_make->loop, &g_test_pipe_make->read_token,
         _test_pipe_make_block_on_read, _test_pipe_make_block_on_read_done);
     ASSERT_EQ_INT(ret, EV_SUCCESS);
 
@@ -207,10 +206,8 @@ TEST_F(pipe, make_nonblock_unix)
 
     /* Read on nonblock pipe should get nothing. */
     {
-        ret = ev_threadpool_submit(&g_test_pipe_make->thr_pool,
-                &g_test_pipe_make->loop, &g_test_pipe_make->read_token,
-                EV_THREADPOOL_WORK_IO_FAST, _test_pipe_make_nonblock_on_read,
-                _test_pipe_make_nonblock_on_read_done);
+        ret = ev_loop_queue_work(&g_test_pipe_make->loop, &g_test_pipe_make->read_token,
+                _test_pipe_make_nonblock_on_read, _test_pipe_make_nonblock_on_read_done);
         ASSERT_EQ_INT(ret, EV_SUCCESS);
         ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_make->loop, EV_LOOP_MODE_DEFAULT), 0);
         ASSERT_EQ_SIZE(g_test_pipe_make->rsize, 0);
@@ -223,10 +220,8 @@ TEST_F(pipe, make_nonblock_unix)
 
     /* Write on nonblock pipe should have fewer bytes than send data */
     {
-        ret = ev_threadpool_submit(&g_test_pipe_make->thr_pool,
-                &g_test_pipe_make->loop, &g_test_pipe_make->write_token,
-                EV_THREADPOOL_WORK_IO_FAST, _test_pipe_make_nonblock_on_write,
-                _test_pipe_make_nonblock_on_write_done);
+        ret = ev_loop_queue_work(&g_test_pipe_make->loop, &g_test_pipe_make->write_token,
+                _test_pipe_make_nonblock_on_write, _test_pipe_make_nonblock_on_write_done);
         ASSERT_EQ_INT(ret, EV_SUCCESS);
         ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_make->loop, EV_LOOP_MODE_DEFAULT), 0);
         ASSERT_GT_SIZE(g_test_pipe_make->wsize, 0);

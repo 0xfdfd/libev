@@ -11,6 +11,7 @@
 3. use `ev_loop_walk()` to walk through all handles
 4. process: support change cwd
 5. add amalgamate support
+6. submit threadpool task by loop api
 
 ### Bug Fixes
 1. fix: use uninitialised value in `ev_exepath()` on Unix
