@@ -12,7 +12,7 @@ TEST_FIXTURE_SETUP(mutex)
     ev_mutex_init(&g_test_3b3b.mutex_r, 1);
 }
 
-TEST_FIXTURE_TEAREDOWN(mutex)
+TEST_FIXTURE_TEARDOWN(mutex)
 {
     ev_mutex_exit(&g_test_3b3b.mutex_r);
 }

@@ -14,7 +14,7 @@ TEST_FIXTURE_SETUP(queue)
     ev_queue_init(&g_test_223a.q);
 }
 
-TEST_FIXTURE_TEAREDOWN(queue)
+TEST_FIXTURE_TEARDOWN(queue)
 {
 }
 

@@ -23,7 +23,7 @@ TEST_FIXTURE_SETUP(timer)
     ASSERT_EQ_INT(ev_timer_init(&g_test_0b72.s_loop, &g_test_0b72.s_timer), 0);
 }
 
-TEST_FIXTURE_TEAREDOWN(timer)
+TEST_FIXTURE_TEARDOWN(timer)
 {
     ASSERT_EQ_EVLOOP(&g_test_0b72.s_loop, &empty_loop);
     ASSERT_EQ_INT(ev_loop_exit(&g_test_0b72.s_loop), 0);

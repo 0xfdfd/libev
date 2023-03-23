@@ -41,7 +41,7 @@ TEST_FIXTURE_SETUP(process)
     g_test_process->flag_stdin_init = 1;
 }
 
-TEST_FIXTURE_TEAREDOWN(process)
+TEST_FIXTURE_TEARDOWN(process)
 {
     _close_stdin_pipe();
     ev_pipe_exit(&g_test_process->stdout_pipe, NULL);

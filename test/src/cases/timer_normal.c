@@ -26,7 +26,7 @@ TEST_FIXTURE_SETUP(timer)
     ASSERT_EQ_INT(ev_timer_init(&g_test_3615.s_loop, &g_test_3615.s_timer), 0);
 }
 
-TEST_FIXTURE_TEAREDOWN(timer)
+TEST_FIXTURE_TEARDOWN(timer)
 {
     ev_timer_exit(&g_test_3615.s_timer, _on_timer_close);
     ASSERT_EQ_INT(g_test_3615.f_on_timer_close, 0);

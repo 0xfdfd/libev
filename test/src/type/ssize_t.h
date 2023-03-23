@@ -7,12 +7,12 @@
 extern "C" {
 #endif
 
-#define ASSERT_EQ_SSIZE(a, b, ...)	ASSERT_TEMPLATE_EXT(ssize_t, ==, a, b, __VA_ARGS__)
-#define ASSERT_NE_SSIZE(a, b, ...)	ASSERT_TEMPLATE_EXT(ssize_t, !=, a, b, __VA_ARGS__)
-#define ASSERT_GT_SSIZE(a, b, ...)	ASSERT_TEMPLATE_EXT(ssize_t, >,  a, b, __VA_ARGS__)
-#define ASSERT_GE_SSIZE(a, b, ...)	ASSERT_TEMPLATE_EXT(ssize_t, >=, a, b, __VA_ARGS__)
-#define ASSERT_LT_SSIZE(a, b, ...)	ASSERT_TEMPLATE_EXT(ssize_t, <,  a, b, __VA_ARGS__)
-#define ASSERT_LE_SSIZE(a, b, ...)	ASSERT_TEMPLATE_EXT(ssize_t, <=, a, b, __VA_ARGS__)
+#define ASSERT_EQ_SSIZE(a, b, ...)	ASSERT_TEMPLATE(ssize_t, ==, a, b, __VA_ARGS__)
+#define ASSERT_NE_SSIZE(a, b, ...)	ASSERT_TEMPLATE(ssize_t, !=, a, b, __VA_ARGS__)
+#define ASSERT_GT_SSIZE(a, b, ...)	ASSERT_TEMPLATE(ssize_t, >,  a, b, __VA_ARGS__)
+#define ASSERT_GE_SSIZE(a, b, ...)	ASSERT_TEMPLATE(ssize_t, >=, a, b, __VA_ARGS__)
+#define ASSERT_LT_SSIZE(a, b, ...)	ASSERT_TEMPLATE(ssize_t, <,  a, b, __VA_ARGS__)
+#define ASSERT_LE_SSIZE(a, b, ...)	ASSERT_TEMPLATE(ssize_t, <=, a, b, __VA_ARGS__)
 
 /**
  * @brief Register typeof `ssize_t'.

@@ -18,7 +18,7 @@ TEST_FIXTURE_SETUP(misc)
     ASSERT_EQ_INT(ev_tcp_init(&g_test_09d8.s_loop, &g_test_09d8.s_socket), 0);
 }
 
-TEST_FIXTURE_TEAREDOWN(misc)
+TEST_FIXTURE_TEARDOWN(misc)
 {
     ev_tcp_exit(&g_test_09d8.s_socket, NULL);
     ASSERT_EQ_INT(ev_loop_run(&g_test_09d8.s_loop, EV_LOOP_MODE_DEFAULT), 0);

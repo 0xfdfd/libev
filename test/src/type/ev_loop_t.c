@@ -58,7 +58,7 @@ static int _find_all_in_loop(ev_loop_t* src, ev_loop_t* pat)
 	return helper.mismatch;
 }
 
-static int _on_cmp_ev_loop_t(const ev_loop_t** addr1, const ev_loop_t** addr2)
+static int _on_cmp_ev_loop_t(ev_loop_t** addr1, ev_loop_t** addr2)
 {
 	ev_loop_t* loop1 = (ev_loop_t*)*addr1;
 	ev_loop_t* loop2 = (ev_loop_t*)*addr2;
@@ -78,7 +78,7 @@ static int _test_dump_handle(ev_handle_t* handle, void* arg)
 	return 0;
 }
 
-static int _on_dump_ev_loop_t(FILE* stream, const ev_loop_t** addr)
+static int _on_dump_ev_loop_t(FILE* stream, ev_loop_t** addr)
 {
 	int ret = 0;
 

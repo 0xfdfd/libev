@@ -24,7 +24,7 @@ TEST_FIXTURE_SETUP(shm)
     ASSERT_EQ_SIZE(ev_shm_size(&g_test_3b5b.smt_token_2), mem_size);
 }
 
-TEST_FIXTURE_TEAREDOWN(shm)
+TEST_FIXTURE_TEARDOWN(shm)
 {
     ev_shm_exit(&g_test_3b5b.smt_token_1);
     ev_shm_exit(&g_test_3b5b.smt_token_2);

@@ -7,8 +7,8 @@
 extern "C" {
 #endif
 
-#define ASSERT_EQ_EVLOOP(a, b, ...)	ASSERT_TEMPLATE_EXT(ev_loop_t*, ==, a, b, __VA_ARGS__)
-#define ASSERT_NE_EVLOOP(a, b, ...)	ASSERT_TEMPLATE_EXT(ev_loop_t*, !=, a, b, __VA_ARGS__)
+#define ASSERT_EQ_EVLOOP(a, b, ...)	ASSERT_TEMPLATE(ev_loop_t*, ==, a, b, __VA_ARGS__)
+#define ASSERT_NE_EVLOOP(a, b, ...)	ASSERT_TEMPLATE(ev_loop_t*, !=, a, b, __VA_ARGS__)
 
 void test_register_ev_loop_t(void);
 

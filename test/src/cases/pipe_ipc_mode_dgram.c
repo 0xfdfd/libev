@@ -69,7 +69,7 @@ TEST_FIXTURE_SETUP(pipe)
     }
 }
 
-TEST_FIXTURE_TEAREDOWN(pipe)
+TEST_FIXTURE_TEARDOWN(pipe)
 {
     ev_pipe_exit(&g_test_a548->s_pipe, NULL);
     ev_pipe_exit(&g_test_a548->c_pipe, NULL);

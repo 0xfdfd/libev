@@ -78,7 +78,7 @@ TEST_FIXTURE_SETUP(fs)
     _test_fs_cleanup();
 }
 
-TEST_FIXTURE_TEAREDOWN(fs)
+TEST_FIXTURE_TEARDOWN(fs)
 {
     if (g_test_file.flags.file_init)
     {

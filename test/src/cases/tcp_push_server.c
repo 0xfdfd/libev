@@ -125,7 +125,7 @@ TEST_FIXTURE_SETUP(tcp)
     test_random(g_test_6d69->s_write_pack.send_buf, sizeof(g_test_6d69->s_write_pack.send_buf));
 }
 
-TEST_FIXTURE_TEAREDOWN(tcp)
+TEST_FIXTURE_TEARDOWN(tcp)
 {
     ev_tcp_exit(&g_test_6d69->s_client, _on_close_client_socket_6d69);
     ASSERT_EQ_INT(ev_loop_run(&g_test_6d69->s_loop, EV_LOOP_MODE_DEFAULT), 0);

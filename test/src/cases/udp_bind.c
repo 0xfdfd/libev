@@ -19,7 +19,7 @@ TEST_FIXTURE_SETUP(udp)
     ASSERT_EQ_INT(ev_udp_init(&g_test_ffe1.loop, &g_test_ffe1.udp2, AF_UNSPEC), 0);
 }
 
-TEST_FIXTURE_TEAREDOWN(udp)
+TEST_FIXTURE_TEARDOWN(udp)
 {
     ev_udp_exit(&g_test_ffe1.udp1, NULL);
     ev_udp_exit(&g_test_ffe1.udp2, NULL);

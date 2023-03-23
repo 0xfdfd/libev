@@ -59,7 +59,7 @@ TEST_FIXTURE_SETUP(pipe)
     ASSERT_EQ_INT(ev_tcp_init(&g_test_19f1->loop, &g_test_19f1->d_tcp), EV_SUCCESS);
 }
 
-TEST_FIXTURE_TEAREDOWN(pipe)
+TEST_FIXTURE_TEARDOWN(pipe)
 {
     ev_pipe_exit(&g_test_19f1->s_pipe, NULL);
     ev_pipe_exit(&g_test_19f1->c_pipe, NULL);

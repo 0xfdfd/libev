@@ -20,7 +20,7 @@ TEST_FIXTURE_SETUP(misc)
     g_test_b380.s_count = 0;
 }
 
-TEST_FIXTURE_TEAREDOWN(misc)
+TEST_FIXTURE_TEARDOWN(misc)
 {
 
 }

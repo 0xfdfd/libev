@@ -26,7 +26,7 @@ TEST_FIXTURE_SETUP(async)
     ASSERT_EQ_INT(ev_async_init(&g_test_sync->s_loop, &g_test_sync->s_async, _test_on_async), 0);
 }
 
-TEST_FIXTURE_TEAREDOWN(async)
+TEST_FIXTURE_TEARDOWN(async)
 {
     ASSERT_EQ_INT(ev_loop_run(&g_test_sync->s_loop, EV_LOOP_MODE_DEFAULT), 0);
     ASSERT_EQ_EVLOOP(&g_test_sync->s_loop, &empty_loop);

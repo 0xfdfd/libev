@@ -12,6 +12,7 @@
 4. process: support change cwd
 5. add amalgamate support
 6. submit threadpool task by loop api
+7. update test framework to v3.0.0
 
 ### Bug Fixes
 1. fix: use uninitialised value in `ev_exepath()` on Unix

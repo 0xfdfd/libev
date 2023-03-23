@@ -28,7 +28,7 @@ TEST_FIXTURE_SETUP(udp)
     ASSERT_EQ_INT(ev_udp_init(&g_test_5295->loop, &g_test_5295->server, AF_INET), 0);
 }
 
-TEST_FIXTURE_TEAREDOWN(udp)
+TEST_FIXTURE_TEARDOWN(udp)
 {
     ev_udp_exit(&g_test_5295->client, NULL);
     ev_udp_exit(&g_test_5295->server, NULL);

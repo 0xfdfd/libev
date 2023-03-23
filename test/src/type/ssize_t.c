@@ -2,7 +2,7 @@
 #include "ssize_t.h"
 #include "cutest.h"
 
-static int _on_cmp_ssize_t(const ssize_t* addr1, const ssize_t* addr2)
+static int _on_cmp_ssize_t(ssize_t* addr1, ssize_t* addr2)
 {
 	ssize_t v1 = *addr1, v2 = *addr2;
 	if (v1 == v2)
@@ -12,7 +12,7 @@ static int _on_cmp_ssize_t(const ssize_t* addr1, const ssize_t* addr2)
 	return v1 < v2 ? -1 : 1;
 }
 
-static int _on_dump_ssize_t(FILE* stream, const ssize_t* addr)
+static int _on_dump_ssize_t(FILE* stream, ssize_t* addr)
 {
 	return fprintf(stream, "%" PRId64, (int64_t)*addr);
 }

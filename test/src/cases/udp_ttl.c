@@ -20,7 +20,7 @@ TEST_FIXTURE_SETUP(udp)
     ASSERT_EQ_INT(ev_udp_bind(&g_test_7ab9.client, (struct sockaddr*)&addr, 0), 0);
 }
 
-TEST_FIXTURE_TEAREDOWN(udp)
+TEST_FIXTURE_TEARDOWN(udp)
 {
     ev_udp_exit(&g_test_7ab9.client, NULL);
     ASSERT_EQ_INT(ev_loop_run(&g_test_7ab9.loop, EV_LOOP_MODE_DEFAULT), 0);

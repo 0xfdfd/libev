@@ -25,7 +25,7 @@ TEST_FIXTURE_SETUP(threadpool)
     ASSERT_EQ_INT(ev_loop_link_threadpool(&g_test_757a.loop, &g_test_757a.pool), 0);
 }
 
-TEST_FIXTURE_TEAREDOWN(threadpool)
+TEST_FIXTURE_TEARDOWN(threadpool)
 {
     ASSERT_EQ_INT(ev_loop_run(&g_test_757a.loop, EV_LOOP_MODE_ONCE), 0);
     ASSERT_EQ_EVLOOP(&g_test_757a.loop, &empty_loop);

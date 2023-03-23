@@ -77,7 +77,7 @@ TEST_FIXTURE_SETUP(pipe)
     ASSERT_EQ_INT(ev_pipe_open(&g_test_pipe_data->pipe_w, fds[1]), 0);
 }
 
-TEST_FIXTURE_TEAREDOWN(pipe)
+TEST_FIXTURE_TEARDOWN(pipe)
 {
     ev_pipe_exit(&g_test_pipe_data->pipe_r, NULL);
     ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_data->loop, EV_LOOP_MODE_DEFAULT), 0);

@@ -21,7 +21,7 @@ TEST_FIXTURE_SETUP(pipe)
     g_test_pipe_close.pipfd[1] = EV_OS_PIPE_INVALID;
 }
 
-TEST_FIXTURE_TEAREDOWN(pipe)
+TEST_FIXTURE_TEARDOWN(pipe)
 {
     size_t i;
     for (i = 0; i < ARRAY_SIZE(g_test_pipe_close.pipfd); i++)

@@ -48,7 +48,7 @@ TEST_FIXTURE_SETUP(pipe)
     test_random(g_test_pipe_make->wbuf, sizeof(g_test_pipe_make->wbuf));
 }
 
-TEST_FIXTURE_TEAREDOWN(pipe)
+TEST_FIXTURE_TEARDOWN(pipe)
 {
     size_t i;
     for (i = 0; i < ARRAY_SIZE(g_test_pipe_make->fds); i++)

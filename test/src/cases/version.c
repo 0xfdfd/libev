@@ -5,7 +5,7 @@ TEST_FIXTURE_SETUP(version)
 {
 }
 
-TEST_FIXTURE_TEAREDOWN(version)
+TEST_FIXTURE_TEARDOWN(version)
 {
 }
 

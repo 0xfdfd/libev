@@ -19,7 +19,7 @@ TEST_FIXTURE_SETUP(tcp)
     ASSERT_EQ_INT(ev_tcp_init(&g_test_43e2.s_loop, &g_test_43e2.c_sock), 0);
 }
 
-TEST_FIXTURE_TEAREDOWN(tcp)
+TEST_FIXTURE_TEARDOWN(tcp)
 {
     ev_tcp_exit(&g_test_43e2.l_sock, NULL);
     ev_tcp_exit(&g_test_43e2.s_sock, NULL);
