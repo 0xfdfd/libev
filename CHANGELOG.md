@@ -13,6 +13,7 @@
 5. add amalgamate support
 6. submit threadpool task by loop api
 7. update test framework to v3.0.0
+8. use `ev_hrtime()` to get high-resolution time
 
 ### Bug Fixes
 1. fix: use uninitialised value in `ev_exepath()` on Unix

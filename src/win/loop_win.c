@@ -99,9 +99,9 @@ static void _ev_init_once_win(void)
     ev__thread_init_win();
 }
 
-API_LOCAL uint64_t ev__clocktime(void)
+uint64_t ev_hrtime(void)
 {
-    return _ev_hrtime_win(1000);
+    return _ev_hrtime_win(1000000);
 }
 
 API_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)

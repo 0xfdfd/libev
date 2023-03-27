@@ -100,12 +100,6 @@ API_LOCAL void ev__loop_exit_backend(ev_loop_t* loop);
  */
 API_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout);
 
-/**
- * @brief Get clocktime
- * @return      Clock time
- */
-API_LOCAL uint64_t ev__clocktime(void);
-
 #ifdef __cplusplus
 }
 #endif

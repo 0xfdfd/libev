@@ -124,7 +124,7 @@ static size_t _ev_calculate_write_size(const ev_write_t* req)
 
 API_LOCAL void ev__loop_update_time(ev_loop_t* loop)
 {
-    loop->hwtime = ev__clocktime();
+    loop->hwtime = ev_hrtime() / 1000;
 }
 
 API_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size)

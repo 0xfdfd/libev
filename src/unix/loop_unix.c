@@ -93,7 +93,7 @@ static void _ev_init_once_unix(void)
     ev__init_process_unix();
 }
 
-API_LOCAL uint64_t ev__clocktime(void)
+uint64_t ev_hrtime(void)
 {
     int errcode;
     struct timespec t;
@@ -104,7 +104,7 @@ API_LOCAL uint64_t ev__clocktime(void)
         EV_ABORT("errno:%d", errcode);
     }
 
-    return t.tv_sec * 1000 + t.tv_nsec / 1000 / 1000;
+    return t.tv_sec * 1000 * 1000 + t.tv_nsec / 1000;
 }
 
 API_LOCAL void ev__init_once_unix(void)
