@@ -26,9 +26,6 @@ typedef struct test_file
     {
         unsigned    file_init : 1;  /**< Flag for file initialize */
     }flags;
-
-    ev_threadpool_t pool;           /**< Thread pool */
-    ev_os_thread_t  threads[4];     /**< Thread storage */
 }test_file_t;
 
 test_file_t         g_test_file;    /**< Global test context */
@@ -78,14 +75,7 @@ TEST_FIXTURE_SETUP(fs)
     int ret;
     memset(&g_test_file, 0, sizeof(g_test_file));
 
-    ret = ev_threadpool_init(&g_test_file.pool, NULL, g_test_file.threads,
-        ARRAY_SIZE(g_test_file.threads));
-    ASSERT_EQ_INT(ret, EV_SUCCESS);
-
     ret = ev_loop_init(&g_test_file.loop);
-    ASSERT_EQ_INT(ret, EV_SUCCESS);
-
-    ret = ev_loop_link_threadpool(&g_test_file.loop, &g_test_file.pool);
     ASSERT_EQ_INT(ret, EV_SUCCESS);
 
     _test_fs_init_file();
@@ -98,7 +88,6 @@ TEST_FIXTURE_TEARDOWN(fs)
 
     ASSERT_EQ_EVLOOP(&g_test_file.loop, &empty_loop);
     ASSERT_EQ_INT(ev_loop_exit(&g_test_file.loop), EV_SUCCESS);
-    ev_threadpool_exit(&g_test_file.pool);
 
     _test_fs_cleanup();
 }

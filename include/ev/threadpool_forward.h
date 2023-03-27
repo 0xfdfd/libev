@@ -12,7 +12,7 @@ extern "C" {
 /**
  * @brief Work type.
  */
-enum ev_threadpool_work_type
+enum ev_work_type
 {
     /**
      * @brief CPU work
@@ -30,26 +30,26 @@ enum ev_threadpool_work_type
     EV_THREADPOOL_WORK_IO_SLOW  = 2,
 };
 
-typedef enum ev_threadpool_work_type ev_threadpool_work_type_t;
+typedef enum ev_work_type ev_work_type_t;
 
 struct ev_threadpool;
 typedef struct ev_threadpool ev_threadpool_t;
 
-struct ev_threadpool_work;
-typedef struct ev_threadpool_work ev_threadpool_work_t;
+struct ev_work;
+typedef struct ev_work ev_work_t;
 
 /**
  * @brief Thread pool task
  * @param[in] work  Work token
  */
-typedef void (*ev_threadpool_work_cb)(ev_threadpool_work_t* work);
+typedef void (*ev_work_cb)(ev_work_t* work);
 
 /**
  * @brief Work done callback in event loop
  * @param[in] work      Work token
  * @param[in] status    Work status
  */
-typedef void (*ev_threadpool_work_done_cb)(ev_threadpool_work_t* work, int status);
+typedef void (*ev_work_done_cb)(ev_work_t* work, int status);
 
 /**
  * @} EV_THREAD_POOL

@@ -19,7 +19,7 @@ typedef enum ev_role
     EV_ROLE_EV_PIPE         = 3,                    /**< Type of #ev_pipe_t */
     EV_ROLE_EV_TCP          = 4,                    /**< Type of #ev_tcp_t */
     EV_ROLE_EV_UDP          = 5,                    /**< Type of #ev_udp_t */
-    EV_ROLE_EV_WORK         = 6,                    /**< Type of #ev_threadpool_work_t */
+    EV_ROLE_EV_WORK         = 6,                    /**< Type of #ev_work_t */
     EV_ROLE_EV_FILE         = 7,                    /**< Type of #ev_file_t */
     EV_ROLE_EV_REQ_UDP_R    = 100,                  /**< Type of #ev_udp_read_t */
     EV_ROLE_EV_REQ_UDP_W    = 101,                  /**< Type of #ev_udp_write_t */

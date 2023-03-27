@@ -133,17 +133,6 @@ void ev_loop_stop(ev_loop_t* loop);
 int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode);
 
 /**
- * @brief Link loop with thread pool.
- * 
- * Some actions require a linked thread pool.
- * 
- * @param[in] loop      The event loop.
- * @param[in] pool      The Thread pool.
- * @return              #ev_errno_t
- */
-int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool);
-
-/**
  * @brief Submit task into thread pool.
  * @param[in] loop      Event loop.
  * @param[in] token     Work token.
@@ -151,8 +140,8 @@ int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool);
  * @param[in] done_cb   Work done callback in event loop.
  * @return              #ev_errno_t
  */
-int ev_loop_queue_work(ev_loop_t* loop, ev_threadpool_work_t* token,
-    ev_threadpool_work_cb work_cb, ev_threadpool_work_done_cb done_cb);
+int ev_loop_queue_work(ev_loop_t* loop, ev_work_t* token,
+    ev_work_cb work_cb, ev_work_done_cb done_cb);
 
 /**
  * @brief Cancel task.
@@ -161,7 +150,7 @@ int ev_loop_queue_work(ev_loop_t* loop, ev_threadpool_work_t* token,
  * @param[in] token     Work token
  * @return              #ev_errno_t
  */
-int ev_loop_cancel(ev_threadpool_work_t* token);
+int ev_loop_cancel(ev_work_t* token);
 
 /**
  * @brief Walk the list of handles.

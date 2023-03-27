@@ -11,11 +11,8 @@ typedef struct test_pipe_make
     ev_os_pipe_t            fds[2];
     ev_loop_t               loop;
 
-    ev_os_thread_t          thr[2];
-    ev_threadpool_t         thr_pool;
-
-    ev_threadpool_work_t    write_token;
-    ev_threadpool_work_t    read_token;
+	ev_work_t               write_token;
+	ev_work_t               read_token;
 
     /* 8MB should exceed most system default underlying cache */
     char                    rbuf[8 * 1024 * 1024];
@@ -41,9 +38,6 @@ TEST_FIXTURE_SETUP(pipe)
     }
 
     ASSERT_EQ_INT(ev_loop_init(&g_test_pipe_make->loop), 0);
-    ASSERT_EQ_INT(ev_threadpool_init(&g_test_pipe_make->thr_pool, NULL,
-        g_test_pipe_make->thr, ARRAY_SIZE(g_test_pipe_make->thr)), 0);
-    ASSERT_EQ_INT(ev_loop_link_threadpool(&g_test_pipe_make->loop, &g_test_pipe_make->thr_pool), 0);
 
     test_random(g_test_pipe_make->wbuf, sizeof(g_test_pipe_make->wbuf));
 }
@@ -64,8 +58,6 @@ TEST_FIXTURE_TEARDOWN(pipe)
     ASSERT_EQ_EVLOOP(&g_test_pipe_make->loop, &empty_loop);
     ASSERT_EQ_INT(ev_loop_exit(&g_test_pipe_make->loop), 0);
 
-    ev_threadpool_exit(&g_test_pipe_make->thr_pool);
-
     mmc_free(g_test_pipe_make);
     g_test_pipe_make = NULL;
 }
@@ -74,7 +66,7 @@ TEST_FIXTURE_TEARDOWN(pipe)
 // pipe.make_block
 ///////////////////////////////////////////////////////////////////////////////
 
-static void _test_pipe_make_block_on_write(ev_threadpool_work_t* work)
+static void _test_pipe_make_block_on_write(ev_work_t* work)
 {
     (void)work;
 
@@ -94,13 +86,13 @@ static void _test_pipe_make_block_on_write(ev_threadpool_work_t* work)
     g_test_pipe_make->wsize = (size_t)write_size;
 }
 
-static void _test_pipe_make_block_on_write_done(ev_threadpool_work_t* work, int status)
+static void _test_pipe_make_block_on_write_done(ev_work_t* work, int status)
 {
     (void)work; (void)status;
     ASSERT_EQ_SIZE(g_test_pipe_make->wsize, sizeof(g_test_pipe_make->wbuf));
 }
 
-static void _test_pipe_make_block_on_read(ev_threadpool_work_t* work)
+static void _test_pipe_make_block_on_read(ev_work_t* work)
 {
     (void)work;
 
@@ -127,7 +119,7 @@ static void _test_pipe_make_block_on_read(ev_threadpool_work_t* work)
     g_test_pipe_make->rsize = (size_t)readen_size;
 }
 
-static void _test_pipe_make_block_on_read_done(ev_threadpool_work_t* work, int status)
+static void _test_pipe_make_block_on_read_done(ev_work_t* work, int status)
 {
     (void)work; (void)status;
     ASSERT_EQ_SIZE(g_test_pipe_make->rsize, sizeof(g_test_pipe_make->rbuf));
@@ -158,7 +150,7 @@ TEST_F(pipe, make_block)
 
 #if !defined(_WIN32)
 
-static void _test_pipe_make_nonblock_on_read(ev_threadpool_work_t* work)
+static void _test_pipe_make_nonblock_on_read(ev_work_t* work)
 {
     (void)work;
 
@@ -178,12 +170,12 @@ static void _test_pipe_make_nonblock_on_read(ev_threadpool_work_t* work)
     }
 }
 
-static void _test_pipe_make_nonblock_on_read_done(ev_threadpool_work_t* work, int status)
+static void _test_pipe_make_nonblock_on_read_done(ev_work_t* work, int status)
 {
     (void)work; (void)status;
 }
 
-static void _test_pipe_make_nonblock_on_write(ev_threadpool_work_t* work)
+static void _test_pipe_make_nonblock_on_write(ev_work_t* work)
 {
     (void)work;
     ssize_t write_size = write(g_test_pipe_make->fds[1], g_test_pipe_make->wbuf,
@@ -192,7 +184,7 @@ static void _test_pipe_make_nonblock_on_write(ev_threadpool_work_t* work)
     g_test_pipe_make->wsize = write_size;
 }
 
-static void _test_pipe_make_nonblock_on_write_done(ev_threadpool_work_t* work, int status)
+static void _test_pipe_make_nonblock_on_write_done(ev_work_t* work, int status)
 {
     (void)work; (void)status;
 }

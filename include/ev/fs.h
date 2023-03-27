@@ -82,7 +82,7 @@ struct ev_fs_req_s
 {
     ev_fs_req_type_t            req_type;       /**< Request type */
     ev_list_node_t              node;           /**< Queue node */
-    ev_threadpool_work_t        work_token;     /**< Thread pool token */
+    ev_work_t                   work_token;     /**< Thread pool token */
     ev_file_t*                  file;           /**< File handle */
     ev_file_cb                  cb;             /**< File operation callback */
     ssize_t                     result;         /**< Result */

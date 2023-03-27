@@ -4,9 +4,33 @@
 #include "threadpool.h"
 #include <assert.h>
 
+typedef struct ev_threadpool_default
+{
+    ev_threadpool_t pool;
+    ev_os_thread_t  storage[4];
+} ev_threadpool_default_t;
+
+static ev_threadpool_default_t s_default_threadpool;
+
+static void _ev_threadpool_on_init_default(void)
+{
+    int ret = ev_threadpool_init(&s_default_threadpool.pool, NULL,
+        s_default_threadpool.storage, ARRAY_SIZE(s_default_threadpool.storage));
+    if (ret != 0)
+    {
+        EV_ABORT("%s(%d)", ev_strerror(ret), ret);
+    }
+}
+
+static void _ev_threadpool_init_default(void)
+{
+    static ev_once_t token = EV_ONCE_INIT;
+    ev_once_execute(&token, _ev_threadpool_on_init_default);
+}
+
 static void _ev_threadpool_on_loop(ev_handle_t* handle)
 {
-    ev_threadpool_work_t* work = EV_CONTAINER_OF(handle, ev_threadpool_work_t, base);
+    ev_work_t* work = EV_CONTAINER_OF(handle, ev_work_t, base);
 
     ev__handle_event_dec(&work->base);
     ev__handle_exit(&work->base, NULL);
@@ -14,7 +38,7 @@ static void _ev_threadpool_on_loop(ev_handle_t* handle)
     work->data.done_cb(work, work->data.status);
 }
 
-static void _ev_threadpool_submit_to_loop(ev_threadpool_work_t* work)
+static void _ev_threadpool_submit_to_loop(ev_work_t* work)
 {
     ev_loop_t* loop = work->base.loop;
 
@@ -28,7 +52,7 @@ static void _ev_threadpool_submit_to_loop(ev_threadpool_work_t* work)
     ev__threadpool_wakeup(loop);
 }
 
-static ev_threadpool_work_t* _ev_threadpool_get_work_locked(ev_threadpool_t* pool)
+static ev_work_t* _ev_threadpool_get_work_locked(ev_threadpool_t* pool)
 {
     ev_queue_node_t* it;
     size_t i;
@@ -50,10 +74,10 @@ static ev_threadpool_work_t* _ev_threadpool_get_work_locked(ev_threadpool_t* poo
         return NULL;
     }
 
-    return EV_CONTAINER_OF(it, ev_threadpool_work_t, node);
+    return EV_CONTAINER_OF(it, ev_work_t, node);
 }
 
-static void _ev_threadpool_commit(ev_threadpool_work_t* work, int status)
+static void _ev_threadpool_commit(ev_work_t* work, int status)
 {
     work->data.status = status;
     _ev_threadpool_submit_to_loop(work);
@@ -61,7 +85,7 @@ static void _ev_threadpool_commit(ev_threadpool_work_t* work, int status)
 
 static void _ev_threadpool_do_work(ev_threadpool_t* pool)
 {
-    ev_threadpool_work_t* work = _ev_threadpool_get_work_locked(pool);
+    ev_work_t* work = _ev_threadpool_get_work_locked(pool);
     if (work == NULL)
     {
         return;
@@ -75,7 +99,7 @@ static void _ev_threadpool_do_work(ev_threadpool_t* pool)
 
 static void _ev_threadpool_cleanup(ev_threadpool_t* pool)
 {
-    ev_threadpool_work_t* work;
+    ev_work_t* work;
     while ((work = _ev_threadpool_get_work_locked(pool)) != NULL)
     {
         _ev_threadpool_commit(work, EV_ECANCELED);
@@ -104,7 +128,7 @@ static void _cancel_work_queue_for_loop(ev_threadpool_t* pool,
         it = ev_queue_head(wqueue);
         while (it != NULL)
         {
-            ev_threadpool_work_t* work = EV_CONTAINER_OF(it, ev_threadpool_work_t, node);
+            ev_work_t* work = EV_CONTAINER_OF(it, ev_work_t, node);
             it = ev_queue_next(wqueue, it);
 
             if (work->base.loop != loop)
@@ -158,8 +182,8 @@ err_release_thread:
 }
 
 int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
-    ev_threadpool_work_t* work, ev_threadpool_work_type_t type,
-    ev_threadpool_work_cb work_cb, ev_threadpool_work_done_cb done_cb)
+    ev_work_t* work, ev_work_type_t type,
+    ev_work_cb work_cb, ev_work_done_cb done_cb)
 {
     if (!pool->looping)
     {
@@ -185,7 +209,7 @@ int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
     return EV_SUCCESS;
 }
 
-int ev_loop_cancel(ev_threadpool_work_t* work)
+int ev_loop_cancel(ev_work_t* work)
 {
     ev_threadpool_t* pool = work->data.pool;
 
@@ -216,7 +240,7 @@ static void _threadpool_cancel_work_queue(ev_threadpool_t* pool, ev_queue_node_t
     ev_queue_node_t* node;
     while ((node = ev_queue_pop_front(wqueue)) != NULL)
     {
-        ev_threadpool_work_t* work = EV_CONTAINER_OF(node, ev_threadpool_work_t, node);
+        ev_work_t* work = EV_CONTAINER_OF(node, ev_work_t, node);
         _ev_threadpool_commit(work, EV_ECANCELED);
     }
 }
@@ -259,10 +283,19 @@ void ev_threadpool_exit(ev_threadpool_t* pool)
     ev_sem_exit(&pool->p2w_sem);
 }
 
+API_LOCAL void ev__loop_link_to_default_threadpool(ev_loop_t* loop)
+{
+    _ev_threadpool_init_default();
+    if (loop->threadpool.pool == NULL)
+    {
+        ev_loop_link_threadpool(loop, &s_default_threadpool.pool);
+    }
+}
+
 API_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
-    ev_threadpool_work_t* work,
-    ev_threadpool_work_type_t type, ev_threadpool_work_cb work_cb,
-    ev_threadpool_work_done_cb done_cb)
+    ev_work_t* work,
+    ev_work_type_t type, ev_work_cb work_cb,
+    ev_work_done_cb done_cb)
 {
     ev_threadpool_t* pool = loop->threadpool.pool;
     if (pool == NULL)
@@ -273,7 +306,7 @@ API_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
     return ev_threadpool_submit(pool, loop, work, type, work_cb, done_cb);
 }
 
-int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool)
+API_LOCAL int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool)
 {
     if (loop->threadpool.pool != NULL)
     {
@@ -322,8 +355,8 @@ int ev_loop_unlink_threadpool(ev_loop_t* loop)
     return EV_SUCCESS;
 }
 
-int ev_loop_queue_work(ev_loop_t* loop, ev_threadpool_work_t* token,
-    ev_threadpool_work_cb work_cb, ev_threadpool_work_done_cb done_cb)
+int ev_loop_queue_work(ev_loop_t* loop, ev_work_t* token,
+    ev_work_cb work_cb, ev_work_done_cb done_cb)
 {
     if (loop->threadpool.pool == NULL)
     {

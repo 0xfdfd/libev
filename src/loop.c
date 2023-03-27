@@ -38,6 +38,8 @@ static int _ev_loop_init(ev_loop_t* loop)
     ev_mutex_init(&loop->threadpool.mutex, 0);
     ev_list_init(&loop->threadpool.work_queue);
 
+    ev__loop_link_to_default_threadpool(loop);
+
     return EV_SUCCESS;
 }
 

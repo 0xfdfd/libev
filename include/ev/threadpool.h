@@ -32,7 +32,7 @@ struct ev_threadpool
     ev_sem_t                        p2w_sem;        /**< Semaphore for pool to worker */
     int                             looping;        /**< Looping flag */
 
-    ev_queue_node_t                 work_queue[3];  /**< Work queue. Index is #ev_threadpool_work_type_t */
+    ev_queue_node_t                 work_queue[3];  /**< Work queue. Index is #ev_work_type_t */
 };
 
 #define EV_THREADPOOL_INVALID   \
@@ -53,7 +53,7 @@ struct ev_threadpool
 /**
  * @brief Thread pool work token.
  */
-struct ev_threadpool_work
+struct ev_work
 {
     ev_handle_t                     base;           /**< Base object */
     ev_queue_node_t                 node;           /**< List node */
@@ -71,8 +71,8 @@ struct ev_threadpool_work
          */
         int                         status;
 
-        ev_threadpool_work_cb       work_cb;        /**< work callback */
-        ev_threadpool_work_done_cb  done_cb;        /**< done callback */
+		ev_work_cb                  work_cb;        /**< work callback */
+		ev_work_done_cb             done_cb;        /**< done callback */
     }data;
 };
 
@@ -82,23 +82,6 @@ struct ev_threadpool_work
         EV_QUEUE_NODE_INVALID,\
         { NULL, EV_UNKNOWN, NULL, NULL },\
     }
-
-/**
- * @brief Initialize thread pool
- * @param[out] pool     Thread pool
- * @param[in] opt       Thread option
- * @param[in] storage   Storage to save thread
- * @param[in] num       Storage size
- * @return              #ev_errno_t
- */
-int ev_threadpool_init(ev_threadpool_t* pool, const ev_thread_opt_t* opt,
-    ev_os_thread_t* storage, size_t num);
-
-/**
- * @brief Exit thread pool
- * @param[in] pool      Thread pool
- */
-void ev_threadpool_exit(ev_threadpool_t* pool);
 
 /**
  * @} EV_THREAD_POOL

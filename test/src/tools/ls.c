@@ -26,8 +26,6 @@ typedef struct file_info
 typedef struct ls_ctx
 {
     ev_loop_t       loop;
-    ev_threadpool_t pool;
-    ev_os_thread_t  thread_storage[1];
     ev_fs_req_t     fs_req;
     ev_map_t        node_table;
     const char*     ls_path;
@@ -52,8 +50,6 @@ static const char* s_ls_help =
 
 static ls_ctx_t g_ls_ctx = {
     EV_LOOP_INVALID,
-    EV_THREADPOOL_INVALID,
-    { EV_OS_THREAD_INVALID },
     EV_FS_REQ_INVALID,
     EV_MAP_INIT(_on_cmp_file_info, NULL),
     "./",
@@ -80,7 +76,6 @@ static void _ls_cleanup(void)
     }
 
     ev_loop_exit(&g_ls_ctx.loop);
-    ev_threadpool_exit(&g_ls_ctx.pool);
 }
 
 static void _ls_on_readdir(ev_fs_req_t* req)
@@ -140,17 +135,6 @@ static int tool_ls(int argc, char* argv[])
         fprintf(stderr, "%s\n", ev_strerror(ret));
         return EXIT_FAILURE;
     }
-
-    ret = ev_threadpool_init(&g_ls_ctx.pool, NULL, g_ls_ctx.thread_storage,
-        ARRAY_SIZE(g_ls_ctx.thread_storage));
-    if (ret != EV_SUCCESS)
-    {
-        ev_loop_exit(&g_ls_ctx.loop);
-        fprintf(stderr, "%s\n", ev_strerror(ret));
-        return EXIT_FAILURE;
-    }
-
-    ev_loop_link_threadpool(&g_ls_ctx.loop, &g_ls_ctx.pool);
 
     ret = ev_fs_readdir(&g_ls_ctx.loop, &g_ls_ctx.fs_req, g_ls_ctx.ls_path, _ls_on_readdir);
     if (ret != EV_SUCCESS)

@@ -6,6 +6,8 @@
 1. remove `ev_todo_token_t`
 2. `ev_process_t` must be exited manually
 3. rename position read and write to `pread` and `pwrite`
+4. embed default thread pool
+5. change thread pool functions
 
 ### Features
 1. add detail information for `ev_fs_readfile()`
