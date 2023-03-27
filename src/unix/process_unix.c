@@ -194,13 +194,15 @@ static void _ev_spawn_child(spawn_helper_t* helper, const ev_process_options_t* 
         _ev_spawn_write_errno_and_exit(helper, errcode);
     }
 
+    const char* file = opt->file != NULL ? opt->file : opt->argv[0];
+
     if (opt->envp == NULL)
     {
-        (void)execvp(opt->argv[0], opt->argv);
+        (void)execvp(file, opt->argv);
     }
     else
     {
-        (void)execvpe(opt->argv[0], opt->argv, opt->envp);
+        (void)execvpe(file, opt->argv, opt->envp);
     }
 
     /* Error */
@@ -282,7 +284,7 @@ static void _ev_process_on_async_close(ev_async_t* async)
 
     if (handle->exit_cb != NULL)
     {
-        handle->exit_cb(handle, handle->exit_status, handle->exit_code);
+        handle->exit_cb(handle);
     }
 }
 
@@ -335,20 +337,20 @@ static void _ev_process_on_sigchild_unix(ev_async_t* async)
     }
 
 fin:
-    ev_mutex_enter(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
-    {
-        ev_list_erase(&g_ev_loop_unix_ctx.process.wait_queue, &handle->node);
-    }
-    ev_mutex_leave(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
     handle->backend.flags.waitpid = 1;
-    ev_async_exit(async, _ev_process_on_async_close);
+
+	if (handle->sigchild_cb != NULL)
+	{
+		handle->sigchild_cb(handle, handle->exit_status, handle->exit_code);
+	}
 }
 
 static int _ev_process_init_process(ev_loop_t* loop, ev_process_t* handle, const ev_process_options_t* opt)
 {
     int ret;
 
-    handle->exit_cb = opt->on_exit;
+    handle->sigchild_cb = opt->on_exit;
+    handle->exit_cb = NULL;
     handle->pid = EV_OS_PID_INVALID;
     handle->exit_status = EV_PROCESS_EXIT_UNKNOWN;
     handle->exit_code = 0;
@@ -583,6 +585,23 @@ int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_opt
 finish:
     _ev_process_exit_spawn_helper(&spawn_helper);
     return ret;
+}
+
+void ev_process_exit(ev_process_t* handle, ev_process_exit_cb cb)
+{
+    if (handle->pid != EV_OS_PID_INVALID)
+    {
+        handle->pid = EV_OS_PID_INVALID;
+    }
+
+	ev_mutex_enter(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
+	{
+		ev_list_erase(&g_ev_loop_unix_ctx.process.wait_queue, &handle->node);
+	}
+	ev_mutex_leave(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
+
+    handle->exit_cb = cb;
+    ev_async_exit(&handle->sigchld, _ev_process_on_async_close);
 }
 
 void ev_process_sigchld(int signum)

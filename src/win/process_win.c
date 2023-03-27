@@ -343,7 +343,7 @@ static void _ev_process_on_async_exit(ev_async_t* async)
 
     if (process->exit_cb != NULL)
     {
-        process->exit_cb(process, process->exit_status, process->exit_code);
+        process->exit_cb(process);
     }
 }
 
@@ -393,7 +393,10 @@ static void _ev_process_on_sigchild_win(ev_async_t* async)
         process->exit_code = ev__translate_sys_error(status);
     }
 
-    ev_async_exit(async, _ev_process_on_async_exit);
+	if (process->sigchild_cb != NULL)
+	{
+		process->sigchild_cb(process, process->exit_status, process->exit_code);
+	}
 }
 
 static int _ev_process_setup_start_info(ev_startup_info_t* start_info,
@@ -445,7 +448,8 @@ static VOID NTAPI _ev_process_on_object_exit(PVOID data, BOOLEAN didTimeout)
 
 static void _ev_process_init_win(ev_process_t* handle, const ev_process_options_t* opt)
 {
-    handle->exit_cb = opt->on_exit;
+    handle->sigchild_cb = opt->on_exit;
+    handle->exit_cb = NULL;
     handle->pid = EV_OS_PID_INVALID;
     handle->exit_status = EV_PROCESS_EXIT_UNKNOWN;
     handle->exit_code = 0;
@@ -475,7 +479,7 @@ int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_opt
         return ret;
     }
 
-    ret = CreateProcessA(NULL, start_info.cmdline, NULL, NULL, TRUE, 0,
+    ret = CreateProcessA(opt->file, start_info.cmdline, NULL, NULL, TRUE, 0,
         start_info.envline, opt->cwd, &start_info.start_info, &piProcInfo);
 
     handle->pid = piProcInfo.hProcess;
@@ -499,6 +503,21 @@ int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_opt
     CloseHandle(piProcInfo.hThread);
 
     return EV_SUCCESS;
+}
+
+void ev_process_exit(ev_process_t* handle, ev_process_exit_cb cb)
+{
+    _ev_process_unregister_wait_handle(handle);
+
+    if (handle->pid != EV_OS_PID_INVALID)
+    {
+        CloseHandle(handle->pid);
+        handle->pid = EV_OS_PID_INVALID;
+    }
+
+    handle->sigchild_cb = NULL;
+    handle->exit_cb = cb;
+    ev_async_exit(&handle->sigchld, _ev_process_on_async_exit);
 }
 
 ssize_t ev_getcwd(char* buffer, size_t size)

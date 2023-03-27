@@ -52,9 +52,14 @@ struct ev_process_stdio_container_s
 struct ev_process_options_s
 {
     /**
-     * @brief (Optional) Process exit callback.
+     * @brief (Optional) Child process exit callback.
      */
-    ev_process_exit_cb              on_exit;
+    ev_process_sigchld_cb           on_exit;
+
+    /**
+     * @brief Execute file.
+     */
+    const char*                     file;
 
     /**
      * @brief Execute command line.
@@ -83,11 +88,15 @@ struct ev_process_options_s
 struct ev_process_s
 {
     ev_list_node_t                  node;           /**< List node */
-    ev_process_exit_cb              exit_cb;        /**< Exit callback */
+
+    ev_process_sigchld_cb           sigchild_cb;    /**< Process exit callback */
+    ev_process_exit_cb              exit_cb;        /**< Exit callback. */
+
     ev_os_pid_t                     pid;            /**< Process ID */
     ev_process_exit_status_t        exit_status;    /**< Exit status */
     int                             exit_code;      /**< Exit code or termainl signal  */
     ev_async_t                      sigchld;        /**< SIGCHLD notifier */
+
     ev_process_backend_t            backend;
 };
 
@@ -99,6 +108,13 @@ struct ev_process_s
  * @return              #ev_errno_t
  */
 int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_options_t* opt);
+
+/**
+ * @brief Exit process handle.
+ * @param[in] handle    Process handle.
+ * @param[in] cb        Exit callback.
+ */
+void ev_process_exit(ev_process_t* handle, ev_process_exit_cb cb);
 
 /**
  * @brief Notify when process receive SIGCHLD.

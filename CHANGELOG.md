@@ -4,6 +4,7 @@
 
 ### BREAKING CHANGES
 1. remove `ev_todo_token_t`
+2. `ev_process_t` must be exited manually
 
 ### Features
 1. add detail information for `ev_fs_readfile()`

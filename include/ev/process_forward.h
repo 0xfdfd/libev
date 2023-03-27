@@ -89,7 +89,7 @@ struct ev_process_s;
 typedef struct ev_process_s ev_process_t;
 
 /**
- * @brief Process exit callback
+ * @brief Child process exit callback
  * @param[in] handle        Process handle.
  * @param[in] exit_status   Exit status
  *   +EV_PROCESS_EXIT_UNKNOWN: \p exit_code is meaninglessness.
@@ -101,8 +101,14 @@ typedef struct ev_process_s ev_process_t;
  *     caused the child process to terminate.
  * @param[in] exit_code     Exit code.
  */
-typedef void (*ev_process_exit_cb)(ev_process_t* handle,
+typedef void (*ev_process_sigchld_cb)(ev_process_t* handle,
         ev_process_exit_status_t exit_status, int exit_code);
+
+/**
+ * @brief Handle exit callback.
+ * @param[in] handle    Process handle.
+ */
+typedef void (*ev_process_exit_cb)(ev_process_t* handle);
 
 /**
  * @}

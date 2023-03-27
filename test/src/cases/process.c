@@ -75,6 +75,8 @@ TEST_F(process, spawn_stdout_ignore)
 
     ret = ev_process_spawn(&g_test_process->loop, &g_test_process->process, &opt);
     ASSERT_EQ_INT(ret, EV_SUCCESS);
+
+    ev_process_exit(&g_test_process->process, NULL);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -88,6 +90,8 @@ static void _test_process_redirect_pipe_on_write_done(ev_pipe_write_req_t* req, 
     ASSERT_EQ_INT(stat, EV_SUCCESS);
 
     _close_stdin_pipe();
+
+    ev_process_exit(&g_test_process->process, NULL);
 }
 
 TEST_F(process, redirect_pipe)
@@ -129,6 +133,8 @@ static void _test_process_exit_callback(ev_process_t* handle,
     ASSERT_EQ_INT(exit_status, EV_PROCESS_EXIT_NORMAL);
     ASSERT_EQ_INT(exit_code, 0);
     g_test_process->flag_exit = 1;
+
+    ev_process_exit(&g_test_process->process, NULL);
 }
 
 TEST_F(process, exit_callback)
@@ -205,6 +211,8 @@ static void _process_cwd_on_read(ev_pipe_read_req_t* req, size_t size, int stat)
         cwd_path->buffer[size] = '\0';
         size--;
     }
+
+    ev_process_exit(&g_test_process->process, NULL);
 }
 
 TEST_F(process, cwd)
