@@ -98,6 +98,12 @@ struct ev_fs_req_s
 
         struct
         {
+            int                 whence;         /**< Directive */
+            ssize_t             offset;         /**< Offset */
+        } as_seek;
+
+        struct
+        {
             ssize_t             offset;         /**< File offset */
             ev_read_t           read_req;       /**< Read token */
         }as_read;
@@ -204,7 +210,43 @@ int ev_file_open(ev_file_t* file, ev_fs_req_t* req, const char* path,
 int ev_file_open_sync(ev_file_t* file, const char* path, int flags, int mode);
 
 /**
+ * @brief Set the file position indicator for the stream pointed to by \p file.
+ * @see #EV_FS_SEEK_BEG
+ * @see #EV_FS_SEEK_CUR
+ * @see #EV_FS_SEEK_END
+ * @param[in] file      File handle.
+ * @param[in] req       File operation token.
+ * @param[in] whence    Direction.
+ * @param[in] offset    Offset.
+ * @param[in] cb        Result callback.
+ * @return              #ev_errno_t
+ */
+int ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence, ssize_t offset, ev_file_cb cb);
+
+/**
  * @brief Read data.
+ * @param[in] file      File handle.
+ * @param[in] req       File operation token.
+ * @param[in] bufs      Buffer list.
+ * @param[in] nbuf      Buffer amount.
+ * @param[in] cb        Read callback.
+ * @return              #ev_errno_t
+ */
+int ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+    size_t nbuf, ev_file_cb cb);
+
+/**
+ * @brief Like #ev_file_read(), but work in synchronous mode.
+ * @see ev_file_read()
+ * @param[in] file      File handle.
+ * @param[in] bufs      Buffer list.
+ * @param[in] nbuf      Buffer amount.
+ * @return              #ev_errno_t
+ */
+ssize_t ev_file_read_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf);
+
+/**
+ * @brief Read position data.
  * @param[in] file      File handle.
  * @param[in] req       File operation token.
  * @param[in] bufs      Buffer list.
@@ -213,19 +255,19 @@ int ev_file_open_sync(ev_file_t* file, const char* path, int flags, int mode);
  * @param[in] cb        Read callback.
  * @return              #ev_errno_t
  */
-int ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+int ev_file_pread(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb);
 
 /**
- * @brief Like #ev_file_read(), but work in synchronous mode.
- * @see ev_file_read()
+ * @brief Like #ev_file_pread(), but work in synchronous mode.
+ * @see ev_file_pread()
  * @param[in] file      File handle.
  * @param[in] bufs      Buffer list.
  * @param[in] nbuf      Buffer amount.
  * @param[in] offset    Offset of file.
  * @return              #ev_errno_t
  */
-ssize_t ev_file_read_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
+ssize_t ev_file_pread_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
     ssize_t offset);
 
 /**
@@ -239,18 +281,41 @@ ssize_t ev_file_read_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
  * @return              #ev_errno_t
  */
 int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+    size_t nbuf, ev_file_cb cb);
+
+/**
+ * @brief Like #ev_file_pwrite(), but work in synchronous mode.
+ * @see ev_file_write()
+ * @param[in] file      File handle.
+ * @param[in] bufs      Buffer list.
+ * @param[in] nbuf      Buffer amount.
+ * @return              #ev_errno_t
+ */
+ssize_t ev_file_write_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf);
+
+/**
+ * @brief Write position data
+ * @param[in] file      File handle.
+ * @param[in] req       File operation token.
+ * @param[in] bufs      Buffer list.
+ * @param[in] nbuf      Buffer amount.
+ * @param[in] offset    Offset of file.
+ * @param[in] cb        Write callback.
+ * @return              #ev_errno_t
+ */
+int ev_file_pwrite(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb);
 
 /**
- * @brief Like #ev_file_write(), but work in synchronous mode.
- * @see ev_file_write()
+ * @brief Like #ev_file_pwrite(), but work in synchronous mode.
+ * @see ev_file_pwrite()
  * @param[in] file      File handle.
  * @param[in] bufs      Buffer list.
  * @param[in] nbuf      Buffer amount.
  * @param[in] offset    Offset of file.
  * @return              #ev_errno_t
  */
-ssize_t ev_file_write_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
+ssize_t ev_file_pwrite_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
     ssize_t offset);
 
 /**

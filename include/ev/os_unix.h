@@ -67,6 +67,10 @@
 #define EV_FS_S_IXUSR           S_IXUSR
 #define EV_FS_S_IRWXU           S_IRWXU
 
+#define EV_FS_SEEK_BEG			SEEK_SET
+#define EV_FS_SEEK_CUR			SEEK_CUR
+#define EV_FS_SEEK_END			SEEK_END
+
 #ifdef __cplusplus
 extern "C" {
 #endif

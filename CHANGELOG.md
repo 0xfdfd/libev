@@ -5,6 +5,7 @@
 ### BREAKING CHANGES
 1. remove `ev_todo_token_t`
 2. `ev_process_t` must be exited manually
+3. rename position read and write to `pread` and `pwrite`
 
 ### Features
 1. add detail information for `ev_fs_readfile()`
@@ -15,6 +16,7 @@
 6. submit threadpool task by loop api
 7. update test framework to v3.0.0
 8. use `ev_hrtime()` to get high-resolution time
+9. support normal file read / write / seek operations
 
 ### Bug Fixes
 1. fix: use uninitialised value in `ev_exepath()` on Unix

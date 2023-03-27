@@ -582,6 +582,59 @@ API_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int m
     return EV_SUCCESS;
 }
 
+API_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset)
+{
+    DWORD errcode;
+    LONG DistanceToMove = offset & 0XFFFFFFFF;
+    LONG DistanceToMoveHigh = offset >> 32;
+
+    if (SetFilePointer(file, DistanceToMove, &DistanceToMoveHigh, whence) == INVALID_SET_FILE_POINTER)
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    return 0;
+}
+
+API_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
+{
+    DWORD errcode;
+    DWORD bytes = 0;
+	if (file == INVALID_HANDLE_VALUE)
+	{
+		return ev__translate_sys_error(ERROR_INVALID_HANDLE);
+	}
+
+    size_t idx;
+    for (idx = 0; idx < nbuf; idx++)
+    {
+        DWORD incremental_bytes;
+        BOOL read_ret = ReadFile(file, bufs[idx].data, bufs[idx].size,
+            &incremental_bytes, NULL);
+        if (!read_ret)
+        {
+            goto error;
+        }
+        bytes += incremental_bytes;
+    }
+
+    return bytes;
+
+error:
+    errcode = GetLastError();
+    if (errcode == ERROR_HANDLE_EOF || errcode == ERROR_BROKEN_PIPE)
+    {
+        return bytes;
+    }
+
+	if (errcode == ERROR_ACCESS_DENIED)
+	{
+        errcode = ERROR_INVALID_FLAGS;
+	}
+	return ev__translate_sys_error(errcode);
+}
+
 API_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
 {
     if (file == INVALID_HANDLE_VALUE)
@@ -624,6 +677,40 @@ API_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, 
         err = ERROR_INVALID_FLAGS;
     }
     return ev__translate_sys_error(err);
+}
+
+API_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
+{
+    DWORD errcode;
+    DWORD bytes = 0;
+	if (file == INVALID_HANDLE_VALUE)
+	{
+		return ev__translate_sys_error(ERROR_INVALID_HANDLE);
+	}
+
+    size_t idx;
+    for (idx = 0; idx < nbuf; idx++)
+    {
+        DWORD incremental_bytes;
+        BOOL write_ret = WriteFile(file, bufs[idx].data, bufs[idx].size,
+            &incremental_bytes, NULL);
+        if (!write_ret)
+        {
+            goto error;
+        }
+
+        bytes += incremental_bytes;
+    }
+
+    return bytes;
+
+error:
+    errcode = GetLastError();
+	if (errcode == ERROR_ACCESS_DENIED)
+	{
+        errcode = ERROR_INVALID_FLAGS;
+	}
+	return ev__translate_sys_error(errcode);
 }
 
 API_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)

@@ -36,6 +36,7 @@ enum ev_fs_req_type_e
 {
     EV_FS_REQ_UNKNOWN,
     EV_FS_REQ_OPEN,
+    EV_FS_REQ_SEEK,
     EV_FS_REQ_READ,
     EV_FS_REQ_WRITE,
     EV_FS_REQ_FSTAT,

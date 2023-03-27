@@ -32,6 +32,11 @@ static void _ev_fs_cleanup_req_as_open(ev_fs_req_t* token)
     }
 }
 
+static void _ev_fs_cleanup_req_as_seek(ev_fs_req_t* req)
+{
+	(void)req;
+}
+
 static void _ev_fs_cleanup_req_as_read(ev_fs_req_t* req)
 {
     ev__read_exit(&req->req.as_read.read_req);
@@ -114,6 +119,17 @@ static int _ev_fs_init_req_as_open(ev_fs_req_t* token, ev_file_t* file,
 
     token->req.as_open.flags = flags;
     token->req.as_open.mode = mode;
+
+    return EV_SUCCESS;
+}
+
+static int _ev_fs_init_req_as_seek(ev_fs_req_t* token, ev_file_t* file,
+    int whence, ssize_t offset, ev_file_cb cb)
+{
+    _ev_fs_init_req(token, file, cb, EV_FS_REQ_SEEK);
+
+    token->req.as_seek.whence = whence;
+    token->req.as_seek.offset = offset;
 
     return EV_SUCCESS;
 }
@@ -314,21 +330,41 @@ static void _ev_file_on_open(ev_threadpool_work_t* work)
 
 static void _ev_file_on_read(ev_threadpool_work_t* work)
 {
+	ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
+	ev_file_t* file = req->file;
+	ev_read_t* read_req = &req->req.as_read.read_req;
+
+    req->result = ev_file_read_sync(file, read_req->data.bufs,
+        read_req->data.nbuf);
+}
+
+static void _ev_file_on_pread(ev_threadpool_work_t* work)
+{
     ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
     ev_file_t* file = req->file;
     ev_read_t* read_req = &req->req.as_read.read_req;
 
-    req->result = ev_file_read_sync(file, read_req->data.bufs,
+    req->result = ev_file_pread_sync(file, read_req->data.bufs,
         read_req->data.nbuf, req->req.as_read.offset);
 }
 
 static void _ev_file_on_write(ev_threadpool_work_t* work)
 {
+	ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
+	ev_file_t* file = req->file;
+	ev_write_t* write_req = &req->req.as_write.write_req;
+
+	req->result = ev_file_write_sync(file, write_req->bufs,
+		write_req->nbuf);
+}
+
+static void _ev_file_on_pwrite(ev_threadpool_work_t* work)
+{
     ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
     ev_file_t* file = req->file;
     ev_write_t* write_req = &req->req.as_write.write_req;
 
-    req->result = ev_file_write_sync(file, write_req->bufs,
+    req->result = ev_file_pwrite_sync(file, write_req->bufs,
         write_req->nbuf, req->req.as_write.offset);
 }
 
@@ -396,6 +432,65 @@ static void _ev_fs_on_mkdir(ev_threadpool_work_t* work)
     int mode = req->req.as_mkdir.mode;
 
     req->result = ev_fs_mkdir_sync(path, mode);
+}
+
+static int _ev_file_read_template(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+	size_t nbuf, ssize_t offset, ev_file_cb cb, ev_threadpool_work_cb work_cb)
+{
+	ev_loop_t* loop = file->base.loop;
+
+	int ret = _ev_fs_init_req_as_read(req, file, bufs, nbuf, offset, cb);
+	if (ret != EV_SUCCESS)
+	{
+		return ret;
+	}
+
+	ev__handle_event_add(&file->base);
+
+	ret = ev__loop_submit_threadpool(loop, &req->work_token,
+		EV_THREADPOOL_WORK_IO_FAST, work_cb, _ev_fs_on_done);
+	if (ret != EV_SUCCESS)
+	{
+		_ev_fs_cleanup_req_as_read(req);
+		ev__handle_event_dec(&file->base);
+		return ret;
+	}
+
+	return EV_SUCCESS;
+}
+
+static int _ev_file_pwrite_template(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+	size_t nbuf, ssize_t offset, ev_file_cb cb, ev_threadpool_work_cb work_cb)
+{
+	int ret;
+	ev_loop_t* loop = file->base.loop;
+
+	ret = _ev_fs_init_req_as_write(req, file, bufs, nbuf, offset, cb);
+	if (ret != EV_SUCCESS)
+	{
+		return ret;
+	}
+
+	ev__handle_event_add(&file->base);
+
+	ret = ev__loop_submit_threadpool(loop, &req->work_token,
+		EV_THREADPOOL_WORK_IO_FAST, work_cb, _ev_fs_on_done);
+	if (ret != EV_SUCCESS)
+	{
+		_ev_fs_cleanup_req_as_write(req);
+		ev__handle_event_dec(&file->base);
+		return ret;
+	}
+
+	return EV_SUCCESS;
+}
+
+static void _ev_fs_on_seek(ev_threadpool_work_t* work)
+{
+	ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
+	ev_file_t* file = req->file;
+
+	req->result = ev__fs_seek(file->file, req->req.as_seek.whence, req->req.as_seek.offset);
 }
 
 int ev_file_init(ev_loop_t* loop, ev_file_t* file)
@@ -486,64 +581,66 @@ int ev_file_open_sync(ev_file_t* file, const char* path, int flags, int mode)
     return ev__fs_open(&file->file, path, flags, mode);
 }
 
-int ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
-    size_t nbuf, ssize_t offset, ev_file_cb cb)
+int ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence, ssize_t offset, ev_file_cb cb)
 {
-    ev_loop_t* loop = file->base.loop;
-
-    int ret = _ev_fs_init_req_as_read(req, file, bufs, nbuf, offset, cb);
-    if (ret != EV_SUCCESS)
-    {
-        return ret;
-    }
+    int ret;
+	ev_loop_t* loop = file->base.loop;
+    _ev_fs_init_req_as_seek(req, file, whence, offset, cb);
 
     ev__handle_event_add(&file->base);
 
     ret = ev__loop_submit_threadpool(loop, &req->work_token,
-        EV_THREADPOOL_WORK_IO_FAST, _ev_file_on_read, _ev_fs_on_done);
-    if (ret != EV_SUCCESS)
-    {
-        _ev_fs_cleanup_req_as_read(req);
-        ev__handle_event_dec(&file->base);
-        return ret;
-    }
+        EV_THREADPOOL_WORK_IO_FAST, _ev_fs_on_seek, _ev_fs_on_done);
+	if (ret != EV_SUCCESS)
+	{
+		ev__handle_event_dec(&file->base);
+		return ret;
+	}
 
     return EV_SUCCESS;
 }
 
-ssize_t ev_file_read_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
+int ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+    size_t nbuf, ev_file_cb cb)
+{
+    return _ev_file_read_template(file, req, bufs, nbuf, 0, cb, _ev_file_on_read);
+}
+
+ssize_t ev_file_read_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf)
+{
+    return ev__fs_readv(file->file, bufs, nbuf);
+}
+
+int ev_file_pread(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+    size_t nbuf, ssize_t offset, ev_file_cb cb)
+{
+    return _ev_file_read_template(file, req, bufs, nbuf, offset, cb, _ev_file_on_pread);
+}
+
+ssize_t ev_file_pread_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
     ssize_t offset)
 {
     return ev__fs_preadv(file->file, bufs, nbuf, offset);
 }
 
 int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
-    size_t nbuf, ssize_t offset, ev_file_cb cb)
+	size_t nbuf, ev_file_cb cb)
 {
-    int ret;
-    ev_loop_t* loop = file->base.loop;
-
-    ret = _ev_fs_init_req_as_write(req, file, bufs, nbuf, offset, cb);
-    if (ret != EV_SUCCESS)
-    {
-        return ret;
-    }
-
-    ev__handle_event_add(&file->base);
-
-    ret = ev__loop_submit_threadpool(loop, &req->work_token,
-        EV_THREADPOOL_WORK_IO_FAST, _ev_file_on_write, _ev_fs_on_done);
-    if (ret != EV_SUCCESS)
-    {
-        _ev_fs_cleanup_req_as_write(req);
-        ev__handle_event_dec(&file->base);
-        return ret;
-    }
-
-    return EV_SUCCESS;
+	return _ev_file_pwrite_template(file, req, bufs, nbuf, 0, cb, _ev_file_on_write);
 }
 
-ssize_t ev_file_write_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
+ssize_t ev_file_write_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf)
+{
+    return ev__fs_writev(file->file, bufs, nbuf);
+}
+
+int ev_file_pwrite(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+    size_t nbuf, ssize_t offset, ev_file_cb cb)
+{
+    return _ev_file_pwrite_template(file, req, bufs, nbuf, offset, cb, _ev_file_on_pwrite);
+}
+
+ssize_t ev_file_pwrite_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
     ssize_t offset)
 {
     return ev__fs_pwritev(file->file, bufs, nbuf, offset);
@@ -656,6 +753,10 @@ void ev_fs_req_cleanup(ev_fs_req_t* req)
     {
     case EV_FS_REQ_OPEN:
         _ev_fs_cleanup_req_as_open(req);
+        break;
+
+    case EV_FS_REQ_SEEK:
+        _ev_fs_cleanup_req_as_seek(req);
         break;
 
     case EV_FS_REQ_READ:

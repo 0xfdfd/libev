@@ -101,6 +101,21 @@ typedef intptr_t ssize_t;
 #define EV_FS_S_IRWXU           (EV_FS_S_IRUSR | EV_FS_S_IWUSR | EV_FS_S_IXUSR)
 
 /**
+ * @brief The starting point is zero or the beginning of the file.
+ */
+#define EV_FS_SEEK_BEG			FILE_BEGIN
+
+/**
+ * @brief The starting point is the current value of the file pointer.
+ */
+#define EV_FS_SEEK_CUR			FILE_CURRENT
+
+/**
+ * @brief The starting point is the current end-of-file position.
+ */
+#define EV_FS_SEEK_END			FILE_END
+
+/**
  * @brief Windows system define of file.
  */
 typedef HANDLE                  ev_os_file_t;
