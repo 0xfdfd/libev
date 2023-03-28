@@ -8,7 +8,6 @@
 #if defined(_WIN32)
 #   include  <io.h>
 #   include <direct.h>
-#   define unlink(x)        _unlink(x)
 #   define rmdir(p)         _rmdir(p)
 #   define access(a, b)     _access(a, b)
 #   define F_OK             0
@@ -39,7 +38,7 @@ static void _test_fs_cleanup(void)
     static char buffer[1024];
 
     /* delete sample file */
-    unlink(s_sample_file);
+    ev_fs_remove_sync(s_sample_file, 1);
 
     /* delete sample dir */
     snprintf(buffer, sizeof(buffer), "%s", s_sample_path);

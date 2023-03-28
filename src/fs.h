@@ -112,6 +112,14 @@ API_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg);
  */
 API_LOCAL int ev__fs_mkdir(const char* path, int mode);
 
+/**
+ * @brief Remove file or directory.
+ * @param[in] path      File path.
+ * @param[in] recursive Recursive if it is a directory.
+ * @return              #ev_errno_t
+ */
+API_LOCAL int ev__fs_remove(const char* path, int recursive);
+
 #ifdef __cplusplus
 }
 #endif

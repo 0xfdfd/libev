@@ -4,7 +4,13 @@
 #include "threadpool.h"
 #include "allocator.h"
 #include "handle.h"
+#include "misc.h"
+#include <sys/stat.h>
 #include <assert.h>
+
+#if !defined(S_ISDIR) && defined(S_IFMT) && defined(S_IFDIR)
+#   define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#endif
 
 typedef struct ev_dirent_record_s
 {
@@ -17,6 +23,12 @@ typedef struct fs_readdir_helper
     ev_fs_req_t*        req;    /**< File system request */
     ssize_t             cnt;    /**< Dirent counter */
 } fs_readdir_helper_t;
+
+typedef struct fs_remove_helper
+{
+	const char*         parent_path;
+	int                 ret;
+} fs_remove_helper_t;
 
 static void _ev_fs_erase_req(ev_file_t* file, ev_fs_req_t* req)
 {
@@ -91,6 +103,15 @@ static void _ev_fs_cleanup_req_as_mkdir(ev_fs_req_t* req)
     {
         ev__free(req->req.as_mkdir.path);
         req->req.as_mkdir.path = NULL;
+    }
+}
+
+static void _ev_fs_cleanup_req_as_remove(ev_fs_req_t* req)
+{
+    if (req->req.as_remove.path != NULL)
+    {
+        ev__free(req->req.as_remove.path);
+        req->req.as_remove.path = NULL;
     }
 }
 
@@ -210,6 +231,20 @@ static int _ev_fs_init_req_as_mkdir(ev_fs_req_t* req, const char* path, int mode
         return EV_ENOMEM;
     }
     req->req.as_mkdir.mode = mode;
+
+    return EV_SUCCESS;
+}
+
+static int _ev_fs_init_req_as_remove(ev_fs_req_t* req, const char* path, int recursion, ev_file_cb cb)
+{
+    _ev_fs_init_req(req, NULL, cb, EV_FS_REQ_REMOVE);
+
+    req->req.as_remove.path = ev__strdup(path);
+    if (req->req.as_remove.path == NULL)
+    {
+        return EV_ENOMEM;
+    }
+    req->req.as_remove.recursion = recursion;
 
     return EV_SUCCESS;
 }
@@ -434,6 +469,14 @@ static void _ev_fs_on_mkdir(ev_work_t* work)
     req->result = ev_fs_mkdir_sync(path, mode);
 }
 
+static void _ev_fs_on_remove(ev_work_t* work)
+{
+    ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
+    const char* path = req->req.as_remove.path;
+
+    req->result = ev_fs_remove_sync(path, req->req.as_remove.recursion);
+}
+
 static int _ev_file_read_template(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
 	size_t nbuf, ssize_t offset, ev_file_cb cb, ev_work_cb work_cb)
 {
@@ -491,6 +534,34 @@ static void _ev_fs_on_seek(ev_work_t* work)
 	ev_file_t* file = req->file;
 
 	req->result = ev__fs_seek(file->file, req->req.as_seek.whence, req->req.as_seek.offset);
+}
+
+static int _ev_fs_remove(const char* path)
+{
+	int errcode;
+	if (remove(path) != 0)
+	{
+		errcode = errno;
+		return ev__translate_sys_error(errcode);
+	}
+	return 0;
+}
+
+static  int _ev_fs_remove_helper(ev_dirent_t* info, void* arg)
+{
+	fs_remove_helper_t* helper = arg;
+	const char* parent_path = helper->parent_path;
+	size_t parent_path_sz = strlen(parent_path);
+	size_t name_sz = strlen(info->name);
+	size_t full_path_sz = parent_path_sz + 1 + name_sz;
+
+	char* full_path = ev__malloc(full_path_sz + 1);
+	snprintf(full_path, full_path_sz + 1, "%s/%s", parent_path, info->name);
+
+	helper->ret = ev__fs_remove(full_path, 1);
+	ev__free(full_path);
+
+	return helper->ret;
 }
 
 int ev_file_init(ev_loop_t* loop, ev_file_t* file)
@@ -742,6 +813,32 @@ int ev_fs_mkdir_sync(const char* path, int mode)
     return ev__fs_mkdir(path, mode);
 }
 
+int ev_fs_remove(ev_loop_t* loop, ev_fs_req_t* req, const char* path, int recursion, ev_file_cb cb)
+{
+    int ret;
+
+    ret = _ev_fs_init_req_as_remove(req, path, recursion, cb);
+    if (ret != EV_SUCCESS)
+    {
+        return ret;
+    }
+
+    ret = ev__loop_submit_threadpool(loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
+        _ev_fs_on_remove, _ev_fs_on_done);
+    if (ret != EV_SUCCESS)
+    {
+        _ev_fs_cleanup_req_as_remove(req);
+        return ret;
+    }
+
+    return EV_SUCCESS;
+}
+
+int ev_fs_remove_sync(const char* path, int recursion)
+{
+    return ev__fs_remove(path, recursion);
+}
+
 ev_fs_stat_t* ev_fs_get_statbuf(ev_fs_req_t* req)
 {
     return &req->rsp.fileinfo;
@@ -827,4 +924,33 @@ ev_dirent_t* ev_fs_get_next_dirent(ev_dirent_t* curr)
 ev_buf_t* ev_fs_get_filecontent(ev_fs_req_t* req)
 {
     return &req->rsp.filecontent;
+}
+
+API_LOCAL int ev__fs_remove(const char* path, int recursive)
+{
+    int ret;
+
+    struct stat buf;
+    if (stat(path, &buf) != 0)
+    {
+        ret = errno;
+        return ev__translate_sys_error(ret);
+    }
+
+    if (!S_ISDIR(buf.st_mode) || !recursive)
+    {
+        goto finish;
+    }
+
+    fs_remove_helper_t helper;
+    helper.parent_path = path;
+    helper.ret = 0;
+
+    if ((ret = ev__fs_readdir(path, _ev_fs_remove_helper, &helper)) != 0)
+    {
+        return helper.ret;
+	}
+
+finish:
+    return _ev_fs_remove(path);
 }

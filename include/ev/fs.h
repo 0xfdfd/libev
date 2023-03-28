@@ -129,6 +129,12 @@ struct ev_fs_req_s
             char*               path;           /**< Directory path */
             int                 mode;           /**< The mode for the new directory */
         }as_mkdir;
+
+        struct
+        {
+            char*               path;           /**< Path */
+            int                 recursion;      /**< Recursion delete */
+        } as_remove;
     }req;
 
     union
@@ -398,6 +404,25 @@ int ev_fs_mkdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path, int mode,
  * @return              #ev_errno_t
  */
 int ev_fs_mkdir_sync(const char* path, int mode);
+
+/**
+ * @brief Delete a name for the file system.
+ * @param[in] loop      Event loop.
+ * @param[in] req       File system request.
+ * @param[in] path      File path.
+ * @param[in] cb        Result callback.
+ * @return              #ev_errno_t
+ */
+int ev_fs_remove(ev_loop_t* loop, ev_fs_req_t* req, const char* path, 
+    int recursion, ev_file_cb cb);
+
+/**
+ * @brief Like #ev_fs_remove(), but work in synchronous mode.
+ * @param[in] path      File path.
+ * @param[in] recursion Recursion delete if path is a directory.
+ * @return              #ev_errno_t
+ */
+int ev_fs_remove_sync(const char* path, int recursion);
 
 /**
  * @brief Cleanup file system request

@@ -43,6 +43,7 @@ enum ev_fs_req_type_e
     EV_FS_REQ_READDIR,
     EV_FS_REQ_READFILE,
     EV_FS_REQ_MKDIR,
+    EV_FS_REQ_REMOVE,
 };
 
 /**
