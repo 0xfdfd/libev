@@ -6,6 +6,7 @@
 #include "handle.h"
 #include "misc.h"
 #include <sys/stat.h>
+#include <string.h>
 #include <assert.h>
 
 #if !defined(S_ISDIR) && defined(S_IFMT) && defined(S_IFDIR)
