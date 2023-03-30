@@ -4,30 +4,10 @@
 #include "loop_win.h"
 #include "thread_win.h"
 #include "threadpool_win.h"
-#include "winapi.h"
+#include "winsock.h"
 #include <assert.h>
 
 ev_loop_win_ctx_t g_ev_loop_win_ctx;
-
-static void _ev_net_init_win(void)
-{
-    int ret; (void)ret;
-    WSADATA wsa_data;
-    if ((ret = WSAStartup(MAKEWORD(2, 2), &wsa_data)) != 0)
-    {
-        assert(ret == 0);
-    }
-
-    g_ev_loop_win_ctx.net.zero_[0] = '\0';
-    if ((ret = ev_ipv4_addr("0.0.0.0", 0, &g_ev_loop_win_ctx.net.addr_any_ip4)) != EV_SUCCESS)
-    {
-        assert(ret == EV_SUCCESS);
-    }
-    if ((ret = ev_ipv6_addr("::", 0, &g_ev_loop_win_ctx.net.addr_any_ip6)) != EV_SUCCESS)
-    {
-        assert(ret == EV_SUCCESS);
-    }
-}
 
 static void _ev_time_init_win(void)
 {
@@ -92,8 +72,10 @@ static void _ev_check_layout_win(void)
 
 static void _ev_init_once_win(void)
 {
+    g_ev_loop_win_ctx.net.zero_[0] = '\0';
+
     _ev_check_layout_win();
-    _ev_net_init_win();
+    ev__winsock_init();
     ev__winapi_init();
     _ev_time_init_win();
     ev__thread_init_win();

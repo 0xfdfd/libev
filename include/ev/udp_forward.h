@@ -1,5 +1,8 @@
 #ifndef __EV_UDP_FORWARD_H__
 #define __EV_UDP_FORWARD_H__
+
+#include <sys/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -74,11 +77,11 @@ typedef void (*ev_udp_write_cb)(ev_udp_write_t* req, size_t size, int stat);
 
 /**
  * @brief Read callback
- * @param[in] req       Read callback
- * @param[in] size      Read size
- * @param[in] stat      Read result
+ * @param[in] req       Read callback.
+ * @param[in] addr      Peer address.
+ * @param[in] size      Read result.
  */
-typedef void (*ev_udp_recv_cb)(ev_udp_read_t* req, size_t size, int stat);
+typedef void (*ev_udp_recv_cb)(ev_udp_read_t* req, const struct sockaddr* addr, ssize_t size);
 
 /**
  * @} EV_UDP

@@ -1,7 +1,7 @@
 #include "ev.h"
 #include "handle.h"
 #include "loop_win.h"
-#include "winapi.h"
+#include "winsock.h"
 #include "misc_win.h"
 #include "tcp_win.h"
 #include <WinSock2.h>
@@ -337,13 +337,13 @@ static int _ev_tcp_bind_any_addr(ev_tcp_t* sock, int af)
     switch (af)
     {
     case AF_INET:
-        bind_addr = (struct sockaddr*)&g_ev_loop_win_ctx.net.addr_any_ip4;
-        name_len = sizeof(g_ev_loop_win_ctx.net.addr_any_ip4);
+        bind_addr = (struct sockaddr*)&ev_addr_ip4_any_;
+        name_len = sizeof(ev_addr_ip4_any_);
         break;
 
     case AF_INET6:
-        bind_addr = (struct sockaddr*)&g_ev_loop_win_ctx.net.addr_any_ip6;
-        name_len = sizeof(g_ev_loop_win_ctx.net.addr_any_ip6);
+        bind_addr = (struct sockaddr*)&ev_addr_ip6_any_;
+        name_len = sizeof(ev_addr_ip6_any_);
         break;
 
     default:

@@ -5,7 +5,6 @@
 #define __EV_BACKEND_UNIX_H__
 
 #include "ev/defs.h"
-#include "ev/os_unix.h"
 #include "ev/map.h"
 #include "ev/list.h"
 #include "ev/ipc-protocol.h"

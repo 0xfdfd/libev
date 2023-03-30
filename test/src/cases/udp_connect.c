@@ -48,11 +48,11 @@ static void _on_test_write_done_5295(ev_udp_write_t* req, size_t size, int stat)
     ASSERT_EQ_INT(stat, EV_SUCCESS);
 }
 
-static void _on_test_read_done_5295(ev_udp_read_t* req, size_t size, int stat)
+static void _on_test_read_done_5295(ev_udp_read_t* req, const struct sockaddr* addr, ssize_t size)
 {
+    (void)addr;
     ASSERT_EQ_PTR(req, &g_test_5295->r_req);
-    ASSERT_EQ_SIZE(size, sizeof(g_test_5295->w_buf));
-    ASSERT_EQ_INT(stat, EV_SUCCESS);
+    ASSERT_EQ_SSIZE(size, sizeof(g_test_5295->w_buf));
 
     ASSERT_EQ_INT(memcmp(g_test_5295->w_buf, g_test_5295->r_buf, size), 0);
 }

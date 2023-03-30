@@ -3,6 +3,9 @@
 
 #include "misc.h"
 
+#define EV_FATAL_SYSCALL(errcode, syscall)	\
+	ev__fatal_syscall(__FILE__, __LINE__, errcode, syscall)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -23,12 +26,8 @@ API_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src);
  */
 API_LOCAL ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src);
 
-/**
- * @brief Convert typeof NTSTATUS error to typeof WinSock error
- * @param[in] status  NTSTATUS error
- * @return WinSock error
- */
-API_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status);
+API_LOCAL void ev__fatal_syscall(const char* file, int line,
+	DWORD errcode, const char* syscall);
 
 #ifdef __cplusplus
 }

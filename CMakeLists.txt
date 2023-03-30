@@ -11,7 +11,6 @@ option(EV_AMALGAMATE_BUILD "Build amalgamate source file" OFF)
 set(ev_header_pre
     "include/ev.h"
     "include/ev/defs.h"
-    "include/ev/os.h"
     "include/ev/backend.h"
     "include/ev/list.h"
     "include/ev/map_low.h"
@@ -31,18 +30,15 @@ set(ev_header_pre
 )
 
 set(ev_hdr_os_win
-    "include/ev/os_win.h"
     "include/ev/backend_win.h"
 )
 
 set(ev_hdr_os_unix
-    "include/ev/os_unix.h"
     "include/ev/backend_unix.h"
 )
 
 set(ev_hdr_post
     "include/ev/errno.h"
-    "include/ev/allocator.h"
     "include/ev/handle.h"
     "include/ev/async.h"
     "include/ev/buf.h"
@@ -63,7 +59,6 @@ set(ev_hdr_post
     "include/ev/thread.h"
     "include/ev/timer.h"
     "include/ev/udp.h"
-    "include/ev/version.h"
 )
 
 set(ev_src_hdr
@@ -84,6 +79,7 @@ set(ev_src_hdr
 
 set(ev_src_hdr_os_win
     "src/win/winapi.h"
+    "src/win/winsock.h"
     "src/win/async_win.h"
     "src/win/fs_win.h"
     "src/win/udp_win.h"
@@ -143,6 +139,7 @@ set(ev_src_os_win
     "src/win/threadpool_win.c"
     "src/win/udp_win.c"
     "src/win/winapi.c"
+    "src/win/winsock.c"
 )
 
 set(ev_src_os_unix

@@ -1,8 +1,6 @@
 #ifndef __EV_SEM_H__
 #define __EV_SEM_H__
 
-#include "ev/os.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif

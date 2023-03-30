@@ -24,12 +24,13 @@ static void _ev_udp_w_user_callback_unix(ev_udp_t* udp, ev_udp_write_t* req, siz
     req->usr_cb(req, size, stat);
 }
 
-static void _ev_udp_r_user_callback_unix(ev_udp_t* udp, ev_udp_read_t* req, size_t size, int stat)
+static void _ev_udp_r_user_callback_unix(ev_udp_t* udp, ev_udp_read_t* req,
+    const struct sockaddr* addr, ssize_t size)
 {
     ev__handle_event_dec(&udp->base);
     ev__read_exit(&req->base);
     ev__handle_exit(&req->handle, NULL);
-    req->usr_cb(req, size, stat);
+    req->usr_cb(req, addr, size);
 }
 
 static void _ev_udp_cancel_all_w_unix(ev_udp_t* udp, int err)
@@ -48,7 +49,7 @@ static void _ev_udp_cancel_all_r_unix(ev_udp_t* udp, int err)
     while ((it = ev_list_pop_front(&udp->recv_list)) != NULL)
     {
         ev_udp_read_t* req = EV_CONTAINER_OF(it, ev_udp_read_t, base.node);
-        _ev_udp_r_user_callback_unix(udp, req, req->base.data.size, err);
+        _ev_udp_r_user_callback_unix(udp, req, NULL, err);
     }
 }
 
@@ -241,7 +242,7 @@ static int _ev_udp_on_io_read_unix(ev_udp_t* udp)
         }
 
         ev_list_erase(&udp->recv_list, it);
-        _ev_udp_r_user_callback_unix(udp, req, req->base.data.size, EV_SUCCESS);
+        _ev_udp_r_user_callback_unix(udp, req, (struct sockaddr*)&req->addr, req->base.data.size);
     }
 
     if (ret == EV_EAGAIN)

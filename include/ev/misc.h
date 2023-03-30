@@ -2,7 +2,6 @@
 #define __EV_MISC_H__
 
 #include "ev/defs.h"
-#include "ev/os.h"
 #include "ev/buf.h"
 #include <stdarg.h>
 

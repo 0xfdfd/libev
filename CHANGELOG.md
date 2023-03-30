@@ -8,6 +8,7 @@
 3. rename position read and write to `pread` and `pwrite`
 4. embed default thread pool
 5. change thread pool functions
+6. expose peeraddr in udp recv callback
 
 ### Features
 1. add detail information for `ev_fs_readfile()`

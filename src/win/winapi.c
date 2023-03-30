@@ -22,6 +22,7 @@ API_LOCAL void ev__winapi_init(void)
     GET_NTDLL_FUNC(NtQueryInformationFile);
     GET_NTDLL_FUNC(RtlNtStatusToDosError);
     GET_NTDLL_FUNC(NtQueryVolumeInformationFile);
+    GET_NTDLL_FUNC(NtDeviceIoControlFile);
 
 #undef GET_NTDLL_FUNC
 }

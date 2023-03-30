@@ -5,7 +5,6 @@
 #define __EV_BACKEND_WIN_H__
 
 #include "ev/defs.h"
-#include "ev/os_win.h"
 #include "ev/ipc-protocol.h"
 #include "ev/map.h"
 #include "ev/tcp_forward.h"
@@ -193,6 +192,15 @@ typedef int (WSAAPI* ev_wsarecvfrom_fn)(
     LPWSAOVERLAPPED overlapped,
     LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine);
 
+typedef int (WSAAPI* ev_wsarecv_fn)(
+    SOCKET socket,
+    LPWSABUF buffers,
+	DWORD buffer_count,
+    LPDWORD bytes,
+    LPDWORD flags,
+    LPWSAOVERLAPPED overlapped,
+	LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine);
+
 /**
  * @brief Windows backend for #ev_udp_write_t.
  */
@@ -218,6 +226,7 @@ typedef struct ev_udp_read_backend
  */
 typedef struct ev_udp_backend
 {
+    ev_wsarecv_fn               fn_wsarecv;
     ev_wsarecvfrom_fn           fn_wsarecvfrom;     /**< WSARecvFrom() */
 }ev_udp_backend_t;
 

@@ -54,127 +54,6 @@ API_LOCAL ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src)
     return (ssize_t)ret;
 }
 
-API_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status)
-{
-    switch (status)
-    {
-        case STATUS_SUCCESS:
-            return ERROR_SUCCESS;
-
-        case STATUS_PENDING:
-            return ERROR_IO_PENDING;
-
-        case STATUS_INVALID_HANDLE:
-        case STATUS_OBJECT_TYPE_MISMATCH:
-            return WSAENOTSOCK;
-
-        case STATUS_INSUFFICIENT_RESOURCES:
-        case STATUS_PAGEFILE_QUOTA:
-        case STATUS_COMMITMENT_LIMIT:
-        case STATUS_WORKING_SET_QUOTA:
-        case STATUS_NO_MEMORY:
-        case STATUS_QUOTA_EXCEEDED:
-        case STATUS_TOO_MANY_PAGING_FILES:
-        case STATUS_REMOTE_RESOURCES:
-            return WSAENOBUFS;
-
-        case STATUS_TOO_MANY_ADDRESSES:
-        case STATUS_SHARING_VIOLATION:
-        case STATUS_ADDRESS_ALREADY_EXISTS:
-            return WSAEADDRINUSE;
-
-        case STATUS_LINK_TIMEOUT:
-        case STATUS_IO_TIMEOUT:
-        case STATUS_TIMEOUT:
-            return WSAETIMEDOUT;
-
-        case STATUS_GRACEFUL_DISCONNECT:
-            return WSAEDISCON;
-
-        case STATUS_REMOTE_DISCONNECT:
-        case STATUS_CONNECTION_RESET:
-        case STATUS_LINK_FAILED:
-        case STATUS_CONNECTION_DISCONNECTED:
-        case STATUS_PORT_UNREACHABLE:
-        case STATUS_HOPLIMIT_EXCEEDED:
-            return WSAECONNRESET;
-
-        case STATUS_LOCAL_DISCONNECT:
-        case STATUS_TRANSACTION_ABORTED:
-        case STATUS_CONNECTION_ABORTED:
-            return WSAECONNABORTED;
-
-        case STATUS_BAD_NETWORK_PATH:
-        case STATUS_NETWORK_UNREACHABLE:
-        case STATUS_PROTOCOL_UNREACHABLE:
-            return WSAENETUNREACH;
-
-        case STATUS_HOST_UNREACHABLE:
-            return WSAEHOSTUNREACH;
-
-        case STATUS_CANCELLED:
-        case STATUS_REQUEST_ABORTED:
-            return WSAEINTR;
-
-        case STATUS_BUFFER_OVERFLOW:
-        case STATUS_INVALID_BUFFER_SIZE:
-            return WSAEMSGSIZE;
-
-        case STATUS_BUFFER_TOO_SMALL:
-        case STATUS_ACCESS_VIOLATION:
-            return WSAEFAULT;
-
-        case STATUS_DEVICE_NOT_READY:
-        case STATUS_REQUEST_NOT_ACCEPTED:
-            return WSAEWOULDBLOCK;
-
-        case STATUS_INVALID_NETWORK_RESPONSE:
-        case STATUS_NETWORK_BUSY:
-        case STATUS_NO_SUCH_DEVICE:
-        case STATUS_NO_SUCH_FILE:
-        case STATUS_OBJECT_PATH_NOT_FOUND:
-        case STATUS_OBJECT_NAME_NOT_FOUND:
-        case STATUS_UNEXPECTED_NETWORK_ERROR:
-            return WSAENETDOWN;
-
-        case STATUS_INVALID_CONNECTION:
-            return WSAENOTCONN;
-
-        case STATUS_REMOTE_NOT_LISTENING:
-        case STATUS_CONNECTION_REFUSED:
-            return WSAECONNREFUSED;
-
-        case STATUS_PIPE_DISCONNECTED:
-            return WSAESHUTDOWN;
-
-        case STATUS_CONFLICTING_ADDRESSES:
-        case STATUS_INVALID_ADDRESS:
-        case STATUS_INVALID_ADDRESS_COMPONENT:
-            return WSAEADDRNOTAVAIL;
-
-        case STATUS_NOT_SUPPORTED:
-        case STATUS_NOT_IMPLEMENTED:
-            return WSAEOPNOTSUPP;
-
-        case STATUS_ACCESS_DENIED:
-            return WSAEACCES;
-
-        default:
-            if ((status & (FACILITY_NTWIN32 << 16)) == (FACILITY_NTWIN32 << 16) &&
-                (status & (ERROR_SEVERITY_ERROR | ERROR_SEVERITY_WARNING)))
-            {
-                /* It's a windows error that has been previously mapped to an ntstatus
-                 * code. */
-                return (DWORD)(status & 0xffff);
-            }
-            else
-            {
-                /* The default fallback for unmappable ntstatus codes. */
-                return WSAEINVAL;
-            }
-    }
-}
-
 API_LOCAL int ev__translate_sys_error(int err)
 {
     switch (err)
@@ -280,6 +159,37 @@ API_LOCAL int ev__translate_sys_error(int err)
         case ERROR_META_EXPANSION_TOO_LONG:     return EV_E2BIG;
         default:                                EV_ABORT("errno:%d", err);
     }
+}
+
+API_LOCAL void ev__fatal_syscall(const char* file, int line,
+    DWORD errcode, const char* syscall)
+{
+    const char* errmsg = "Unknown error";
+    char* buf = NULL;
+    FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL, errcode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&buf, 0, NULL);
+    if (buf)
+    {
+        errmsg = buf;
+    }
+
+    if (syscall != NULL)
+    {
+        fprintf(stderr, "%s:%d: [%s] %s(%d)\n", file, line, syscall, errmsg, (int)errcode);
+    }
+    else
+    {
+        fprintf(stderr, "%s:%d: %s(%d)\n", file, line, errmsg, (int)errcode);
+    }
+
+    if (buf)
+    {
+        LocalFree(buf);
+        buf = NULL;
+    }
+
+    __debugbreak();
+    abort();
 }
 
 void ev_library_shutdown(void)

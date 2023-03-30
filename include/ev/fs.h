@@ -10,7 +10,6 @@
 #include "ev/loop_forward.h"
 #include "ev/threadpool.h"
 #include "ev/request.h"
-#include "ev/os.h"
 #include "ev/time.h"
 
 #ifdef __cplusplus
