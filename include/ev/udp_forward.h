@@ -69,11 +69,10 @@ typedef void (*ev_udp_cb)(ev_udp_t* udp);
 
 /**
  * @brief Write callback
- * @param[in] req       Write request
- * @param[in] size      Write size
- * @param[in] stat      Write result
+ * @param[in] req       Write request.
+ * @param[in] size      Write result.
  */
-typedef void (*ev_udp_write_cb)(ev_udp_write_t* req, size_t size, int stat);
+typedef void (*ev_udp_write_cb)(ev_udp_write_t* req, ssize_t size);
 
 /**
  * @brief Read callback

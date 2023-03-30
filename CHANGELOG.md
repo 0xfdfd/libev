@@ -9,6 +9,7 @@
 4. embed default thread pool
 5. change thread pool functions
 6. expose peeraddr in udp recv callback
+7. reduce parameter in udp send callback
 
 ### Features
 1. add detail information for `ev_fs_readfile()`

@@ -41,11 +41,10 @@ TEST_FIXTURE_TEARDOWN(udp)
     g_test_5295 = NULL;
 }
 
-static void _on_test_write_done_5295(ev_udp_write_t* req, size_t size, int stat)
+static void _on_test_write_done_5295(ev_udp_write_t* req, ssize_t size)
 {
     ASSERT_EQ_PTR(&g_test_5295->w_req, req);
-    ASSERT_EQ_SIZE(size, sizeof(g_test_5295->w_buf));
-    ASSERT_EQ_INT(stat, EV_SUCCESS);
+    ASSERT_EQ_SSIZE(size, sizeof(g_test_5295->w_buf));
 }
 
 static void _on_test_read_done_5295(ev_udp_read_t* req, const struct sockaddr* addr, ssize_t size)

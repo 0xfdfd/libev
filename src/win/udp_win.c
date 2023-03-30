@@ -321,7 +321,7 @@ static int _ev_udp_set_source_membership_ipv6(ev_udp_t* udp,
     return EV_SUCCESS;
 }
 
-static void _ev_udp_w_user_callback_win(ev_udp_write_t* req, size_t size, int stat)
+static void _ev_udp_w_user_callback_win(ev_udp_write_t* req, ssize_t size)
 {
     ev_udp_t* udp = req->backend.owner;
     ev__handle_event_dec(&udp->base);
@@ -329,7 +329,7 @@ static void _ev_udp_w_user_callback_win(ev_udp_write_t* req, size_t size, int st
     ev__write_exit(&req->base);
     ev__handle_exit(&req->handle, NULL);
 
-    req->usr_cb(req, size, stat);
+    req->usr_cb(req, size);
 }
 
 static void _ev_udp_r_user_callback_win(ev_udp_read_t* req, const struct sockaddr* addr, ssize_t size)
@@ -346,7 +346,13 @@ static void _ev_udp_r_user_callback_win(ev_udp_read_t* req, const struct sockadd
 static void _ev_udp_on_send_complete_win(ev_udp_t* udp, ev_udp_write_t* req)
 {
     ev_list_erase(&udp->send_list, &req->base.node);
-    _ev_udp_w_user_callback_win(req, req->base.size, req->backend.stat);
+
+    ssize_t result = req->backend.stat;
+    if (result >= 0)
+    {
+        result = req->base.size;
+    }
+    _ev_udp_w_user_callback_win(req, result);
 }
 
 static void _ev_udp_on_send_bypass_iocp(ev_handle_t* handle)

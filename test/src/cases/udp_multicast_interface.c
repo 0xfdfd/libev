@@ -26,12 +26,11 @@ TEST_FIXTURE_TEARDOWN(udp)
     ASSERT_EQ_INT(ev_loop_exit(&g_test_6e87.loop), 0);
 }
 
-static void _on_send_finish_6e87(ev_udp_write_t* req, size_t size, int stat)
+static void _on_send_finish_6e87(ev_udp_write_t* req, ssize_t size)
 {
     g_test_6e87.cnt_send++;
     ASSERT_EQ_PTR(req, &g_test_6e87.token);
-    ASSERT_EQ_INT(stat, EV_SUCCESS);
-    ASSERT_EQ_SIZE(size, 4);
+    ASSERT_EQ_SSIZE(size, 4);
 }
 
 TEST_F(udp, multicast_interface)
