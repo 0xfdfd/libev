@@ -45,7 +45,7 @@ int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
     ev__handle_init(loop, &handle->base, EV_ROLE_EV_ASYNC);
     ev__handle_event_add(&handle->base);
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)

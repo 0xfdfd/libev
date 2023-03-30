@@ -34,7 +34,7 @@ static void _idle_client_on_accept(ev_tcp_t* lisn, ev_tcp_t* conn, int stat)
 {
     ASSERT_EQ_PTR(lisn, &g_test_43e2.l_sock);
     ASSERT_EQ_PTR(conn, &g_test_43e2.s_sock);
-    ASSERT_EQ_INT(stat, EV_SUCCESS);
+    ASSERT_EQ_INT(stat, 0);
 }
 
 static int _idle_client_setup_once_server(void)
@@ -59,7 +59,7 @@ static int _idle_client_setup_once_server(void)
 static void _idle_client_on_connect(ev_tcp_t* sock, int stat)
 {
     ASSERT_EQ_PTR(sock, &g_test_43e2.c_sock);
-    ASSERT_EQ_INT(stat, EV_SUCCESS);
+    ASSERT_EQ_INT(stat, 0);
 }
 
 static void _idle_client_connect(int port)

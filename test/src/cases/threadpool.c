@@ -41,7 +41,7 @@ static void _test_threadpool_on_work_done(ev_work_t* work, int status)
 {
     ev_os_tid_t curr_thread = ev_thread_id();
     ASSERT_EQ_ULONG(curr_thread, g_test_757a.thread_id);
-    ASSERT_EQ_INT(status, EV_SUCCESS);
+    ASSERT_EQ_INT(status, 0);
     ASSERT_EQ_PTR(work, &g_test_757a.token);
     g_test_757a.cnt_done++;
 }

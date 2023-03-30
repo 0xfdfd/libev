@@ -44,7 +44,7 @@ int ev_ipv4_addr(const char* ip, int port, struct sockaddr_in* addr)
     addr->sin_family = AF_INET;
     addr->sin_port = htons((uint16_t)port);
 
-    return inet_pton(AF_INET, ip, &addr->sin_addr) ? EV_SUCCESS : EV_EINVAL;
+    return inet_pton(AF_INET, ip, &addr->sin_addr) ? 0 : EV_EINVAL;
 }
 
 int ev_ipv6_addr(const char* ip, int port, struct sockaddr_in6* addr)
@@ -55,7 +55,7 @@ int ev_ipv6_addr(const char* ip, int port, struct sockaddr_in6* addr)
     addr->sin6_port = htons((uint16_t)port);
     _ev_set_scope_id(addr, ip);
 
-    return inet_pton(AF_INET6, ip, &addr->sin6_addr) ? EV_SUCCESS : EV_EINVAL;
+    return inet_pton(AF_INET6, ip, &addr->sin6_addr) ? 0 : EV_EINVAL;
 }
 
 int ev_ipv4_name(const struct sockaddr_in* addr, int* port, char* ip, size_t len)
@@ -68,10 +68,10 @@ int ev_ipv4_name(const struct sockaddr_in* addr, int* port, char* ip, size_t len
     if (ip != NULL)
     {
         return inet_ntop(AF_INET, &addr->sin_addr, ip, len) != NULL ?
-            EV_SUCCESS : EV_ENOSPC;
+            0 : EV_ENOSPC;
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t len)
@@ -84,10 +84,10 @@ int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t le
     if (ip != NULL)
     {
         return inet_ntop(AF_INET6, &addr->sin6_addr, ip, len) != NULL ?
-            EV_SUCCESS : EV_ENOSPC;
+            0 : EV_ENOSPC;
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 ev_buf_t ev_buf_make(void* buf, size_t len)
@@ -122,4 +122,26 @@ void ev_buf_make_v(ev_buf_t bufs[], size_t nbuf, va_list ap)
         size_t v_l = va_arg(ap, size_t);
         bufs[i] = ev_buf_make(v_b, v_l);
     }
+}
+
+API_LOCAL int ev__translate_posix_sys_error(int syserr)
+{
+#define EV_EXPAND_ERRMAP(err, syserr, str) case syserr: return err;
+
+    switch (syserr)
+    {
+    /* Success */
+    case 0:                 return 0;
+#if EWOULDBLOCK != EAGAIN
+    case EWOULDBLOCK:       return EV_EAGAIN;
+#endif
+    EV_ERRNO_POSIX_MAP(EV_EXPAND_ERRMAP);
+
+    /* Unknown */
+    default:                break;
+    }
+
+    EV_ABORT("unknown system errno %d.", syserr);
+
+#undef EV_EXPAND_ERRMAP
 }

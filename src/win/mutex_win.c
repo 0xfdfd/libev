@@ -26,7 +26,7 @@ int ev_mutex_try_enter(ev_mutex_t* handle)
 {
     if (TryEnterCriticalSection(&handle->u.r))
     {
-        return EV_SUCCESS;
+        return 0;
     }
 
     return EV_EBUSY;

@@ -153,7 +153,7 @@ static int _ev_file_get_open_attributes(int flags, int mode, file_open_info_win_
         return EV_EINVAL;
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 static int _ev_fs_readlink_handle(HANDLE handle, char** target_ptr,
@@ -475,7 +475,7 @@ static int _ev_file_fstat_win(HANDLE handle, ev_fs_stat_t* statbuf, int do_lstat
         return ev__translate_sys_error(errcode);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 static ev_dirent_type_t _ev_fs_get_dirent_type_win(WIN32_FIND_DATAW* info)
@@ -522,7 +522,7 @@ static int _ev_fs_wmkdir(WCHAR* path, int mode)
 
     if (CreateDirectoryW(path, NULL))
     {
-        return EV_SUCCESS;
+        return 0;
     }
 
     errcode = GetLastError();
@@ -560,7 +560,7 @@ API_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int m
 
     file_open_info_win_t info;
     ret = _ev_file_get_open_attributes(flags, mode, &info);
-    if (ret != EV_SUCCESS)
+    if (ret != 0)
     {
         return ret;
     }
@@ -579,7 +579,7 @@ API_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int m
     }
 
     *file = filehandle;
-    return EV_SUCCESS;
+    return 0;
 }
 
 API_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset)
@@ -765,7 +765,7 @@ API_LOCAL int ev__fs_close(ev_os_file_t file)
         errcode = GetLastError();
         return ev__translate_sys_error(errcode);
     }
-    return EV_SUCCESS;
+    return 0;
 }
 
 API_LOCAL int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg)
@@ -773,7 +773,7 @@ API_LOCAL int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg)
     WIN32_FIND_DATAW info;
     ev_dirent_w_t dirent_info;
 
-    int ret = EV_SUCCESS;
+    int ret = 0;
     HANDLE dir_handle = INVALID_HANDLE_VALUE;
     WCHAR* fixed_path = NULL;
 
@@ -840,7 +840,7 @@ API_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
     int ret = ev__fs_readdir_w(wide_path, _ev_fs_readdir_w_on_dirent, &helper);
 
     ev_free(wide_path);
-    return helper.errcode != EV_SUCCESS ? helper.errcode : ret;
+    return helper.errcode != 0 ? helper.errcode : ret;
 }
 
 API_LOCAL int ev__fs_mkdir(const char* path, int mode)

@@ -59,10 +59,6 @@
 #ifndef __EV_H__
 #define __EV_H__
 
-#if defined(_WIN32)
-#else
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -90,7 +86,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           18
+#define EV_VERSION_PREREL           19
 
 /**
  * @brief Version calculate helper macro.
@@ -141,6 +137,7 @@ unsigned ev_version_code(void);
 #   include <sys/stat.h>
 #   include <stddef.h>
 #   include <stdint.h>
+#   include <errno.h>
 
 #   if !defined(_SSIZE_T_) && !defined(_SSIZE_T_DEFINED)
 typedef intptr_t ssize_t;
@@ -291,6 +288,7 @@ typedef HANDLE                  ev_os_sem_t;
 #   include <fcntl.h>
 #   include <stddef.h>
 #   include <stdint.h>
+#   include <errno.h>
 
 #if defined(O_APPEND)
 #   define EV_FS_O_APPEND       O_APPEND
@@ -389,6 +387,78 @@ typedef sem_t                   ev_os_sem_t;
  */
 
 /**
+ * @defgroup EV_ERRNO Error number
+ * @{
+ */
+
+#define EV_ERRNO_POSIX_MAP(xx)  \
+    xx(EV_EPERM,            EPERM,              "Operation not permitted")                  \
+    xx(EV_ENOENT,           ENOENT,             "No such file or directory")                \
+    xx(EV_EIO,              EIO,                "Host is unreachable")                      \
+    xx(EV_E2BIG,            E2BIG,              "Argument list too long")                   \
+    xx(EV_EBADF,            EBADF,              "Bad file descriptor")                      \
+    xx(EV_EAGAIN,           EAGAIN,             "Resource temporarily unavailable")         \
+    xx(EV_ENOMEM,           ENOMEM,             "Not enough space/cannot allocate memory")  \
+    xx(EV_EACCES,           EACCES,             "Permission denied")                        \
+    xx(EV_EFAULT,           EFAULT,             "Bad address")                              \
+    xx(EV_EBUSY,            EBUSY,              "Device or resource busy")                  \
+    xx(EV_EEXIST,           EEXIST,             "File exists")                              \
+    xx(EV_EXDEV,            EXDEV,              "Improper link")                            \
+    xx(EV_ENOTDIR,          ENOTDIR,            "Not a directory")                          \
+    xx(EV_EISDIR,           EISDIR,             "Is a directory")                           \
+    xx(EV_EINVAL,           EINVAL,             "Invalid argument")                         \
+    xx(EV_EMFILE,           EMFILE,             "Too many open files")                      \
+    xx(EV_ENOSPC,           ENOSPC,             "No space left on device")                  \
+    xx(EV_EROFS,            EROFS,              "Read-only filesystem")                     \
+    xx(EV_EPIPE,            EPIPE,              "Broken pipe")                              \
+    xx(EV_ENAMETOOLONG,     ENAMETOOLONG,       "Filename too long")                        \
+    xx(EV_ENOTEMPTY,        ENOTEMPTY,          "Directory not empty")                      \
+    xx(EV_EADDRINUSE,       EADDRINUSE,         "Address already in use")                   \
+    xx(EV_EADDRNOTAVAIL,    EADDRNOTAVAIL,      "Address not available")                    \
+    xx(EV_EAFNOSUPPORT,     EAFNOSUPPORT,       "Address family not supported")             \
+    xx(EV_EALREADY,         EALREADY,           "Connection already in progress")           \
+    xx(EV_ECANCELED,        ECANCELED,          "Operation canceled")                       \
+    xx(EV_ECONNABORTED,     ECONNABORTED,       "Connection aborted")                       \
+    xx(EV_ECONNREFUSED,     ECONNREFUSED,       "Connection refused")                       \
+    xx(EV_ECONNRESET,       ECONNRESET,         "Connection reset")                         \
+    xx(EV_EHOSTUNREACH,     EHOSTUNREACH,       "Host is unreachable")                      \
+    xx(EV_EINPROGRESS,      EINPROGRESS,        "Operation in progress")                    \
+    xx(EV_EISCONN,          EISCONN,            "Socket is connected")                      \
+    xx(EV_ELOOP,            ELOOP,              "Too many levels of symbolic links")        \
+    xx(EV_EMSGSIZE,         EMSGSIZE,           "Message too long")                         \
+    xx(EV_ENETUNREACH,      ENETUNREACH,        "Network unreachable")                      \
+    xx(EV_ENOBUFS,          ENOBUFS,            "No buffer space available")                \
+    xx(EV_ENOTCONN,         ENOTCONN,           "The socket is not connected")              \
+    xx(EV_ENOTSOCK,         ENOTSOCK,           "Not a socket")                             \
+    xx(EV_ENOTSUP,          ENOTSUP,            "Operation not supported")                  \
+    xx(EV_EPROTO,           EPROTO,             "Protocol error")                           \
+    xx(EV_EPROTONOSUPPORT,  EPROTONOSUPPORT,    "Protocol not supported")                   \
+    xx(EV_ETIMEDOUT,        ETIMEDOUT,          "Operation timed out")
+
+/**
+ * @brief Error number
+ */
+typedef enum ev_errno
+{
+#define EV_EXPAND_ERRMAP(err, syserr, str) err = -syserr,
+    EV_ERRNO_POSIX_MAP(EV_EXPAND_ERRMAP)
+#undef EV_EXPAND_ERRMAP
+
+    EV_EOF = -4095,
+}ev_errno_t;
+
+/**
+ * @brief Describe the error code
+ * @param[in] err   Error code
+ * @return          Describe string
+ */
+const char* ev_strerror(int err);
+
+/**
+ * @} EV_ERRNO
+ */
+
+/**
  * @defgroup EV_ALLOCATOR Allocator
  * @{
  */
@@ -466,7 +536,6 @@ void ev_free(void* ptr);
 
 #include "ev/async.h"
 #include "ev/buf.h"
-#include "ev/errno.h"
 #include "ev/fs.h"
 #include "ev/handle.h"
 #include "ev/list.h"

@@ -64,7 +64,7 @@ int test_write_file(const char* path, const void* data, size_t size)
 
     fclose(file);
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 int test_access_dir(const char* path)
@@ -80,7 +80,7 @@ int test_access_dir(const char* path)
     switch (ret)
     {
     case FILE_ATTRIBUTE_DIRECTORY:
-        return EV_SUCCESS;
+        return 0;
 
     default:
         return EV_ENOENT;
@@ -96,7 +96,7 @@ int test_access_dir(const char* path)
     }
 
     closedir(dir);
-    return EV_SUCCESS;
+    return 0;
 #endif
 }
 

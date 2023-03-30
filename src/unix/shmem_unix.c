@@ -42,7 +42,7 @@ int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
         goto err_ftruncate;
     }
 
-    return EV_SUCCESS;
+    return 0;
 
 err_ftruncate:
     close(shm->backend.map_file);
@@ -83,7 +83,7 @@ int ev_shm_open(ev_shm_t* shm, const char* key)
         goto err_fstat;
     }
 
-    return EV_SUCCESS;
+    return 0;
 
 err_fstat:
     close(shm->backend.map_file);

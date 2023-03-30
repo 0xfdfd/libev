@@ -25,7 +25,7 @@ static int _ev_stream_do_read_once(ev_nonblock_stream_t* stream, ev_read_t* req,
     if (read_size >= 0)
     {
         *size = read_size;
-        return EV_SUCCESS;
+        return 0;
     }
     return read_size;
 }
@@ -39,9 +39,9 @@ static void _ev_stream_do_write(ev_nonblock_stream_t* stream)
     while ((it = ev_list_pop_front(&stream->pending.w_queue)) != NULL)
     {
         req = EV_CONTAINER_OF(it, ev_write_t, node);
-        if ((ret = _ev_stream_do_write_once(stream, req)) == EV_SUCCESS)
+        if ((ret = _ev_stream_do_write_once(stream, req)) == 0)
         {
-            stream->callbacks.w_cb(stream, req, req->size, EV_SUCCESS);
+            stream->callbacks.w_cb(stream, req, req->size, 0);
             continue;
         }
 
@@ -75,9 +75,9 @@ static void _ev_stream_do_read(ev_nonblock_stream_t* stream)
     ret = _ev_stream_do_read_once(stream, req, &r_size);
     req->data.size += r_size;
 
-    if (ret == EV_SUCCESS)
+    if (ret == 0)
     {
-        stream->callbacks.r_cb(stream, req, req->data.size, EV_SUCCESS);
+        stream->callbacks.r_cb(stream, req, req->data.size, 0);
         return;
     }
 
@@ -184,7 +184,7 @@ API_LOCAL int ev__nonblock_stream_write(ev_nonblock_stream_t* stream, ev_write_t
     }
 
     ev_list_push_back(&stream->pending.w_queue, &req->node);
-    return EV_SUCCESS;
+    return 0;
 }
 
 API_LOCAL int ev__nonblock_stream_read(ev_nonblock_stream_t* stream, ev_read_t* req)
@@ -201,7 +201,7 @@ API_LOCAL int ev__nonblock_stream_read(ev_nonblock_stream_t* stream, ev_read_t* 
     }
 
     ev_list_push_back(&stream->pending.r_queue, &req->node);
-    return EV_SUCCESS;
+    return 0;
 }
 
 API_LOCAL size_t ev__nonblock_stream_size(ev_nonblock_stream_t* stream, unsigned evts)

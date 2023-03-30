@@ -119,7 +119,7 @@ API_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
     ev__init_io(loop);
     ev__init_work(loop);
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 API_LOCAL void ev__loop_exit_backend(ev_loop_t* loop)

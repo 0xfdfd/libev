@@ -59,18 +59,18 @@ static int _ev_process_setup_child_fd(int fd)
     int ret;
 
     /* must in block mode */
-    if ((ret = ev__nonblock(fd, 0)) != EV_SUCCESS)
+    if ((ret = ev__nonblock(fd, 0)) != 0)
     {
         return ret;
     }
 
     /* cannot have FD_CLOEXEC */
-    if ((ret = ev__cloexec(fd, 0)) != EV_SUCCESS)
+    if ((ret = ev__cloexec(fd, 0)) != 0)
     {
         return ret;
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 static int _ev_spawn_setup_stdio_as_fd(int* handle, int fd)
@@ -83,14 +83,14 @@ static int _ev_spawn_setup_stdio_as_fd(int* handle, int fd)
     }
 
     int ret = _ev_process_setup_child_fd(dup_fd);
-    if (ret != EV_SUCCESS)
+    if (ret != 0)
     {
         close(dup_fd);
         return ret;
     }
 
     *handle = dup_fd;
-    return EV_SUCCESS;
+    return 0;
 }
 
 static int _ev_spawn_setup_stdio_as_null(int* handle, int mode)
@@ -103,14 +103,14 @@ static int _ev_spawn_setup_stdio_as_null(int* handle, int mode)
     }
 
     int ret = _ev_process_setup_child_fd(null_fd);
-    if (ret != EV_SUCCESS)
+    if (ret != 0)
     {
         close(null_fd);
         return ret;
     }
 
     *handle = null_fd;
-    return EV_SUCCESS;
+    return 0;
 }
 
 static int _ev_spawn_setup_stdio_as_pipe(ev_pipe_t* pipe, int* handle, int is_pipe_read)
@@ -123,25 +123,25 @@ static int _ev_spawn_setup_stdio_as_pipe(ev_pipe_t* pipe, int* handle, int is_pi
     int wflags = is_pipe_read ? 0 : EV_PIPE_NONBLOCK;
 
     errcode = ev_pipe_make(pipfd, rflags, wflags);
-    if (errcode != EV_SUCCESS)
+    if (errcode != 0)
     {
         return errcode;
     }
 
     errcode = _ev_process_setup_child_fd(is_pipe_read ? pipfd[1] : pipfd[0]);
-    if (errcode != EV_SUCCESS)
+    if (errcode != 0)
     {
         goto err_exit;
     }
 
     errcode = ev_pipe_open(pipe, is_pipe_read ? pipfd[0] : pipfd[1]);
-    if (errcode != EV_SUCCESS)
+    if (errcode != 0)
     {
         goto err_exit;
     }
 
     *handle = is_pipe_read ? pipfd[1] : pipfd[0];
-    return EV_SUCCESS;
+    return 0;
 
 err_exit:
     ev_pipe_close(pipfd[0]);
@@ -225,7 +225,7 @@ static int _ev_spawn_parent(ev_process_t* handle, spawn_helper_t* spawn_helper)
     /* EOF, child exec success */
     if (r == 0)
     {
-        return EV_SUCCESS;
+        return 0;
     }
 
     if (r == sizeof(child_errno))
@@ -254,7 +254,7 @@ static int _ev_spawn_parent(ev_process_t* handle, spawn_helper_t* spawn_helper)
     /* unknown error */
     EV_ABORT();
 
-    return EV_UNKNOWN;
+    return EV_EPIPE;
 }
 
 API_LOCAL void ev__init_process_unix(void)
@@ -339,10 +339,10 @@ static void _ev_process_on_sigchild_unix(ev_async_t* async)
 fin:
     handle->backend.flags.waitpid = 1;
 
-	if (handle->sigchild_cb != NULL)
-	{
-		handle->sigchild_cb(handle, handle->exit_status, handle->exit_code);
-	}
+    if (handle->sigchild_cb != NULL)
+    {
+        handle->sigchild_cb(handle, handle->exit_status, handle->exit_code);
+    }
 }
 
 static int _ev_process_init_process(ev_loop_t* loop, ev_process_t* handle, const ev_process_options_t* opt)
@@ -357,7 +357,7 @@ static int _ev_process_init_process(ev_loop_t* loop, ev_process_t* handle, const
     memset(&handle->backend.flags, 0, sizeof(handle->backend.flags));
 
     ret = ev_async_init(loop, &handle->sigchld, _ev_process_on_sigchild_unix);
-    if (ret != EV_SUCCESS)
+    if (ret != 0)
     {
         return ret;
     }
@@ -368,7 +368,7 @@ static int _ev_process_init_process(ev_loop_t* loop, ev_process_t* handle, const
     }
     ev_mutex_leave(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 static int _ev_process_setup_child_stdin(spawn_helper_t* helper,
@@ -376,7 +376,7 @@ static int _ev_process_setup_child_stdin(spawn_helper_t* helper,
 {
     if (container->flag == EV_PROCESS_STDIO_IGNORE)
     {
-        return EV_SUCCESS;
+        return 0;
     }
 
     if (container->flag & EV_PROCESS_STDIO_REDIRECT_NULL)
@@ -394,7 +394,7 @@ static int _ev_process_setup_child_stdin(spawn_helper_t* helper,
         return _ev_spawn_setup_stdio_as_pipe(container->data.pipe, &helper->child.fd_stdin, 0);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 static int _ev_process_setup_child_stdout(spawn_helper_t* helper,
@@ -402,7 +402,7 @@ static int _ev_process_setup_child_stdout(spawn_helper_t* helper,
 {
     if (container->flag == EV_PROCESS_STDIO_IGNORE)
     {
-        return EV_SUCCESS;
+        return 0;
     }
 
     if (container->flag & EV_PROCESS_STDIO_REDIRECT_NULL)
@@ -420,7 +420,7 @@ static int _ev_process_setup_child_stdout(spawn_helper_t* helper,
         return _ev_spawn_setup_stdio_as_pipe(container->data.pipe, &helper->child.fd_stdout, 1);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 static int _ev_process_setup_child_stderr(spawn_helper_t* helper,
@@ -428,7 +428,7 @@ static int _ev_process_setup_child_stderr(spawn_helper_t* helper,
 {
     if (container->flag == EV_PROCESS_STDIO_IGNORE)
     {
-        return EV_SUCCESS;
+        return 0;
     }
 
     if (container->flag & EV_PROCESS_STDIO_REDIRECT_NULL)
@@ -446,7 +446,7 @@ static int _ev_process_setup_child_stderr(spawn_helper_t* helper,
         return _ev_spawn_setup_stdio_as_pipe(container->data.pipe, &helper->child.fd_stderr, 1);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 static void _ev_process_close_read_end(spawn_helper_t* helper)
@@ -508,22 +508,22 @@ static int _ev_process_init_spawn_helper(spawn_helper_t* helper, const ev_proces
         return ev__translate_sys_error(ret);
     }
 
-    if ((ret = _ev_process_setup_child_stdin(helper, &opt->stdios[0])) != EV_SUCCESS)
+    if ((ret = _ev_process_setup_child_stdin(helper, &opt->stdios[0])) != 0)
     {
         goto err_close_pipe;
     }
 
-    if ((ret = _ev_process_setup_child_stdout(helper, &opt->stdios[1])) != EV_SUCCESS)
+    if ((ret = _ev_process_setup_child_stdout(helper, &opt->stdios[1])) != 0)
     {
         goto err_close_stdin;
     }
 
-    if ((ret = _ev_process_setup_child_stderr(helper, &opt->stdios[2])) != EV_SUCCESS)
+    if ((ret = _ev_process_setup_child_stderr(helper, &opt->stdios[2])) != 0)
     {
         goto err_close_stdout;
     }
 
-    return EV_SUCCESS;
+    return 0;
 
 err_close_stdout:
     _ev_process_close_stdout(helper);
@@ -549,12 +549,12 @@ int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_opt
     int ret;
 
     spawn_helper_t spawn_helper;
-    if ((ret = _ev_process_init_spawn_helper(&spawn_helper, opt)) != EV_SUCCESS)
+    if ((ret = _ev_process_init_spawn_helper(&spawn_helper, opt)) != 0)
     {
         return ret;
     }
 
-    if ((ret = _ev_process_init_process(loop, handle, opt)) != EV_SUCCESS)
+    if ((ret = _ev_process_init_process(loop, handle, opt)) != 0)
     {
         goto finish;
     }
@@ -580,7 +580,7 @@ int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_opt
 
     /* should not reach here. */
     EV_ABORT();
-    return EV_UNKNOWN;
+    return EV_EPIPE;
 
 finish:
     _ev_process_exit_spawn_helper(&spawn_helper);
@@ -594,11 +594,11 @@ void ev_process_exit(ev_process_t* handle, ev_process_exit_cb cb)
         handle->pid = EV_OS_PID_INVALID;
     }
 
-	ev_mutex_enter(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
-	{
-		ev_list_erase(&g_ev_loop_unix_ctx.process.wait_queue, &handle->node);
-	}
-	ev_mutex_leave(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
+    ev_mutex_enter(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
+    {
+        ev_list_erase(&g_ev_loop_unix_ctx.process.wait_queue, &handle->node);
+    }
+    ev_mutex_leave(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
 
     handle->exit_cb = cb;
     ev_async_exit(&handle->sigchld, _ev_process_on_async_close);

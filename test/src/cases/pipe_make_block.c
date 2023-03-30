@@ -11,8 +11,8 @@ typedef struct test_pipe_make
     ev_os_pipe_t            fds[2];
     ev_loop_t               loop;
 
-	ev_work_t               write_token;
-	ev_work_t               read_token;
+    ev_work_t               write_token;
+    ev_work_t               read_token;
 
     /* 8MB should exceed most system default underlying cache */
     char                    rbuf[8 * 1024 * 1024];
@@ -135,11 +135,11 @@ TEST_F(pipe, make_block)
 
     ret = ev_loop_queue_work(&g_test_pipe_make->loop, &g_test_pipe_make->write_token,
         _test_pipe_make_block_on_write, _test_pipe_make_block_on_write_done);
-    ASSERT_EQ_INT(ret, EV_SUCCESS);
+    ASSERT_EQ_INT(ret, 0);
 
     ret = ev_loop_queue_work(&g_test_pipe_make->loop, &g_test_pipe_make->read_token,
         _test_pipe_make_block_on_read, _test_pipe_make_block_on_read_done);
-    ASSERT_EQ_INT(ret, EV_SUCCESS);
+    ASSERT_EQ_INT(ret, 0);
 
     ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_make->loop, EV_LOOP_MODE_DEFAULT), 0);
 }
@@ -194,13 +194,13 @@ TEST_F(pipe, make_nonblock_unix)
     int ret;
 
     ret = ev_pipe_make(g_test_pipe_make->fds, EV_PIPE_NONBLOCK, EV_PIPE_NONBLOCK);
-    ASSERT_EQ_INT(ret, EV_SUCCESS);
+    ASSERT_EQ_INT(ret, 0);
 
     /* Read on nonblock pipe should get nothing. */
     {
         ret = ev_loop_queue_work(&g_test_pipe_make->loop, &g_test_pipe_make->read_token,
                 _test_pipe_make_nonblock_on_read, _test_pipe_make_nonblock_on_read_done);
-        ASSERT_EQ_INT(ret, EV_SUCCESS);
+        ASSERT_EQ_INT(ret, 0);
         ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_make->loop, EV_LOOP_MODE_DEFAULT), 0);
         ASSERT_EQ_SIZE(g_test_pipe_make->rsize, 0);
 #if EAGAIN == EWOULDBLOCK
@@ -214,7 +214,7 @@ TEST_F(pipe, make_nonblock_unix)
     {
         ret = ev_loop_queue_work(&g_test_pipe_make->loop, &g_test_pipe_make->write_token,
                 _test_pipe_make_nonblock_on_write, _test_pipe_make_nonblock_on_write_done);
-        ASSERT_EQ_INT(ret, EV_SUCCESS);
+        ASSERT_EQ_INT(ret, 0);
         ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_make->loop, EV_LOOP_MODE_DEFAULT), 0);
         ASSERT_GT_SIZE(g_test_pipe_make->wsize, 0);
         ASSERT_LT_SIZE(g_test_pipe_make->wsize, sizeof(g_test_pipe_make->wbuf));

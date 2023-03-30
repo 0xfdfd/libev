@@ -51,7 +51,7 @@ int ev_replace_allocator(ev_malloc_fn malloc_func, ev_calloc_fn calloc_func,
     ev__allocator.realloc_func = realloc_func;
     ev__allocator.free_func = free_func;
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 void* ev_calloc(size_t nmemb, size_t size)

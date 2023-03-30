@@ -76,13 +76,13 @@ API_LOCAL int ev__asyc_eventfd(int evtfd[2])
     }
 #else
     errcode = ev_pipe_make(evtfd, EV_PIPE_NONBLOCK, EV_PIPE_NONBLOCK);
-    if (errcode != EV_SUCCESS)
+    if (errcode != 0)
     {
         return errcode;
     }
 #endif
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 API_LOCAL void ev__async_eventfd_close(int fd)
@@ -134,7 +134,7 @@ int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
     ev__handle_init(loop, &handle->base, EV_ROLE_EV_ASYNC);
 
     errcode = ev__asyc_eventfd(handle->backend.pipfd);
-    if (errcode != EV_SUCCESS)
+    if (errcode != 0)
     {
         goto err_close_handle;
     }
@@ -144,7 +144,7 @@ int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
     ev__nonblock_io_add(loop, &handle->backend.io, EV_IO_IN);
     ev__handle_event_add(&handle->base);
 
-    return EV_SUCCESS;
+    return 0;
 
 err_close_handle:
     _async_close_pipe(handle);

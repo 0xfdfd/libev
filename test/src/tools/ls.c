@@ -130,14 +130,14 @@ static int tool_ls(int argc, char* argv[])
         return 0;
     }
 
-    if ((ret = ev_loop_init(&g_ls_ctx.loop)) != EV_SUCCESS)
+    if ((ret = ev_loop_init(&g_ls_ctx.loop)) != 0)
     {
         fprintf(stderr, "%s\n", ev_strerror(ret));
         return EXIT_FAILURE;
     }
 
     ret = ev_fs_readdir(&g_ls_ctx.loop, &g_ls_ctx.fs_req, g_ls_ctx.ls_path, _ls_on_readdir);
-    if (ret != EV_SUCCESS)
+    if (ret != 0)
     {
         fprintf(stderr, "%s\n", ev_strerror(ret));
         ret = EXIT_FAILURE;
@@ -145,7 +145,7 @@ static int tool_ls(int argc, char* argv[])
     }
 
     ret = ev_loop_run(&g_ls_ctx.loop, EV_LOOP_MODE_DEFAULT);
-    if (ret != EV_SUCCESS)
+    if (ret != 0)
     {
         fprintf(stderr, "%s\n", ev_strerror(ret));
         ret = EXIT_FAILURE;

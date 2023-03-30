@@ -38,7 +38,6 @@ set(ev_hdr_os_unix
 )
 
 set(ev_hdr_post
-    "include/ev/errno.h"
     "include/ev/handle.h"
     "include/ev/async.h"
     "include/ev/buf.h"

@@ -80,7 +80,7 @@ struct ev_work
     {\
         EV_HANDLE_INVALID,\
         EV_QUEUE_NODE_INVALID,\
-        { NULL, EV_UNKNOWN, NULL, NULL },\
+        { NULL, EV_EINPROGRESS, NULL, NULL },\
     }
 
 /**

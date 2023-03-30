@@ -40,7 +40,7 @@ static int _dup_cmd(char** buf, char* const argv[])
     }
 
     *buf = cmdline;
-    return EV_SUCCESS;
+    return 0;
 }
 
 static int _dup_envp(char**buf, char* const envp[])
@@ -48,7 +48,7 @@ static int _dup_envp(char**buf, char* const envp[])
     if (envp == NULL)
     {
         *buf = NULL;
-        return EV_SUCCESS;
+        return 0;
     }
 
     size_t malloc_size = 1;
@@ -76,7 +76,7 @@ static int _dup_envp(char**buf, char* const envp[])
     }
 
     *buf = envline;
-    return EV_SUCCESS;
+    return 0;
 }
 
 static int _ev_process_setup_stdio_as_null(HANDLE* handle, DWORD dwDesiredAccess)
@@ -92,13 +92,13 @@ static int _ev_process_setup_stdio_as_null(HANDLE* handle, DWORD dwDesiredAccess
     }
 
     *handle = nul_file;
-    return EV_SUCCESS;
+    return 0;
 }
 
 static int _ev_process_setup_stdio_as_fd(HANDLE* duph, HANDLE handle)
 {
     *duph = handle;
-    return EV_SUCCESS;
+    return 0;
 }
 
 static int _ev_process_setup_stdio_as_pipe_win(ev_pipe_t* pipe, HANDLE* handle, int is_pipe_read)
@@ -110,19 +110,19 @@ static int _ev_process_setup_stdio_as_pipe_win(ev_pipe_t* pipe, HANDLE* handle, 
     int rflags = is_pipe_read ? EV_PIPE_NONBLOCK : 0;
     int wflags = is_pipe_read ? 0 : EV_PIPE_NONBLOCK;
 
-    if ((ret = ev_pipe_make(pipfd, rflags, wflags)) != EV_SUCCESS)
+    if ((ret = ev_pipe_make(pipfd, rflags, wflags)) != 0)
     {
         return ret;
     }
 
-    if ((ret = ev_pipe_open(pipe, is_pipe_read ? pipfd[0] : pipfd[1])) != EV_SUCCESS)
+    if ((ret = ev_pipe_open(pipe, is_pipe_read ? pipfd[0] : pipfd[1])) != 0)
     {
         goto err;
     }
 
     *handle = is_pipe_read ? pipfd[1] : pipfd[0];
 
-    return EV_SUCCESS;
+    return 0;
 
 err:
     ev_pipe_close(pipfd[0]);
@@ -135,7 +135,7 @@ static int _ev_process_dup_stdin_win(ev_startup_info_t* info,
 {
     if (container->flag == EV_PROCESS_STDIO_IGNORE)
     {
-        return EV_SUCCESS;
+        return 0;
     }
 
     if (container->flag & EV_PROCESS_STDIO_REDIRECT_NULL)
@@ -151,7 +151,7 @@ static int _ev_process_dup_stdin_win(ev_startup_info_t* info,
         return _ev_process_setup_stdio_as_pipe_win(container->data.pipe, &info->start_info.hStdInput, 0);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 static int _ev_process_dup_stdout_win(ev_startup_info_t* info,
@@ -159,7 +159,7 @@ static int _ev_process_dup_stdout_win(ev_startup_info_t* info,
 {
     if (container->flag == EV_PROCESS_STDIO_IGNORE)
     {
-        return EV_SUCCESS;
+        return 0;
     }
 
     if (container->flag & EV_PROCESS_STDIO_REDIRECT_NULL)
@@ -177,7 +177,7 @@ static int _ev_process_dup_stdout_win(ev_startup_info_t* info,
         return _ev_process_setup_stdio_as_pipe_win(container->data.pipe, &info->start_info.hStdOutput, 1);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 static int _ev_process_dup_stderr_win(ev_startup_info_t* info,
@@ -185,7 +185,7 @@ static int _ev_process_dup_stderr_win(ev_startup_info_t* info,
 {
     if (container->flag == EV_PROCESS_STDIO_IGNORE)
     {
-        return EV_SUCCESS;
+        return 0;
     }
 
     if (container->flag & EV_PROCESS_STDIO_REDIRECT_NULL)
@@ -203,7 +203,7 @@ static int _ev_process_dup_stderr_win(ev_startup_info_t* info,
         return _ev_process_setup_stdio_as_pipe_win(container->data.pipe, &info->start_info.hStdError, 1);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 static void _ev_process_close_stdin_win(ev_startup_info_t* info)
@@ -295,24 +295,24 @@ static int _ev_process_inherit_stdio(ev_startup_info_t* info)
         }
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 static int _ev_process_dup_stdio_win(ev_startup_info_t* info, const ev_process_options_t* opt)
 {
     int ret;
 
-    if ((ret = _ev_process_dup_stdin_win(info, &opt->stdios[0])) != EV_SUCCESS)
+    if ((ret = _ev_process_dup_stdin_win(info, &opt->stdios[0])) != 0)
     {
         return ret;
     }
 
-    if ((ret = _ev_process_dup_stdout_win(info, &opt->stdios[1])) != EV_SUCCESS)
+    if ((ret = _ev_process_dup_stdout_win(info, &opt->stdios[1])) != 0)
     {
         goto err;
     }
 
-    if ((ret = _ev_process_dup_stderr_win(info, &opt->stdios[2])) != EV_SUCCESS)
+    if ((ret = _ev_process_dup_stderr_win(info, &opt->stdios[2])) != 0)
     {
         goto err;
     }
@@ -321,16 +321,16 @@ static int _ev_process_dup_stdio_win(ev_startup_info_t* info, const ev_process_o
         && info->start_info.hStdOutput == INVALID_HANDLE_VALUE
         && info->start_info.hStdError == INVALID_HANDLE_VALUE)
     {
-        return EV_SUCCESS;
+        return 0;
     }
 
     info->start_info.dwFlags |= STARTF_USESTDHANDLES;
-    if ((ret = _ev_process_inherit_stdio(info)) != EV_SUCCESS)
+    if ((ret = _ev_process_inherit_stdio(info)) != 0)
     {
         goto err;
     }
 
-    return EV_SUCCESS;
+    return 0;
 
 err:
     _ev_process_cleanup_start_info(info);
@@ -410,24 +410,24 @@ static int _ev_process_setup_start_info(ev_startup_info_t* start_info,
     start_info->start_info.hStdInput = INVALID_HANDLE_VALUE;
 
     ret = _dup_cmd(&start_info->cmdline, opt->argv);
-    if (ret != EV_SUCCESS)
+    if (ret != 0)
     {
         return ret;
     }
 
     ret = _dup_envp(&start_info->envline, opt->envp);
-    if (ret != EV_SUCCESS)
+    if (ret != 0)
     {
         goto err_free_cmdline;
     }
 
     ret = _ev_process_dup_stdio_win(start_info, opt);
-    if (ret != EV_SUCCESS)
+    if (ret != 0)
     {
         goto err_free_envp;
     }
 
-    return EV_SUCCESS;
+    return 0;
 
 err_free_envp:
     _ev_process_cleanup_envp(start_info);
@@ -465,7 +465,7 @@ int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_opt
 
     ev_startup_info_t start_info;
     ret = _ev_process_setup_start_info(&start_info, opt);
-    if (ret != EV_SUCCESS)
+    if (ret != 0)
     {
         return ret;
     }
@@ -473,7 +473,7 @@ int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_opt
     _ev_process_init_win(handle, opt);
 
     ret = ev_async_init(loop, &handle->sigchld, _ev_process_on_sigchild_win);
-    if (ret != EV_SUCCESS)
+    if (ret != 0)
     {
         _ev_process_cleanup_start_info(&start_info);
         return ret;
@@ -502,7 +502,7 @@ int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_opt
 
     CloseHandle(piProcInfo.hThread);
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 void ev_process_exit(ev_process_t* handle, ev_process_exit_cb cb)

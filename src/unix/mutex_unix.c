@@ -99,7 +99,7 @@ int ev_mutex_try_enter(ev_mutex_t* handle)
     int err = pthread_mutex_trylock(&handle->u.r);
     if (!err)
     {
-        return EV_SUCCESS;
+        return 0;
     }
 
     if (err != EBUSY && err != EAGAIN)

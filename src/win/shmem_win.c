@@ -33,7 +33,7 @@ int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
         return ev__translate_sys_error(err);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 int ev_shm_open(ev_shm_t* shm, const char* key)
@@ -65,7 +65,7 @@ int ev_shm_open(ev_shm_t* shm, const char* key)
     }
     shm->size = info.RegionSize;
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 void ev_shm_exit(ev_shm_t* shm)

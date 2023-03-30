@@ -86,7 +86,7 @@ static void _on_test_write_done_a548(ev_pipe_write_req_t* req, size_t size, int 
 {
     g_test_a548->w_req_cnt++;
 
-    ASSERT_EQ_INT(stat, EV_SUCCESS);
+    ASSERT_EQ_INT(stat, 0);
     struct wdata_pack_a548* w_pack = EV_CONTAINER_OF(req, struct wdata_pack_a548, req);
 
     ASSERT_EQ_SIZE(size, sizeof(w_pack->data2) + sizeof(w_pack->data1));
@@ -96,7 +96,7 @@ static void _on_test_read_done_a548(ev_pipe_read_req_t* req, size_t size, int st
 {
     g_test_a548->r_req_cnt++;
 
-    ASSERT_EQ_INT(stat, EV_SUCCESS);
+    ASSERT_EQ_INT(stat, 0);
     struct rdata_pack_a548* r_pack = EV_CONTAINER_OF(req, struct rdata_pack_a548, req);
 
     ASSERT_GT_SIZE(size, sizeof(r_pack->data1));

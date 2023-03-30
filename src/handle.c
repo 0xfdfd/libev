@@ -138,7 +138,7 @@ API_LOCAL int ev__backlog_submit(ev_handle_t* handle, ev_handle_cb callback)
 
     ev_list_push_back(&handle->loop->backlog_queue, &handle->backlog.node);
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 API_LOCAL void ev__process_backlog(ev_loop_t* loop)

@@ -254,7 +254,7 @@ void mmc_init(void)
 
     ASSERT_EQ_INT(
         ev_replace_allocator(mmc_malloc, mmc_calloc, mmc_realloc, mmc_free),
-        EV_SUCCESS
+        0
     );
 }
 

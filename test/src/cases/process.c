@@ -33,10 +33,10 @@ TEST_FIXTURE_SETUP(process)
     g_test_process->self_exe_path = mmc_strdup(test_get_self_exe());
     ASSERT_NE_PTR(g_test_process->self_exe_path, NULL);
 
-    ASSERT_EQ_INT(ev_loop_init(&g_test_process->loop), EV_SUCCESS);
-    ASSERT_EQ_INT(ev_pipe_init(&g_test_process->loop, &g_test_process->stdin_pipe, 0), EV_SUCCESS);
-    ASSERT_EQ_INT(ev_pipe_init(&g_test_process->loop, &g_test_process->stdout_pipe, 0), EV_SUCCESS);
-    ASSERT_EQ_INT(ev_pipe_init(&g_test_process->loop, &g_test_process->stderr_pipe, 0), EV_SUCCESS);
+    ASSERT_EQ_INT(ev_loop_init(&g_test_process->loop), 0);
+    ASSERT_EQ_INT(ev_pipe_init(&g_test_process->loop, &g_test_process->stdin_pipe, 0), 0);
+    ASSERT_EQ_INT(ev_pipe_init(&g_test_process->loop, &g_test_process->stdout_pipe, 0), 0);
+    ASSERT_EQ_INT(ev_pipe_init(&g_test_process->loop, &g_test_process->stderr_pipe, 0), 0);
 
     g_test_process->flag_stdin_init = 1;
 }
@@ -49,7 +49,7 @@ TEST_FIXTURE_TEARDOWN(process)
 
     ASSERT_EQ_INT(ev_loop_run(&g_test_process->loop, EV_LOOP_MODE_DEFAULT), 0);
     ASSERT_EQ_EVLOOP(&g_test_process->loop, &empty_loop);
-    ASSERT_EQ_INT(ev_loop_exit(&g_test_process->loop), EV_SUCCESS);
+    ASSERT_EQ_INT(ev_loop_exit(&g_test_process->loop), 0);
 
     mmc_free(g_test_process->self_exe_path);
     g_test_process->self_exe_path = NULL;
@@ -74,7 +74,7 @@ TEST_F(process, spawn_stdout_ignore)
     opt.stdios[1].flag = EV_PROCESS_STDIO_REDIRECT_NULL;
 
     ret = ev_process_spawn(&g_test_process->loop, &g_test_process->process, &opt);
-    ASSERT_EQ_INT(ret, EV_SUCCESS);
+    ASSERT_EQ_INT(ret, 0);
 
     ev_process_exit(&g_test_process->process, NULL);
 }
@@ -87,7 +87,7 @@ static void _test_process_redirect_pipe_on_write_done(ev_pipe_write_req_t* req, 
 {
     (void)req;
     ASSERT_EQ_SIZE(size, strlen(g_test_process_data));
-    ASSERT_EQ_INT(stat, EV_SUCCESS);
+    ASSERT_EQ_INT(stat, 0);
 
     _close_stdin_pipe();
 
@@ -111,13 +111,13 @@ TEST_F(process, redirect_pipe)
     opt.stdios[2].flag = EV_PROCESS_STDIO_REDIRECT_PIPE;
     opt.stdios[2].data.pipe = &g_test_process->stderr_pipe;
     ret = ev_process_spawn(&g_test_process->loop, &g_test_process->process, &opt);
-    ASSERT_EQ_INT(ret, EV_SUCCESS);
+    ASSERT_EQ_INT(ret, 0);
 
     static ev_pipe_write_req_t write_req;
     ev_buf_t write_buf = ev_buf_make((char*)g_test_process_data, strlen(g_test_process_data));
     ret = ev_pipe_write(&g_test_process->stdin_pipe, &write_req, &write_buf, 1,
             _test_process_redirect_pipe_on_write_done);
-    ASSERT_EQ_INT(ret, EV_SUCCESS);
+    ASSERT_EQ_INT(ret, 0);
 
     ASSERT_EQ_INT(ev_loop_run(&g_test_process->loop, EV_LOOP_MODE_DEFAULT), 0);
 }
@@ -149,7 +149,7 @@ TEST_F(process, exit_callback)
     opt.stdios[1].flag = EV_PROCESS_STDIO_REDIRECT_NULL;
 
     ret = ev_process_spawn(&g_test_process->loop, &g_test_process->process, &opt);
-    ASSERT_EQ_INT(ret, EV_SUCCESS);
+    ASSERT_EQ_INT(ret, 0);
 
     ASSERT_EQ_INT(ev_loop_run(&g_test_process->loop, EV_LOOP_MODE_DEFAULT), 0);
     ASSERT_EQ_INT(g_test_process->flag_exit, 1);
@@ -200,7 +200,7 @@ typedef struct process_cwd_path
 
 static void _process_cwd_on_read(ev_pipe_read_req_t* req, size_t size, int stat)
 {
-    ASSERT_EQ_INT(stat, EV_SUCCESS);
+    ASSERT_EQ_INT(stat, 0);
     process_cwd_path_t* cwd_path = EV_CONTAINER_OF(req, process_cwd_path_t, req);
 
     cwd_path->buffer[size] = '\0';
@@ -230,7 +230,7 @@ TEST_F(process, cwd)
     opt.stdios[1].data.pipe = &g_test_process->stdout_pipe;
 
     ret = ev_process_spawn(&g_test_process->loop, &g_test_process->process, &opt);
-    ASSERT_EQ_INT(ret, EV_SUCCESS);
+    ASSERT_EQ_INT(ret, 0);
 
     process_cwd_path_t cwd_path;
     memset(&cwd_path, 0, sizeof(cwd_path));
@@ -238,7 +238,7 @@ TEST_F(process, cwd)
 
     ret = ev_pipe_read(&g_test_process->stdout_pipe, &cwd_path.req, &buf, 1,
         _process_cwd_on_read);
-    ASSERT_EQ_INT(ret, EV_SUCCESS);
+    ASSERT_EQ_INT(ret, 0);
 
     ASSERT_EQ_INT(ev_loop_run(&g_test_process->loop, EV_LOOP_MODE_DEFAULT), 0);
 

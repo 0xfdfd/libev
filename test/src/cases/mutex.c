@@ -21,7 +21,7 @@ TEST_F(mutex, recursive)
 {
     ev_mutex_enter(&g_test_3b3b.mutex_r);
     ev_mutex_enter(&g_test_3b3b.mutex_r);
-    ASSERT_EQ_INT(ev_mutex_try_enter(&g_test_3b3b.mutex_r), EV_SUCCESS);
+    ASSERT_EQ_INT(ev_mutex_try_enter(&g_test_3b3b.mutex_r), 0);
 
     ev_mutex_leave(&g_test_3b3b.mutex_r);
     ev_mutex_leave(&g_test_3b3b.mutex_r);

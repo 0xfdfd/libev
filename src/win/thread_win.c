@@ -42,7 +42,7 @@ static unsigned __stdcall _ev_thread_proxy_proc_win(void* lpThreadParameter)
 API_LOCAL void ev__thread_init_win(void)
 {
     int ret = ev_tls_init(&g_ev_loop_win_ctx.thread.thread_key);
-    if (ret != EV_SUCCESS)
+    if (ret != 0)
     {
         EV_ABORT("ret:%d", ret);
     }
@@ -51,7 +51,7 @@ API_LOCAL void ev__thread_init_win(void)
 int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
     ev_thread_cb cb, void* arg)
 {
-    DWORD err = EV_SUCCESS;
+    DWORD err = 0;
     ev__init_once_win();
 
     ev_thread_helper_win_t helper;
@@ -113,7 +113,7 @@ int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
     CloseHandle(*thr);
     *thr = NULL;
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 ev_os_thread_t ev_thread_self(void)
@@ -146,7 +146,7 @@ int ev_tls_init(ev_tls_t* tls)
         return ev__translate_sys_error(err);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 void ev_tls_exit(ev_tls_t* tls)

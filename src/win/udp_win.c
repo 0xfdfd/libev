@@ -42,16 +42,16 @@ static int _ev_udp_setup_socket_attribute_win(ev_loop_t* loop, ev_udp_t* udp, in
 
     /*
      * All known Windows that support SetFileCompletionNotificationModes have a
-	 * bug that makes it impossible to use this function in conjunction with
-	 * datagram sockets. We can work around that but only if the user is using
-	 * the default UDP driver (AFD) and has no other. LSPs stacked on top. Here
-	 * we check whether that is the case.
+     * bug that makes it impossible to use this function in conjunction with
+     * datagram sockets. We can work around that but only if the user is using
+     * the default UDP driver (AFD) and has no other. LSPs stacked on top. Here
+     * we check whether that is the case.
      */
     opt_len = sizeof(info);
     if (getsockopt(udp->sock, SOL_SOCKET, SO_PROTOCOL_INFOW, (char*)&info, &opt_len) == SOCKET_ERROR)
     {
-		ret = GetLastError();
-		goto err;
+        ret = GetLastError();
+        goto err;
     }
     if (info.ProtocolChain.ChainLen == 1)
     {
@@ -77,7 +77,7 @@ static int _ev_udp_setup_socket_attribute_win(ev_loop_t* loop, ev_udp_t* udp, in
         assert(!(udp->base.data.flags & EV_HANDLE_UDP_IPV6));
     }
 
-    return EV_SUCCESS;
+    return 0;
 
 err:
     return ev__translate_sys_error(ret);
@@ -98,7 +98,7 @@ static int _ev_udp_is_bound_win(ev_udp_t* udp)
     size_t addrlen = sizeof(addr);
 
     int ret = ev_udp_getsockname(udp, (struct sockaddr*)&addr, &addrlen);
-    return ret == EV_SUCCESS && addrlen > 0;
+    return ret == 0 && addrlen > 0;
 }
 
 static int _ev_udp_is_connected_win(ev_udp_t* udp)
@@ -107,7 +107,7 @@ static int _ev_udp_is_connected_win(ev_udp_t* udp)
     size_t addrlen = sizeof(addr);
 
     int ret = ev_udp_getpeername(udp, (struct sockaddr*)&addr, &addrlen);
-    return ret == EV_SUCCESS && addrlen > 0;
+    return ret == 0 && addrlen > 0;
 }
 
 static int _ev_udp_maybe_deferred_socket_win(ev_udp_t* udp, int domain)
@@ -115,7 +115,7 @@ static int _ev_udp_maybe_deferred_socket_win(ev_udp_t* udp, int domain)
     int ret;
     if (udp->sock != EV_OS_SOCKET_INVALID)
     {
-        return EV_SUCCESS;
+        return 0;
     }
 
     if ((udp->sock = socket(domain, SOCK_DGRAM, 0)) == INVALID_SOCKET)
@@ -124,14 +124,14 @@ static int _ev_udp_maybe_deferred_socket_win(ev_udp_t* udp, int domain)
         return ev__translate_sys_error(ret);
     }
 
-    if ((ret = _ev_udp_setup_socket_attribute_win(udp->base.loop, udp, domain)) != EV_SUCCESS)
+    if ((ret = _ev_udp_setup_socket_attribute_win(udp->base.loop, udp, domain)) != 0)
     {
         closesocket(udp->sock);
         udp->sock = EV_OS_SOCKET_INVALID;
         return ret;
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 static void _ev_udp_close_socket_win(ev_udp_t* udp)
@@ -156,14 +156,14 @@ static int _ev_udp_disconnect_win(ev_udp_t* udp)
     }
 
     udp->base.data.flags &= ~EV_HANDLE_UDP_CONNECTED;
-    return EV_SUCCESS;
+    return 0;
 }
 
 static int _ev_udp_maybe_deferred_bind_win(ev_udp_t* udp, int domain)
 {
     if (udp->base.data.flags & EV_HANDLE_UDP_BOUND)
     {
-        return EV_SUCCESS;
+        return 0;
     }
 
     struct sockaddr* bind_addr;
@@ -213,7 +213,7 @@ static int _ev_udp_set_membership_ipv4_win(ev_udp_t* udp,
         return ev__translate_sys_error(ret);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 static int _ev_udp_set_membership_ipv6_win(ev_udp_t* udp,
@@ -247,7 +247,7 @@ static int _ev_udp_set_membership_ipv6_win(ev_udp_t* udp,
         return ev__translate_sys_error(ret);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 static int _ev_udp_set_source_membership_ipv4(ev_udp_t* udp,
@@ -282,7 +282,7 @@ static int _ev_udp_set_source_membership_ipv4(ev_udp_t* udp,
         return ev__translate_sys_error(err);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 static int _ev_udp_set_source_membership_ipv6(ev_udp_t* udp,
@@ -297,7 +297,7 @@ static int _ev_udp_set_source_membership_ipv6(ev_udp_t* udp,
 
     if (interface_addr != NULL)
     {
-        if ((ret = ev_ipv6_addr(interface_addr, 0, &addr6)) != EV_SUCCESS)
+        if ((ret = ev_ipv6_addr(interface_addr, 0, &addr6)) != 0)
         {
             return ret;
         }
@@ -318,7 +318,7 @@ static int _ev_udp_set_source_membership_ipv6(ev_udp_t* udp,
         return ev__translate_sys_error(ret);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 static void _ev_udp_w_user_callback_win(ev_udp_write_t* req, ssize_t size)
@@ -370,7 +370,7 @@ static void _ev_udp_on_send_iocp_win(ev_iocp_t* iocp, size_t transferred, void* 
 
     req->base.size = transferred;
     req->backend.stat = NT_SUCCESS(iocp->overlapped.Internal) ?
-        EV_SUCCESS : ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal));
+        0 : ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal));
 
     _ev_udp_on_send_complete_win(udp, req);
 }
@@ -386,7 +386,7 @@ static void _ev_udp_do_recv_win(ev_udp_t* udp, ev_udp_read_t* req)
     if (ret != SOCKET_ERROR)
     {
         req->base.data.size = recv_bytes;
-        req->backend.stat = EV_SUCCESS;
+        req->backend.stat = 0;
     }
     else
     {
@@ -427,63 +427,63 @@ static void _ev_udp_on_recv_bypass_iocp_win(ev_handle_t* handle)
 
 static int _ev_udp_maybe_bind_win(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags)
 {
-	int ret;
-	if (udp->base.data.flags & EV_HANDLE_UDP_BOUND)
-	{
-		return EV_EALREADY;
-	}
+    int ret;
+    if (udp->base.data.flags & EV_HANDLE_UDP_BOUND)
+    {
+        return EV_EALREADY;
+    }
 
-	if ((flags & EV_UDP_IPV6_ONLY) && addr->sa_family != AF_INET6)
-	{
-		return EV_EINVAL;
-	}
+    if ((flags & EV_UDP_IPV6_ONLY) && addr->sa_family != AF_INET6)
+    {
+        return EV_EINVAL;
+    }
 
-	if (udp->sock == EV_OS_SOCKET_INVALID)
-	{
-		if ((udp->sock = socket(addr->sa_family, SOCK_DGRAM, 0)) == EV_OS_SOCKET_INVALID)
-		{
-			ret = WSAGetLastError();
-			return ev__translate_sys_error(ret);
-		}
+    if (udp->sock == EV_OS_SOCKET_INVALID)
+    {
+        if ((udp->sock = socket(addr->sa_family, SOCK_DGRAM, 0)) == EV_OS_SOCKET_INVALID)
+        {
+            ret = WSAGetLastError();
+            return ev__translate_sys_error(ret);
+        }
 
-		ret = _ev_udp_setup_socket_attribute_win(udp->base.loop, udp, addr->sa_family);
-		if (ret != 0)
-		{
-			_ev_udp_close_socket_win(udp);
-			return ret;
-		}
-	}
+        ret = _ev_udp_setup_socket_attribute_win(udp->base.loop, udp, addr->sa_family);
+        if (ret != 0)
+        {
+            _ev_udp_close_socket_win(udp);
+            return ret;
+        }
+    }
 
-	if (flags & EV_UDP_REUSEADDR)
-	{
-		if ((ret = ev__reuse_win(udp->sock, 1)) != EV_SUCCESS)
-		{
-			return ret;
-		}
-	}
+    if (flags & EV_UDP_REUSEADDR)
+    {
+        if ((ret = ev__reuse_win(udp->sock, 1)) != 0)
+        {
+            return ret;
+        }
+    }
 
-	if (addr->sa_family == AF_INET6)
-	{
-		udp->base.data.flags |= EV_HANDLE_UDP_IPV6;
-		if (flags & EV_UDP_IPV6_ONLY)
-		{
-			if ((ret = ev__ipv6only_win(udp->sock, 1)) != 0)
-			{
-				_ev_udp_close_socket_win(udp);
-				return ret;
-			}
-		}
-	}
+    if (addr->sa_family == AF_INET6)
+    {
+        udp->base.data.flags |= EV_HANDLE_UDP_IPV6;
+        if (flags & EV_UDP_IPV6_ONLY)
+        {
+            if ((ret = ev__ipv6only_win(udp->sock, 1)) != 0)
+            {
+                _ev_udp_close_socket_win(udp);
+                return ret;
+            }
+        }
+    }
 
-	socklen_t addrlen = ev__get_addr_len(addr);
-	if ((ret = bind(udp->sock, addr, addrlen)) == SOCKET_ERROR)
-	{
-		ret = WSAGetLastError();
-		return ev__translate_sys_error(ret);
-	}
+    socklen_t addrlen = ev__get_addr_len(addr);
+    if ((ret = bind(udp->sock, addr, addrlen)) == SOCKET_ERROR)
+    {
+        ret = WSAGetLastError();
+        return ev__translate_sys_error(ret);
+    }
 
-	udp->base.data.flags |= EV_HANDLE_UDP_BOUND;
-	return 0;
+    udp->base.data.flags |= EV_HANDLE_UDP_BOUND;
+    return 0;
 }
 
 API_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
@@ -505,13 +505,13 @@ API_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
     if (ret == 0 && (udp->base.data.flags & EV_HANDLE_UDP_BYPASS_IOCP))
     {
         ev__backlog_submit(&req->handle, _ev_udp_on_recv_bypass_iocp_win);
-        return EV_SUCCESS;
+        return 0;
     }
 
     int err;
     if (ret == 0 || (err = WSAGetLastError()) == ERROR_IO_PENDING)
     {
-        return EV_SUCCESS;
+        return 0;
     }
 
     ev__handle_event_dec(&udp->base);
@@ -530,7 +530,7 @@ API_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
             return EV_EINVAL;
         }
 
-        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, addr->sa_family)) != EV_SUCCESS)
+        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, addr->sa_family)) != 0)
         {
             return ret;
         }
@@ -549,15 +549,15 @@ API_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
     if (ret == 0 && (udp->base.data.flags & EV_HANDLE_UDP_BYPASS_IOCP))
     {
         req->base.size += req->base.capacity;
-        req->backend.stat = EV_SUCCESS;
+        req->backend.stat = 0;
         ev__backlog_submit(&req->handle, _ev_udp_on_send_bypass_iocp);
-        return EV_SUCCESS;
+        return 0;
     }
 
     if (ret == 0 || (err = GetLastError()) == ERROR_IO_PENDING)
     {
         req->backend.stat = EV_EINPROGRESS;
-        return EV_SUCCESS;
+        return 0;
     }
 
     ev__handle_event_dec(&udp->base);
@@ -579,14 +579,14 @@ int ev_udp_init(ev_loop_t* loop, ev_udp_t* udp, int domain)
 
     if (domain != AF_UNSPEC)
     {
-        if ((err = _ev_udp_maybe_deferred_socket_win(udp, domain)) != EV_SUCCESS)
+        if ((err = _ev_udp_maybe_deferred_socket_win(udp, domain)) != 0)
         {
             ev__handle_exit(&udp->base, NULL);
             return err;
         }
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 void ev_udp_exit(ev_udp_t* udp, ev_udp_cb close_cb)
@@ -615,7 +615,7 @@ int ev_udp_open(ev_udp_t* udp, ev_os_socket_t sock)
 
     udp->sock = sock;
     if ((ret = _ev_udp_setup_socket_attribute_win(udp->base.loop, udp,
-        protocol_info.iAddressFamily)) != EV_SUCCESS)
+        protocol_info.iAddressFamily)) != 0)
     {
         udp->sock = EV_OS_SOCKET_INVALID;
         return ret;
@@ -631,7 +631,7 @@ int ev_udp_open(ev_udp_t* udp, ev_os_socket_t sock)
         udp->base.data.flags |= EV_HANDLE_UDP_CONNECTED;
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 int ev_udp_bind(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags)
@@ -668,13 +668,13 @@ int ev_udp_connect(ev_udp_t* udp, const struct sockaddr* addr)
         return EV_EINVAL;
     }
 
-	if ((ret = connect(udp->sock, addr, addrlen)) != 0)
-	{
-		ret = WSAGetLastError();
-		return ev__translate_sys_error(ret);
-	}
+    if ((ret = connect(udp->sock, addr, addrlen)) != 0)
+    {
+        ret = WSAGetLastError();
+        return ev__translate_sys_error(ret);
+    }
 
-	return EV_SUCCESS;
+    return 0;
 }
 
 int ev_udp_getsockname(ev_udp_t* udp, struct sockaddr* name, size_t* len)
@@ -687,7 +687,7 @@ int ev_udp_getsockname(ev_udp_t* udp, struct sockaddr* name, size_t* len)
     }
 
     *len = wrap_len;
-    return EV_SUCCESS;
+    return 0;
 }
 
 int ev_udp_getpeername(ev_udp_t* udp, struct sockaddr* name, size_t* len)
@@ -700,7 +700,7 @@ int ev_udp_getpeername(ev_udp_t* udp, struct sockaddr* name, size_t* len)
     }
 
     *len = wrap_len;
-    return EV_SUCCESS;
+    return 0;
 }
 
 int ev_udp_set_membership(ev_udp_t* udp, const char* multicast_addr,
@@ -714,13 +714,13 @@ int ev_udp_set_membership(ev_udp_t* udp, const char* multicast_addr,
         return EV_EINVAL;
     }
 
-    if ((ret = ev_ipv4_addr(multicast_addr, 0, (struct sockaddr_in*)&addr)) == EV_SUCCESS)
+    if ((ret = ev_ipv4_addr(multicast_addr, 0, (struct sockaddr_in*)&addr)) == 0)
     {
         if (udp->base.data.flags & EV_HANDLE_UDP_IPV6)
         {
             return EV_EINVAL;
         }
-        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, AF_INET)) != EV_SUCCESS)
+        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, AF_INET)) != 0)
         {
             return ret;
         }
@@ -728,13 +728,13 @@ int ev_udp_set_membership(ev_udp_t* udp, const char* multicast_addr,
             interface_addr, membership);
     }
 
-    if ((ret = ev_ipv6_addr(multicast_addr, 0, (struct sockaddr_in6*)&addr)) == EV_SUCCESS)
+    if ((ret = ev_ipv6_addr(multicast_addr, 0, (struct sockaddr_in6*)&addr)) == 0)
     {
         if ((udp->base.data.flags & EV_HANDLE_UDP_BOUND) && !(udp->base.data.flags & EV_HANDLE_UDP_IPV6))
         {
             return EV_EINVAL;
         }
-        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, AF_INET6)) != EV_SUCCESS)
+        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, AF_INET6)) != 0)
         {
             return ret;
         }
@@ -757,9 +757,9 @@ int ev_udp_set_source_membership(ev_udp_t* udp, const char* multicast_addr,
         return EV_EINVAL;
     }
 
-    if ((ret = ev_ipv4_addr(multicast_addr, 0, (struct sockaddr_in*)&mcast_addr)) == EV_SUCCESS)
+    if ((ret = ev_ipv4_addr(multicast_addr, 0, (struct sockaddr_in*)&mcast_addr)) == 0)
     {
-        if ((ret = ev_ipv4_addr(source_addr, 0, (struct sockaddr_in*)&src_addr)) != EV_SUCCESS)
+        if ((ret = ev_ipv4_addr(source_addr, 0, (struct sockaddr_in*)&src_addr)) != 0)
         {
             return ret;
         }
@@ -767,7 +767,7 @@ int ev_udp_set_source_membership(ev_udp_t* udp, const char* multicast_addr,
         {
             return EV_EINVAL;
         }
-        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, AF_INET)) != EV_SUCCESS)
+        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, AF_INET)) != 0)
         {
             return ret;
         }
@@ -775,9 +775,9 @@ int ev_udp_set_source_membership(ev_udp_t* udp, const char* multicast_addr,
             interface_addr, (struct sockaddr_in*)&src_addr, membership);
     }
 
-    if ((ret = ev_ipv6_addr(multicast_addr, 0, (struct sockaddr_in6*)&mcast_addr)) == EV_SUCCESS)
+    if ((ret = ev_ipv6_addr(multicast_addr, 0, (struct sockaddr_in6*)&mcast_addr)) == 0)
     {
-        if ((ret = ev_ipv6_addr(source_addr, 0, (struct sockaddr_in6*)&src_addr)) != EV_SUCCESS)
+        if ((ret = ev_ipv6_addr(source_addr, 0, (struct sockaddr_in6*)&src_addr)) != 0)
         {
             return ret;
         }
@@ -785,7 +785,7 @@ int ev_udp_set_source_membership(ev_udp_t* udp, const char* multicast_addr,
         {
             return EV_EINVAL;
         }
-        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, AF_INET6)) != EV_SUCCESS)
+        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, AF_INET6)) != 0)
         {
             return ret;
         }
@@ -818,7 +818,7 @@ int ev_udp_set_multicast_loop(ev_udp_t* udp, int on)
         return ev__translate_sys_error(ret);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 int ev_udp_set_multicast_ttl(ev_udp_t* udp, int ttl)
@@ -847,7 +847,7 @@ int ev_udp_set_multicast_ttl(ev_udp_t* udp, int ttl)
         return ev__translate_sys_error(ret);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 int ev_udp_set_multicast_interface(ev_udp_t* udp, const char* interface_addr)
@@ -863,7 +863,7 @@ int ev_udp_set_multicast_interface(ev_udp_t* udp, const char* interface_addr)
     }
 
     int is_ipv6 = udp->base.data.flags & EV_HANDLE_UDP_IPV6;
-    if ((ret = ev__udp_interface_addr_to_sockaddr(&addr_st, interface_addr, is_ipv6)) != EV_SUCCESS)
+    if ((ret = ev__udp_interface_addr_to_sockaddr(&addr_st, interface_addr, is_ipv6)) != 0)
     {
         return ret;
     }
@@ -884,7 +884,7 @@ int ev_udp_set_multicast_interface(ev_udp_t* udp, const char* interface_addr)
         return ev__translate_sys_error(ret);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 int ev_udp_set_broadcast(ev_udp_t* udp, int on)
@@ -902,7 +902,7 @@ int ev_udp_set_broadcast(ev_udp_t* udp, int on)
         return ev__translate_sys_error(err);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
@@ -931,5 +931,5 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
         return ev__translate_sys_error(err);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }

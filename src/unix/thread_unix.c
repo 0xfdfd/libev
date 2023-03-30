@@ -31,7 +31,7 @@ static void* _ev_thread_proxy_unix(void* arg)
 int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
     ev_thread_cb cb, void* arg)
 {
-    int err = EV_SUCCESS;
+    int err = 0;
 
     pthread_attr_t* attr = NULL;
     pthread_attr_t attr_storage;
@@ -72,7 +72,7 @@ int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
         err = sem_wait(&helper.sem);
     } while (err == -1 && errno == EINTR);
 
-    err = err != 0 ? errno : EV_SUCCESS;
+    err = err != 0 ? errno : 0;
 
 release_sem:
     sem_destroy(&helper.sem);
@@ -156,7 +156,7 @@ int ev_tls_init(ev_tls_t* tls)
     int ret = pthread_key_create(&tls->tls, NULL);
     if (ret == 0)
     {
-        return EV_SUCCESS;
+        return 0;
     }
     return ev__translate_sys_error(ret);
 }

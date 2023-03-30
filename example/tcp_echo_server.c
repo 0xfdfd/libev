@@ -11,7 +11,7 @@
 #define CHECK_SUCCESS(ret) \
     do {\
         int _ret = ret;\
-        if (_ret == EV_SUCCESS) {\
+        if (_ret == 0) {\
             break;\
         }\
         fprintf(stderr, "%s:%d: %s\n",\
@@ -167,7 +167,7 @@ static void _on_write_done(ev_tcp_write_req_t* req, size_t size, int stat)
     (void)size;
     tcp_client_t* client = EV_CONTAINER_OF(req, tcp_client_t, write_req);
 
-    if (stat != EV_SUCCESS)
+    if (stat != 0)
     {
         _close_client(client);
         return;
@@ -181,7 +181,7 @@ static void _on_read_done(ev_tcp_read_req_t* req, size_t size, int stat)
     int ret;
     tcp_client_t* client = EV_CONTAINER_OF(req, tcp_client_t, read_req);
 
-    if (stat != EV_SUCCESS)
+    if (stat != 0)
     {
         _close_client(client);
         return;
@@ -218,7 +218,7 @@ static void _on_accept_done(ev_tcp_t* lisn, ev_tcp_t* conn, int stat)
 {
     assert(lisn == &s_tcp_echo_server.sock_listen); (void)lisn;
 
-    if (stat != EV_SUCCESS)
+    if (stat != 0)
     {
         return;
     }
@@ -230,7 +230,7 @@ static void _on_accept_done(ev_tcp_t* lisn, ev_tcp_t* conn, int stat)
     submit_accept_request();
 
     /* If accept failed, destroy resource */
-    if (stat != EV_SUCCESS)
+    if (stat != 0)
     {
         _close_client(client);
         return;

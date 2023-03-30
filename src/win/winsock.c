@@ -29,11 +29,11 @@ API_LOCAL void ev__winsock_init(void)
     int ret; (void)ret;
 
     /* Set implicit binding address used by connectEx */
-    if ((ret = ev_ipv4_addr("0.0.0.0", 0, &ev_addr_ip4_any_)) != EV_SUCCESS)
+    if ((ret = ev_ipv4_addr("0.0.0.0", 0, &ev_addr_ip4_any_)) != 0)
     {
         abort();
     }
-    if ((ret = ev_ipv6_addr("::", 0, &ev_addr_ip6_any_)) != EV_SUCCESS)
+    if ((ret = ev_ipv6_addr("::", 0, &ev_addr_ip6_any_)) != 0)
     {
         abort();
     }

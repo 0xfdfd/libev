@@ -48,7 +48,7 @@ int ev_sem_try_wait(ev_sem_t* sem)
 
     if (ret == WAIT_OBJECT_0)
     {
-        return EV_SUCCESS;
+        return 0;
     }
 
     if (ret == WAIT_TIMEOUT)

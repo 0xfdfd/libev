@@ -24,11 +24,11 @@ API_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
             addr_4->sin_addr.s_addr = htonl(INADDR_ANY);
         }
     }
-    else if (ev_ipv4_addr(interface_addr, 0, addr_4) == EV_SUCCESS)
+    else if (ev_ipv4_addr(interface_addr, 0, addr_4) == 0)
     {
         /* do nothing, address was parsed */
     }
-    else if (ev_ipv6_addr(interface_addr, 0, addr_6) == EV_SUCCESS)
+    else if (ev_ipv6_addr(interface_addr, 0, addr_6) == 0)
     {
         /* do nothing, address was parsed */
     }
@@ -37,7 +37,7 @@ API_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
         return EV_EINVAL;
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
@@ -62,20 +62,20 @@ int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf, 
     req->usr_cb = cb;
     ev__handle_init(udp->base.loop, &req->handle, EV_ROLE_EV_REQ_UDP_R);
 
-    if ((ret = ev__read_init(&req->base, bufs, nbuf)) != EV_SUCCESS)
+    if ((ret = ev__read_init(&req->base, bufs, nbuf)) != 0)
     {
         goto err;
     }
     ev_list_push_back(&udp->recv_list, &req->base.node);
 
-    if ((ret = ev__udp_recv(udp, req)) != EV_SUCCESS)
+    if ((ret = ev__udp_recv(udp, req)) != 0)
     {
         ev__read_exit(&req->base);
         ev_list_erase(&udp->recv_list, &req->base.node);
         goto err;
     }
 
-    return EV_SUCCESS;
+    return 0;
 
 err:
     ev__handle_exit(&req->handle, NULL);
@@ -90,19 +90,19 @@ int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
     req->usr_cb = cb;
     ev__handle_init(udp->base.loop, &req->handle, EV_ROLE_EV_REQ_UDP_W);
 
-    if ((ret = ev__write_init(&req->base, bufs, nbuf)) != EV_SUCCESS)
+    if ((ret = ev__write_init(&req->base, bufs, nbuf)) != 0)
     {
         goto err;
     }
     ev_list_push_back(&udp->send_list, &req->base.node);
 
     socklen_t addrlen = addr != NULL ? ev__get_addr_len(addr) : 0;
-    if ((ret = ev__udp_send(udp, req, addr, addrlen)) != EV_SUCCESS)
+    if ((ret = ev__udp_send(udp, req, addr, addrlen)) != 0)
     {
         goto err_cleanup_write;
     }
 
-    return EV_SUCCESS;
+    return 0;
 
 err_cleanup_write:
     ev_list_erase(&udp->send_list, &req->base.node);

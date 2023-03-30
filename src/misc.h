@@ -15,6 +15,8 @@ extern "C" {
  */
 API_LOCAL int ev__translate_sys_error(int syserr);
 
+API_LOCAL int ev__translate_posix_sys_error(int syserr);
+
 #ifdef __cplusplus
 }
 #endif

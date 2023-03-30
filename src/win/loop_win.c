@@ -173,7 +173,7 @@ API_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
 
     ev__threadpool_init_win(loop);
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 API_LOCAL void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req)
@@ -198,7 +198,7 @@ API_LOCAL int ev__reuse_win(SOCKET sock, int opt)
         return ev__translate_sys_error(err);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 API_LOCAL int ev__ipv6only_win(SOCKET sock, int opt)
@@ -212,5 +212,5 @@ API_LOCAL int ev__ipv6only_win(SOCKET sock, int opt)
         return ev__translate_sys_error(err);
     }
 
-    return EV_SUCCESS;
+    return 0;
 }

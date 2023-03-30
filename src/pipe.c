@@ -11,14 +11,14 @@ int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req, ev_buf_t* bufs,
 API_LOCAL int ev__pipe_read_init(ev_pipe_read_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_pipe_read_cb cb)
 {
     int ret;
-    if ((ret = ev__read_init(&req->base, bufs, nbuf)) != EV_SUCCESS)
+    if ((ret = ev__read_init(&req->base, bufs, nbuf)) != 0)
     {
         return ret;
     }
     req->ucb = cb;
 
     req->handle.os_socket = EV_OS_SOCKET_INVALID;
-    return EV_SUCCESS;
+    return 0;
 }
 
 API_LOCAL int ev__pipe_write_init(ev_pipe_write_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_pipe_write_cb cb)
@@ -31,7 +31,7 @@ API_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t* req, ev_pipe_write_cb
     ev_role_t handle_role, void* handle_addr, size_t handle_size)
 {
     int ret;
-    if ((ret = ev__write_init(&req->base, bufs, nbuf)) != EV_SUCCESS)
+    if ((ret = ev__write_init(&req->base, bufs, nbuf)) != 0)
     {
         return ret;
     }
@@ -57,5 +57,5 @@ API_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t* req, ev_pipe_write_cb
         return EV_EINVAL;
     }
 
-    return EV_SUCCESS;
+    return 0;
 }

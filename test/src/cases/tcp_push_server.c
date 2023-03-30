@@ -61,7 +61,7 @@ static void _on_send_finish_6d69(ev_tcp_write_req_t* req, size_t size, int stat)
 {
     (void)req;
     ASSERT_EQ_SIZE(size, sizeof(g_test_6d69->s_write_pack.send_buf));
-    ASSERT_EQ_INT(stat, EV_SUCCESS);
+    ASSERT_EQ_INT(stat, 0);
 
     /* Close connection */
     ev_tcp_exit(&g_test_6d69->s_conn, _on_close_conn_socket);
@@ -71,7 +71,7 @@ static void _on_accept_6d69(ev_tcp_t* from, ev_tcp_t* to, int stat)
 {
     ASSERT_EQ_PTR(&g_test_6d69->s_server, from);
     ASSERT_EQ_PTR(&g_test_6d69->s_conn, to);
-    ASSERT_EQ_INT(stat, EV_SUCCESS);
+    ASSERT_EQ_INT(stat, 0);
 
     ev_tcp_exit(&g_test_6d69->s_server, _on_close_server_socket);
     ASSERT_EQ_INT(ev_tcp_write(to, &g_test_6d69->s_write_pack.w_req,
@@ -94,7 +94,7 @@ static void _on_read_6d69(ev_tcp_read_req_t* req, size_t size, int stat)
         return;
     }
 
-    ASSERT_EQ_INT(stat, EV_SUCCESS);
+    ASSERT_EQ_INT(stat, 0);
 
     g_test_6d69->s_read_pack.buf =
         ev_buf_make(g_test_6d69->s_read_pack.recv_buf + g_test_6d69->s_read_pack.pos,
@@ -106,7 +106,7 @@ static void _on_read_6d69(ev_tcp_read_req_t* req, size_t size, int stat)
 static void _on_connect_6d69(ev_tcp_t* sock, int stat)
 {
     ASSERT_EQ_PTR(sock, &g_test_6d69->s_client);
-    ASSERT_EQ_INT(stat, EV_SUCCESS);
+    ASSERT_EQ_INT(stat, 0);
 
     ASSERT_EQ_INT(ev_tcp_read(&g_test_6d69->s_client, &g_test_6d69->s_read_pack.r_req,
         &g_test_6d69->s_read_pack.buf, 1, _on_read_6d69), 0);

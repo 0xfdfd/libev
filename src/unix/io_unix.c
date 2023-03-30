@@ -16,7 +16,7 @@ static int _ev_io_finalize_send_req_unix(ev_write_t* req, size_t write_size)
     if (req->size == req->capacity)
     {
         req->nbuf = 0;
-        return EV_SUCCESS;
+        return 0;
     }
     assert(req->size < req->capacity);
 
@@ -167,7 +167,7 @@ API_LOCAL int ev__cloexec(int fd, int set)
         return ev__translate_sys_error(errno);
     }
 
-    return EV_SUCCESS;
+    return 0;
 #else
     int flags;
 
@@ -180,7 +180,7 @@ API_LOCAL int ev__cloexec(int fd, int set)
     /* Bail out now if already set/clear. */
     if (!!(r & FD_CLOEXEC) == !!set)
     {
-        return EV_SUCCESS;
+        return 0;
     }
 
     if (set)
@@ -202,7 +202,7 @@ API_LOCAL int ev__cloexec(int fd, int set)
         return ev__translate_sys_error(errno);
     }
 
-    return EV_SUCCESS;
+    return 0;
 #endif
 }
 
@@ -228,7 +228,7 @@ API_LOCAL int ev__nonblock(int fd, int set)
         return ev__translate_sys_error(errno);
     }
 
-    return EV_SUCCESS;
+    return 0;
 #else
     int flags;
 
@@ -241,7 +241,7 @@ API_LOCAL int ev__nonblock(int fd, int set)
     /* Bail out now if already set/clear. */
     if (!!(r & O_NONBLOCK) == !!set)
     {
-        return EV_SUCCESS;
+        return 0;
     }
 
     if (set)
@@ -263,7 +263,7 @@ API_LOCAL int ev__nonblock(int fd, int set)
         return ev__translate_sys_error(errno);
     }
 
-    return EV_SUCCESS;
+    return 0;
 #endif
 }
 

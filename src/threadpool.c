@@ -94,7 +94,7 @@ static void _ev_threadpool_do_work(ev_threadpool_t* pool)
     work->data.status = EV_EBUSY;
     work->data.work_cb(work);
 
-    _ev_threadpool_commit(work, EV_SUCCESS);
+    _ev_threadpool_commit(work, 0);
 }
 
 static void _ev_threadpool_cleanup(ev_threadpool_t* pool)
@@ -168,7 +168,7 @@ int ev_threadpool_init(ev_threadpool_t* pool, const ev_thread_opt_t* opt,
         }
     }
 
-    return EV_SUCCESS;
+    return 0;
 
 err_release_thread:
     pool->looping = 0;
@@ -206,7 +206,7 @@ int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
 
     ev_sem_post(&pool->p2w_sem);
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 int ev_loop_cancel(ev_work_t* work)
@@ -231,7 +231,7 @@ int ev_loop_cancel(ev_work_t* work)
 
     _ev_threadpool_commit(work, EV_ECANCELED);
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 static void _threadpool_cancel_work_queue(ev_threadpool_t* pool, ev_queue_node_t* wqueue)
@@ -270,7 +270,7 @@ void ev_threadpool_exit(ev_threadpool_t* pool)
     for (i = 0; i < pool->thrnum; i++)
     {
         errcode = ev_thread_exit(&pool->threads[i], EV_INFINITE_TIMEOUT);
-        if (errcode != EV_SUCCESS)
+        if (errcode != 0)
         {
             EV_ABORT("ev_thread_exit:%d", errcode);
         }
@@ -298,10 +298,6 @@ API_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
     ev_work_done_cb done_cb)
 {
     ev_threadpool_t* pool = loop->threadpool.pool;
-    if (pool == NULL)
-    {
-        return EV_ENOTHREADPOOL;
-    }
 
     return ev_threadpool_submit(pool, loop, work, type, work_cb, done_cb);
 }
@@ -321,17 +317,13 @@ API_LOCAL int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool)
     }
     ev_mutex_leave(&pool->mutex);
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 int ev_loop_unlink_threadpool(ev_loop_t* loop)
 {
     size_t i;
     ev_threadpool_t* pool = loop->threadpool.pool;
-    if (pool == NULL)
-    {
-        return EV_ENOTHREADPOOL;
-    }
 
     /**
      * Cancel all pending task from target loop.
@@ -352,17 +344,12 @@ int ev_loop_unlink_threadpool(ev_loop_t* loop)
     }
     ev_mutex_leave(&pool->mutex);
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 int ev_loop_queue_work(ev_loop_t* loop, ev_work_t* token,
     ev_work_cb work_cb, ev_work_done_cb done_cb)
 {
-    if (loop->threadpool.pool == NULL)
-    {
-        return EV_ENOTHREADPOOL;
-    }
-
     return ev_threadpool_submit(loop->threadpool.pool, loop, token,
         EV_THREADPOOL_WORK_CPU, work_cb, done_cb);
 }

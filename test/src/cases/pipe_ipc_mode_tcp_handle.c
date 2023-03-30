@@ -41,10 +41,10 @@ TEST_FIXTURE_SETUP(pipe)
     g_test_19f1 = mmc_calloc(1, sizeof(*g_test_19f1));
 
     test_random(g_test_19f1->data1, sizeof(g_test_19f1->data1));
-    ASSERT_EQ_INT(ev_loop_init(&g_test_19f1->loop), EV_SUCCESS);
+    ASSERT_EQ_INT(ev_loop_init(&g_test_19f1->loop), 0);
 
-    ASSERT_EQ_INT(ev_pipe_init(&g_test_19f1->loop, &g_test_19f1->s_pipe, 1), EV_SUCCESS);
-    ASSERT_EQ_INT(ev_pipe_init(&g_test_19f1->loop, &g_test_19f1->c_pipe, 1), EV_SUCCESS);
+    ASSERT_EQ_INT(ev_pipe_init(&g_test_19f1->loop, &g_test_19f1->s_pipe, 1), 0);
+    ASSERT_EQ_INT(ev_pipe_init(&g_test_19f1->loop, &g_test_19f1->c_pipe, 1), 0);
 
     int rwflags = EV_PIPE_NONBLOCK | EV_PIPE_IPC;
     ev_os_pipe_t fds[2] = { EV_OS_PIPE_INVALID, EV_OS_PIPE_INVALID };
@@ -53,10 +53,10 @@ TEST_FIXTURE_SETUP(pipe)
     ASSERT_EQ_INT(ev_pipe_open(&g_test_19f1->s_pipe, fds[0]), 0);
     ASSERT_EQ_INT(ev_pipe_open(&g_test_19f1->c_pipe, fds[1]), 0);
 
-    ASSERT_EQ_INT(ev_tcp_init(&g_test_19f1->loop, &g_test_19f1->s_tcp), EV_SUCCESS);
-    ASSERT_EQ_INT(ev_tcp_init(&g_test_19f1->loop, &g_test_19f1->c_tcp), EV_SUCCESS);
+    ASSERT_EQ_INT(ev_tcp_init(&g_test_19f1->loop, &g_test_19f1->s_tcp), 0);
+    ASSERT_EQ_INT(ev_tcp_init(&g_test_19f1->loop, &g_test_19f1->c_tcp), 0);
     test_sockpair(&g_test_19f1->loop, &g_test_19f1->s_tcp, &g_test_19f1->c_tcp);
-    ASSERT_EQ_INT(ev_tcp_init(&g_test_19f1->loop, &g_test_19f1->d_tcp), EV_SUCCESS);
+    ASSERT_EQ_INT(ev_tcp_init(&g_test_19f1->loop, &g_test_19f1->d_tcp), 0);
 }
 
 TEST_FIXTURE_TEARDOWN(pipe)
@@ -77,7 +77,7 @@ TEST_FIXTURE_TEARDOWN(pipe)
 static void _on_pipe_write_done_19f1(ev_pipe_write_req_t* req, size_t size, int stat)
 {
     ASSERT_EQ_PTR(req, &g_test_19f1->pipe.w_req);
-    ASSERT_EQ_INT(stat, EV_SUCCESS);
+    ASSERT_EQ_INT(stat, 0);
     ASSERT_EQ_SIZE(size, sizeof(g_test_19f1->data1));
 
     g_test_19f1->cnt_wcb++;
@@ -86,7 +86,7 @@ static void _on_pipe_write_done_19f1(ev_pipe_write_req_t* req, size_t size, int 
 static void _on_tcp_write_done_19f1(ev_tcp_write_req_t* req, size_t size, int stat)
 {
     ASSERT_EQ_PTR(req, &g_test_19f1->tcp.w_req);
-    ASSERT_EQ_INT(stat, EV_SUCCESS);
+    ASSERT_EQ_INT(stat, 0);
     ASSERT_EQ_SIZE(size, sizeof(g_test_19f1->data1));
 
     g_test_19f1->cnt_wcb++;
@@ -96,7 +96,7 @@ static void _on_pipe_read_done_19f1(ev_pipe_read_req_t* req, size_t size, int st
 {
     (void)size;
     ASSERT_EQ_PTR(req, &g_test_19f1->pipe.r_req);
-    ASSERT_EQ_INT(stat, EV_SUCCESS);
+    ASSERT_EQ_INT(stat, 0);
 
     g_test_19f1->cnt_rcb++;
 }
@@ -105,7 +105,7 @@ static void _on_tcp_read_done_19f1(ev_tcp_read_req_t* req, size_t size, int stat
 {
     (void)size;
     ASSERT_EQ_PTR(req, &g_test_19f1->tcp.r_req);
-    ASSERT_EQ_INT(stat, EV_SUCCESS);
+    ASSERT_EQ_INT(stat, 0);
 
     g_test_19f1->cnt_rcb++;
 }

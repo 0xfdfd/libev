@@ -23,6 +23,7 @@
 9. support normal file read / write / seek operations
 10. support remove file and directory
 11. expose memory allocate functions
+12. redone error number
 
 ### Bug Fixes
 1. fix: use uninitialised value in `ev_exepath()` on Unix

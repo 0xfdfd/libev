@@ -80,7 +80,7 @@ static int _ev_fs_mkpath(char* file_path, int mode)
         }
     }
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 API_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
@@ -199,7 +199,7 @@ API_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
 #   endif
 #endif
 
-    return EV_SUCCESS;
+    return 0;
 
 err_errno:
     errcode = errno;
@@ -214,7 +214,7 @@ API_LOCAL int ev__fs_close(ev_os_file_t file)
         errcode = errno;
         return ev__translate_sys_error(errcode);
     }
-    return EV_SUCCESS;
+    return 0;
 }
 
 API_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mode)
@@ -233,7 +233,7 @@ API_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int m
     }
 
 #if defined(O_CLOEXEC)
-    if ((errcode = ev__cloexec(fd, 1)) != EV_SUCCESS)
+    if ((errcode = ev__cloexec(fd, 1)) != 0)
     {
         close(fd);
         return errcode;
@@ -241,7 +241,7 @@ API_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int m
 #endif
 
     *file = fd;
-    return EV_SUCCESS;
+    return 0;
 }
 
 API_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset)
@@ -282,13 +282,13 @@ API_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, 
 API_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
 {
     ssize_t write_size = writev(file, (struct iovec*)bufs, nbuf);
-	if (write_size >= 0)
-	{
-		return write_size;
-	}
+    if (write_size >= 0)
+    {
+        return write_size;
+    }
 
-	int errcode = errno;
-	return ev__translate_sys_error(errcode);
+    int errcode = errno;
+    return ev__translate_sys_error(errcode);
 }
 
 API_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)

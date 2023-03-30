@@ -151,7 +151,7 @@ struct ev_fs_req_s
         EV_THREADPOOL_WORK_INVALID,\
         NULL,\
         NULL,\
-        EV_UNKNOWN,\
+        EV_EINPROGRESS,\
         { { NULL, 0, 0 } },\
         { EV_FS_STAT_INVALID },\
     }

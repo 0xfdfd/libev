@@ -36,7 +36,7 @@ TEST_FIXTURE_TEARDOWN(pipe)
 
 TEST_F(pipe, 0_0_close_read)
 {
-    ASSERT_EQ_INT(ev_pipe_make(g_test_pipe_close.pipfd, 0, 0), EV_SUCCESS);
+    ASSERT_EQ_INT(ev_pipe_make(g_test_pipe_close.pipfd, 0, 0), 0);
 
     /* Close read side */
     ev_pipe_close(g_test_pipe_close.pipfd[0]);
@@ -57,7 +57,7 @@ TEST_F(pipe, 0_0_close_read)
 
 TEST_F(pipe, 0_0_close_write)
 {
-    ASSERT_EQ_INT(ev_pipe_make(g_test_pipe_close.pipfd, 0, 0), EV_SUCCESS);
+    ASSERT_EQ_INT(ev_pipe_make(g_test_pipe_close.pipfd, 0, 0), 0);
 
     /* Close write side */
     ev_pipe_close(g_test_pipe_close.pipfd[1]);
@@ -78,7 +78,7 @@ TEST_F(pipe, 0_0_close_write)
 
 TEST_F(pipe, 0_NONBLOCK_close_read)
 {
-    ASSERT_EQ_INT(ev_pipe_make(g_test_pipe_close.pipfd, 0, EV_PIPE_NONBLOCK), EV_SUCCESS);
+    ASSERT_EQ_INT(ev_pipe_make(g_test_pipe_close.pipfd, 0, EV_PIPE_NONBLOCK), 0);
 
     /* Close read side */
     ev_pipe_close(g_test_pipe_close.pipfd[0]);
@@ -99,7 +99,7 @@ TEST_F(pipe, 0_NONBLOCK_close_read)
 
 TEST_F(pipe, 0_NONBLOCK_close_write)
 {
-    ASSERT_EQ_INT(ev_pipe_make(g_test_pipe_close.pipfd, 0, EV_PIPE_NONBLOCK), EV_SUCCESS);
+    ASSERT_EQ_INT(ev_pipe_make(g_test_pipe_close.pipfd, 0, EV_PIPE_NONBLOCK), 0);
 
     /* Close write side */
     ev_pipe_close(g_test_pipe_close.pipfd[1]);
@@ -120,7 +120,7 @@ TEST_F(pipe, 0_NONBLOCK_close_write)
 
 TEST_F(pipe, NONBLOCK_0_close_read)
 {
-    ASSERT_EQ_INT(ev_pipe_make(g_test_pipe_close.pipfd, EV_PIPE_NONBLOCK, 0), EV_SUCCESS);
+    ASSERT_EQ_INT(ev_pipe_make(g_test_pipe_close.pipfd, EV_PIPE_NONBLOCK, 0), 0);
 
     /* Close read side */
     ev_pipe_close(g_test_pipe_close.pipfd[0]);
@@ -141,7 +141,7 @@ TEST_F(pipe, NONBLOCK_0_close_read)
 
 TEST_F(pipe, NONBLOCK_0_close_write)
 {
-    ASSERT_EQ_INT(ev_pipe_make(g_test_pipe_close.pipfd, EV_PIPE_NONBLOCK, 0), EV_SUCCESS);
+    ASSERT_EQ_INT(ev_pipe_make(g_test_pipe_close.pipfd, EV_PIPE_NONBLOCK, 0), 0);
 
     /* Close write side */
     ev_pipe_close(g_test_pipe_close.pipfd[1]);

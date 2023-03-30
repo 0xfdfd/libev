@@ -40,7 +40,7 @@ static int _ev_loop_init(ev_loop_t* loop)
 
     ev__loop_link_to_default_threadpool(loop);
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 static void _ev_loop_exit(ev_loop_t* loop)
@@ -164,19 +164,19 @@ API_LOCAL ev_loop_t* ev__handle_loop(ev_handle_t* handle)
 int ev_loop_init(ev_loop_t* loop)
 {
     int ret;
-    if ((ret = _ev_loop_init(loop)) != EV_SUCCESS)
+    if ((ret = _ev_loop_init(loop)) != 0)
     {
         return ret;
     }
 
-    if ((ret = ev__loop_init_backend(loop)) != EV_SUCCESS)
+    if ((ret = ev__loop_init_backend(loop)) != 0)
     {
         _ev_loop_exit(loop);
         return ret;
     }
 
     ev__loop_update_time(loop);
-    return EV_SUCCESS;
+    return 0;
 }
 
 int ev_loop_exit(ev_loop_t* loop)
@@ -190,7 +190,7 @@ int ev_loop_exit(ev_loop_t* loop)
     ev__loop_exit_backend(loop);
     _ev_loop_exit(loop);
 
-    return EV_SUCCESS;
+    return 0;
 }
 
 void ev_loop_stop(ev_loop_t* loop)
@@ -276,7 +276,7 @@ API_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf)
     memcpy(req->bufs, bufs, sizeof(ev_buf_t) * nbuf);
     req->size = 0;
     req->capacity = _ev_calculate_write_size(req);
-    return EV_SUCCESS;
+    return 0;
 }
 
 API_LOCAL void ev__write_exit(ev_write_t* req)
@@ -310,7 +310,7 @@ API_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf)
     memcpy(req->data.bufs, bufs, sizeof(ev_buf_t) * nbuf);
     req->data.capacity = _ev_calculate_read_capacity(req);
     req->data.size = 0;
-    return EV_SUCCESS;
+    return 0;
 }
 
 API_LOCAL void ev__read_exit(ev_read_t* req)
@@ -325,63 +325,21 @@ API_LOCAL void ev__read_exit(ev_read_t* req)
 
 const char* ev_strerror(int err)
 {
+#define EV_EXPAND_ERRMAP(err, syserr, str) case err: return str;
+
     switch (err)
     {
-        /* Success */
-    case EV_SUCCESS:            return "Operation success";
-
-        /* Posix compatible error code */
-    case EV_EPERM:              return "Operation not permitted";
-    case EV_ENOENT:             return "No such file or directory";
-    case EV_EIO:                return "Host is unreachable";
-    case EV_E2BIG:              return "Argument list too long";
-    case EV_EBADF:              return "Bad file descriptor";
-    case EV_EAGAIN:             return "Resource temporarily unavailable";
-    case EV_ENOMEM:             return "EV_ENOMEM";
-    case EV_EACCES:             return "Permission denied";
-    case EV_EFAULT:             return "Bad address";
-    case EV_EBUSY:              return "Device or resource busy";
-    case EV_EEXIST:             return "File exists";
-    case EV_EXDEV:              return "Improper link";
-    case EV_ENOTDIR:            return "Not a directory";
-    case EV_EISDIR:             return "Is a directory";
-    case EV_EINVAL:             return "Invalid argument";
-    case EV_EMFILE:             return "Too many open files";
-    case EV_ENOSPC:             return "No space left on device";
-    case EV_EROFS:              return "Read-only filesystem";
-    case EV_EPIPE:              return "Broken pipe";
-    case EV_ENAMETOOLONG:       return "Filename too long";
-    case EV_ENOTEMPTY:          return "Directory not empty";
-    case EV_EADDRINUSE:         return "Address already in use";
-    case EV_EADDRNOTAVAIL:      return "Address not available";
-    case EV_EAFNOSUPPORT:       return "Address family not supported";
-    case EV_EALREADY:           return "Connection already in progress";
-    case EV_ECANCELED:          return "Operation canceled";
-    case EV_ECONNABORTED:       return "Connection aborted";
-    case EV_ECONNREFUSED:       return "Connection refused";
-    case EV_ECONNRESET:         return "Connection reset";
-    case EV_EHOSTUNREACH:       return "Host is unreachable";
-    case EV_EINPROGRESS:        return "Operation in progress";
-    case EV_EISCONN:            return "Socket is connected";
-    case EV_ELOOP:              return "Too many levels of symbolic links";
-    case EV_EMSGSIZE:           return "Message too long";
-    case EV_ENETUNREACH:        return "Network unreachable";
-    case EV_ENOBUFS:            return "No buffer space available";
-    case EV_ENOTCONN:           return "The socket is not connected";
-    case EV_ENOTSOCK:           return "Not a socket";
-    case EV_ENOTSUP:            return "Operation not supported";
-    case EV_EPROTONOSUPPORT:    return "Protocol not supported";
-    case EV_ETIMEDOUT:          return "Operation timed out";
-
-        /* Extend error code */
-    case EV_UNKNOWN:            return "Unknown error";
+	/* Success */
+	case 0:                     return "Operation success";
     case EV_EOF:                return "End of file";
-    case EV_ENOTHREADPOOL:      return "No linked thread pool";
-
-        /* Unknown error */
+    /* posix */
+    EV_ERRNO_POSIX_MAP(EV_EXPAND_ERRMAP);
+    /* Unknown error */
     default:                    break;
     }
     return "Unknown error";
+
+#undef EV_EXPAND_ERRMAP
 }
 
 API_LOCAL socklen_t ev__get_addr_len(const struct sockaddr* addr)

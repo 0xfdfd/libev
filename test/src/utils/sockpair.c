@@ -9,14 +9,14 @@ typedef struct test_sockpair_ctx
 static void _test_sockpair_on_accept(ev_tcp_t* lisn, ev_tcp_t* conn, int stat)
 {
     (void)conn;
-    ASSERT_EQ_INT(stat, EV_SUCCESS);
+    ASSERT_EQ_INT(stat, 0);
     ev_tcp_exit(lisn, NULL);
 }
 
 static void _test_sockpair_on_connect(ev_tcp_t* sock, int stat)
 {
     (void)sock;
-    ASSERT_EQ_INT(stat, EV_SUCCESS);
+    ASSERT_EQ_INT(stat, 0);
 }
 
 void test_sockpair(ev_loop_t* loop, ev_tcp_t* s_sock, ev_tcp_t* c_sock)
