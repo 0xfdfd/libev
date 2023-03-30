@@ -20,7 +20,7 @@ extern "C" {
  */
 
 /**
- * @brief Convert ip and port into network address
+ * @brief Convert IPv4 ip and port into network address
  * @param[in] ip    Character string contains IP
  * @param[in] port  Port
  * @param[out] addr network address structure
@@ -29,7 +29,7 @@ extern "C" {
 int ev_ipv4_addr(const char* ip, int port, struct sockaddr_in* addr);
 
 /**
- * @brief Convert ip and port into network address
+ * @brief Convert IPv6 ip and port into network address
  * @param[in] ip    Character string contains IP
  * @param[in] port  Port
  * @param[out] addr network address structure
@@ -38,7 +38,16 @@ int ev_ipv4_addr(const char* ip, int port, struct sockaddr_in* addr);
 int ev_ipv6_addr(const char* ip, int port, struct sockaddr_in6* addr);
 
 /**
- * @brief Convert network address into ip and port
+ * @brief Convert ip and port into network address
+ * @param[in] ip    Character string contains IP
+ * @param[in] port  Port
+ * @param[out] addr network address structure
+ * @return          #ev_errno_t
+ */
+int ev_ip_addr(const char* ip, int port, struct sockaddr* addr, size_t size);
+
+/**
+ * @brief Convert IPv4 network address into ip and port
  * @param[in] addr  network address structure
  * @param[out] port Port
  * @param[out] ip   A buffer to store IP string
@@ -48,7 +57,7 @@ int ev_ipv6_addr(const char* ip, int port, struct sockaddr_in6* addr);
 int ev_ipv4_name(const struct sockaddr_in* addr, int* port, char* ip, size_t len);
 
 /**
- * @brief Convert network address into ip and port
+ * @brief Convert IPv6 network address into ip and port
  * @param[in] addr  network address structure
  * @param[out] port Port
  * @param[out] ip   A buffer to store IP string
@@ -56,6 +65,16 @@ int ev_ipv4_name(const struct sockaddr_in* addr, int* port, char* ip, size_t len
  * @return          #ev_errno_t
  */
 int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t len);
+
+/**
+ * @brief Convert network address into ip and port
+ * @param[in] addr  network address structure
+ * @param[out] port Port
+ * @param[out] ip   A buffer to store IP string
+ * @param[in] len   Buffer length
+ * @return          #ev_errno_t
+ */
+int ev_ip_name(const struct sockaddr* addr, int* port, char* ip, size_t len);
 
 /**
  * @} EV_MISC_NET

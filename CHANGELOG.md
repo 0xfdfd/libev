@@ -24,6 +24,7 @@
 10. support remove file and directory
 11. expose memory allocate functions
 12. redone error number
+13. smart convert addr and name
 
 ### Bug Fixes
 1. fix: use uninitialised value in `ev_exepath()` on Unix
