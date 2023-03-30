@@ -12,7 +12,7 @@ extern "C" {
 
 /**
  * @brief Maps a character string to a UTF-16 (wide character) string.
- * @param[out] dst  Pointer to store wide string. Use #ev__free() to release it.
+ * @param[out] dst  Pointer to store wide string. Use #ev_free() to release it.
  * @param[in] src   Source string.
  * @return          The number of characters (not bytes) of \p dst, or #ev_errno_t if error.
  */
@@ -20,7 +20,7 @@ API_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src);
 
 /**
  * @brief Maps a UTF-16 (wide character) string to a character string.
- * @param[out] dst  Pointer to store wide string. Use #ev__free() to release it.
+ * @param[out] dst  Pointer to store wide string. Use #ev_free() to release it.
  * @param[in] src   Source string.
  * @return          The number of characters (not bytes) of \p dst, or #ev_errno_t if error.
  */

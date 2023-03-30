@@ -266,7 +266,7 @@ API_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf)
     }
     else
     {
-        req->bufs = ev__malloc(sizeof(ev_buf_t) * nbuf);
+        req->bufs = ev_malloc(sizeof(ev_buf_t) * nbuf);
         if (req->bufs == NULL)
         {
             return EV_ENOMEM;
@@ -283,7 +283,7 @@ API_LOCAL void ev__write_exit(ev_write_t* req)
 {
     if (req->bufs != req->bufsml)
     {
-        ev__free(req->bufs);
+        ev_free(req->bufs);
     }
 
     req->bufs = NULL;
@@ -300,7 +300,7 @@ API_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf)
     }
     else
     {
-        req->data.bufs = ev__malloc(sizeof(ev_buf_t) * nbuf);
+        req->data.bufs = ev_malloc(sizeof(ev_buf_t) * nbuf);
         if (req->data.bufs == NULL)
         {
             return EV_ENOMEM;
@@ -317,7 +317,7 @@ API_LOCAL void ev__read_exit(ev_read_t* req)
 {
     if (req->data.bufs != req->data.bufsml)
     {
-        ev__free(req->data.bufs);
+        ev_free(req->data.bufs);
     }
     req->data.bufs = NULL;
     req->data.nbuf = 0;

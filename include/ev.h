@@ -90,7 +90,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           17
+#define EV_VERSION_PREREL           18
 
 /**
  * @brief Version calculate helper macro.
@@ -439,6 +439,26 @@ typedef void (*ev_free_fn)(void* ptr);
  */
 int ev_replace_allocator(ev_malloc_fn malloc_func, ev_calloc_fn calloc_func,
     ev_realloc_fn realloc_func, ev_free_fn free_func);
+
+/**
+ * @brief Same as [malloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
+ */
+void* ev_malloc(size_t size);
+
+/**
+ * @brief Same as [calloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
+ */
+void* ev_calloc(size_t nmemb, size_t size);
+
+/**
+ * @brief Same as [realloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
+ */
+void* ev_realloc(void* ptr, size_t size);
+
+/**
+ * @brief Same as [free(3)](https://man7.org/linux/man-pages/man3/free.3.html)
+ */
+void ev_free(void* ptr);
 
 /**
  * @} EV_ALLOCATOR

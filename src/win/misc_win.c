@@ -15,7 +15,7 @@ API_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src)
     }
 
     size_t buf_sz = pathw_len * sizeof(WCHAR);
-    WCHAR* buf = ev__malloc(buf_sz);
+    WCHAR* buf = ev_malloc(buf_sz);
     if (buf == NULL)
     {
         return EV_ENOMEM;
@@ -40,7 +40,7 @@ API_LOCAL ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src)
         return ev__translate_sys_error(errcode);
     }
 
-    char* buf = ev__malloc(target_len);
+    char* buf = ev_malloc(target_len);
     if (buf == NULL)
     {
         return EV_ENOMEM;

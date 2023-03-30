@@ -61,7 +61,7 @@ static int _ev_fs_wide_to_utf8(WCHAR* w_source_ptr, DWORD w_source_len,
         return 0;
     }
 
-    target = ev__malloc(target_len + 1);
+    target = ev_malloc(target_len + 1);
     if (target == NULL)
     {
         SetLastError(ERROR_OUTOFMEMORY);
@@ -548,7 +548,7 @@ static int _ev_fs_readdir_w_on_dirent(ev_dirent_w_t* info, void* arg)
     }
 
     ret = helper->cb(&wrap_info, helper->arg);
-    ev__free(wrap_info.name);
+    ev_free(wrap_info.name);
 
     return (int)ret;
 }
@@ -779,7 +779,7 @@ API_LOCAL int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg)
 
     size_t path_len = wcslen(path);
     size_t fixed_path_len = path_len + 3;
-    fixed_path = ev__malloc(sizeof(WCHAR) * fixed_path_len);
+    fixed_path = ev_malloc(sizeof(WCHAR) * fixed_path_len);
     if (fixed_path == NULL)
     {
         return EV_ENOMEM;
@@ -822,7 +822,7 @@ cleanup:
     }
     if (fixed_path != NULL)
     {
-        ev__free(fixed_path);
+        ev_free(fixed_path);
     }
     return ret;
 }
@@ -839,7 +839,7 @@ API_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
     fs_readdir_win_helper_t helper = { cb, arg, 0 };
     int ret = ev__fs_readdir_w(wide_path, _ev_fs_readdir_w_on_dirent, &helper);
 
-    ev__free(wide_path);
+    ev_free(wide_path);
     return helper.errcode != EV_SUCCESS ? helper.errcode : ret;
 }
 
@@ -853,7 +853,7 @@ API_LOCAL int ev__fs_mkdir(const char* path, int mode)
     }
 
     ret = _ev_fs_wmkdir(copy_wpath, mode);
-    ev__free(copy_wpath);
+    ev_free(copy_wpath);
 
     return (int)ret;
 }

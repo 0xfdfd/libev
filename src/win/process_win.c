@@ -24,7 +24,7 @@ typedef struct stdio_pair_s
 
 static int _dup_cmd(char** buf, char* const argv[])
 {
-    char* cmdline = ev__malloc(MAX_PATH + 1);
+    char* cmdline = ev_malloc(MAX_PATH + 1);
     if (cmdline == NULL)
     {
         return EV_ENOMEM;
@@ -59,7 +59,7 @@ static int _dup_envp(char**buf, char* const envp[])
         malloc_size += strlen(envp[idx]) + 1;
     }
 
-    char* envline = ev__malloc(malloc_size);
+    char* envline = ev_malloc(malloc_size);
     if (envline == NULL)
     {
         return EV_ENOMEM;
@@ -237,7 +237,7 @@ static void _ev_process_cleanup_cmdline(ev_startup_info_t* start_info)
 {
     if (start_info->cmdline != NULL)
     {
-        ev__free(start_info->cmdline);
+        ev_free(start_info->cmdline);
         start_info->cmdline = NULL;
     }
 }
@@ -246,7 +246,7 @@ static void _ev_process_cleanup_envp(ev_startup_info_t* start_info)
 {
     if (start_info->envline != NULL)
     {
-        ev__free(start_info->envline);
+        ev_free(start_info->envline);
         start_info->envline = NULL;
     }
 }
@@ -530,7 +530,7 @@ ssize_t ev_getcwd(char* buffer, size_t size)
         return ev__translate_sys_error(errcode);
     }
 
-    WCHAR* tmp_buf = ev__malloc(wide_size * sizeof(WCHAR));
+    WCHAR* tmp_buf = ev_malloc(wide_size * sizeof(WCHAR));
     if (tmp_buf == NULL)
     {
         return EV_ENOMEM;
@@ -540,7 +540,7 @@ ssize_t ev_getcwd(char* buffer, size_t size)
     if (wide_size == 0)
     {
         errcode = GetLastError();
-        ev__free(tmp_buf);
+        ev_free(tmp_buf);
         return ev__translate_sys_error(errcode);
     }
 
@@ -557,13 +557,13 @@ ssize_t ev_getcwd(char* buffer, size_t size)
     if (required_size == 0)
     {
         errcode = GetLastError();
-        ev__free(tmp_buf);
+        ev_free(tmp_buf);
         return ev__translate_sys_error(errcode);
     }
 
     int write_size = WideCharToMultiByte(CP_UTF8, 0, tmp_buf, -1, buffer,
         (int)size, NULL, NULL);
-    ev__free(tmp_buf);
+    ev_free(tmp_buf);
 
     if (write_size == 0)
     {
@@ -585,7 +585,7 @@ ssize_t ev_exepath(char* buffer, size_t size)
     int err;
 
     DWORD utf16_buffer_len = WIN32_UNICODE_PATH_MAX;
-    WCHAR* utf16_buffer = (WCHAR*) ev__malloc(sizeof(WCHAR) * utf16_buffer_len);
+    WCHAR* utf16_buffer = (WCHAR*) ev_malloc(sizeof(WCHAR) * utf16_buffer_len);
     if (!utf16_buffer)
     {
         return EV_ENOMEM;
@@ -617,7 +617,7 @@ ssize_t ev_exepath(char* buffer, size_t size)
         goto error;
     }
 
-    ev__free(utf16_buffer);
+    ev_free(utf16_buffer);
 
     /* utf8_len *does* include the terminating null at this point, but the
      * returned size shouldn't. */
@@ -628,6 +628,6 @@ error:
     {
         *buffer = '\0';
     }
-    ev__free(utf16_buffer);
+    ev_free(utf16_buffer);
     return ev__translate_sys_error(err);
 }

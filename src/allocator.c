@@ -54,22 +54,22 @@ int ev_replace_allocator(ev_malloc_fn malloc_func, ev_calloc_fn calloc_func,
     return EV_SUCCESS;
 }
 
-API_LOCAL void* ev__calloc(size_t nmemb, size_t size)
+void* ev_calloc(size_t nmemb, size_t size)
 {
     return ev__allocator.calloc_func(nmemb, size);
 }
 
-API_LOCAL void* ev__malloc(size_t size)
+void* ev_malloc(size_t size)
 {
     return ev__allocator.malloc_func(size);
 }
 
-API_LOCAL void* ev__realloc(void* ptr, size_t size)
+void* ev_realloc(void* ptr, size_t size)
 {
     return ev__allocator.realloc_func(ptr, size);
 }
 
-API_LOCAL void ev__free(void* ptr)
+void ev_free(void* ptr)
 {
     ev__allocator.free_func(ptr);
 }
@@ -77,7 +77,7 @@ API_LOCAL void ev__free(void* ptr)
 API_LOCAL char* ev__strdup(const char* s)
 {
     size_t len = strlen(s) + 1;
-    char* m = ev__malloc(len);
+    char* m = ev_malloc(len);
     if (m == NULL)
     {
         return NULL;

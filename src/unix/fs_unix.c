@@ -347,7 +347,7 @@ API_LOCAL int ev__fs_mkdir(const char* path, int mode)
     }
 
     int ret = _ev_fs_mkpath(dup_path, mode);
-    ev__free(dup_path);
+    ev_free(dup_path);
 
     return ret;
 }

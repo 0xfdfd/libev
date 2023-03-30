@@ -634,7 +634,7 @@ ssize_t ev_getcwd(char* buffer, size_t size)
     }
 
     const size_t max_path_size = PATH_MAX + 1;
-    char* tmp_buf = ev__malloc(max_path_size);
+    char* tmp_buf = ev_malloc(max_path_size);
     if (tmp_buf == NULL)
     {
         return EV_ENOMEM;
@@ -643,7 +643,7 @@ ssize_t ev_getcwd(char* buffer, size_t size)
     if (getcwd(tmp_buf, max_path_size) == NULL)
     {
         errcode = errno;
-        ev__free(tmp_buf);
+        ev_free(tmp_buf);
         return ev__translate_sys_error(errcode);
     }
 
@@ -659,7 +659,7 @@ ssize_t ev_getcwd(char* buffer, size_t size)
         snprintf(buffer, size, "%s", tmp_buf);
     }
 
-    ev__free(tmp_buf);
+    ev_free(tmp_buf);
     return str_len;
 }
 
@@ -668,7 +668,7 @@ ssize_t ev_exepath(char* buffer, size_t size)
     int errcode;
 
     size_t tmp_size = PATH_MAX;
-    char* tmp_buffer = ev__malloc(tmp_size);
+    char* tmp_buffer = ev_malloc(tmp_size);
     if (tmp_buffer == NULL)
     {
         errcode = EV_ENOMEM;
@@ -687,7 +687,7 @@ ssize_t ev_exepath(char* buffer, size_t size)
     {
         ret = snprintf(buffer, size, "%s", tmp_buffer);
     }
-    ev__free(tmp_buffer);
+    ev_free(tmp_buffer);
 
     return ret;
 
@@ -696,6 +696,6 @@ error:
     {
         buffer[0] = '\0';
     }
-    ev__free(tmp_buffer);
+    ev_free(tmp_buffer);
     return errcode;
 }

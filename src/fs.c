@@ -40,7 +40,7 @@ static void _ev_fs_cleanup_req_as_open(ev_fs_req_t* token)
 {
     if (token->req.as_open.path != NULL)
     {
-        ev__free(token->req.as_open.path);
+        ev_free(token->req.as_open.path);
         token->req.as_open.path = NULL;
     }
 }
@@ -71,13 +71,13 @@ static void _ev_fs_cleanup_req_as_readdir(ev_fs_req_t* req)
     while ((it = ev_list_pop_front(&req->rsp.dirents)) != NULL)
     {
         ev_dirent_record_t* rec = EV_CONTAINER_OF(it, ev_dirent_record_t, node);
-        ev__free((char*)rec->data.name);
-        ev__free(rec);
+        ev_free((char*)rec->data.name);
+        ev_free(rec);
     }
 
     if (req->req.as_readdir.path != NULL)
     {
-        ev__free(req->req.as_readdir.path);
+        ev_free(req->req.as_readdir.path);
         req->req.as_readdir.path = NULL;
     }
 }
@@ -86,13 +86,13 @@ static void _ev_fs_cleanup_req_as_readfile(ev_fs_req_t* req)
 {
     if (req->req.as_readfile.path != NULL)
     {
-        ev__free(req->req.as_readfile.path);
+        ev_free(req->req.as_readfile.path);
         req->req.as_readfile.path = NULL;
     }
 
     if (req->rsp.filecontent.data != NULL)
     {
-        ev__free(req->rsp.filecontent.data);
+        ev_free(req->rsp.filecontent.data);
         req->rsp.filecontent.data = NULL;
     }
     req->rsp.filecontent.size = 0;
@@ -102,7 +102,7 @@ static void _ev_fs_cleanup_req_as_mkdir(ev_fs_req_t* req)
 {
     if (req->req.as_mkdir.path != NULL)
     {
-        ev__free(req->req.as_mkdir.path);
+        ev_free(req->req.as_mkdir.path);
         req->req.as_mkdir.path = NULL;
     }
 }
@@ -111,7 +111,7 @@ static void _ev_fs_cleanup_req_as_remove(ev_fs_req_t* req)
 {
     if (req->req.as_remove.path != NULL)
     {
-        ev__free(req->req.as_remove.path);
+        ev_free(req->req.as_remove.path);
         req->req.as_remove.path = NULL;
     }
 }
@@ -304,7 +304,7 @@ static int _ev_fs_on_readdir_entry(ev_dirent_t* info, void* arg)
 {
     fs_readdir_helper_t* helper = arg;
 
-    ev_dirent_record_t* rec = ev__malloc(sizeof(ev_dirent_record_t));
+    ev_dirent_record_t* rec = ev_malloc(sizeof(ev_dirent_record_t));
     if (rec == NULL)
     {
         goto err_nomem;
@@ -325,7 +325,7 @@ static int _ev_fs_on_readdir_entry(ev_dirent_t* info, void* arg)
 err_nomem:
     if (rec != NULL)
     {
-        ev__free(rec);
+        ev_free(rec);
     }
     helper->req->result = EV_ENOMEM;
     return -1;
@@ -446,7 +446,7 @@ static void _ev_fs_on_readfile(ev_work_t* work)
         goto close_file;
     }
 
-    void* data = ev__malloc(statbuf.st_size);
+    void* data = ev_malloc(statbuf.st_size);
     req->rsp.filecontent = ev_buf_make(data, statbuf.st_size);
 
     if (req->rsp.filecontent.data == NULL)
@@ -556,11 +556,11 @@ static  int _ev_fs_remove_helper(ev_dirent_t* info, void* arg)
 	size_t name_sz = strlen(info->name);
 	size_t full_path_sz = parent_path_sz + 1 + name_sz;
 
-	char* full_path = ev__malloc(full_path_sz + 1);
+	char* full_path = ev_malloc(full_path_sz + 1);
 	snprintf(full_path, full_path_sz + 1, "%s/%s", parent_path, info->name);
 
 	helper->ret = ev__fs_remove(full_path, 1);
-	ev__free(full_path);
+	ev_free(full_path);
 
 	return helper->ret;
 }
