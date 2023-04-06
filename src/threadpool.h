@@ -8,6 +8,61 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Work type.
+ */
+typedef enum ev_work_type
+{
+    /**
+     * @brief CPU work
+     */
+    EV_THREADPOOL_WORK_CPU      = 0,
+
+    /**
+     * @brief Fast IO. Typically file system operations.
+     */
+    EV_THREADPOOL_WORK_IO_FAST  = 1,
+
+    /**
+     * @brief Slow IO. Typically network operations.
+     */
+    EV_THREADPOOL_WORK_IO_SLOW  = 2,
+} ev_work_type_t;
+
+typedef struct ev_threadpool ev_threadpool_t;
+
+/**
+ * @brief Thread pool handle type.
+ */
+struct ev_threadpool
+{
+    ev_os_thread_t*                 threads;        /**< Threads */
+    size_t                          thrnum;         /**< The number of threads */
+
+    ev_list_t                       loop_table;     /**< Loop table */
+
+    ev_mutex_t                      mutex;          /**< Thread pool mutex */
+    ev_sem_t                        p2w_sem;        /**< Semaphore for pool to worker */
+    int                             looping;        /**< Looping flag */
+
+    ev_queue_node_t                 work_queue[3];  /**< Work queue. Index is #ev_work_type_t */
+};
+
+#define EV_THREADPOOL_INVALID   \
+    {\
+        NULL,\
+        0,\
+        EV_LIST_INIT,\
+        EV_MUTEX_INVALID,\
+        EV_SEM_INVALID,\
+        0,\
+        {\
+            EV_QUEUE_NODE_INVALID,\
+            EV_QUEUE_NODE_INVALID,\
+            EV_QUEUE_NODE_INVALID,\
+        },\
+    }
+
 API_LOCAL void ev__loop_link_to_default_threadpool(ev_loop_t* loop);
 
 API_LOCAL int ev_loop_unlink_threadpool(ev_loop_t* loop);

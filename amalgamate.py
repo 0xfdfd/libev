@@ -42,24 +42,26 @@ def process_file(content, src_path):
     content += data
     return content
 
-def do_amalgamate_header(hdr_pre, hdr_os_win, hdr_os_unix, hdr_post):
+def read_content(path):
+    f = open(path, 'r', encoding='UTF-8')
+    data = f.read()
+    f.close()
+    return data
+
+def do_amalgamate_header(hdr_list):
     content = ''
     content = add_license(content)
     content = add_warning(content)
+    # Read content
+    content += read_content(hdr_list[0])
 
-    for header in hdr_pre:
-        content = process_file(content, header)
-
-    content += '\n#if defined(_WIN32) /* AMALGAMATE: `#if defined(_WIN32)\' (1/3) */\n'
-    for header in hdr_os_win:
-        content = process_file(content, header)
-    content += '\n#else /* AMALGAMATE: `#if defined(_WIN32)\' (2/3) */\n'
-    for header in hdr_os_unix:
-        content = process_file(content, header)
-    content += '\n#endif /* AMALGAMATE: `#if defined(_WIN32)\' (3/3) */\n'
-
-    for header in hdr_post:
-        content = process_file(content, header)
+    while True:
+        m = re.search('#\\s*include\\s+"([-\\w/]+)\\.h"', content)
+        if m == None:
+            break
+        for c in hdr_list:
+            if c.find(m.group(1)) != -1:
+                content = content[:m.start(0)] + read_content(c) + content[m.end(0):]
 
     return content
 
@@ -101,10 +103,7 @@ if __name__ == '__main__':
         prog = 'amalgamate',
         description = 'Amalgamate libev headers and sources')
     cmd_parser.add_argument('--out', required = True)
-    cmd_parser.add_argument('--hdr_pre', required = True)
-    cmd_parser.add_argument('--hdr_os_win', required = True)
-    cmd_parser.add_argument('--hdr_os_unix', required = True)
-    cmd_parser.add_argument('--hdr_post', required = True)
+    cmd_parser.add_argument('--public_hdr', required = True)
     cmd_parser.add_argument('--src_hdr', required = True)
     cmd_parser.add_argument('--src_hdr_os_win', required = True)
     cmd_parser.add_argument('--src_hdr_os_unix', required = True)
@@ -115,11 +114,7 @@ if __name__ == '__main__':
     args = cmd_parser.parse_args()
     os.makedirs(args.out, exist_ok=True)
 
-    content = do_amalgamate_header(
-        args.hdr_pre.split(','),
-        args.hdr_os_win.split(','),
-        args.hdr_os_unix.split(','),
-        args.hdr_post.split(','))
+    content = do_amalgamate_header(args.public_hdr.split(','))
     dst_file = open(args.out + '/ev.h', 'w', encoding='UTF-8')
     dst_file.write(content)
     dst_file.close()

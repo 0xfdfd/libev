@@ -8,56 +8,10 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/third_party/cmake-modules")
 option(EV_ENABLE_COVERAGE "Enable code coverage. GCC/Clang only" OFF)
 option(EV_AMALGAMATE_BUILD "Build amalgamate source file" OFF)
 
-set(ev_header_pre
+set(ev_header_public_list
     "include/ev.h"
-    "include/ev/defs.h"
-    "include/ev/backend.h"
-    "include/ev/list.h"
-    "include/ev/map_low.h"
-    "include/ev/map.h"
-    "include/ev/loop_forward.h"
-    "include/ev/tcp_forward.h"
-    "include/ev/pipe_forward.h"
-    "include/ev/fs_forward.h"
-    "include/ev/process_forward.h"
-    "include/ev/threadpool_forward.h"
-    "include/ev/request_forward.h"
-    "include/ev/thread_forward.h"
-    "include/ev/udp_forward.h"
-    "include/ev/time_forward.h"
-    "include/ev/timer_forward.h"
-    "include/ev/ipc-protocol.h"
-)
-
-set(ev_hdr_os_win
-    "include/ev/backend_win.h"
-)
-
-set(ev_hdr_os_unix
-    "include/ev/backend_unix.h"
-)
-
-set(ev_hdr_post
-    "include/ev/handle.h"
-    "include/ev/async.h"
-    "include/ev/buf.h"
-    "include/ev/time.h"
-    "include/ev/queue.h"
-    "include/ev/mutex.h"
-    "include/ev/sem.h"
-    "include/ev/threadpool.h"
-    "include/ev/request.h"
-    "include/ev/fs.h"
-    "include/ev/loop.h"
-    "include/ev/misc.h"
-    "include/ev/once.h"
-    "include/ev/pipe.h"
-    "include/ev/process.h"
-    "include/ev/shmem.h"
-    "include/ev/tcp.h"
-    "include/ev/thread.h"
-    "include/ev/timer.h"
-    "include/ev/udp.h"
+    "include/ev/win.h"
+    "include/ev/unix.h"
 )
 
 set(ev_src_hdr
@@ -110,7 +64,6 @@ set(ev_src
     "src/log.c"
     "src/loop.c"
     "src/map.c"
-    "src/map_low.c"
     "src/misc.c"
     "src/pipe.c"
     "src/queue.c"
@@ -178,10 +131,7 @@ endfunction()
 function(build_with_amalgamate name)
     find_package (Python3 REQUIRED COMPONENTS Interpreter)
 
-    string(REPLACE ";" "," escaped_ev_header_pre      "${ev_header_pre}")
-    string(REPLACE ";" "," escaped_ev_hdr_os_win      "${ev_hdr_os_win}")
-    string(REPLACE ";" "," escaped_ev_hdr_os_unix     "${ev_hdr_os_unix}")
-    string(REPLACE ";" "," escaped_ev_hdr_post        "${ev_hdr_post}")
+    string(REPLACE ";" "," escaped_ev_header_public_list      "${ev_header_public_list}")
     string(REPLACE ";" "," escaped_ev_src_hdr         "${ev_src_hdr}")
     string(REPLACE ";" "," escaped_ev_src_hdr_os_win  "${ev_src_hdr_os_win}")
     string(REPLACE ";" "," escaped_ev_src_hdr_os_unix "${ev_src_hdr_os_unix}")
@@ -193,10 +143,7 @@ function(build_with_amalgamate name)
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/amalgamate/ev.h ${CMAKE_CURRENT_BINARY_DIR}/amalgamate/ev.c
         COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.py
                 --out ${CMAKE_CURRENT_BINARY_DIR}/amalgamate
-                --hdr_pre           ${escaped_ev_header_pre}
-                --hdr_os_win        ${escaped_ev_hdr_os_win}
-                --hdr_os_unix       ${escaped_ev_hdr_os_unix}
-                --hdr_post          ${escaped_ev_hdr_post}
+                --public_hdr        ${escaped_ev_header_public_list}
                 --src_hdr           ${escaped_ev_src_hdr}
                 --src_hdr_os_win    ${escaped_ev_src_hdr_os_win}
                 --src_hdr_os_unix   ${escaped_ev_src_hdr_os_unix}
@@ -204,10 +151,7 @@ function(build_with_amalgamate name)
                 --src_os_win        ${escaped_ev_src_os_win}
                 --src_os_unix       ${escaped_ev_src_os_unix}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        DEPENDS ${ev_header_pre}
-                ${ev_hdr_os_win}
-                ${ev_hdr_os_unix}
-                ${ev_hdr_post}
+        DEPENDS ${ev_header_public_list}
                 ${ev_src_hdr}
                 ${ev_src_hdr_os_win}
                 ${ev_src_hdr_os_unix}
