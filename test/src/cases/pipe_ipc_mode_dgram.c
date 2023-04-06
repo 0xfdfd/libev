@@ -82,24 +82,22 @@ TEST_FIXTURE_TEARDOWN(pipe)
     g_test_a548 = NULL;
 }
 
-static void _on_test_write_done_a548(ev_pipe_write_req_t* req, size_t size, int stat)
+static void _on_test_write_done_a548(ev_pipe_write_req_t* req, ssize_t size)
 {
     g_test_a548->w_req_cnt++;
 
-    ASSERT_EQ_INT(stat, 0);
     struct wdata_pack_a548* w_pack = EV_CONTAINER_OF(req, struct wdata_pack_a548, req);
 
-    ASSERT_EQ_SIZE(size, sizeof(w_pack->data2) + sizeof(w_pack->data1));
+    ASSERT_EQ_SSIZE(size, sizeof(w_pack->data2) + sizeof(w_pack->data1));
 }
 
-static void _on_test_read_done_a548(ev_pipe_read_req_t* req, size_t size, int stat)
+static void _on_test_read_done_a548(ev_pipe_read_req_t* req, ssize_t size)
 {
     g_test_a548->r_req_cnt++;
 
-    ASSERT_EQ_INT(stat, 0);
     struct rdata_pack_a548* r_pack = EV_CONTAINER_OF(req, struct rdata_pack_a548, req);
 
-    ASSERT_GT_SIZE(size, sizeof(r_pack->data1));
+    ASSERT_GT_SSIZE(size, sizeof(r_pack->data1));
     size_t body_size = size - sizeof(r_pack->data1);
     ASSERT_EQ_SIZE(r_pack->data1.size, body_size);
     ASSERT_EQ_UINT64(r_pack->data1.hash, test_hash64(r_pack->data2, body_size, 0));

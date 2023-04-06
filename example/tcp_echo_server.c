@@ -162,12 +162,11 @@ static void _close_client(tcp_client_t* client)
     ev_tcp_exit(&client->client, _on_client_close);
 }
 
-static void _on_write_done(ev_tcp_write_req_t* req, size_t size, int stat)
+static void _on_write_done(ev_tcp_write_req_t* req, ssize_t size)
 {
-    (void)size;
     tcp_client_t* client = EV_CONTAINER_OF(req, tcp_client_t, write_req);
 
-    if (stat != 0)
+    if (size < 0)
     {
         _close_client(client);
         return;
@@ -176,12 +175,12 @@ static void _on_write_done(ev_tcp_write_req_t* req, size_t size, int stat)
     _want_read(client);
 }
 
-static void _on_read_done(ev_tcp_read_req_t* req, size_t size, int stat)
+static void _on_read_done(ev_tcp_read_req_t* req, ssize_t size)
 {
     int ret;
     tcp_client_t* client = EV_CONTAINER_OF(req, tcp_client_t, read_req);
 
-    if (stat != 0)
+    if (size < 0)
     {
         _close_client(client);
         return;

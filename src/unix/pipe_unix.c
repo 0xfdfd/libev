@@ -34,35 +34,35 @@ static void _ev_pipe_on_close_unix(ev_handle_t* handle)
 }
 
 static void _ev_pipe_w_user_callback_unix(ev_pipe_t* pipe,
-    ev_pipe_write_req_t* req, size_t size, int stat)
+    ev_pipe_write_req_t* req, ssize_t size)
 {
     ev__handle_event_dec(&pipe->base);
     ev__write_exit(&req->base);
-    req->ucb(req, size, stat);
+    req->ucb(req, size);
 }
 
-static void _ev_pipe_r_user_callback_unix(ev_pipe_t* pipe, ev_pipe_read_req_t* req, size_t size, int stat)
+static void _ev_pipe_r_user_callback_unix(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ssize_t size)
 {
     ev__handle_event_dec(&pipe->base);
     ev__read_exit(&req->base);
-    req->ucb(req, size, stat);
+    req->ucb(req, size);
 }
 
 static void _ev_pipe_on_data_mode_write_unix(ev_nonblock_stream_t* stream,
-    ev_write_t* req, size_t size, int stat)
+    ev_write_t* req, ssize_t size)
 {
     ev_pipe_t* pipe_handle = EV_CONTAINER_OF(stream, ev_pipe_t, backend.data_mode.stream);
     ev_pipe_write_req_t* w_req = EV_CONTAINER_OF(req, ev_pipe_write_req_t, base);
-    _ev_pipe_w_user_callback_unix(pipe_handle, w_req, size, stat);
+    _ev_pipe_w_user_callback_unix(pipe_handle, w_req, size);
 }
 
 static void _ev_pipe_on_data_mode_read_unix(ev_nonblock_stream_t* stream,
-    ev_read_t* req, size_t size, int stat)
+    ev_read_t* req, ssize_t size)
 {
     ev_pipe_t* pipe_handle = EV_CONTAINER_OF(stream, ev_pipe_t, backend.data_mode.stream);
 
     ev_pipe_read_req_t* r_req = EV_CONTAINER_OF(req, ev_pipe_read_req_t, base);
-    _ev_pipe_r_user_callback_unix(pipe_handle, r_req, size, stat);
+    _ev_pipe_r_user_callback_unix(pipe_handle, r_req, size);
 }
 
 static int _ev_pipe_on_ipc_mode_io_read_remain(ev_pipe_t* pipe)
@@ -133,7 +133,7 @@ static int _ev_pipe_on_ipc_mode_io_read_remain(ev_pipe_t* pipe)
 
 callback:
     pipe->backend.ipc_mode.rio.curr.reading = NULL;
-    _ev_pipe_r_user_callback_unix(pipe, req, req->base.data.size, 0);
+    _ev_pipe_r_user_callback_unix(pipe, req, req->base.data.size);
     return 0;
 }
 
@@ -279,7 +279,7 @@ static int _ev_pipe_on_ipc_mode_io_read_first(ev_pipe_t* pipe)
     {
         ev_pipe_read_req_t* req = pipe->backend.ipc_mode.rio.curr.reading;
         pipe->backend.ipc_mode.rio.curr.reading = NULL;
-        _ev_pipe_r_user_callback_unix(pipe, req, req->base.data.size, 0);
+        _ev_pipe_r_user_callback_unix(pipe, req, req->base.data.size);
     }
 
     /* Process to read body */
@@ -398,7 +398,7 @@ static int _ev_pipe_on_ipc_mode_io_write_remain_body_unix(ev_pipe_t* pipe)
     if (pipe->backend.ipc_mode.wio.curr.buf_idx >= req->base.nbuf)
     {
         pipe->backend.ipc_mode.wio.curr.writing = NULL;
-        _ev_pipe_w_user_callback_unix(pipe, req, req->base.size, 0);
+        _ev_pipe_w_user_callback_unix(pipe, req, req->base.size);
     }
 
     return 0;
@@ -533,7 +533,7 @@ static void _ev_pipe_ipc_mode_cancel_all_rio_unix(ev_pipe_t* pipe, int stat)
     while ((it = ev_list_pop_front(&pipe->backend.ipc_mode.rio.rqueue)) != NULL)
     {
         ev_pipe_read_req_t* req = EV_CONTAINER_OF(it, ev_pipe_read_req_t, base.node);
-        _ev_pipe_r_user_callback_unix(pipe, req, req->base.data.size, stat);
+        _ev_pipe_r_user_callback_unix(pipe, req, stat);
     }
 }
 
@@ -543,7 +543,7 @@ static void _ev_pipe_ipc_mode_cancel_all_wio_unix(ev_pipe_t* pipe, int stat)
     while ((it = ev_list_pop_front(&pipe->backend.ipc_mode.wio.wqueue)) != NULL)
     {
         ev_pipe_write_req_t* req = EV_CONTAINER_OF(it, ev_pipe_write_req_t, base.node);
-        _ev_pipe_w_user_callback_unix(pipe, req, req->base.size, stat);
+        _ev_pipe_w_user_callback_unix(pipe, req, stat);
     }
 }
 

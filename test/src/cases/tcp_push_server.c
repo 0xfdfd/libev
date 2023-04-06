@@ -57,11 +57,10 @@ static void _on_close_client_socket_6d69(ev_tcp_t* sock)
     g_test_6d69->s_cnt_client_close++;
 }
 
-static void _on_send_finish_6d69(ev_tcp_write_req_t* req, size_t size, int stat)
+static void _on_send_finish_6d69(ev_tcp_write_req_t* req, ssize_t size)
 {
     (void)req;
-    ASSERT_EQ_SIZE(size, sizeof(g_test_6d69->s_write_pack.send_buf));
-    ASSERT_EQ_INT(stat, 0);
+    ASSERT_EQ_SSIZE(size, sizeof(g_test_6d69->s_write_pack.send_buf));
 
     /* Close connection */
     ev_tcp_exit(&g_test_6d69->s_conn, _on_close_conn_socket);
@@ -78,14 +77,13 @@ static void _on_accept_6d69(ev_tcp_t* from, ev_tcp_t* to, int stat)
         &g_test_6d69->s_write_pack.buf, 1, _on_send_finish_6d69), 0);
 }
 
-static void _on_read_6d69(ev_tcp_read_req_t* req, size_t size, int stat)
+static void _on_read_6d69(ev_tcp_read_req_t* req, ssize_t size)
 {
     (void)req;
 
-    ASSERT_LE_SIZE(size, sizeof(g_test_6d69->s_write_pack.send_buf));
-    g_test_6d69->s_read_pack.pos += size;
+    ASSERT_LE_SSIZE(size, sizeof(g_test_6d69->s_write_pack.send_buf));
 
-    if (stat == EV_EOF)
+    if (size == EV_EOF)
     {
         ASSERT_EQ_SIZE(g_test_6d69->s_read_pack.pos, sizeof(g_test_6d69->s_write_pack.send_buf));
         int ret = memcmp(g_test_6d69->s_write_pack.send_buf,
@@ -93,8 +91,9 @@ static void _on_read_6d69(ev_tcp_read_req_t* req, size_t size, int stat)
         ASSERT_EQ_INT(ret, 0);
         return;
     }
+    ASSERT_GE_SSIZE(size, 0);
 
-    ASSERT_EQ_INT(stat, 0);
+    g_test_6d69->s_read_pack.pos += size;
 
     g_test_6d69->s_read_pack.buf =
         ev_buf_make(g_test_6d69->s_read_pack.recv_buf + g_test_6d69->s_read_pack.pos,

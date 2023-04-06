@@ -78,33 +78,33 @@ fin:
     sock->backend.u.client.cb(sock, sock->backend.u.client.stat);
 }
 
-static void _ev_tcp_w_user_callback_unix(ev_tcp_t* sock, ev_tcp_write_req_t* req, size_t size, int stat)
+static void _ev_tcp_w_user_callback_unix(ev_tcp_t* sock, ev_tcp_write_req_t* req, ssize_t size)
 {
     ev__handle_event_dec(&sock->base);
     ev__write_exit(&req->base);
-    req->user_callback(req, size, stat);
+    req->user_callback(req, size);
 }
 
-static void _ev_tcp_r_user_callback_unix(ev_tcp_t* sock, ev_tcp_read_req_t* req, size_t size, int stat)
+static void _ev_tcp_r_user_callback_unix(ev_tcp_t* sock, ev_tcp_read_req_t* req, ssize_t size)
 {
     ev__handle_event_dec(&sock->base);
     ev__read_exit(&req->base);
-    req->user_callback(req, size, stat);
+    req->user_callback(req, size);
 }
 
-static void _on_tcp_write_done(ev_nonblock_stream_t* stream, ev_write_t* req, size_t size, int stat)
+static void _on_tcp_write_done(ev_nonblock_stream_t* stream, ev_write_t* req, ssize_t size)
 {
     ev_tcp_t* sock = EV_CONTAINER_OF(stream, ev_tcp_t, backend.u.stream);
     ev_tcp_write_req_t* w_req = EV_CONTAINER_OF(req, ev_tcp_write_req_t, base);
-    _ev_tcp_w_user_callback_unix(sock, w_req, size, stat);
+    _ev_tcp_w_user_callback_unix(sock, w_req, size);
 }
 
-static void _on_tcp_read_done(ev_nonblock_stream_t* stream, ev_read_t* req, size_t size, int stat)
+static void _on_tcp_read_done(ev_nonblock_stream_t* stream, ev_read_t* req, ssize_t size)
 {
     ev_tcp_t* sock = EV_CONTAINER_OF(stream, ev_tcp_t, backend.u.stream);
 
     ev_tcp_read_req_t* r_req = EV_CONTAINER_OF(req, ev_tcp_read_req_t, base);
-    _ev_tcp_r_user_callback_unix(sock, r_req, size, stat);
+    _ev_tcp_r_user_callback_unix(sock, r_req, size);
 }
 
 static void _ev_tcp_accept_user_callback_unix(ev_tcp_t* acpt, ev_tcp_t* conn, int ret)

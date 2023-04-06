@@ -83,11 +83,10 @@ TEST_F(process, spawn_stdout_ignore)
 // process.redirect_pipe
 ///////////////////////////////////////////////////////////////////////////////
 
-static void _test_process_redirect_pipe_on_write_done(ev_pipe_write_req_t* req, size_t size, int stat)
+static void _test_process_redirect_pipe_on_write_done(ev_pipe_write_req_t* req, ssize_t size)
 {
     (void)req;
-    ASSERT_EQ_SIZE(size, strlen(g_test_process_data));
-    ASSERT_EQ_INT(stat, 0);
+    ASSERT_EQ_SSIZE(size, strlen(g_test_process_data));
 
     _close_stdin_pipe();
 
@@ -198,9 +197,8 @@ typedef struct process_cwd_path
     ev_pipe_read_req_t req;
 }process_cwd_path_t;
 
-static void _process_cwd_on_read(ev_pipe_read_req_t* req, size_t size, int stat)
+static void _process_cwd_on_read(ev_pipe_read_req_t* req, ssize_t size)
 {
-    ASSERT_EQ_INT(stat, 0);
     process_cwd_path_t* cwd_path = EV_CONTAINER_OF(req, process_cwd_path_t, req);
 
     cwd_path->buffer[size] = '\0';

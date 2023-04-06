@@ -30,10 +30,9 @@ typedef struct test_pipe_data_mode
 
 test_pipe_data_mode_t*      g_test_pipe_data = NULL;
 
-static void _on_write_callback_221d(ev_pipe_write_req_t* req, size_t size, int stat)
+static void _on_write_callback_221d(ev_pipe_write_req_t* req, ssize_t size)
 {
-    ASSERT_EQ_INT(stat, 0);
-    ASSERT_EQ_SIZE(size, TEST_BUFFER_SIZE_221D);
+    ASSERT_EQ_SSIZE(size, TEST_BUFFER_SIZE_221D);
 
     if (req == &g_test_pipe_data->w_pack[TEST_PACK_NUM_221D - 1].write_req)
     {
@@ -41,15 +40,15 @@ static void _on_write_callback_221d(ev_pipe_write_req_t* req, size_t size, int s
     }
 }
 
-static void _on_read_callback_221d(ev_pipe_read_req_t* req, size_t size, int stat)
+static void _on_read_callback_221d(ev_pipe_read_req_t* req, ssize_t size)
 {
     ASSERT_EQ_PTR(req, &g_test_pipe_data->r_pack.read_req);
 
-    if (stat == EV_EOF)
+    if (size == EV_EOF)
     {
         return;
     }
-    ASSERT_EQ_INT(stat, 0);
+    ASSERT_GE_SSIZE(size, 0);
 
     g_test_pipe_data->r_pack.buf = ev_buf_make((char*)g_test_pipe_data->r_pack.buf.data + size, g_test_pipe_data->r_pack.buf.size - size);
     ASSERT_EQ_INT(ev_pipe_read(&g_test_pipe_data->pipe_r, &g_test_pipe_data->r_pack.read_req,

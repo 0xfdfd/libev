@@ -32,7 +32,7 @@ static int _ev_stream_do_read_once(ev_nonblock_stream_t* stream, ev_read_t* req,
 
 static void _ev_stream_do_write(ev_nonblock_stream_t* stream)
 {
-    int ret;
+    ssize_t ret;
     ev_list_node_t* it;
     ev_write_t* req;
 
@@ -41,7 +41,7 @@ static void _ev_stream_do_write(ev_nonblock_stream_t* stream)
         req = EV_CONTAINER_OF(it, ev_write_t, node);
         if ((ret = _ev_stream_do_write_once(stream, req)) == 0)
         {
-            stream->callbacks.w_cb(stream, req, req->size, 0);
+            stream->callbacks.w_cb(stream, req, req->size);
             continue;
         }
 
@@ -61,7 +61,8 @@ err:
     while ((it = ev_list_pop_front(&stream->pending.w_queue)) != NULL)
     {
         req = EV_CONTAINER_OF(it, ev_write_t, node);
-        stream->callbacks.w_cb(stream, req, req->size, ret);
+        ret = ret < 0 ? ret : (ssize_t)req->size;
+        stream->callbacks.w_cb(stream, req, ret);
     }
 }
 
@@ -77,7 +78,7 @@ static void _ev_stream_do_read(ev_nonblock_stream_t* stream)
 
     if (ret == 0)
     {
-        stream->callbacks.r_cb(stream, req, req->data.size, 0);
+        stream->callbacks.r_cb(stream, req, req->data.size);
         return;
     }
 
@@ -92,7 +93,7 @@ static void _ev_stream_do_read(ev_nonblock_stream_t* stream)
     while ((it = ev_list_pop_front(&stream->pending.r_queue)) != NULL)
     {
         req = EV_CONTAINER_OF(it, ev_read_t, node);
-        stream->callbacks.r_cb(stream, req, 0, ret);
+        stream->callbacks.r_cb(stream, req, ret);
     }
 }
 
@@ -102,7 +103,7 @@ static void _ev_stream_cleanup_r(ev_nonblock_stream_t* stream, int errcode)
     while ((it = ev_list_pop_front(&stream->pending.r_queue)) != NULL)
     {
         ev_read_t* req = EV_CONTAINER_OF(it, ev_read_t, node);
-        stream->callbacks.r_cb(stream, req, 0, errcode);
+        stream->callbacks.r_cb(stream, req, errcode);
     }
 }
 
@@ -112,7 +113,7 @@ static void _ev_stream_cleanup_w(ev_nonblock_stream_t* stream, int errcode)
     while ((it = ev_list_pop_front(&stream->pending.w_queue)) != NULL)
     {
         ev_write_t* req = EV_CONTAINER_OF(it, ev_write_t, node);
-        stream->callbacks.w_cb(stream, req, req->size, errcode);
+        stream->callbacks.w_cb(stream, req, errcode);
     }
 }
 

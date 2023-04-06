@@ -74,38 +74,34 @@ TEST_FIXTURE_TEARDOWN(pipe)
     g_test_19f1 = NULL;
 }
 
-static void _on_pipe_write_done_19f1(ev_pipe_write_req_t* req, size_t size, int stat)
+static void _on_pipe_write_done_19f1(ev_pipe_write_req_t* req, ssize_t size)
 {
     ASSERT_EQ_PTR(req, &g_test_19f1->pipe.w_req);
-    ASSERT_EQ_INT(stat, 0);
-    ASSERT_EQ_SIZE(size, sizeof(g_test_19f1->data1));
+    ASSERT_EQ_SSIZE(size, sizeof(g_test_19f1->data1));
 
     g_test_19f1->cnt_wcb++;
 }
 
-static void _on_tcp_write_done_19f1(ev_tcp_write_req_t* req, size_t size, int stat)
+static void _on_tcp_write_done_19f1(ev_tcp_write_req_t* req, ssize_t size)
 {
     ASSERT_EQ_PTR(req, &g_test_19f1->tcp.w_req);
-    ASSERT_EQ_INT(stat, 0);
-    ASSERT_EQ_SIZE(size, sizeof(g_test_19f1->data1));
+    ASSERT_EQ_SSIZE(size, sizeof(g_test_19f1->data1));
 
     g_test_19f1->cnt_wcb++;
 }
 
-static void _on_pipe_read_done_19f1(ev_pipe_read_req_t* req, size_t size, int stat)
+static void _on_pipe_read_done_19f1(ev_pipe_read_req_t* req, ssize_t size)
 {
     (void)size;
     ASSERT_EQ_PTR(req, &g_test_19f1->pipe.r_req);
-    ASSERT_EQ_INT(stat, 0);
 
     g_test_19f1->cnt_rcb++;
 }
 
-static void _on_tcp_read_done_19f1(ev_tcp_read_req_t* req, size_t size, int stat)
+static void _on_tcp_read_done_19f1(ev_tcp_read_req_t* req, ssize_t size)
 {
-    (void)size;
     ASSERT_EQ_PTR(req, &g_test_19f1->tcp.r_req);
-    ASSERT_EQ_INT(stat, 0);
+    ASSERT_GE_SSIZE(size, 0);
 
     g_test_19f1->cnt_rcb++;
 }

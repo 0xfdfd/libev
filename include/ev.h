@@ -91,7 +91,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           23
+#define EV_VERSION_PREREL           24
 
 /**
  * @brief Version calculate helper macro.
@@ -1711,18 +1711,16 @@ typedef void(*ev_tcp_connect_cb)(ev_tcp_t* sock, int stat);
 /**
  * @brief Write callback
  * @param[in] req       Write request token
- * @param[in] size      Write size
- * @param[in] stat      Write result
+ * @param[in] size      Write result
  */
-typedef void (*ev_tcp_write_cb)(ev_tcp_write_req_t* req, size_t size, int stat);
+typedef void (*ev_tcp_write_cb)(ev_tcp_write_req_t* req, ssize_t size);
 
 /**
  * @brief Read callback
  * @param[in] req       Read callback
- * @param[in] size      Read size
- * @param[in] stat      Read result
+ * @param[in] size      Read result
  */
-typedef void (*ev_tcp_read_cb)(ev_tcp_read_req_t* req, size_t size, int stat);
+typedef void (*ev_tcp_read_cb)(ev_tcp_read_req_t* req, ssize_t size);
 
 /**
  * @brief TCP socket.
@@ -2222,18 +2220,16 @@ typedef void(*ev_pipe_cb)(ev_pipe_t* handle);
 /**
  * @brief Write callback
  * @param[in] req       Write request
- * @param[in] size      Write size
- * @param[in] stat      Write result
+ * @param[in] result    Write result
  */
-typedef void(*ev_pipe_write_cb)(ev_pipe_write_req_t* req, size_t size, int stat);
+typedef void(*ev_pipe_write_cb)(ev_pipe_write_req_t* req, ssize_t result);
 
 /**
  * @brief Read callback
  * @param[in] req       Read callback
- * @param[in] size      Read size
- * @param[in] stat      Read result
+ * @param[in] result    Read result
  */
-typedef void(*ev_pipe_read_cb)(ev_pipe_read_req_t* req, size_t size, int stat);
+typedef void(*ev_pipe_read_cb)(ev_pipe_read_req_t* req, ssize_t result);
 
 /**
  * @brief IPC frame header.

@@ -116,7 +116,7 @@ typedef struct ev_nonblock_stream ev_nonblock_stream_t;
  * @param[in] size      Write size
  * @param[in] stat      Write result
  */
-typedef void(*ev_stream_write_cb)(ev_nonblock_stream_t* stream, struct ev_write* req, size_t size, int stat);
+typedef void(*ev_stream_write_cb)(ev_nonblock_stream_t* stream, struct ev_write* req, ssize_t size);
 
 /**
  * @brief Read callback
@@ -124,7 +124,7 @@ typedef void(*ev_stream_write_cb)(ev_nonblock_stream_t* stream, struct ev_write*
  * @param[in] size      Read size
  * @param[in] stat      Read result
  */
-typedef void(*ev_stream_read_cb)(ev_nonblock_stream_t* stream, struct ev_read* req, size_t size, int stat);
+typedef void(*ev_stream_read_cb)(ev_nonblock_stream_t* stream, struct ev_read* req, ssize_t size);
 
 /**
  * @brief Buffer
