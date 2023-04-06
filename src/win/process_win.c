@@ -509,17 +509,24 @@ int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_opt
     }
 
     CloseHandle(piProcInfo.hThread);
+    piProcInfo.hThread = INVALID_HANDLE_VALUE;
 
     return 0;
 }
 
 void ev_process_exit(ev_process_t* handle, ev_process_exit_cb cb)
 {
+    DWORD errcode;
     _ev_process_unregister_wait_handle(handle);
 
     if (handle->pid != EV_OS_PID_INVALID)
     {
-        CloseHandle(handle->pid);
+        if (CloseHandle(handle->pid) == 0)
+        {
+            errcode = GetLastError();
+            EV_ABORT("errcode: %d", (int)errcode);
+        }
+
         handle->pid = EV_OS_PID_INVALID;
     }
 

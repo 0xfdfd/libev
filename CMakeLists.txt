@@ -7,6 +7,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/third_party/cmake-modules")
 # Build options
 option(EV_ENABLE_COVERAGE "Enable code coverage. GCC/Clang only" OFF)
 option(EV_AMALGAMATE_BUILD "Build amalgamate source file" OFF)
+option(EV_HAVE_LUA_BINDING "Build with lua binding" OFF)
 
 set(ev_header_public_list
     "include/ev.h"
@@ -207,5 +208,9 @@ if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 endif()
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
     add_subdirectory(third_party/cutest)
-    add_subdirectory(test)
+    include(test/CMakeLists.txt)
 endif()
+
+if (EV_HAVE_LUA_BINDING)
+    include(lua/CMakeLists.txt)
+endif ()
