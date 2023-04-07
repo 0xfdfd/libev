@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.0.8
+## v0.0.8 (2023/04/07)
 
 ### BREAKING CHANGES
 1. remove `ev_todo_token_t`
