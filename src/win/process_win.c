@@ -97,7 +97,15 @@ static int _ev_process_setup_stdio_as_null(HANDLE* handle, DWORD dwDesiredAccess
 
 static int _ev_process_setup_stdio_as_fd(HANDLE* duph, HANDLE handle)
 {
-    *duph = handle;
+    HANDLE current_process = GetCurrentProcess();
+    BOOL ret = DuplicateHandle(current_process, handle, current_process, duph, 0, TRUE, DUPLICATE_SAME_ACCESS);
+    if (!ret)
+    {
+        *duph = INVALID_HANDLE_VALUE;
+        DWORD errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
     return 0;
 }
 

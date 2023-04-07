@@ -14,7 +14,7 @@ typedef struct test_process
     int             flag_exit;
 }test_process_t;
 
-test_process_t*     g_test_process;
+static test_process_t* g_test_process;
 static const char* g_test_process_data = "abcdefghijklmnopqrstuvwxyz1234567890";
 
 static void _close_stdin_pipe(void)

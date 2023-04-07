@@ -29,6 +29,7 @@ add_executable(ev_test
     "src/cases/pipe_ipc_mode_tcp_handle.c"
     "src/cases/pipe_make_block.c"
     "src/cases/process.c"
+    "src/cases/process.redirect_file.c"
     "src/cases/queue.c"
     "src/cases/shm.c"
     "src/cases/tcp_connect_non_exist.c"

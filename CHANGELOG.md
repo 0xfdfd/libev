@@ -29,6 +29,7 @@
 ### Bug Fixes
 1. fix: use uninitialised value in `ev_exepath()` on Unix
 2. fix: thread pool not unlink when exit loop
+3. fix: `ev_process_spawn()` coredump on windows when redirect file
 
 
 ## v0.0.7 (2022/06/07)
