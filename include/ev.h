@@ -3049,7 +3049,10 @@ ev_buf_t* ev_fs_get_filecontent(ev_fs_req_t* req);
  * @{
  */
 
-enum ev_process_exit_status_e
+/**
+ * @brief Typedef of #ev_process_exit_status_e.
+ */
+typedef enum ev_process_exit_status_e
 {
     /**
      * @brief The child terminated, but we don't known how or why.
@@ -3066,14 +3069,12 @@ enum ev_process_exit_status_e
      * @brief The child process was terminated by a signal.
      */
     EV_PROCESS_EXIT_SIGNAL,
-};
+} ev_process_exit_status_t;
 
 /**
- * @brief Typedef of #ev_process_exit_status_e.
+ * @brief Typedef of #ev_process_stdio_flags_e.
  */
-typedef enum ev_process_exit_status_e ev_process_exit_status_t;
-
-enum ev_process_stdio_flags_e
+typedef enum ev_process_stdio_flags_e
 {
     /**
      * @brief Ignore this field.
@@ -3100,28 +3101,7 @@ enum ev_process_stdio_flags_e
      * yet opened or connected.
      */
     EV_PROCESS_STDIO_REDIRECT_PIPE  = 0x04,
-};
-
-/**
- * @brief Typedef of #ev_process_stdio_flags_e.
- */
-typedef enum ev_process_stdio_flags_e ev_process_stdio_flags_t;
-
-struct ev_process_stdio_container_s;
-
-/**
- * @brief Typedef of #ev_process_stdio_container_s.
- */
-typedef struct ev_process_stdio_container_s ev_process_stdio_container_t;
-
-struct ev_process_options_s;
-
-/**
- * @brief Typedef of #ev_process_options_s.
- */
-typedef struct ev_process_options_s ev_process_options_t;
-
-struct ev_process_s;
+} ev_process_stdio_flags_t;
 
 /**
  * @brief Typedef of #ev_process_s.
@@ -3153,7 +3133,7 @@ typedef void (*ev_process_exit_cb)(ev_process_t* handle);
 /**
  * @brief Process stdio container.
  */
-struct ev_process_stdio_container_s
+typedef struct ev_process_stdio_container_s
 {
     /**
      * @brief Bit-OR of #ev_process_stdio_flags_t controls how a stdio should
@@ -3179,12 +3159,12 @@ struct ev_process_stdio_container_s
          */
         ev_pipe_t*                  pipe;
     } data;
-};
+} ev_process_stdio_container_t;
 
 /**
  * @brief Process executable options.
  */
-struct ev_process_options_s
+typedef struct ev_process_options_s
 {
     /**
      * @brief (Optional) Child process exit callback.
@@ -3215,7 +3195,7 @@ struct ev_process_options_s
      * @brief (Optional) Pipe for redirect stdin / stdout / stderr.
      */
     ev_process_stdio_container_t    stdios[3];
-};
+} ev_process_options_t;
 
 /**
  * @brief Process context.
