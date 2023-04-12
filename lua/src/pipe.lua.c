@@ -1,4 +1,5 @@
 #include "pipe.lua.h"
+#include <string.h>
 
 #define LEV_PIPE_NAME   "__ev_pipe"
 

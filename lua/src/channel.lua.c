@@ -1,4 +1,5 @@
 #include "channel.lua.h"
+#include <string.h>
 
 #define LEV_CHANNEL_NAME    "__ev_channel"
 

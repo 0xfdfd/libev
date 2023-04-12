@@ -7,6 +7,7 @@
 #include "timer.lua.h"
 #include "udp.lua.h"
 #include <assert.h>
+#include <string.h>
 
 /**
  * @brief Map of ev public interface.

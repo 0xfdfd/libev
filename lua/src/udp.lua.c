@@ -1,5 +1,7 @@
 #include "udp.lua.h"
 #include "misc.lua.h"
+#include <string.h>
+#include <stdlib.h>
 
 #define LEV_UDP_NAME    "__ev_udp"
 

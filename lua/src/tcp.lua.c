@@ -1,5 +1,6 @@
 #include "tcp.lua.h"
 #include "misc.lua.h"
+#include <string.h>
 
 #define LEV_TCP_NAME                "__ev_tcp"
 

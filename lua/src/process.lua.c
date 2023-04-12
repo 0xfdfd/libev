@@ -1,6 +1,8 @@
 #include "process.lua.h"
 #include "fs.lua.h"
 #include "pipe.lua.h"
+#include <string.h>
+#include <stdlib.h>
 
 #define LEV_PROCESS_NAME            "__ev_process"
 #define LEV_PROCESS_WAITPID_NAME    "__ev_process_waitpid"
