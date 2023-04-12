@@ -263,6 +263,9 @@ static void _lev_set_options(lua_State* L)
     LEV_OPT_MAP(IMPORT_OPTIONS);
 
 #undef IMPORT_OPTIONS
+
+    lua_pushlightuserdata(L, NULL);
+    lua_setfield(L, -2, "NULL");
 }
 
 static char* _lev_strerr(const char* fmt, va_list ap)

@@ -121,6 +121,16 @@ static int _lev_process_opt_stdio(lua_State* L, int idx, lev_process_t* process,
         lua_pop(L, 1);\
     } while (0)
 
+#define LEV_PIPE_CHECK_STDIO_AS_NULL(name, arr) \
+    do {\
+        if (lua_getfield(L, idx, #name) == LUA_TLIGHTUSERDATA) {\
+            if (lua_touserdata(L, top_sp + 1) == NULL) {\
+                opt->stdios[arr].flag = EV_PROCESS_STDIO_REDIRECT_NULL;\
+            }\
+        }\
+        lua_pop(L, 1);\
+    } while (0)
+
     int top_sp = lua_gettop(L);
 
     LEV_PIPE_CHECK_STDIO_AS_PIPE(stdin,  0);
@@ -131,10 +141,15 @@ static int _lev_process_opt_stdio(lua_State* L, int idx, lev_process_t* process,
     LEV_PIPE_CHECK_STDIO_AS_FILE(stdout, 1);
     LEV_PIPE_CHECK_STDIO_AS_FILE(stderr, 2);
 
+	LEV_PIPE_CHECK_STDIO_AS_NULL(stdin,  0);
+	LEV_PIPE_CHECK_STDIO_AS_NULL(stdout, 1);
+	LEV_PIPE_CHECK_STDIO_AS_NULL(stderr, 2);
+
     return 0;
 
 #undef LEV_PIPE_CHECK_STDIO_AS_PIPE
 #undef LEV_PIPE_CHECK_STDIO_AS_FILE
+#undef LEV_PIPE_CHECK_STDIO_AS_NULL
 }
 
 static int _lev_process_opt(lua_State* L, ev_loop_t* loop, int idx,
