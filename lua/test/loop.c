@@ -27,6 +27,6 @@ TEST_F(lua, loop_empty)
 "local loop = ev.mkloop()\n"
 "loop:run()\n";
 
-	ASSERT_EQ_INT(luaL_dostring(g_test_lua.L, script), LUA_OK,
-		"%s", lua_tostring(g_test_lua.L, -1));
+    ASSERT_EQ_INT(luaL_dostring(g_test_lua.L, script), LUA_OK,
+        "%s", lua_tostring(g_test_lua.L, -1));
 }

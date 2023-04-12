@@ -51,6 +51,11 @@ void test_lua_teardown(void);
  */
 void test_lua_set_test_string(const char* key, const char* value);
 
+/**
+ * @brief Set integer value of \p value into test object.
+ * @param[in] key   Key.
+ * @param[in] value String value.
+ */
 void test_lua_set_test_integer(const char* key, int value);
 
 /*

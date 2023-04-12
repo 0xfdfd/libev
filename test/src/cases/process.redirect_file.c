@@ -49,6 +49,8 @@ TEST_FIXTURE_TEARDOWN(process)
 
     mmc_free(g_test_process.self_exe_path);
     g_test_process.self_exe_path = NULL;
+
+    ev_fs_remove_sync(TEST_PROCESS_TMPFILE_PATH, 1);
 }
 
 static void _test_process_redirect_file_on_open(ev_fs_req_t* req)

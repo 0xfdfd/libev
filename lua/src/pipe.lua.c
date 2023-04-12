@@ -104,10 +104,14 @@ static int _lev_pipe_on_send_resume(lua_State* L, int status, lua_KContext ctx)
 
     if (token->ret < 0)
     {
-        return lev_error(L, token->loop, (int)token->ret, NULL);
+        lua_pushinteger(L, token->ret);
+    }
+    else
+    {
+        lua_pushnil(L);
     }
 
-    return 0;
+    return 1;
 }
 
 static int _lev_pipe_send(lua_State* L)
@@ -123,7 +127,8 @@ static int _lev_pipe_send(lua_State* L)
     ret = ev_pipe_write(&self->pipe, &token->token, &buf, 1, _lev_pipe_on_send_done);
     if (ret != 0)
     {
-        return lev_error(L, self->loop, ret, NULL);
+        lua_pushinteger(L, ret);
+        return 1;
     }
 
     token->L = L;
@@ -149,11 +154,14 @@ static int _lev_pipe_on_recv_resume(lua_State* L, int status, lua_KContext ctx)
 
     if (token->ret < 0)
     {
-        return lev_error(L, token->loop, (int)token->ret, NULL);
+        lua_pushinteger(L, token->ret);
+        lua_pushnil(L);
+        return 2;
     }
 
+    lua_pushnil(L);
     lua_pushlstring(L, token->buffer, token->ret);
-    return 1;
+    return 2;
 }
 
 static int _lev_pipe_recv(lua_State* L)
@@ -175,7 +183,9 @@ static int _lev_pipe_recv(lua_State* L)
     ret = ev_pipe_read(&self->pipe, &token->token, &buf, 1, _lev_pipe_on_recv_done);
     if (ret != 0)
     {
-        return lev_error(L, self->loop, ret, NULL);
+        lua_pushinteger(L, ret);
+        lua_pushnil(L);
+        return 2;
     }
 
     token->L = L;

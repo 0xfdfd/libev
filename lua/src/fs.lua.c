@@ -74,16 +74,21 @@ static int _lev_file_on_open_resume(lua_State* L, int status, lua_KContext ctx)
     (void)status;
 
     lev_file_open_t* token = (lev_file_open_t*)ctx;
-
-    if (token->req.result != 0)
-    {
-        return lev_error(L, token->loop, (int)token->req.result, NULL);
-    }
-
-    lua_pop(L, 1);
+    int result = (int)token->req.result;
     ev_fs_req_cleanup(&token->req);
 
-    return 1;
+    if (result != 0)
+    {
+        lua_pushinteger(L, result);
+        lua_pushnil(L);
+        return 2;
+    }
+
+    lua_pop(L, 1); /* Remove token. Now file is on top of stack. */
+    lua_pushnil(L);
+    lua_insert(L, lua_gettop(L) - 1);
+
+    return 2;
 }
 
 static int _lev_file_gc(lua_State* L)
@@ -116,11 +121,14 @@ static int _lev_file_on_read_resume(lua_State* L, int status, lua_KContext ctx)
 
     if (result < 0)
     {
-        return lev_error(L, token->loop, (int)result, NULL);
+        lua_pushinteger(L, result);
+        lua_pushnil(L);
+        return 2;
     }
 
+    lua_pushnil(L);
     lua_pushlstring(L, token->buf, result);
-    return 1;
+    return 2;
 }
 
 static int _lev_file_read_ex(lua_State* L, lev_file_t* file, size_t size)
@@ -134,7 +142,9 @@ static int _lev_file_read_ex(lua_State* L, lev_file_t* file, size_t size)
     ret = ev_file_read(&file->file, &token->req, &buf, 1, _lev_file_on_read_done);
     if (ret != 0)
     {
-        return lev_error(L, file->loop, ret, NULL);
+        lua_pushinteger(L, ret);
+        lua_pushnil(L);
+        return 2;
     }
 
     token->L = L;
@@ -173,10 +183,13 @@ static int _lev_file_on_write_resume(lua_State* L, int status, lua_KContext ctx)
 
     if (result < 0)
     {
-        return lev_error(L, token->loop, (int)result, NULL);
+        lua_pushinteger(L, result);
+    }
+    else
+    {
+        lua_pushnil(L);
     }
 
-    lua_pushinteger(L, result);
     return 1;
 }
 
@@ -194,7 +207,8 @@ static int _lev_file_write(lua_State* L)
     ret = ev_file_write(&file->file, &token->req, &buf, 1, _lev_file_on_write_done);
     if (ret != 0)
     {
-        return lev_error(L, file->loop, ret, NULL);
+        lua_pushinteger(L, ret);
+        return 1;
     }
 
     token->L = L;
@@ -220,11 +234,14 @@ static int _lev_file_on_seek_resume(lua_State* L, int status, lua_KContext ctx)
 
     if (result < 0)
     {
-        return lev_error(L, token->loop, (int)result, NULL);
+        lua_pushinteger(L, result);
+        lua_pushnil(L);
+        return 2;
     }
 
+    lua_pushnil(L);
     lua_pushinteger(L, result);
-    return 1;
+    return 2;
 }
 
 static int _lev_file_seek(lua_State* L)
@@ -238,7 +255,9 @@ static int _lev_file_seek(lua_State* L)
     ret = ev_file_seek(&file->file, &token->req, whence, offset, _lev_file_on_seek_done);
     if (ret != 0)
     {
-        return lev_error(L, file->loop, ret, NULL);
+        lua_pushinteger(L, ret);
+        lua_pushnil(L);
+        return 2;
     }
 
     token->L = L;
@@ -280,11 +299,14 @@ static int _lev_file_on_stat_resume(lua_State* L, int status, lua_KContext ctx)
 
     if (result < 0)
     {
-        return lev_error(L, token->loop, result, NULL);
+        lua_pushinteger(L, result);
+        lua_pushnil(L);
+        return 2;
     }
     
     ev_fs_stat_t* stat = ev_fs_get_statbuf(&token->req);
 
+    lua_pushnil(L);
     lua_newtable(L);
 
     PUSH_FIELD_UINT64(L, stat, st_dev);
@@ -305,7 +327,7 @@ static int _lev_file_on_stat_resume(lua_State* L, int status, lua_KContext ctx)
     PUSH_FILED_TIMESPEC(L, stat, st_ctim);
     PUSH_FILED_TIMESPEC(L, stat, st_birthtim);
 
-    return 1;
+    return 2;
 
 #undef PUSH_FIELD_UINT64
 #undef PUSH_FILED_TIMESPEC
@@ -320,7 +342,9 @@ static int _lev_file_stat(lua_State* L)
     ret = ev_file_stat(&file->file, &token->req, _lev_file_on_stat_done);
     if (ret != 0)
     {
-        return lev_error(L, file->loop, ret, NULL);
+        lua_pushinteger(L, ret);
+        lua_pushnil(L);
+        return 2;
     }
 
     token->L = L;
@@ -378,10 +402,14 @@ static int _lev_fs_on_remove_resume(lua_State* L, int status, lua_KContext ctx)
 
     if (result < 0)
     {
-        return lev_error(L, token->loop, result, NULL);
+        lua_pushinteger(L, result);
+    }
+    else
+    {
+        lua_pushnil(L);
     }
 
-    return 0;
+    return 1;
 }
 
 int lev_fs_file(lua_State* L)
@@ -401,7 +429,7 @@ int lev_fs_file(lua_State* L)
         mode = (int)lua_tointeger(L, 4);
     }
 
-    lev_file_t* file = lua_newuserdata(L, sizeof(lev_file_t));
+    lev_file_t* file = lua_newuserdata(L, sizeof(lev_file_t)); /* SP + 1 */
     file->closed = 0;
     file->loop = loop;
 
@@ -433,11 +461,13 @@ int lev_fs_file(lua_State* L)
     }
     lua_setmetatable(L, -2);
 
-    lev_file_open_t* token = lua_newuserdata(L, sizeof(lev_file_open_t));
+    lev_file_open_t* token = lua_newuserdata(L, sizeof(lev_file_open_t)); /* SP + 2 */
     ret = ev_file_open(&file->file, &token->req, path, flags, mode, _lev_file_on_open);
     if (ret != 0)
     {
-        return lev_error(L, loop, ret, NULL);
+        lua_pushinteger(L, ret);
+        lua_pushnil(L);
+        return 2;
     }
 
     token->L = L;
@@ -463,7 +493,8 @@ int lev_fs_remove(lua_State* L)
     ret = ev_fs_remove(loop, &token->req, path, recursion, _lev_fs_on_remove_done);
     if (ret != 0)
     {
-        return lev_error(L, loop, ret, NULL);
+        lua_pushinteger(L, ret);
+        return 1;
     }
 
     token->loop = loop;

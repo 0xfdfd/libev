@@ -68,13 +68,16 @@ static int _lev_tcp_on_connect_resume(lua_State* L, int status, lua_KContext ctx
 {
     (void)status;
     lev_tcp_t* tcp = (lev_tcp_t*)ctx;
+    int ret = tcp->ret;
 
-    if (tcp->ret < 0)
+    if (ret < 0)
     {
-        return lev_error(L, tcp->loop, tcp->ret, NULL);
+        lua_pushinteger(L, ret);
+        return 1;
     }
 
-    return 0;
+    lua_pushnil(L);
+    return 1;
 }
 
 static int _lev_tcp_connect(lua_State* L)
@@ -86,7 +89,8 @@ static int _lev_tcp_connect(lua_State* L)
     ret = ev_tcp_connect(&tcp->sock, (struct sockaddr*)addr, sizeof(*addr), _lev_tcp_on_connect);
     if (ret != 0)
     {
-        return lev_error(L, tcp->loop, ret, NULL);
+        lua_pushinteger(L, ret);
+        return 1;
     }
 
     tcp->L = L;
@@ -110,7 +114,8 @@ static int _lev_tcp_on_write_resume(lua_State* L, int status, lua_KContext ctx)
 
     if (token->ret < 0)
     {
-        return lev_error(L, token->loop, (int)token->ret, NULL);
+        lua_pushinteger(L, token->ret);
+        return 1;
     }
 
     return 0;
@@ -130,7 +135,8 @@ static int _lev_tcp_send(lua_State* L)
     ret = ev_tcp_write(&tcp->sock, &token->token, &buf, 1, _lev_tcp_on_write_done);
     if (ret != 0)
     {
-        return lev_error(L, tcp->loop, ret, NULL);
+        lua_pushinteger(L, ret);
+        return 1;
     }
 
     token->loop = tcp->loop;
@@ -155,11 +161,14 @@ static int _lev_tcp_on_read_resume(lua_State* L, int status, lua_KContext ctx)
 
     if (token->ret < 0)
     {
-        return lev_error(L, token->loop, (int)token->ret, NULL);
+        lua_pushinteger(L, token->ret);
+        lua_pushnil(L);
+        return 2;
     }
 
+    lua_pushnil(L);
     lua_pushlstring(L, token->buffer, token->ret);
-    return 1;
+    return 2;
 }
 
 static int _lev_tcp_recv(lua_State* L)
@@ -173,7 +182,8 @@ static int _lev_tcp_recv(lua_State* L)
     ret = ev_tcp_read(&tcp->sock, &token->token, &buf, 1, _lev_tcp_on_read_done);
     if (ret != 0)
     {
-        return lev_error(L, tcp->loop, ret, NULL);
+        lua_pushinteger(L, ret);
+        return 1;
     }
 
     token->L = L;
@@ -185,7 +195,7 @@ static int _lev_tcp_recv(lua_State* L)
 
 static int _lev_tcp_listen(lua_State* L)
 {
-    int ret;
+    int ret = 0;
     lev_tcp_t* tcp = luaL_checkudata(L, 1, LEV_TCP_NAME);
     struct sockaddr_storage* addr = lev_to_sockaddr_storage(L, 2);
 
@@ -197,15 +207,24 @@ static int _lev_tcp_listen(lua_State* L)
 
     if ((ret = ev_tcp_bind(&tcp->sock, (struct sockaddr*)addr, sizeof(*addr))) != 0)
     {
-        return lev_error(L, tcp->loop, ret, NULL);
+        goto finish;
     }
 
     if ((ret = ev_tcp_listen(&tcp->sock, backlog)) != 0)
     {
-        return lev_error(L, tcp->loop, ret, NULL);
+        goto finish;
     }
 
-    return 0;
+finish:
+    if (ret != 0)
+    {
+        lua_pushinteger(L, ret);
+    }
+    else
+    {
+        lua_pushnil(L);
+    }
+    return 1;
 }
 
 static void _lev_tcp_on_accept(ev_tcp_t* lisn, ev_tcp_t* conn, int stat)
@@ -220,15 +239,21 @@ static void _lev_tcp_on_accept(ev_tcp_t* lisn, ev_tcp_t* conn, int stat)
 static int _lev_tcp_on_accept_resume(lua_State* L, int status, lua_KContext ctx)
 {
     (void)status;
+    int sp = lua_gettop(L);
     lev_tcp_t* sock = (lev_tcp_t*)ctx;
+    int ret = sock->ret;
 
-    if (sock->ret == 0)
+    if (ret == 0)
     {
-        return 1;
+        lua_pushnil(L);
+        lua_insert(L, sp - 1);
+        return 2;
     }
 
-    lua_pop(L, 1);
-    return 0;
+    lua_pushinteger(L, ret);
+    lua_pushnil(L);
+
+    return 2;
 }
 
 static int _lev_tcp_accept(lua_State* L)
@@ -239,7 +264,9 @@ static int _lev_tcp_accept(lua_State* L)
 
     if ((ret = ev_tcp_accept(&tcp->sock, &sock->sock, _lev_tcp_on_accept)) != 0)
     {
-        return lev_error(L, tcp->loop, ret, NULL);
+        lua_pushinteger(L, ret);
+        lua_pushnil(L);
+        return 2;
     }
 
     sock->L = L;

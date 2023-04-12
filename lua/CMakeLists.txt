@@ -10,6 +10,7 @@ find_package(Lua REQUIRED)
 ###############################################################################
 
 target_sources(ev PRIVATE
+    "lua/src/channel.lua.c"
     "lua/src/ev.lua.c"
     "lua/src/fs.lua.c"
     "lua/src/misc.lua.c"
@@ -37,6 +38,7 @@ target_link_libraries(ev
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
     target_sources(ev_test PRIVATE
         "lua/test/file.c"
+        "lua/test/channel.c"
         "lua/test/loop.c"
         "lua/test/process.c"
         "lua/test/strerror.c"

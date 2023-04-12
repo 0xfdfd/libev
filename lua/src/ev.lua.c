@@ -1,4 +1,4 @@
-#include "ev.lua.internal.h"
+#include "channel.lua.h"
 #include "fs.lua.h"
 #include "misc.lua.h"
 #include "pipe.lua.h"
@@ -23,6 +23,7 @@
  * @brief Map of loop public interface.
  */
 #define LEV_LOOP_API_MAP(xx)            \
+    xx("channel",       lev_channel)    \
     xx("fs_file",       lev_fs_file)    \
     xx("fs_remove",     lev_fs_remove)  \
     xx("pipe",          lev_pipe)       \

@@ -4,8 +4,8 @@
 #include "ev.lua.h"
 #include "ev.h"
 
-#define lev_error(L, loop, errcode, fmt, ...)	\
-	lev_error_ex(__FILE__, __LINE__, L, loop, errcode, fmt, ##__VA_ARGS__)
+#define lev_error(L, loop, errcode, fmt, ...)   \
+    lev_error_ex(__FILE__, __LINE__, L, loop, errcode, fmt, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 extern "C" {

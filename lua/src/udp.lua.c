@@ -66,10 +66,14 @@ static int _lev_udp_bind(lua_State* L)
 
     if ((ret = ev_udp_bind(&udp->sock, (struct sockaddr*)addr, flags)) != 0)
     {
-        return lev_error(L, udp->loop, ret, NULL);
+        lua_pushinteger(L, ret);
+    }
+    else
+    {
+        lua_pushnil(L);
     }
 
-    return 0;
+    return 1;
 }
 
 static int _lev_udp_connect(lua_State* L)
@@ -80,10 +84,14 @@ static int _lev_udp_connect(lua_State* L)
 
     if ((ret = ev_udp_connect(&udp->sock, (struct sockaddr*)addr)) != 0)
     {
-        return lev_error(L, udp->loop, ret, NULL);
+        lua_pushinteger(L, ret);
+    }
+    else
+    {
+        lua_pushnil(L);
     }
 
-    return 0;
+    return 1;
 }
 
 static int _lev_udp_name(lua_State* L, int(*cb)(ev_udp_t*,struct sockaddr*,size_t*))
@@ -121,10 +129,14 @@ static int _lev_udp_set_membership(lua_State* L)
     int ret = ev_udp_set_membership(&udp->sock, multicast_addr, interface_addr, membership);
     if (ret != 0)
     {
-        return lev_error(L, udp->loop, ret, NULL);
+        lua_pushinteger(L, ret);
+    }
+    else
+    {
+        lua_pushnil(L);
     }
 
-    return 0;
+    return 1;
 }
 
 static int _lev_udp_set_source_membership(lua_State* L)
@@ -139,10 +151,14 @@ static int _lev_udp_set_source_membership(lua_State* L)
         interface_addr, source_addr, membership);
     if (ret != 0)
     {
-        return lev_error(L, udp->loop, ret, NULL);
+        lua_pushinteger(L, ret);
+    }
+    else
+    {
+        lua_pushnil(L);
     }
 
-    return 0;
+    return 1;
 }
 
 static int _lev_udp_set_multicast_loop(lua_State* L)
@@ -153,10 +169,14 @@ static int _lev_udp_set_multicast_loop(lua_State* L)
 
     if ((ret = ev_udp_set_multicast_loop(&udp->sock, on)) != 0)
     {
-        return lev_error(L, udp->loop, ret, NULL);
+        lua_pushinteger(L, ret);
+    }
+    else
+    {
+        lua_pushnil(L);
     }
 
-    return 0;
+    return 1;
 }
 
 static int _lev_udp_set_multicast_ttl(lua_State* L)
@@ -167,9 +187,14 @@ static int _lev_udp_set_multicast_ttl(lua_State* L)
 
     if ((ret = ev_udp_set_multicast_ttl(&udp->sock, ttl)) != 0)
     {
-        return lev_error(L, udp->loop, ret, NULL);
+        lua_pushinteger(L, ret);
     }
-    return 0;
+    else
+    {
+        lua_pushnil(L);
+    }
+
+    return 1;
 }
 
 static int _lev_udp_set_multicast_interface(lua_State* L)
@@ -180,9 +205,14 @@ static int _lev_udp_set_multicast_interface(lua_State* L)
 
     if ((ret = ev_udp_set_multicast_interface(&udp->sock, interface_addr)) != 0)
     {
-        return lev_error(L, udp->loop, ret, NULL);
+        lua_pushinteger(L, ret);
     }
-    return 0;
+    else
+    {
+        lua_pushnil(L);
+    }
+
+    return 1;
 }
 
 static int _lev_udp_set_broadcast(lua_State* L)
@@ -193,9 +223,14 @@ static int _lev_udp_set_broadcast(lua_State* L)
 
     if ((ret = ev_udp_set_broadcast(&udp->sock, on)) != 0)
     {
-        return lev_error(L, udp->loop, ret, NULL);
+        lua_pushinteger(L, ret);
     }
-    return 0;
+    else
+    {
+        lua_pushnil(L);
+    }
+
+    return 1;
 }
 
 static int _lev_udp_set_ttl(lua_State* L)
@@ -206,9 +241,14 @@ static int _lev_udp_set_ttl(lua_State* L)
 
     if ((ret = ev_udp_set_ttl(&udp->sock, ttl)) != 0)
     {
-        return lev_error(L, udp->loop, ret, NULL);
+        lua_pushinteger(L, ret);
     }
-    return 0;
+    else
+    {
+        lua_pushnil(L);
+    }
+
+    return 1;
 }
 
 static void _lev_udp_on_send_done(ev_udp_write_t* req, ssize_t size)
@@ -226,10 +266,13 @@ static int _lev_udp_on_send_resume(lua_State* L, int status, lua_KContext ctx)
 
     if (token->result < 0)
     {
-        return lev_error(L, token->loop, (int)token->result, NULL);
+        lua_pushinteger(L, token->result);
     }
-
-    lua_pushinteger(L, token->result);
+    else
+    {
+        lua_pushnil(L);
+    }
+    
     return 1;
 }
 
@@ -254,7 +297,8 @@ static int _lev_udp_send_template(lua_State* L,
     ret = cb(&udp->sock, &token->req, &buf, 1, (struct sockaddr*)addr, _lev_udp_on_send_done);
     if (ret != 0)
     {
-        return lev_error(L, udp->loop, ret, NULL);
+        lua_pushinteger(L, ret);
+        return 1;
     }
 
     token->L = L;
@@ -290,11 +334,14 @@ static int _lev_udp_on_recv_resume(lua_State* L, int status, lua_KContext ctx)
 
     if (token->result < 0)
     {
-        return lev_error(L, token->loop, (int)token->result, NULL);
+        lua_pushinteger(L, token->result);
+        lua_pushnil(L);
+        return 2;
     }
 
+    lua_pushnil(L);
     lua_pushlstring(L, token->buffer, token->result);
-    return 1;
+    return 2;
 }
 
 static int _lev_udp_recv(lua_State* L)
@@ -307,7 +354,9 @@ static int _lev_udp_recv(lua_State* L)
     ret = ev_udp_recv(&udp->sock, &token->req, &buf, 1, _lev_udp_on_recv_done);
     if (ret != 0)
     {
-        return lev_error(L, udp->loop, ret, NULL);
+        lua_pushinteger(L, ret);
+        lua_pushnil(L);
+        return 2;
     }
 
     token->L = L;
@@ -354,15 +403,19 @@ static int _lev_udp_on_recvfrom_resume(lua_State* L, int status, lua_KContext ct
 
     if (token->result < 0)
     {
-        return lev_error(L, token->loop, (int)token->result, NULL);
+        lua_pushinteger(L, token->result);
+        lua_pushnil(L);
+        lua_pushnil(L);
+        return 3;
     }
 
+    lua_pushnil(L);
     lua_pushlstring(L, token->buffer, token->result);
 
     struct sockaddr_storage* addr = lev_push_sockaddr_storage(L);
     memcpy(addr, &token->storage, sizeof(token->storage));
 
-    return 2;
+    return 3;
 }
 
 static int _lev_udp_recvfrom(lua_State* L)
@@ -375,7 +428,10 @@ static int _lev_udp_recvfrom(lua_State* L)
     ret = ev_udp_recv(&udp->sock, &token->req, &buf, 1, _lev_udp_on_recvfrom_done);
     if (ret != 0)
     {
-        return lev_error(L, udp->loop, ret, NULL);
+        lua_pushinteger(L, ret);
+        lua_pushnil(L);
+        lua_pushnil(L);
+        return 3;
     }
 
     token->L = L;

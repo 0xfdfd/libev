@@ -93,39 +93,26 @@ static char** _lev_to_string_array(lua_State* L, ev_loop_t* loop, int idx)
 
 static int _lev_process_opt_stdio(lua_State* L, int idx, lev_process_t* process, ev_process_options_t* opt)
 {
-#define LEV_PIPE_CHECK_STDIO_AS_PIPE(name, arr)  \
+#define LEV_PIPE_CHECK_STDIO(name, arr) \
     do {\
-        ev_pipe_t* pipe;\
-        if (lua_getfield(L, idx, #name) == LUA_TUSERDATA) {\
-            if ((pipe = lev_try_to_pipe(L, top_sp + 1)) != NULL) {\
+        int type = LUA_TNIL;\
+        ev_pipe_t* pipe = NULL;\
+        ev_file_t* file = NULL;\
+        if ((type = lua_getfield(L, idx, #name)) != LUA_TNIL) {\
+            if (type == LUA_TLIGHTUSERDATA && lua_touserdata(L, top_sp + 1) == NULL) {\
+                opt->stdios[arr].flag = EV_PROCESS_STDIO_REDIRECT_NULL;\
+            } else if (type == LUA_TUSERDATA && (pipe = lev_try_to_pipe(L, top_sp + 1)) != NULL) {\
                 opt->stdios[arr].flag = EV_PROCESS_STDIO_REDIRECT_PIPE;\
                 opt->stdios[arr].data.pipe = pipe;\
                 lua_pushvalue(L, -1);\
                 process->ref_##name = luaL_ref(L, LUA_REGISTRYINDEX);\
-            }\
-        }\
-        lua_pop(L, 1);\
-    } while (0)
-
-#define LEV_PIPE_CHECK_STDIO_AS_FILE(name, arr) \
-    do {\
-        ev_file_t* file;\
-        if (lua_getfield(L, idx, #name) == LUA_TUSERDATA) {\
-            if ((file = lev_try_to_file(L, top_sp + 1)) != NULL) {\
+            } else if (type == LUA_TUSERDATA && (file = lev_try_to_file(L, top_sp + 1)) != NULL) {\
                 opt->stdios[arr].flag = EV_PROCESS_STDIO_REDIRECT_FD;\
                 opt->stdios[arr].data.fd = file->file;\
                 lua_pushvalue(L, -1);\
                 process->ref_##name = luaL_ref(L, LUA_REGISTRYINDEX);\
-            }\
-        }\
-        lua_pop(L, 1);\
-    } while (0)
-
-#define LEV_PIPE_CHECK_STDIO_AS_NULL(name, arr) \
-    do {\
-        if (lua_getfield(L, idx, #name) == LUA_TLIGHTUSERDATA) {\
-            if (lua_touserdata(L, top_sp + 1) == NULL) {\
-                opt->stdios[arr].flag = EV_PROCESS_STDIO_REDIRECT_NULL;\
+            } else {\
+                return lev_error(L, process->loop, EV_EINVAL, "argument to " #name " is invalid");\
             }\
         }\
         lua_pop(L, 1);\
@@ -133,23 +120,13 @@ static int _lev_process_opt_stdio(lua_State* L, int idx, lev_process_t* process,
 
     int top_sp = lua_gettop(L);
 
-    LEV_PIPE_CHECK_STDIO_AS_PIPE(stdin,  0);
-    LEV_PIPE_CHECK_STDIO_AS_PIPE(stdout, 1);
-    LEV_PIPE_CHECK_STDIO_AS_PIPE(stderr, 2);
-
-    LEV_PIPE_CHECK_STDIO_AS_FILE(stdin,  0);
-    LEV_PIPE_CHECK_STDIO_AS_FILE(stdout, 1);
-    LEV_PIPE_CHECK_STDIO_AS_FILE(stderr, 2);
-
-	LEV_PIPE_CHECK_STDIO_AS_NULL(stdin,  0);
-	LEV_PIPE_CHECK_STDIO_AS_NULL(stdout, 1);
-	LEV_PIPE_CHECK_STDIO_AS_NULL(stderr, 2);
+    LEV_PIPE_CHECK_STDIO(stdin,  0);
+    LEV_PIPE_CHECK_STDIO(stdout, 1);
+    LEV_PIPE_CHECK_STDIO(stderr, 2);
 
     return 0;
 
-#undef LEV_PIPE_CHECK_STDIO_AS_PIPE
-#undef LEV_PIPE_CHECK_STDIO_AS_FILE
-#undef LEV_PIPE_CHECK_STDIO_AS_NULL
+#undef LEV_PIPE_CHECK_STDIO
 }
 
 static int _lev_process_opt(lua_State* L, ev_loop_t* loop, int idx,
@@ -217,10 +194,26 @@ static int _lev_process_gc(lua_State* L)
         lev_process_wait_token_t* token = EV_CONTAINER_OF(it, lev_process_wait_token_t, node);
         lev_set_state(token->L, token->loop, 1);
         token->process = NULL;
+        token->loop = NULL;
     }
 
     ev_process_exit(&process->process, NULL);
     ev_loop_run(process->loop, EV_LOOP_MODE_NOWAIT);
+
+    return 0;
+}
+
+static int _lev_process_waitpid_gc(lua_State* L)
+{
+    lev_process_wait_token_t* token = lua_touserdata(L, 1);
+
+    if (token->process != NULL)
+    {
+        ev_list_erase(&token->process->wait_queue, &token->node);
+        token->process = NULL;
+    }
+
+    token->loop = NULL;
 
     return 0;
 }
@@ -301,19 +294,6 @@ static int _lev_process_waitpid_resume(lua_State* L, int status, lua_KContext ct
     return 1;
 }
 
-static int _lev_process_waitpid_gc(lua_State* L)
-{
-    lev_process_wait_token_t* token = lua_touserdata(L, 1);
-
-    if (token->process != NULL)
-    {
-        ev_list_erase(&token->process->wait_queue, &token->node);
-        token->process = NULL;
-    }
-
-    return 0;
-}
-
 static int _lev_process_waitpid(lua_State* L)
 {
     lev_process_t* self = luaL_checkudata(L, 1, LEV_PROCESS_NAME);
@@ -367,7 +347,9 @@ int lev_process(lua_State* L)
 
     if (ret != 0)
     {
-        return lev_error(L, loop, ret, NULL);
+        lua_pushinteger(L, ret);
+        lua_pushnil(L);
+        return 2;
     }
 
     static const luaL_Reg s_meta[] = {
@@ -388,7 +370,10 @@ int lev_process(lua_State* L)
     }
     lua_setmetatable(L, -2);
 
-    return 1;
+    lua_pushnil(L);
+    lua_insert(L, lua_gettop(L) - 1);
+
+    return 2;
 }
 
 int lev_getcwd(lua_State* L)
