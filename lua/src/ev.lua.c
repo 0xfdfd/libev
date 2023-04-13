@@ -3,6 +3,7 @@
 #include "misc.lua.h"
 #include "pipe.lua.h"
 #include "process.lua.h"
+#include "promise.lua.h"
 #include "tcp.lua.h"
 #include "timer.lua.h"
 #include "udp.lua.h"
@@ -29,6 +30,7 @@
     xx("fs_remove",     lev_fs_remove)  \
     xx("pipe",          lev_pipe)       \
     xx("process",       lev_process)    \
+    xx("promise",       lev_promise)    \
     xx("sleep",         lev_sleep)      \
     xx("tcp",           lev_tcp)        \
     xx("udp",           lev_udp)

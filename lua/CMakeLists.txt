@@ -16,6 +16,7 @@ target_sources(ev PRIVATE
     "lua/src/misc.lua.c"
     "lua/src/pipe.lua.c"
     "lua/src/process.lua.c"
+    "lua/src/promise.lua.c"
     "lua/src/tcp.lua.c"
     "lua/src/timer.lua.c"
     "lua/src/udp.lua.c")
@@ -41,6 +42,7 @@ if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
         "lua/test/channel.c"
         "lua/test/loop.c"
         "lua/test/process.c"
+        "lua/test/promise.c"
         "lua/test/strerror.c"
         "lua/test/tcp.c"
         "lua/test/test.lua.c"
