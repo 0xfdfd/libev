@@ -22,6 +22,12 @@ extern "C" {
 ev_loop_t* lev_make_loop(lua_State* L);
 
 /**
+ * @brief Wakeup event loop.
+ * @param[in] loop  Event loop.
+ */
+void lev_wakeup(ev_loop_t* loop);
+
+/**
  * @brief Set coroutine state.
  * @param[in] L     Lua stack.
  * @param[in] loop  Event loop.

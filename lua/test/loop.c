@@ -3,7 +3,7 @@
 TEST_F(lua, loop)
 {
     static const char* script =
-"local loop = ev.mkloop()\n"
+"local loop = ev.loop()\n"
 "local ret1 = 0\n"
 "loop:co(function(a, b)\n"
 "    ret1 = a + b\n"
@@ -24,7 +24,7 @@ TEST_F(lua, loop)
 TEST_F(lua, loop_empty)
 {
     static const char* script =
-"local loop = ev.mkloop()\n"
+"local loop = ev.loop()\n"
 "loop:run()\n";
 
     ASSERT_EQ_INT(luaL_dostring(g_test_lua.L, script), LUA_OK,

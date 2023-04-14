@@ -3,13 +3,13 @@
 TEST_F(lua, tcp)
 {
     static const char* script =
-"local loop = ev.mkloop()\n"
-"local ch = loop:channel()\n"
+"local loop = ev.loop()\n"
+"local promise = loop:promise()\n"
 "loop:co(function()\n"
 "    local sock = loop:tcp()\n"
 "    local err = sock:listen(ev.ip_addr(test.ip, 0))\n"
 "    assert(err == nil)\n"
-"    ch:send(ev.ip_name(sock:sockname()))\n"
+"    promise:set_value(ev.ip_name(sock:sockname()))\n"
 "    local _, client = sock:accept()\n"
 "    local _, data = client:recv()\n"
 "    assert(data == test.data)\n"
@@ -17,7 +17,7 @@ TEST_F(lua, tcp)
 "end)\n"
 "loop:co(function()\n"
 "    local sock = loop:tcp()\n"
-"    local _, _, port = ch:recv()\n"
+"    local _, port = promise:get_value()\n"
 "    local err = sock:connect(ev.ip_addr(test.ip, port))\n"
 "    assert(err == nil)\n"
 "    err = sock:send(test.data)\n"

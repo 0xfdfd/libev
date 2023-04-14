@@ -3,14 +3,14 @@
 TEST_F(lua, udp)
 {
     static const char* script =
-"local loop = ev.mkloop()\n"
-"local ch = loop:channel()\n"
+"local loop = ev.loop()\n"
+"local p = loop:promise()\n"
 "loop:co(function()\n"
 "    local sock = loop:udp()\n"
 "    local err = sock:bind(ev.ip_addr(test.ip, 0))\n"
 "    assert(err == nil)\n"
 "    local addr = sock:getsockname()\n"
-"    ch:send(ev.ip_name(addr))\n"
+"    p:set_value(ev.ip_name(addr))\n"
 "    local _, data, addr = sock:recvfrom()\n"
 "    assert(data == test.data)\n"
 "    err = sock:send(data, addr)\n"
@@ -18,7 +18,7 @@ TEST_F(lua, udp)
 "end)\n"
 "loop:co(function()\n"
 "    local sock = loop:udp()\n"
-"    local _, _, port = ch:recv()\n"
+"    local _, port = p:get_value()\n"
 "    local err = sock:connect(ev.ip_addr(test.ip, port))\n"
 "    assert(err == nil)\n"
 "    err = sock:send(test.data)\n"

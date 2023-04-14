@@ -129,6 +129,7 @@ static int _lev_channel_send(lua_State* L)
 
     lev_channel_wait_token_t* wait_token = EV_CONTAINER_OF(node, lev_channel_wait_token_t, node);
     lev_set_state(wait_token->wait_L, self->loop, 1);
+    wait_token->is_busy = 1;
     ev_list_push_back(&self->busy_queue, &wait_token->node);
 
 finish:
@@ -182,12 +183,11 @@ static int _lev_channel_recv_resume(lua_State* L, int status, lua_KContext ctx)
 
 static int _lev_channel_recv(lua_State* L)
 {
-    int ret;
     lev_channel_t* self = luaL_checkudata(L, 1, LEV_CHANNEL_NAME);
 
-    if ((ret = _lev_channel_process_recv(L, self)) != 0)
+    if (ev_list_size(&self->data_queue) != 0 || self->is_closed)
     {
-        return ret;
+        return _lev_channel_process_recv(L, self);
     }
 
     lev_channel_wait_token_t* wait_token = ev_malloc(sizeof(lev_channel_wait_token_t));

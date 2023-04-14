@@ -4,8 +4,17 @@
 
 int lev_hrtime(lua_State* L)
 {
+    static uint64_t basis = 0;
+
     uint64_t t = ev_hrtime();
-    lua_pushnumber(L, (lua_Number)t);
+    if (basis == 0)
+    {
+        basis = t;
+    }
+
+    uint64_t dif = t - basis;
+
+    lua_pushinteger(L, (lua_Integer)dif);
     return 1;
 }
 

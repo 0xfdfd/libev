@@ -45,7 +45,7 @@ static void _lev_promise_drop_value(lua_State* L, lev_promise_t* self)
         return;
     }
 
-    size_t i;
+    int i;
     for (i = 0; i < self->value->refkey_sz; i++)
     {
         luaL_unref(L, LUA_REGISTRYINDEX, self->value->refkey[i]);
@@ -126,7 +126,7 @@ static int _lev_promise_set_value(lua_State* L)
 
 static int _lev_promise_push_value(lua_State* L, lev_promise_t* self, lev_promise_cb cb, void* data)
 {
-    size_t i;
+    int i;
     lev_promise_value_t* value = self->value;
     if (value == NULL)
     {
@@ -252,6 +252,7 @@ int lev_promise_set_value(lua_State* L, lev_promise_t* promise, int narg)
     }
 
     _lev_promise_wakeup_all(promise);
+    lev_wakeup(promise->loop);
 
     return 0;
 }

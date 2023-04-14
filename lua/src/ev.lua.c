@@ -50,6 +50,7 @@
 typedef struct lev_loop_s
 {
     ev_loop_t       loop;
+    ev_async_t      async;
 
     ev_map_t        record;
     ev_list_t       wait_queue;
@@ -129,6 +130,10 @@ static int _lev_loop_gc(lua_State* L)
         lev_coroutine_t* co = EV_CONTAINER_OF(it, lev_coroutine_t, q_node);
         _lev_release_co(L, co);
     }
+
+    /* Exit async */
+    ev_async_exit(&loop->async, NULL);
+    ev_loop_run(&loop->loop, EV_LOOP_MODE_NOWAIT);
 
     /* Exit loop. */
     if ((ret = ev_loop_exit(&loop->loop)) != 0)
@@ -393,11 +398,11 @@ int luaopen_ev(lua_State* L)
 #endif
 
     static const luaL_Reg s_ev_api_map[] = {
-        { "mkloop",     _lev_mkloop },
+        { "loop",   _lev_mkloop },
 #define EXPAND_EV_LUA_API_MAP(n, f) { n, f },
         LEV_API_MAP(EXPAND_EV_LUA_API_MAP)
 #undef EXPAND_EV_LUA_API_MAP
-        { NULL,         NULL },
+        { NULL,     NULL },
     };
     luaL_newlib(L, s_ev_api_map);
 
@@ -483,6 +488,11 @@ static int _lev_error(lua_State* L)
     return lua_error(L);
 }
 
+static void _lev_loop_on_weakup(ev_async_t* async)
+{
+    (void)async;
+}
+
 ev_loop_t* lev_make_loop(lua_State* L)
 {
     lev_loop_t* loop = lua_newuserdata(L, sizeof(lev_loop_t));
@@ -490,6 +500,8 @@ ev_loop_t* lev_make_loop(lua_State* L)
     memset(loop, 0, sizeof(*loop));
     ev_loop_init(&loop->loop);
     ev_map_init(&loop->record, _lev_on_cmp_co, NULL);
+
+    ev_async_init(&loop->loop, &loop->async, _lev_loop_on_weakup);
 
     static const luaL_Reg s_meta[] = {
         { "__gc",       _lev_loop_gc },
@@ -561,4 +573,10 @@ int lev_error_ex(const char* file, int line, lua_State* L, ev_loop_t* loop, int 
     ev_free(umsg);
 
     return lua_error(L);
+}
+
+void lev_wakeup(ev_loop_t* loop)
+{
+    lev_loop_t* self = EV_CONTAINER_OF(loop, lev_loop_t, loop);
+    ev_async_wakeup(&self->async);
 }

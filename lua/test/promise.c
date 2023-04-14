@@ -3,7 +3,7 @@
 TEST_F(lua, promise)
 {
     static const char* script =
-"local loop = ev.mkloop()\n"
+"local loop = ev.loop()\n"
 "local promise = loop:promise()\n"
 "loop:co(function()\n"
 "    local v = promise:get_value()\n"

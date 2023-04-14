@@ -23,7 +23,7 @@ TEST_FIXTURE_TEARDOWN(lua)
 TEST_F(lua, process_pipe)
 {
     static const char* script =
-"local loop = ev.mkloop()\n"
+"local loop = ev.loop()\n"
 "local self_path = ev.exepath()\n"
 "local out_pipe = loop:pipe()\n"
 "loop:co(function()\n"
@@ -42,7 +42,7 @@ TEST_F(lua, process_pipe)
 TEST_F(lua, process_file)
 {
     static const char* script =
-"local loop = ev.mkloop()\n"
+"local loop = ev.loop()\n"
 "loop:co(function()\n"
 "    local _, out_file = loop:fs_file(test.path, ev.EV_FS_O_CREAT | ev.EV_FS_O_WRONLY)\n"
 "    assert(out_file ~= nil)\n"
@@ -66,7 +66,7 @@ TEST_F(lua, process_file)
 TEST_F(lua, DISABLED_process_tcp)
 {
     static const char* script =
-"local loop = ev.mkloop()\n"
+"local loop = ev.loop()\n"
 "local srv = loop:tcp()\n"
 "srv:listen(ev.ip_addr(test.ip, test.port))\n"
 "local pip_stdin = loop:pipe()\n"

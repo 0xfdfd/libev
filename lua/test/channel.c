@@ -3,15 +3,17 @@
 TEST_F(lua, channel)
 {
     static const char* script =
-"local loop = ev.mkloop()\n"
+"local loop = ev.loop()\n"
 "local chan = loop:channel()\n"
-"loop:co(function()\n"
+
+"local function sender()\n"
 "    for i=1,10 do\n"
 "        chan:send(i)\n"
 "    end\n"
 "    chan:close()\n"
-"end)\n"
-"loop:co(function()\n"
+"end\n"
+
+"local function recver()\n"
 "    for i=1,10 do\n"
 "        local e, v = chan:recv()\n"
 "        assert(e == nil)\n"
@@ -20,7 +22,10 @@ TEST_F(lua, channel)
 "    local e, v = chan:recv()\n"
 "    assert(e ~= nil)\n"
 "    assert(v == nil)\n"
-"end)\n"
+"end\n"
+
+"loop:co(recver)\n"
+"loop:co(sender)\n"
 "loop:run()\n";
 
     ASSERT_EQ_INT(luaL_dostring(g_test_lua.L, script), LUA_OK,

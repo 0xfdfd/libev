@@ -18,7 +18,7 @@ TEST_FIXTURE_TEARDOWN(lua)
 TEST_F(lua, fs_file)
 {
     static const char* script =
-"local loop = ev.mkloop()\n"
+"local loop = ev.loop()\n"
 "loop:co(function()\n"
 "    local _, file = loop:fs_file(test.sample_file, ev.EV_FS_O_CREAT | ev.EV_FS_O_RDWR)\n"
 "    assert(file ~= nil)\n"
