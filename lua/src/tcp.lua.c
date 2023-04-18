@@ -247,7 +247,7 @@ static int _lev_tcp_on_accept_resume(lua_State* L, int status, lua_KContext ctx)
     if (ret == 0)
     {
         lua_pushnil(L);
-        lua_insert(L, sp - 1);
+        lua_insert(L, sp);
         return 2;
     }
 
