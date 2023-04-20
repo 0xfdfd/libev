@@ -72,3 +72,38 @@ int lev_ip_name(lua_State* L)
     lua_pushinteger(L, port);
     return 2;
 }
+
+int lev_arg_pack(lua_State* L)
+{
+    int i;
+    int sp = lua_gettop(L);
+
+    lua_newtable(L); // sp + 1
+    for (i = 1; i <= sp; i++)
+    {
+        lua_pushvalue(L, i); // sp + 2
+        lua_rawseti(L, sp + 1, i);
+    }
+
+    return 1;
+}
+
+int lev_arg_unpack(lua_State* L)
+{
+    luaL_checktype(L, 1, LUA_TTABLE);
+
+    int sp = lua_gettop(L);
+    lua_State* tmp = lua_newthread(L); // sp + 1
+
+    lua_pushnil(L); // sp + 2
+    while (lua_next(L, 1) != 0)
+    {// key at sp+2, value at sp+3
+        lua_xmove(L, tmp, 1); // sp + 2
+    }
+
+    int tmp_sp = lua_gettop(tmp);
+    lua_xmove(tmp, L, tmp_sp);
+    lua_remove(L, sp + 1);
+
+    return tmp_sp;
+}

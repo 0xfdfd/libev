@@ -41,6 +41,7 @@ if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
         "lua/test/file.c"
         "lua/test/channel.c"
         "lua/test/loop.c"
+        "lua/test/misc.c"
         "lua/test/process.c"
         "lua/test/promise.c"
         "lua/test/strerror.c"

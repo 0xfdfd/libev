@@ -39,6 +39,20 @@ int lev_ip_addr(lua_State* L);
  */
 int lev_ip_name(lua_State* L);
 
+/**
+ * @brief Pack arguments.
+ * @param[in] L     Lua stack.
+ * @return          Always 1.
+ */
+int lev_arg_pack(lua_State* L);
+
+/**
+ * @brief Unpack arguments.
+ * @param[in] L     Lua stack.
+ * @return          The number of unpacked arguments.
+ */
+int lev_arg_unpack(lua_State* L);
+
 #ifdef __cplusplus
 }
 #endif

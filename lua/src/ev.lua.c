@@ -19,7 +19,9 @@
     xx("hrtime",        lev_hrtime)     \
     xx("ip_addr",       lev_ip_addr)    \
     xx("ip_name",       lev_ip_name)    \
-    xx("strerror",      lev_strerror)
+    xx("strerror",      lev_strerror)   \
+    xx("arg_pack",      lev_arg_pack)   \
+    xx("arg_unpack",    lev_arg_unpack)
 
 /**
  * @brief Map of loop public interface.
