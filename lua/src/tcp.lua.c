@@ -177,6 +177,13 @@ static int _lev_tcp_recv(lua_State* L)
     int ret;
     lev_tcp_t* tcp = luaL_checkudata(L, 1, LEV_TCP_NAME);
 
+    if (tcp->closed)
+    {
+        lua_pushinteger(L, EV_EPIPE);
+        lua_pushnil(L);
+        return 2;
+    }
+
     lev_tcp_recv_token_t* token = lua_newuserdata(L, sizeof(lev_tcp_recv_token_t));
 
     ev_buf_t buf = ev_buf_make(token->buffer, sizeof(token->buffer));
@@ -184,7 +191,8 @@ static int _lev_tcp_recv(lua_State* L)
     if (ret != 0)
     {
         lua_pushinteger(L, ret);
-        return 1;
+        lua_pushnil(L);
+        return 2;
     }
 
     token->L = L;

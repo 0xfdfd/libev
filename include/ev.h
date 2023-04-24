@@ -86,12 +86,12 @@ extern "C" {
 /**
  * @brief Patch version.
  */
-#define EV_VERSION_PATCH            8
+#define EV_VERSION_PATCH            9
 
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           0
+#define EV_VERSION_PREREL           1
 
 /**
  * @brief Version calculate helper macro.
@@ -660,9 +660,9 @@ void ev_map_init(ev_map_t* handler, ev_map_cmp_fn cmp, void* arg);
  * @warning the node must not exist in any map.
  * @param handler   The pointer to the map
  * @param node      The node
- * @return          0 if success, -1 otherwise
+ * @return          NULL if success, otherwise return the conflict node address.
  */
-int ev_map_insert(ev_map_t* handler, ev_map_node_t* node);
+ev_map_node_t* ev_map_insert(ev_map_t* handler, ev_map_node_t* node);
 
 /**
  * @brief Delete the node from the map.

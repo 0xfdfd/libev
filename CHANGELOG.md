@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.0.9
+
+### BREAKING CHANGES
+1. `ev_map_insert()` now return conflict node address
+
+
 ## v0.0.8 (2023/04/07)
 
 ### BREAKING CHANGES

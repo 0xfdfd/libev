@@ -85,7 +85,7 @@ int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_
     handle->attr.repeat = repeat;
     handle->data.active = loop->hwtime + timeout;
 
-    if (ev_map_insert(&loop->timer.heap, &handle->node) < 0)
+    if (ev_map_insert(&loop->timer.heap, &handle->node) != 0)
     {
         EV_ABORT("duplicate timer");
     }
