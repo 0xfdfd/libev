@@ -31,6 +31,7 @@ add_executable(ev_test
     "test/src/cases/process.redirect_file.c"
     "test/src/cases/queue.c"
     "test/src/cases/shm.c"
+    "test/src/cases/tcp_close_in_middle.c"
     "test/src/cases/tcp_connect_non_exist.c"
     "test/src/cases/tcp_idle_client.c"
     "test/src/cases/tcp_listen.c"
