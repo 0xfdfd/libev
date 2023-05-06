@@ -16,6 +16,6 @@ TEST_F(lua, promise)
 
     test_lua_set_test_string("value", "a7366500-985c-45c9-9ea8-8775a9cf745b");
 
-    ASSERT_EQ_INT(luaL_dostring(g_test_lua.L, script), LUA_OK,
+    ASSERT_EQ_INT(test_lua_dostring(g_test_lua.L, script), LUA_OK,
         "%s", lua_tostring(g_test_lua.L, -1));
 }

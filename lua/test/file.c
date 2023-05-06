@@ -31,6 +31,6 @@ TEST_F(lua, fs_file)
 
     test_lua_set_test_string("sample_file", TMPFILE_PATH);
 
-    ASSERT_EQ_INT(luaL_dostring(g_test_lua.L, script), LUA_OK,
+    ASSERT_EQ_INT(test_lua_dostring(g_test_lua.L, script), LUA_OK,
         "%s", lua_tostring(g_test_lua.L, -1));
 }

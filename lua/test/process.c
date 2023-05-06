@@ -35,7 +35,7 @@ TEST_F(lua, process_pipe)
 "end)\n"
 "loop:run()\n";
 
-    ASSERT_EQ_INT(luaL_dostring(g_test_lua.L, script), LUA_OK,
+    ASSERT_EQ_INT(test_lua_dostring(g_test_lua.L, script), LUA_OK,
         "%s", lua_tostring(g_test_lua.L, -1));
 }
 
@@ -59,7 +59,7 @@ TEST_F(lua, process_file)
 
     test_lua_set_test_string("path", TEST_LUA_TMPFILE_PATH);
 
-    ASSERT_EQ_INT(luaL_dostring(g_test_lua.L, script), LUA_OK,
+    ASSERT_EQ_INT(test_lua_dostring(g_test_lua.L, script), LUA_OK,
         "%s", lua_tostring(g_test_lua.L, -1));
 }
 
@@ -98,6 +98,6 @@ TEST_F(lua, DISABLED_process_tcp)
     test_lua_set_test_string("ip", "0.0.0.0");
     test_lua_set_test_integer("port", 5000);
 
-    ASSERT_EQ_INT(luaL_dostring(g_test_lua.L, script), LUA_OK,
+    ASSERT_EQ_INT(test_lua_dostring(g_test_lua.L, script), LUA_OK,
         "%s", lua_tostring(g_test_lua.L, -1));
 }

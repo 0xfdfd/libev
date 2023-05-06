@@ -30,6 +30,6 @@ TEST_F(lua, tcp)
     test_lua_set_test_string("ip", "127.0.0.1");
     test_lua_set_test_string("data", "hello world");
 
-    ASSERT_EQ_INT(luaL_dostring(g_test_lua.L, script), LUA_OK,
+    ASSERT_EQ_INT(test_lua_dostring(g_test_lua.L, script), LUA_OK,
         "%s", lua_tostring(g_test_lua.L, -1));
 }

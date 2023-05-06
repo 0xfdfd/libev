@@ -15,6 +15,6 @@ TEST_F(lua, strerror)
     lua_setfield(g_test_lua.L, -2, "errstr");
     lua_setglobal(g_test_lua.L, "test");
 
-    ASSERT_EQ_INT(luaL_dostring(g_test_lua.L, script), LUA_OK,
+    ASSERT_EQ_INT(test_lua_dostring(g_test_lua.L, script), LUA_OK,
         "%s", lua_tostring(g_test_lua.L, -1));
 }

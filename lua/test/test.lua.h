@@ -58,6 +58,11 @@ void test_lua_set_test_string(const char* key, const char* value);
  */
 void test_lua_set_test_integer(const char* key, int value);
 
+/**
+ * @brief Like luaL_dostring(), but with traceback.
+ */
+int test_lua_dostring(lua_State* L, const char* s);
+
 /*
  * Common Lua test environment setup and teardown progress.
  * This is enabled by default. To disable it, define `EV_TEST_NO_LUA_SETUP`
