@@ -21,7 +21,7 @@ local function read_files(paths)
         local f = io.open(v)
         local d = f:read("a")
 
-        d = string.gsub(d, "#%s*include%s+\"([-_%w/]+)%.h\"", "/* AMALGAMATE: %0 */")
+        d = string.gsub(d, "#%s*include%s+\"([-_%w%./]+)%.h\"", "/* AMALGAMATE: %0 */")
         f:close()
 
         if opt.no_line == false then

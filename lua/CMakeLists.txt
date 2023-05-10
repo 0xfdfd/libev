@@ -9,23 +9,10 @@ find_package(Lua REQUIRED)
 # Setup library
 ###############################################################################
 
-target_sources(ev PRIVATE
-    "lua/src/channel.lua.c"
-    "lua/src/ev.lua.c"
-    "lua/src/fs.lua.c"
-    "lua/src/misc.lua.c"
-    "lua/src/pipe.lua.c"
-    "lua/src/process.lua.c"
-    "lua/src/promise.lua.c"
-    "lua/src/tcp.lua.c"
-    "lua/src/timer.lua.c"
-    "lua/src/udp.lua.c")
+target_compile_options(${PROJECT_NAME} PRIVATE -DEV_HAVE_LUA_BINDING)
 
 target_include_directories(ev
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lua/include>
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/lua/src
         ${LUA_INCLUDE_DIR})
 
 target_link_libraries(ev

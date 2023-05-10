@@ -2,7 +2,6 @@
 #define __TEST_LUA_H__
 
 #include "test.h"
-#include "ev.lua.h"
 
 #ifdef __cplusplus
 extern "C" {
