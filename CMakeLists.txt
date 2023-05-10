@@ -6,16 +6,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/third_party/cmake-modules")
 
 # Build options
 option(EV_ENABLE_COVERAGE "Enable code coverage. GCC/Clang only" OFF)
-option(EV_AMALGAMATE_BUILD "Build amalgamate source file" OFF)
 option(EV_HAVE_LUA_BINDING "Build with lua binding" OFF)
 
-set(ev_header_public_list
-    "include/ev.h"
-    "include/ev/win.h"
-    "include/ev/unix.h"
-)
-
-set(ev_src_hdr
+set(ev_src
     "src/defs.h"
     "src/allocator.h"
     "src/async.h"
@@ -29,35 +22,6 @@ set(ev_src_hdr
     "src/timer.h"
     "src/log.h"
     "src/udp.h"
-)
-
-set(ev_src_hdr_os_win
-    "src/win/winapi.h"
-    "src/win/winsock.h"
-    "src/win/async_win.h"
-    "src/win/fs_win.h"
-    "src/win/udp_win.h"
-    "src/win/loop_win.h"
-    "src/win/process_win.h"
-    "src/win/pipe_win.h"
-    "src/win/misc_win.h"
-    "src/win/thread_win.h"
-    "src/win/threadpool_win.h"
-    "src/win/tcp_win.h"
-)
-
-set(ev_src_hdr_os_unix
-    "src/unix/async_unix.h"
-    "src/unix/io_unix.h"
-    "src/unix/process_unix.h"
-    "src/unix/tcp_unix.h"
-    "src/unix/loop_unix.h"
-    "src/unix/misc_unix.h"
-    "src/unix/stream_unix.h"
-    "src/unix/work.h"
-)
-
-set(ev_src
     "src/allocator.c"
     "src/fs.c"
     "src/handle.c"
@@ -77,6 +41,18 @@ set(ev_src
 )
 
 set(ev_src_os_win
+    "src/win/winapi.h"
+    "src/win/winsock.h"
+    "src/win/async_win.h"
+    "src/win/fs_win.h"
+    "src/win/udp_win.h"
+    "src/win/loop_win.h"
+    "src/win/process_win.h"
+    "src/win/pipe_win.h"
+    "src/win/misc_win.h"
+    "src/win/thread_win.h"
+    "src/win/threadpool_win.h"
+    "src/win/tcp_win.h"
     "src/win/async_win.c"
     "src/win/fs_win.c"
     "src/win/loop_win.c"
@@ -96,6 +72,14 @@ set(ev_src_os_win
 )
 
 set(ev_src_os_unix
+    "src/unix/async_unix.h"
+    "src/unix/io_unix.h"
+    "src/unix/process_unix.h"
+    "src/unix/tcp_unix.h"
+    "src/unix/loop_unix.h"
+    "src/unix/misc_unix.h"
+    "src/unix/stream_unix.h"
+    "src/unix/work.h"
     "src/unix/async_unix.c"
     "src/unix/fs_unix.c"
     "src/unix/io_unix.c"
@@ -114,64 +98,67 @@ set(ev_src_os_unix
     "src/unix/udp_unix.c"
 )
 
-function(build_with_native name)
-    add_library(${name} ${ev_src})
-    if(WIN32)
-        target_sources(${PROJECT_NAME} PRIVATE ${ev_src_os_win})
-    else()
-        target_sources(${PROJECT_NAME} PRIVATE ${ev_src_os_unix})
-    endif()
-    target_include_directories(${name}
-        PUBLIC
-            $<INSTALL_INTERFACE:include>
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        PRIVATE
-            ${CMAKE_CURRENT_SOURCE_DIR}/src)
-endfunction()
+include(third_party/lua54.cmake)
 
-function(build_with_amalgamate name)
-    find_package (Python3 REQUIRED COMPONENTS Interpreter)
+string(REPLACE ";" "," escaped_ev_src                   "${ev_src}")
+string(REPLACE ";" "," escaped_ev_src_os_win            "${ev_src_os_win}")
+string(REPLACE ";" "," escaped_ev_src_os_unix           "${ev_src_os_unix}")
 
-    string(REPLACE ";" "," escaped_ev_header_public_list      "${ev_header_public_list}")
-    string(REPLACE ";" "," escaped_ev_src_hdr         "${ev_src_hdr}")
-    string(REPLACE ";" "," escaped_ev_src_hdr_os_win  "${ev_src_hdr_os_win}")
-    string(REPLACE ";" "," escaped_ev_src_hdr_os_unix "${ev_src_hdr_os_unix}")
-    string(REPLACE ";" "," escaped_ev_src             "${ev_src}")
-    string(REPLACE ";" "," escaped_ev_src_os_win      "${ev_src_os_win}")
-    string(REPLACE ";" "," escaped_ev_src_os_unix     "${ev_src_os_unix}")
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/ev.h
+    COMMAND $<TARGET_FILE:lua54> ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.lua
+            --no_line
+            --out       ${CMAKE_CURRENT_SOURCE_DIR}/ev.h
+            --license   ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+            --include   "include/ev/version.h"
+            --include   "include/ev/list.h"
+            --include   "include/ev/map.h"
+            --string    "#if defined(_WIN32) /* AMALGAMATE: ev.h (1/3) */"
+            --include   "include/ev/win.h"
+            --string    "#else               /* AMALGAMATE: ev.h (2/3) */"
+            --include   "include/ev/unix.h"
+            --string    "#endif              /* AMALGAMATE: ev.h (3/3) */"
+            --include   "include/ev.h"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.lua
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/version.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/list.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/map.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/win.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/unix.h
+    VERBATIM
+)
 
-    add_custom_command(
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/amalgamate/ev.h ${CMAKE_CURRENT_BINARY_DIR}/amalgamate/ev.c
-        COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.py
-                --out ${CMAKE_CURRENT_BINARY_DIR}/amalgamate
-                --public_hdr        ${escaped_ev_header_public_list}
-                --src_hdr           ${escaped_ev_src_hdr}
-                --src_hdr_os_win    ${escaped_ev_src_hdr_os_win}
-                --src_hdr_os_unix   ${escaped_ev_src_hdr_os_unix}
-                --src               ${escaped_ev_src}
-                --src_os_win        ${escaped_ev_src_os_win}
-                --src_os_unix       ${escaped_ev_src_os_unix}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        DEPENDS ${ev_header_public_list}
-                ${ev_src_hdr}
-                ${ev_src_hdr_os_win}
-                ${ev_src_hdr_os_unix}
-                ${ev_src}
-                ${ev_src_os_win}
-                ${ev_src_os_unix})
-    add_library(${PROJECT_NAME} ${CMAKE_CURRENT_BINARY_DIR}/amalgamate/ev.c)
-    target_include_directories(${name}
-        PUBLIC
-            $<INSTALL_INTERFACE:include>
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/amalgamate>)
-endfunction()
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/ev.c
+    COMMAND $<TARGET_FILE:lua54> ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.lua
+            --out               ${CMAKE_CURRENT_SOURCE_DIR}/ev.c
+            --license           ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+            --string            "#define EV_AMALGAMATE_BUILD"
+            --string            "#define _GNU_SOURCE"
+            --string            "#include \"ev.h\""
+            --include           ${escaped_ev_src}
+            --string            "#if defined(_WIN32) /* AMALGAMATE: ev.c (1/3) */"
+            --include           ${escaped_ev_src_os_win}
+            --string            "#else               /* AMALGAMATE: ev.c (2/3) */"
+            --include           ${escaped_ev_src_os_unix}
+            --string            "#endif              /* AMALGAMATE: ev.c (3/3) */"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.lua
+            ${CMAKE_CURRENT_SOURCE_DIR}/ev.h
+            ${ev_src}
+            ${ev_src_os_win}
+            ${ev_src_os_unix}
+    VERBATIM
+)
 
-# add source files
-if (EV_AMALGAMATE_BUILD)
-    build_with_amalgamate(${PROJECT_NAME})
-else ()
-    build_with_native(${PROJECT_NAME})
-endif ()
+add_library(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/ev.c)
+target_include_directories(${PROJECT_NAME}
+    PUBLIC
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+)
 
 # add library dependencies
 find_package(Threads REQUIRED)

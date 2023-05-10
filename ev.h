@@ -1,4 +1,1368 @@
 /**
+ * MIT License
+ * 
+ * Copyright (c) 2021 qgymib
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+#ifndef __EV_VERSION_H__
+#define __EV_VERSION_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @defgroup EV_VERSION Version
+ * @{
+ */
+
+/**
+ * @brief Major version.
+ */
+#define EV_VERSION_MAJOR            0
+
+/**
+ * @brief Minor version.
+ */
+#define EV_VERSION_MINOR            0
+
+/**
+ * @brief Patch version.
+ */
+#define EV_VERSION_PATCH            9
+
+/**
+ * @brief Development version.
+ */
+#define EV_VERSION_PREREL           1
+
+/**
+ * @brief Version calculate helper macro.
+ * @param[in] a     Major version.
+ * @param[in] b     Minor version.
+ * @param[in] c     Patch version.
+ * @param[in] d     Development version.
+ */
+#define EV_VERSION(a, b, c, d)      (((a) << 24) + ((b) << 16) + ((c) << 8) + ((d) ? (d) : 255))
+
+/**
+ * @brief Current version code.
+ */
+#define EV_VERSION_CODE             \
+    EV_VERSION(EV_VERSION_MAJOR, EV_VERSION_MINOR, EV_VERSION_PATCH, EV_VERSION_PREREL)
+
+/**
+ * @brief Get version code as c string.
+ * @return      Version code.
+ */
+const char* ev_version_str(void);
+
+/**
+ * @brief Get version code as number.
+ * @return      Version code
+ */
+unsigned ev_version_code(void);
+
+/**
+ * @} EV_VERSION
+ */
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+#ifndef __EV_LIST_H__
+#define __EV_LIST_H__
+
+#include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @defgroup EV_UTILS_LIST List
+ * @ingroup EV_UTILS
+ * @{
+ */
+
+/**
+ * @brief Static initializer for #ev_list_t
+ * @see ev_list_t
+ */
+#define EV_LIST_INIT            { NULL, NULL, 0 }
+
+/**
+ * @brief Static initializer for #ev_list_node_t
+ * @see ev_list_node_t
+ */
+#define EV_LIST_NODE_INIT       { NULL, NULL }
+
+/**
+ * @brief The list node.
+ * This node must put in your struct.
+ * @see EV_LIST_NODE_INIT
+ */
+typedef struct ev_list_node
+{
+    struct ev_list_node*    p_after;    /**< Pointer to next node */
+    struct ev_list_node*    p_before;   /**< Pointer to previous node */
+}ev_list_node_t;
+
+/**
+ * @brief Double Linked List
+ * @see EV_LIST_INIT
+ */
+typedef struct ev_list
+{
+    ev_list_node_t*         head;       /**< Pointer to HEAD node */
+    ev_list_node_t*         tail;       /**< Pointer to TAIL node */
+    size_t                  size;       /**< The number of total nodes */
+}ev_list_t;
+
+/**
+ * @brief Initialize Double Linked List.
+ * @note It is guarantee that memset() to zero have the same affect.
+ * @param[out] handler  Pointer to list
+ */
+void ev_list_init(ev_list_t* handler);
+
+/**
+ * @brief Insert a node to the head of the list.
+ * @warning the node must not exist in any list.
+ * @param[in,out] handler   Pointer to list
+ * @param[in,out] node      Pointer to a new node
+ */
+void ev_list_push_front(ev_list_t* handler, ev_list_node_t* node);
+
+/**
+ * @brief Insert a node to the tail of the list.
+ * @warning the node must not exist in any list.
+ * @param[in,out] handler   Pointer to list
+ * @param[in,out] node      Pointer to a new node
+ */
+void ev_list_push_back(ev_list_t* handler, ev_list_node_t* node);
+
+/**
+ * @brief Insert a node in front of a given node.
+ * @warning the node must not exist in any list.
+ * @param[in,out] handler   Pointer to list
+ * @param[in,out] pos       Pointer to a exist node
+ * @param[in,out] node      Pointer to a new node
+ */
+void ev_list_insert_before(ev_list_t* handler, ev_list_node_t* pos, ev_list_node_t* node);
+
+/**
+ * @brief Insert a node right after a given node.
+ * @warning the node must not exist in any list.
+ * @param[in,out] handler   Pointer to list
+ * @param[in,out] pos       Pointer to a exist node
+ * @param[in,out] node      Pointer to a new node
+ */
+void ev_list_insert_after(ev_list_t* handler, ev_list_node_t* pos, ev_list_node_t* node);
+
+/**
+ * @brief Delete a exist node
+ * @warning The node must already in the list.
+ * @param[in,out] handler   Pointer to list
+ * @param[in,out] node      The node you want to delete
+ */
+void ev_list_erase(ev_list_t* handler, ev_list_node_t* node);
+
+/**
+ * @brief Get the number of nodes in the list.
+ * @param[in] handler   Pointer to list
+ * @return              The number of nodes
+ */
+size_t ev_list_size(const ev_list_t* handler);
+
+/**
+ * @brief Get the first node and remove it from the list.
+ * @param[in,out] handler   Pointer to list
+ * @return                  The first node
+ */
+ev_list_node_t* ev_list_pop_front(ev_list_t* handler);
+
+/**
+ * @brief Get the last node and remove it from the list.
+ * @param[in,out] handler   Pointer to list
+ * @return                  The last node
+ */
+ev_list_node_t* ev_list_pop_back(ev_list_t* handler);
+
+/**
+ * @brief Get the first node.
+ * @param[in] handler   Pointer to list
+ * @return              The first node
+ */
+ev_list_node_t* ev_list_begin(const ev_list_t* handler);
+
+/**
+ * @brief Get the last node.
+ * @param[in] handler   The handler of list
+ * @return              The last node
+ */
+ev_list_node_t* ev_list_end(const ev_list_t* handler);
+
+/**
+* @brief Get next node.
+* @param[in] node   Current node
+* @return           The next node
+*/
+ev_list_node_t* ev_list_next(const ev_list_node_t* node);
+
+/**
+ * @brief Get previous node.
+ * @param[in] node  current node
+ * @return          previous node
+ */
+ev_list_node_t* ev_list_prev(const ev_list_node_t* node);
+
+/**
+ * @brief Move all elements from \p src into the end of \p dst.
+ * @param[in] dst   Destination list.
+ * @param[in] src   Source list.
+ */
+void ev_list_migrate(ev_list_t* dst, ev_list_t* src);
+
+/**
+ * @} EV_UTILS/EV_UTILS_LIST
+ */
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+#ifndef __EV_MAP_H__
+#define __EV_MAP_H__
+
+#include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @defgroup EV_UTILS_MAP Map
+ * @ingroup EV_UTILS
+ * @{
+ */         
+
+/**
+ * @brief The node for map
+ * @see eaf_map_t
+ * @see EV_MAP_NODE_INIT
+ */
+typedef struct ev_map_node
+{
+    struct ev_map_node* __rb_parent_color;  /**< parent node | color */
+    struct ev_map_node* rb_right;           /**< right node */
+    struct ev_map_node* rb_left;            /**< left node */
+} ev_map_node_t;
+
+/**
+ * @brief Static initializer for #ev_map_t
+ * @see ev_map_t
+ * @param[in] cmp   Compare function
+ * @param[in] arg   Argument for compare function
+ */
+#define EV_MAP_INIT(cmp, arg)   { NULL, { cmp, arg }, 0 }
+
+/**
+ * @brief Static initializer for #ev_map_node_t
+ * @see ev_map_node_t
+ */
+#define EV_MAP_NODE_INIT        { NULL, NULL, NULL }
+
+/**
+ * @brief Compare function.
+ * @param key1  The key in the map
+ * @param key2  The key user given
+ * @param arg   User defined argument
+ * @return      -1 if key1 < key2. 1 if key1 > key2. 0 if key1 == key2.
+ */
+typedef int(*ev_map_cmp_fn)(const ev_map_node_t* key1, const ev_map_node_t* key2, void* arg);
+
+/**
+ * @brief Map implemented as red-black tree
+ * @see EV_MAP_INIT
+ */
+typedef struct ev_map
+{
+    ev_map_node_t*      rb_root;            /**< root node */
+
+    struct
+    {
+        ev_map_cmp_fn   cmp;        /**< Pointer to compare function */
+        void*           arg;        /**< User defined argument, which will passed to compare function */
+    }cmp;                           /**< Compare function data */
+
+    size_t              size;       /**< The number of nodes */
+} ev_map_t;
+
+/**
+ * @brief Initialize the map referenced by handler.
+ * @param handler   The pointer to the map
+ * @param cmp       The compare function. Must not NULL
+ * @param arg       User defined argument. Can be anything
+ */
+void ev_map_init(ev_map_t* handler, ev_map_cmp_fn cmp, void* arg);
+
+/**
+ * @brief Insert the node into map.
+ * @warning the node must not exist in any map.
+ * @param handler   The pointer to the map
+ * @param node      The node
+ * @return          NULL if success, otherwise return the conflict node address.
+ */
+ev_map_node_t* ev_map_insert(ev_map_t* handler, ev_map_node_t* node);
+
+/**
+ * @brief Delete the node from the map.
+ * @warning The node must already in the map.
+ * @param handler   The pointer to the map
+ * @param node      The node
+ */
+void ev_map_erase(ev_map_t* handler, ev_map_node_t* node);
+
+/**
+ * @brief Get the number of nodes in the map.
+ * @param handler   The pointer to the map
+ * @return          The number of nodes
+ */
+size_t ev_map_size(const ev_map_t* handler);
+
+/**
+ * @brief Finds element with specific key
+ * @param handler   The pointer to the map
+ * @param key       The key
+ * @return          An iterator point to the found node
+ */
+ev_map_node_t* ev_map_find(const ev_map_t* handler,
+    const ev_map_node_t* key);
+
+/**
+ * @brief Returns an iterator to the first element not less than the given key
+ * @param handler   The pointer to the map
+ * @param key       The key
+ * @return          An iterator point to the found node
+ */
+ev_map_node_t* ev_map_find_lower(const ev_map_t* handler,
+    const ev_map_node_t* key);
+
+/**
+ * @brief Returns an iterator to the first element greater than the given key
+ * @param handler   The pointer to the map
+ * @param key       The key
+ * @return          An iterator point to the found node
+ */
+ev_map_node_t* ev_map_find_upper(const ev_map_t* handler,
+    const ev_map_node_t* key);
+
+/**
+ * @brief Returns an iterator to the beginning
+ * @param handler   The pointer to the map
+ * @return          An iterator
+ */
+ev_map_node_t* ev_map_begin(const ev_map_t* handler);
+
+/**
+ * @brief Returns an iterator to the end
+ * @param handler   The pointer to the map
+ * @return          An iterator
+ */
+ev_map_node_t* ev_map_end(const ev_map_t* handler);
+
+/**
+ * @brief Get an iterator next to the given one.
+ * @param node      Current iterator
+ * @return          Next iterator
+ */
+ev_map_node_t* ev_map_next(const ev_map_node_t* node);
+
+/**
+ * @brief Get an iterator before the given one.
+ * @param node      Current iterator
+ * @return          Previous iterator
+ */
+ev_map_node_t* ev_map_prev(const ev_map_node_t* node);
+
+/**
+ * @} EV_UTILS/EV_UTILS_MAP
+ */
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+#if defined(_WIN32) /* AMALGAMATE: ev.h (1/3) */
+/**
+ * @file
+ */
+#ifndef __EV_BACKEND_WIN_H__
+#define __EV_BACKEND_WIN_H__
+
+#ifndef _WIN32_WINNT
+#    define _WIN32_WINNT   0x0600
+#endif
+#include <winsock2.h>
+#include <mswsock.h>
+#include <ws2tcpip.h>
+#include <windows.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#   if !defined(_SSIZE_T_) && !defined(_SSIZE_T_DEFINED)
+typedef intptr_t ssize_t;
+#       define SSIZE_MAX INTPTR_MAX
+#       define _SSIZE_T_
+#       define _SSIZE_T_DEFINED
+#   endif
+
+/**
+ * @addtogroup EV_FILESYSTEM
+ * @{
+ */
+
+/**
+ * @brief The file is opened in append mode. Before each write, the file offset
+ *   is positioned at the end of the file.
+ */
+#define EV_FS_O_APPEND          _O_APPEND
+
+/**
+ * @brief The file is created if it does not already exist.
+ */
+#define EV_FS_O_CREAT           _O_CREAT
+
+/**
+ * @brief The file is opened for synchronous I/O. Write operations will complete
+ *   once all data and a minimum of metadata are flushed to disk.
+ */
+#define EV_FS_O_DSYNC           FILE_FLAG_WRITE_THROUGH
+
+/**
+ * @brief If the `O_CREAT` flag is set and the file already exists, fail the open.
+ */
+#define EV_FS_O_EXCL            _O_EXCL
+
+/**
+ * @brief The file is opened for synchronous I/O. Write operations will complete
+ *   once all data and all metadata are flushed to disk.
+ */
+#define EV_FS_O_SYNC            FILE_FLAG_WRITE_THROUGH
+
+/**
+ * @brief If the file exists and is a regular file, and the file is opened
+ *   successfully for write access, its length shall be truncated to zero.
+ */
+#define EV_FS_O_TRUNC           _O_TRUNC
+
+/**
+ * @brief Open the file for read-only access.
+ */
+#define EV_FS_O_RDONLY          _O_RDONLY
+
+/**
+ * @brief Open the file for write-only access.
+ */
+#define EV_FS_O_WRONLY          _O_WRONLY
+
+/**
+ * @def EV_FS_O_RDWR
+ * @brief Open the file for read-write access.
+ */
+#define EV_FS_O_RDWR            _O_RDWR
+
+/**
+ * @brief User has read permission.
+ */
+#define EV_FS_S_IRUSR           _S_IREAD
+
+/**
+ * @brief User has write permission.
+ */
+#define EV_FS_S_IWUSR           _S_IWRITE
+
+/**
+ * @brief User has execute permission.
+ */
+#define EV_FS_S_IXUSR           _S_IEXEC
+
+/**
+ * @brief user (file owner) has read, write, and execute permission.
+ */
+#define EV_FS_S_IRWXU           (EV_FS_S_IRUSR | EV_FS_S_IWUSR | EV_FS_S_IXUSR)
+
+/**
+ * @brief The starting point is zero or the beginning of the file.
+ */
+#define EV_FS_SEEK_BEG           FILE_BEGIN
+
+/**
+ * @brief The starting point is the current value of the file pointer.
+ */
+#define EV_FS_SEEK_CUR           FILE_CURRENT
+
+/**
+ * @brief The starting point is the current end-of-file position.
+ */
+#define EV_FS_SEEK_END           FILE_END
+
+/**
+ * @brief Windows system define of file.
+ */
+typedef HANDLE                   ev_os_file_t;
+
+/**
+ * @brief Invalid valid of #ev_os_file_t.
+ */
+#define EV_OS_FILE_INVALID      INVALID_HANDLE_VALUE
+
+/**
+ * @} EV_FILESYSTEM
+ */
+
+/**
+ * @addtogroup EV_PROCESS
+ * @{
+ */
+
+typedef HANDLE                  ev_os_pid_t;
+#define EV_OS_PID_INVALID       INVALID_HANDLE_VALUE
+
+/**
+ * @} EV_PROCESS
+ */
+
+typedef HANDLE                  ev_os_pipe_t;
+#define EV_OS_PIPE_INVALID      INVALID_HANDLE_VALUE
+
+typedef SOCKET                  ev_os_socket_t;
+#define EV_OS_SOCKET_INVALID    INVALID_SOCKET
+
+typedef DWORD                   ev_os_tid_t;
+#define EV_OS_TID_INVALID       ((DWORD)(-1))
+
+typedef HANDLE                  ev_os_thread_t;
+#define EV_OS_THREAD_INVALID    INVALID_HANDLE_VALUE
+
+typedef DWORD                   ev_os_tls_t;
+typedef CRITICAL_SECTION        ev_os_mutex_t;
+typedef HANDLE                  ev_os_sem_t;
+
+/**
+ * @brief Buffer
+ * @internal Must share the same layout with WSABUF
+ */
+typedef struct ev_buf
+{
+    ULONG                       size;               /**< Data size */
+    CHAR*                       data;               /**< Data address */
+} ev_buf_t;
+
+/**
+ * @brief Initialize #ev_buf_t.
+ * @param[in] buf   Data address.
+ * @param[in] len   Data length.
+ */
+#define EV_BUF_INIT(buf, len)   { (ULONG)len, (CHAR*)buf }
+
+struct ev_once
+{
+    INIT_ONCE                   guard;              /**< Once token */
+};
+
+/**
+ * @brief Initialize #ev_once_t to Windows specific structure.
+ */
+#define EV_ONCE_INIT            { INIT_ONCE_STATIC_INIT }
+
+struct ev_iocp;
+
+/**
+ * @brief Typedef of #ev_iocp.
+ */
+typedef struct ev_iocp ev_iocp_t;
+
+/**
+ * @brief IOCP complete callback
+ * @param[in] iocp  IOCP request
+ */
+typedef void(*ev_iocp_cb)(ev_iocp_t* iocp, size_t transferred, void* arg);
+
+/**
+ * @brief IOCP structure.
+ */
+struct ev_iocp
+{
+    void*                       arg;                /**< Index */
+    ev_iocp_cb                  cb;                 /**< Callback */
+    OVERLAPPED                  overlapped;         /**< IOCP field */
+};
+
+/**
+ * @brief Initialize #ev_iocp_t to invalid value.
+ */
+#define EV_IOCP_INIT            { NULL, NULL, { 0, 0, { { 0, 0 } }, NULL } }
+
+/**
+ * @brief Windows backend for #ev_async_t.
+ */
+#define EV_ASYNC_BACKEND    \
+    struct ev_async_plt {\
+        LONG volatile               async_sent;\
+        ev_iocp_t                   io;\
+    }
+
+/**
+ * @brief Initialize #EV_ASYNC_BACKEND to an Windows specific invalid value.
+ */
+#define EV_ASYNC_PLT_INVALID    { 0, EV_IOCP_INIT }
+
+#define EV_LOOP_BACKEND \
+    struct ev_loop_plt {\
+        HANDLE                      iocp;               /**< IOCP handle */\
+        struct {\
+            ev_iocp_t               io;                 /**< Wakeup token */\
+        } threadpool;\
+    }
+
+/**
+ * @brief Initialize #EV_LOOP_BACKEND to Windows specific invalid value.
+ */
+#define EV_LOOP_PLT_INIT        { NULL, { EV_IOCP_INIT } }
+
+/**
+ * @brief Windows backend for #ev_tcp_read_req_t.
+ */
+#define EV_TCP_READ_BACKEND \
+    struct ev_tcp_read_backend {\
+        ev_tcp_t*                   owner;              /**< Owner */\
+        ev_iocp_t                   io;                 /**< IOCP */\
+        int                         stat;               /**< Read result */\
+    }
+
+/**
+ * @brief  Windows backend for #ev_tcp_write_req_t.
+ */
+#define EV_TCP_WRITE_BACKEND    \
+    struct ev_tcp_write_backend {\
+        void*                       owner;              /**< Owner */\
+        int                         stat;               /**< Write result */\
+        ev_iocp_t                   io;                 /**< IOCP backend */\
+    }
+
+/**
+ * @brief Windows backend for #ev_tcp_t.
+ */
+#define EV_TCP_BACKEND  \
+    struct ev_tcp_backend {\
+        int                         af;                 /**< AF_INET / AF_INET6 */\
+        ev_iocp_t                   io;                 /**< IOCP */\
+        struct {\
+            unsigned                todo_pending : 1;   /**< Already submit todo request */\
+        }mask;\
+        union {\
+            struct {\
+                ev_list_t           a_queue;            /**< (#ev_tcp_backend::u::accept::node) Accept queue */\
+                ev_list_t           a_queue_done;       /**< (#ev_tcp_backend::u::accept::node) Accept done queue */\
+            }listen;\
+            struct {\
+                ev_tcp_accept_cb    cb;                 /**< Accept callback */\
+                ev_list_node_t      node;               /**< (#ev_tcp_backend::u::listen) Accept queue node */\
+                ev_tcp_t*           listen;             /**< Listen socket */\
+                int                 stat;               /**< Accept result */\
+                /**\
+                 * lpOutputBuffer for AcceptEx.\
+                 * dwLocalAddressLength and dwRemoteAddressLength require 16 bytes\
+                 * more than the maximum address length for the transport protocol.\
+                 */\
+                char                buffer[(sizeof(struct sockaddr_storage) + 16) * 2];\
+            }accept;\
+            struct {\
+                ev_tcp_connect_cb   cb;                 /**< Callback */\
+                LPFN_CONNECTEX      fn_connectex;       /**< ConnectEx */\
+                int                 stat;               /**< Connect result */\
+            }client;\
+            struct {\
+                ev_list_t           w_queue;            /**< (#ev_write_t::node) Write queue */\
+                ev_list_t           w_queue_done;       /**< (#ev_write_t::node) Write done queue */\
+                ev_list_t           r_queue;            /**< (#ev_read_t::node) Read queue */\
+                ev_list_t           r_queue_done;       /**< (#ev_read_t::node) Read done queue */\
+            }stream;\
+        }u;\
+    }
+
+/**
+ * @brief Initialize #EV_TCP_BACKEND to Windows specific invalid value.
+ */
+#define EV_TCP_BACKEND_INIT     \
+    {\
+        0,\
+        EV_IOCP_INIT,\
+        { 0 },\
+        { { EV_LIST_INIT, EV_LIST_INIT } },\
+    }
+
+typedef int (WSAAPI* ev_wsarecvfrom_fn)(
+    SOCKET socket,
+    LPWSABUF buffers,
+    DWORD buffer_count,
+    LPDWORD bytes,
+    LPDWORD flags,
+    struct sockaddr* addr,
+    LPINT addr_len,
+    LPWSAOVERLAPPED overlapped,
+    LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine);
+
+typedef int (WSAAPI* ev_wsarecv_fn)(
+    SOCKET socket,
+    LPWSABUF buffers,
+    DWORD buffer_count,
+    LPDWORD bytes,
+    LPDWORD flags,
+    LPWSAOVERLAPPED overlapped,
+    LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine);
+
+/**
+ * @brief Windows backend for #ev_udp_write_t.
+ */
+#define EV_UDP_WRITE_BACKEND    \
+    struct ev_udp_write_backend {\
+        ev_iocp_t                   io;                 /**< IOCP handle */\
+        int                         stat;               /**< Write result */\
+        ev_udp_t*                   owner;              /**< Owner */\
+    }
+
+/**
+ * @brief Windows backend for #ev_udp_read_t.
+ */
+#define EV_UDP_READ_BACKEND \
+    struct ev_udp_read_backend {\
+        ev_udp_t*                   owner;              /**< Owner */\
+        ev_iocp_t                   io;                 /**< IOCP handle */\
+        int                         stat;               /**< Read result */\
+    }
+
+/**
+ * @brief Windows backend for #ev_udp_t.
+ */
+#define EV_UDP_BACKEND  \
+    struct ev_udp_backend {\
+        ev_wsarecv_fn               fn_wsarecv;\
+        ev_wsarecvfrom_fn           fn_wsarecvfrom;     /**< WSARecvFrom() */\
+    }
+
+typedef enum ev_pipe_win_ipc_info_type
+{
+    EV_PIPE_WIN_IPC_INFO_TYPE_STATUS,               /**< #ev_pipe_win_ipc_info_t::data::as_status */
+    EV_PIPE_WIN_IPC_INFO_TYPE_PROTOCOL_INFO,        /**< #ev_pipe_win_ipc_info_t::data::as_protocol_info */
+}ev_pipe_win_ipc_info_type_t;
+
+/**
+ * @brief Windows IPC frame information.
+ */
+typedef struct ev_pipe_win_ipc_info
+{
+    ev_pipe_win_ipc_info_type_t type;               /**< Type */
+    union
+    {
+        struct
+        {
+            DWORD               pid;                /**< PID */
+        }as_status;
+
+        WSAPROTOCOL_INFOW       as_protocol_info;   /**< Protocol info */
+    }data;
+} ev_pipe_win_ipc_info_t;
+
+#define EV_PIPE_WRITE_BACKEND   \
+    struct ev_pipe_write_backend {\
+        ev_pipe_t*                  owner;              /**< Owner */\
+        int                         stat;               /**< Write result */\
+    }
+
+/**
+ * @brief Windows backend for #ev_pipe_read_req_t.
+ */
+#define EV_PIPE_READ_BACKEND    \
+    struct ev_pipe_read_backend {\
+        ev_pipe_t*                  owner;              /**< Owner */\
+        int                         stat;               /**< Read result */\
+    }
+
+#define EV_PIPE_BACKEND_BUFFER_SIZE    \
+        (sizeof(ev_ipc_frame_hdr_t) + sizeof(ev_pipe_win_ipc_info_t))
+
+#define EV_PIPE_BACKEND \
+    union ev_pipe_backend {\
+        int                                 _useless;           /**< For static initializer */\
+        struct {\
+            struct {\
+                ev_iocp_t                   io;                 /**< IOCP backend */\
+                ev_list_t                   r_pending;          /**< Request queue to be read */\
+                ev_pipe_read_req_t*         r_doing;            /**< Request queue in reading */\
+            }rio;\
+            struct {\
+                struct ev_pipe_backend_data_mode_wio {\
+                    size_t                  idx;                /**< Index. Must not change. */\
+                    ev_iocp_t               io;                 /**< IOCP backend */\
+                    ev_pipe_write_req_t*    w_req;              /**< The write request mapping for IOCP */\
+                    size_t                  w_buf_idx;          /**< The write buffer mapping for IOCP */\
+                }iocp[EV_IOV_MAX];\
+                unsigned                    w_io_idx;           /**< Usable index */\
+                unsigned                    w_io_cnt;           /**< Busy count */\
+                ev_list_t                   w_pending;          /**< Request queue to be write */\
+                ev_list_t                   w_doing;            /**< Request queue in writing */\
+                ev_pipe_write_req_t*        w_half;\
+                size_t                      w_half_idx;\
+            }wio;\
+        } data_mode;\
+        struct {\
+            int                             iner_err;           /**< Internal error code */\
+            DWORD                           peer_pid;           /**< Peer process ID */\
+            struct {\
+                struct {\
+                    unsigned                rio_pending : 1;    /**< There is a IOCP request pending */\
+                }mask;\
+                struct {\
+                    ev_pipe_read_req_t*     reading;            /**< Request for read */\
+                    DWORD                   buf_idx;            /**< Buffer for read */\
+                    DWORD                   buf_pos;            /**< Available position */\
+                }reading;\
+                ev_list_t                   pending;            /**< Buffer list to be filled */\
+                int                         r_err;              /**< Error code if read failure */\
+                DWORD                       remain_size;        /**< How many data need to read (bytes) */\
+                ev_iocp_t                   io;                 /**< IOCP read backend */\
+                uint8_t                     buffer[EV_PIPE_BACKEND_BUFFER_SIZE];\
+            }rio;\
+            struct {\
+                struct {\
+                    unsigned                iocp_pending : 1;   /**< There is a IOCP request pending */\
+                }mask;\
+                struct {\
+                    ev_pipe_write_req_t*    w_req;              /**< The write request sending */\
+                    size_t                  donecnt;            /**< Success send counter */\
+                }sending;\
+                ev_list_t                   pending;            /**< FIFO queue of write request */\
+                int                         w_err;              /**< Error code if write failure */\
+                ev_iocp_t                   io;                 /**< IOCP write backend, with #ev_write_t */\
+                uint8_t                     buffer[EV_PIPE_BACKEND_BUFFER_SIZE];\
+            }wio;\
+        } ipc_mode;\
+    }
+
+/**
+ * @brief Initialize #EV_PIPE_BACKEND to Windows specific invalid value.
+ */
+#define EV_PIPE_BACKEND_INVALID         { 0 }
+
+/**
+ * @brief Windows backend for #ev_shm_t.
+ */
+#define EV_SHM_BACKEND  \
+    struct ev_shm_backend {\
+        HANDLE                              map_file;           /**< Shared memory file */\
+    }
+
+/**
+ * @brief Initialize #EV_SHM_BACKEND to Windows specific invalid value.
+ */
+#define EV_SHM_BACKEND_INVALID          { NULL }
+
+/**
+ * @brief Windows backend for #ev_process_t.
+ */
+#define EV_PROCESS_BACKEND  \
+    struct ev_process_backend_s {\
+        HANDLE                              wait_handle;\
+    }
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
+
+#else               /* AMALGAMATE: ev.h (2/3) */
+/**
+ * @file
+ */
+#ifndef __EV_BACKEND_UNIX_H__
+#define __EV_BACKEND_UNIX_H__
+
+#include <netinet/in.h>
+#include <sys/epoll.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <fcntl.h>
+#include <errno.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if defined(O_APPEND)
+#   define EV_FS_O_APPEND       O_APPEND
+#else
+#   define EV_FS_O_APPEND       0
+#endif
+
+#if defined(O_CREAT)
+#   define EV_FS_O_CREAT        O_CREAT
+#else
+#   define EV_FS_O_CREAT        0
+#endif
+
+#if defined(O_DSYNC)
+#   define EV_FS_O_DSYNC        O_DSYNC
+#else
+#   define EV_FS_O_DSYNC        0
+#endif
+
+#if defined(O_EXCL)
+#   define EV_FS_O_EXCL         O_EXCL
+#else
+#   define EV_FS_O_EXCL         0
+#endif
+
+#if defined(O_SYNC)
+#   define EV_FS_O_SYNC         O_SYNC
+#else
+#   define EV_FS_O_SYNC         0
+#endif
+
+#if defined(O_TRUNC)
+#   define EV_FS_O_TRUNC        O_TRUNC
+#else
+#   define EV_FS_O_TRUNC        0
+#endif
+
+#if defined(O_RDONLY)
+#   define EV_FS_O_RDONLY       O_RDONLY
+#else
+#   define EV_FS_O_RDONLY       0
+#endif
+
+#if defined(O_WRONLY)
+#   define EV_FS_O_WRONLY       O_WRONLY
+#else
+#   define EV_FS_O_WRONLY       0
+#endif
+
+#if defined(O_RDWR)
+#   define EV_FS_O_RDWR         O_RDWR
+#else
+#   define EV_FS_O_RDWR         0
+#endif
+
+#define EV_FS_S_IRUSR           S_IRUSR
+#define EV_FS_S_IWUSR           S_IWUSR
+#define EV_FS_S_IXUSR           S_IXUSR
+#define EV_FS_S_IRWXU           S_IRWXU
+
+#define EV_FS_SEEK_BEG          SEEK_SET
+#define EV_FS_SEEK_CUR          SEEK_CUR
+#define EV_FS_SEEK_END          SEEK_END
+
+typedef pid_t                   ev_os_pid_t;
+#define EV_OS_PID_INVALID       ((pid_t)-1)
+
+typedef int                     ev_os_pipe_t;
+#define EV_OS_PIPE_INVALID      (-1)
+
+typedef int                     ev_os_socket_t;
+#define EV_OS_SOCKET_INVALID    (-1)
+
+typedef pid_t                   ev_os_tid_t;
+#define EV_OS_TID_INVALID       ((pid_t)(-1))
+
+typedef int                     ev_os_file_t;
+#define EV_OS_FILE_INVALID      (-1)
+
+typedef pthread_t               ev_os_thread_t;
+#define EV_OS_THREAD_INVALID    ((pthread_t)(-1))
+
+typedef pthread_key_t           ev_os_tls_t;
+typedef pthread_mutex_t         ev_os_mutex_t;
+typedef sem_t                   ev_os_sem_t;
+
+struct ev_write;
+struct ev_read;
+
+struct ev_nonblock_stream;
+
+/**
+ * @brief Typedef of #ev_nonblock_stream.
+ */
+typedef struct ev_nonblock_stream ev_nonblock_stream_t;
+
+/**
+ * @brief Write callback
+ * @param[in] req       Write request
+ * @param[in] size      Write size
+ * @param[in] stat      Write result
+ */
+typedef void(*ev_stream_write_cb)(ev_nonblock_stream_t* stream, struct ev_write* req, ssize_t size);
+
+/**
+ * @brief Read callback
+ * @param[in] req       Read callback
+ * @param[in] size      Read size
+ * @param[in] stat      Read result
+ */
+typedef void(*ev_stream_read_cb)(ev_nonblock_stream_t* stream, struct ev_read* req, ssize_t size);
+
+/**
+ * @brief Buffer
+ * @internal Must share the same layout with `struct iovec`.
+ */
+typedef struct ev_buf
+{
+    void*                       data;               /**< Data address */
+    size_t                      size;               /**< Data size */
+} ev_buf_t;
+
+/**
+ * @brief Initialize #ev_buf_t.
+ * @param[in] buf   Data address.
+ * @param[in] len   Data length.
+ */
+#define EV_BUF_INIT(buf, len)   { (void*)buf, (size_t)len }
+
+/**
+ * @brief Unix implementation of once token.
+ */
+struct ev_once
+{
+    pthread_once_t              guard;              /**< Once token */
+};
+
+/**
+ * @brief Initialize #ev_once_t to Unix specific structure.
+ */
+#define EV_ONCE_INIT            { PTHREAD_ONCE_INIT }
+
+struct ev_nonblock_io;
+
+/**
+ * @brief Typedef of #ev_nonblock_io.
+ */
+typedef struct ev_nonblock_io ev_nonblock_io_t;
+
+/**
+ * @brief IO active callback
+ * @param[in] io    IO object
+ * @param[in] evts  IO events
+ */
+typedef void(*ev_nonblock_io_cb)(ev_nonblock_io_t* io, unsigned evts, void* arg);
+
+/**
+ * @brief Nonblock IO.
+ */
+struct ev_nonblock_io
+{
+    ev_map_node_t               node;               /**< #EV_LOOP_BACKEND::io */
+    struct
+    {
+        int                     fd;                 /**< File descriptor */
+        unsigned                c_events;           /**< Current events */
+        unsigned                n_events;           /**< Next events */
+        ev_nonblock_io_cb       cb;                 /**< IO active callback */
+        void*                   arg;                /**< User data */
+    }data;
+};
+
+/**
+ * @brief Initialize #ev_nonblock_io_t to an invalid value.
+ */
+#define EV_NONBLOCK_IO_INVALID  \
+    {\
+        EV_MAP_NODE_INIT,\
+        {\
+            0,\
+            0,\
+            0,\
+            NULL,\
+            NULL,\
+        }\
+    }
+
+/**
+ * @brief Unix backend for #ev_async_t.
+ */
+#define EV_ASYNC_BACKEND    \
+    struct ev_async_plt {\
+        /**\
+         * @brief pipefd for wakeup.\
+         * To wakeup, write data to pipfd[1].\
+         */\
+        int                         pipfd[2];\
+        ev_nonblock_io_t            io;\
+    }
+
+/**
+ * @brief Initialize #EV_ASYNC_BACKEND to an Unix specific invalid value.
+ */
+#define EV_ASYNC_PLT_INVALID    { { -1, -1 }, EV_NONBLOCK_IO_INVALID }
+
+/**
+ * @brief Unix backend for #ev_loop_t.
+ */
+#define EV_LOOP_BACKEND \
+    struct ev_loop_plt {\
+        int                         pollfd;             /**< Multiplexing */\
+        ev_map_t                    io;                 /**< table for #ev_nonblock_io_t */\
+        struct {\
+            int                     evtfd[2];           /**< [0] for read, [1] for write. */\
+            ev_nonblock_io_t        io;\
+        } threadpool;\
+    }
+
+/**
+ * @brief Initialize #EV_LOOP_BACKEND to Unix specific invalid value.
+ */
+#define EV_LOOP_PLT_INIT        \
+    {\
+        -1,\
+        EV_MAP_INIT(NULL, NULL),\
+        {\
+            { EV_OS_PIPE_INVALID, EV_OS_PIPE_INVALID },\
+            EV_NONBLOCK_IO_INVALID,\
+        }\
+    }
+
+/**
+ * @brief Unix backend for #ev_tcp_read_req_t.
+ */
+#define EV_TCP_READ_BACKEND \
+    struct ev_tcp_read_backend {\
+        int                         _useless[0];        /**< Useless field */\
+    }
+
+/**
+ * @brief Unix backend for #ev_tcp_write_req_t.
+ */
+#define EV_TCP_WRITE_BACKEND    \
+    struct ev_tcp_write_backend {\
+        int                         _useless[0];        /**< Useless field */\
+    }
+
+/**
+ * @brief Unix backend for #ev_udp_read_t.
+ */
+#define EV_UDP_READ_BACKEND \
+    struct ev_udp_read_backend {\
+        int                         _useless[0];        /**< Useless field */\
+    }
+
+/**
+ * @brief Unix backend for #ev_udp_write_t.
+ */
+#define EV_UDP_WRITE_BACKEND    \
+    struct ev_udp_write_backend {\
+        struct sockaddr_storage     peer_addr;          /**< Peer address */\
+    }
+
+/**
+ * @brief Nonblock stream.
+ */
+struct ev_nonblock_stream
+{
+    struct ev_loop*             loop;               /**< Event loop */
+
+    struct
+    {
+        unsigned                io_abort : 1;       /**< No futher IO allowed */
+        unsigned                io_reg_r : 1;       /**< IO registered read event */
+        unsigned                io_reg_w : 1;       /**< IO registered write event */
+    }flags;
+
+    ev_nonblock_io_t            io;                 /**< IO object */
+
+    struct
+    {
+        ev_list_t               w_queue;            /**< Write queue */
+        ev_list_t               r_queue;            /**< Read queue */
+    }pending;
+
+    struct
+    {
+        ev_stream_write_cb      w_cb;               /**< Write callback */
+        ev_stream_read_cb       r_cb;               /**< Read callback */
+    }callbacks;
+};
+
+/**
+ * @brief Initialize #ev_nonblock_stream_t to Unix specific invalid value.
+ */
+#define EV_NONBLOCK_STREAM_INIT \
+    {\
+        NULL,                           /* .loop */\
+        { 0, 0, 0, 0, 0 },              /* .flags */\
+        EV_NONBLOCK_IO_INVALID,         /* .io */\
+        { EV_LIST_INIT, EV_LIST_INIT }, /* .pending */\
+        { NULL, NULL }                  /* .callbacks */\
+    }
+
+/**
+ * @brief Unix backend for #ev_tcp_t.
+ */
+#define EV_TCP_BACKEND    \
+    struct ev_tcp_backend {\
+        union {\
+            struct {\
+                ev_nonblock_io_t            io;                 /**< IO object */\
+                ev_list_t                   accept_queue;       /**< Accept queue */\
+            }listen;\
+            struct {\
+                ev_tcp_accept_cb            cb;                 /**< Accept callback */\
+                ev_list_node_t              accept_node;        /**< Accept queue node */\
+            }accept;\
+            ev_nonblock_stream_t            stream;             /**< IO component */\
+            struct {\
+                ev_nonblock_io_t            io;                 /**< IO object */\
+                ev_tcp_connect_cb           cb;                 /**< Connect callback */\
+                int                         stat;               /**< Connect result */\
+            }client;\
+        }u;\
+    }
+
+/**
+ * @brief Initialize #EV_TCP_BACKEND to Unix specific invalid value.
+ */
+#define EV_TCP_BACKEND_INIT         { { { EV_NONBLOCK_IO_INVALID, EV_LIST_INIT } } }
+
+/**
+ * @brief Unix backend for #ev_udp_t.
+ */
+#define EV_UDP_BACKEND  \
+    struct ev_udp_backend {\
+        ev_nonblock_io_t                    io;                 /**< Backend IO */\
+    }
+
+/**
+ * @brief Unix backend for #ev_pipe_read_req_t.
+ */
+#define EV_PIPE_READ_BACKEND    \
+    struct ev_pipe_read_backend {\
+        int                                 _useless[0];        /**< Useless field */\
+    }
+
+/**
+ * @brief Unix backend for #ev_pipe_write_req_t.
+ */
+#define EV_PIPE_WRITE_BACKEND   \
+    struct ev_pipe_write_backend {\
+        int                                 _useless[0];        /**< Useless field */\
+    }
+
+/**
+ * @brief Unix backend for #ev_pipe_t.
+ */
+#define EV_PIPE_BACKEND \
+    union ev_pipe_backend {\
+        int                                 _useless;           /**< For static initializer */\
+        struct {\
+            ev_nonblock_stream_t            stream;             /**< Stream */\
+        }data_mode;\
+        struct {\
+            ev_nonblock_io_t                io;                 /**< IO object */\
+            struct {\
+                unsigned                    wio_pending : 1;    /**< Write pending */\
+                unsigned                    rio_pending : 1;    /**< Read pending */\
+                unsigned                    no_cmsg_cloexec : 1;/**< No MSG_CMSG_CLOEXEC */\
+            }mask;\
+            struct {\
+                struct {\
+                    size_t                  head_read_size;     /**< Head read size */\
+                    size_t                  data_remain_size;   /**< Data remain to read */\
+                    size_t                  buf_idx;            /**< Buffer index to fill */\
+                    size_t                  buf_pos;            /**< Buffer position to fill */\
+                    ev_pipe_read_req_t*     reading;            /**< Current handling request */\
+                }curr;\
+                ev_list_t                   rqueue;             /**< #ev_pipe_read_req_t */\
+                uint8_t                     buffer[sizeof(ev_ipc_frame_hdr_t)];\
+            }rio;\
+            struct {\
+                struct {\
+                    size_t                  head_send_capacity; /**< Head send capacity */\
+                    size_t                  head_send_size;     /**< Head send size */\
+                    size_t                  buf_idx;            /**< Buffer index to send */\
+                    size_t                  buf_pos;            /**< Buffer position to send */\
+                    ev_pipe_write_req_t*    writing;            /**< Currernt handling request */\
+                }curr;\
+                ev_list_t                   wqueue;             /**< #ev_pipe_write_req_t */\
+                uint8_t                     buffer[sizeof(ev_ipc_frame_hdr_t)];\
+            }wio;\
+        }ipc_mode;\
+    }
+
+/**
+ * @brief Initialize #EV_PIPE_BACKEND to Unix specific invalid value.
+ */
+#define EV_PIPE_BACKEND_INVALID         { 0 }
+
+/**
+ * @brief Unix backend for #ev_shm_t.
+ */
+#define EV_SHM_BACKEND  \
+    struct ev_shm_backend {\
+        char                                name[256];\
+        int                                 map_file;\
+        struct {\
+            unsigned                        is_open : 1;\
+        }mask;\
+    }
+
+/**
+ * @brief Initialize #EV_SHM_BACKEND to Unix specific invalid value.
+ */
+#define EV_SHM_BACKEND_INVALID          { 0 }
+
+/**
+ * @brief Unix backend for #ev_process_t.
+ */
+#define EV_PROCESS_BACKEND  \
+    struct ev_process_backend_s {\
+        struct {\
+            int                             waitpid : 1;     /**< Already call waitpid() */\
+        } flags;\
+    }
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
+
+#endif              /* AMALGAMATE: ev.h (3/3) */
+/**
  * @mainpage libev
  *
  * \section EV_OVERVIEW Overview
@@ -64,9 +1428,9 @@
 #include <inttypes.h>
 #include <stdarg.h>
 
-#include "ev/list.h"
-#include "ev/map.h"
-#include "ev/version.h"
+/* AMALGAMATE: #include "ev/list.h" */
+/* AMALGAMATE: #include "ev/map.h" */
+/* AMALGAMATE: #include "ev/version.h" */
 
 #ifdef __cplusplus
 extern "C" {
@@ -389,9 +1753,9 @@ ev_queue_node_t* ev_queue_next(ev_queue_node_t* head, ev_queue_node_t* node);
  */
 
 #if defined(_WIN32)                                                     /* OS */
-#   include "ev/win.h"
+/* AMALGAMATE: #   include "ev/win.h" */
 #else                                                                   /* OS */
-#   include "ev/unix.h"
+/* AMALGAMATE: #   include "ev/unix.h" */
 #endif                                                                  /* OS */
 
 /**
@@ -3062,3 +4426,4 @@ uint64_t ev_hrtime(void);
 }
 #endif
 #endif
+
