@@ -99,26 +99,26 @@ set(ev_src_os_unix
 )
 
 set(ev_src_lua
-	"lua/src/ev.lua.internal.h"
-	"lua/src/channel.lua.h"
-	"lua/src/fs.lua.h"
-	"lua/src/misc.lua.h"
-	"lua/src/pipe.lua.h"
-	"lua/src/process.lua.h"
-	"lua/src/promise.lua.h"
-	"lua/src/tcp.lua.h"
-	"lua/src/timer.lua.h"
-	"lua/src/udp.lua.h"
-	"lua/src/ev.lua.c"
-	"lua/src/channel.lua.c"
-	"lua/src/fs.lua.c"
-	"lua/src/misc.lua.c"
-	"lua/src/pipe.lua.c"
-	"lua/src/process.lua.c"
-	"lua/src/promise.lua.c"
-	"lua/src/tcp.lua.c"
-	"lua/src/timer.lua.c"
-	"lua/src/udp.lua.c"
+    "lua/src/ev.lua.internal.h"
+    "lua/src/channel.lua.h"
+    "lua/src/fs.lua.h"
+    "lua/src/misc.lua.h"
+    "lua/src/pipe.lua.h"
+    "lua/src/process.lua.h"
+    "lua/src/promise.lua.h"
+    "lua/src/tcp.lua.h"
+    "lua/src/timer.lua.h"
+    "lua/src/udp.lua.h"
+    "lua/src/ev.lua.c"
+    "lua/src/channel.lua.c"
+    "lua/src/fs.lua.c"
+    "lua/src/misc.lua.c"
+    "lua/src/pipe.lua.c"
+    "lua/src/process.lua.c"
+    "lua/src/promise.lua.c"
+    "lua/src/tcp.lua.c"
+    "lua/src/timer.lua.c"
+    "lua/src/udp.lua.c"
 )
 
 include(third_party/lua54.cmake)
@@ -126,33 +126,36 @@ include(third_party/lua54.cmake)
 string(REPLACE ";" "," escaped_ev_src                   "${ev_src}")
 string(REPLACE ";" "," escaped_ev_src_os_win            "${ev_src_os_win}")
 string(REPLACE ";" "," escaped_ev_src_os_unix           "${ev_src_os_unix}")
-string(REPLACE ";" "," escaped_ev_src_lua           	"${ev_src_lua}")
+string(REPLACE ";" "," escaped_ev_src_lua               "${ev_src_lua}")
 
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/ev.h
     COMMAND $<TARGET_FILE:lua54> ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.lua
             --no_line
             --out       ${CMAKE_CURRENT_SOURCE_DIR}/ev.h
-            --license   ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
-            --include   "include/ev/version.h"
-            --include   "include/ev/list.h"
-            --include   "include/ev/map.h"
+            --commit    ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+            --commit    ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md
+            --source    "include/ev/version.h"
+            --source    "include/ev/list.h"
+            --source    "include/ev/map.h"
             --string    "#if defined(_WIN32) /* AMALGAMATE: ev.h (1/3) */"
-            --include   "include/ev/win.h"
+            --source    "include/ev/win.h"
             --string    "#else               /* AMALGAMATE: ev.h (2/3) */"
-            --include   "include/ev/unix.h"
+            --source    "include/ev/unix.h"
             --string    "#endif              /* AMALGAMATE: ev.h (3/3) */"
-            --include   "include/ev.h"
-			--include   "lua/include/ev.lua.h"
+            --source    "include/ev.h"
+            --source    "lua/include/ev.lua.h"
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.lua
+            ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+            ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/version.h
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/list.h
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/map.h
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev.h
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/win.h
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/unix.h
-			${CMAKE_CURRENT_SOURCE_DIR}/lua/include/ev.lua.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/lua/include/ev.lua.h
     VERBATIM
 )
 
@@ -160,27 +163,29 @@ add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/ev.c
     COMMAND $<TARGET_FILE:lua54> ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.lua
             --out               ${CMAKE_CURRENT_SOURCE_DIR}/ev.c
-            --license           ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+            --commit            ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
             --string            "#define EV_AMALGAMATE_BUILD"
             --string            "#define _GNU_SOURCE"
             --string            "#include \"ev.h\""
-            --include           ${escaped_ev_src}
+            --source            ${escaped_ev_src}
             --string            "#if defined(_WIN32) /* AMALGAMATE: ev.c (1/3) */"
-            --include           ${escaped_ev_src_os_win}
+            --source            ${escaped_ev_src_os_win}
             --string            "#else               /* AMALGAMATE: ev.c (2/3) */"
-            --include           ${escaped_ev_src_os_unix}
+            --source            ${escaped_ev_src_os_unix}
             --string            "#endif              /* AMALGAMATE: ev.c (3/3) */"
-			--string 			"#if defined(EV_HAVE_LUA_BINDING) /* FEATURE: EV_HAVE_LUA_BINDING (1/2) */"
+            --string            "#if defined(EV_HAVE_LUA_BINDING) /* FEATURE: EV_HAVE_LUA_BINDING (1/2) */"
             --string            "#include \"lua.h\""
             --string            "#include \"lauxlib.h\""
-			--include 			${escaped_ev_src_lua}
-			--string 			"#endif                           /* FEATURE: EV_HAVE_LUA_BINDING (2/2) */"
+            --source            ${escaped_ev_src_lua}
+            --string            "#endif                           /* FEATURE: EV_HAVE_LUA_BINDING (2/2) */"
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.lua
+            ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
             ${CMAKE_CURRENT_SOURCE_DIR}/ev.h
             ${ev_src}
             ${ev_src_os_win}
             ${ev_src_os_unix}
+            ${ev_src_lua}
     VERBATIM
 )
 

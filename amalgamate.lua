@@ -15,7 +15,7 @@ local function split_string (inputstr)
     return t
 end
 
-local function read_files(paths)
+local function append_source(paths)
     local path_list = split_string(paths)
     for _,v in ipairs(path_list) do
         local f = io.open(v)
@@ -31,7 +31,7 @@ local function read_files(paths)
     end
 end
 
-local function append_license(path)
+local function append_commit(path)
     out_data = out_data .. "/**\n"
     local f = io.open(path)
     while true do
@@ -58,12 +58,12 @@ for i,v in ipairs(arg) do
         out_path = arg[i+1]
     end
 
-    if v == "--license" then
-        append_license(arg[i+1])
+    if v == "--commit" then
+        append_commit(arg[i+1])
     end
 
-    if v == "--include" then
-        read_files(arg[i+1])
+    if v == "--source" then
+        append_source(arg[i+1])
     end
 
     if v == "--string" then
