@@ -52,7 +52,7 @@ static int _ev_cmp_io_unix(const ev_map_node_t* key1, const ev_map_node_t* key2,
     return io1->data.fd - io2->data.fd;
 }
 
-API_LOCAL void ev__init_io(ev_loop_t* loop)
+EV_LOCAL void ev__init_io(ev_loop_t* loop)
 {
     int err;
     ev_map_init(&loop->backend.io, _ev_cmp_io_unix, NULL);
@@ -69,7 +69,7 @@ API_LOCAL void ev__init_io(ev_loop_t* loop)
     }
 }
 
-API_LOCAL void ev__exit_io(ev_loop_t* loop)
+EV_LOCAL void ev__exit_io(ev_loop_t* loop)
 {
     if (loop->backend.pollfd != -1)
     {
@@ -78,7 +78,7 @@ API_LOCAL void ev__exit_io(ev_loop_t* loop)
     }
 }
 
-API_LOCAL void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb, void* arg)
+EV_LOCAL void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb, void* arg)
 {
     io->data.fd = fd;
     io->data.c_events = 0;
@@ -87,7 +87,7 @@ API_LOCAL void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io
     io->data.arg = arg;
 }
 
-API_LOCAL void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
+EV_LOCAL void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
 {
     int errcode;
     struct epoll_event poll_event;
@@ -117,7 +117,7 @@ API_LOCAL void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsign
     }
 }
 
-API_LOCAL void ev__nonblock_io_del(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
+EV_LOCAL void ev__nonblock_io_del(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
 {
     int errcode;
     struct epoll_event poll_event;
@@ -145,7 +145,7 @@ API_LOCAL void ev__nonblock_io_del(ev_loop_t* loop, ev_nonblock_io_t* io, unsign
     }
 }
 
-API_LOCAL int ev__cloexec(int fd, int set)
+EV_LOCAL int ev__cloexec(int fd, int set)
 {
 #if defined(_AIX) || \
     defined(__APPLE__) || \
@@ -206,7 +206,7 @@ API_LOCAL int ev__cloexec(int fd, int set)
 #endif
 }
 
-API_LOCAL int ev__nonblock(int fd, int set)
+EV_LOCAL int ev__nonblock(int fd, int set)
 {
 #if defined(_AIX) || \
     defined(__APPLE__) || \
@@ -267,7 +267,7 @@ API_LOCAL int ev__nonblock(int fd, int set)
 #endif
 }
 
-API_LOCAL int ev__reuse_unix(int fd)
+EV_LOCAL int ev__reuse_unix(int fd)
 {
     int yes;
     yes = 1;
@@ -312,7 +312,7 @@ err:
     return ev__translate_sys_error(yes);
 }
 
-API_LOCAL int ev__fcntl_getfl_unix(int fd)
+EV_LOCAL int ev__fcntl_getfl_unix(int fd)
 {
     int mode;
     do
@@ -322,7 +322,7 @@ API_LOCAL int ev__fcntl_getfl_unix(int fd)
     return mode;
 }
 
-API_LOCAL int ev__fcntl_getfd_unix(int fd)
+EV_LOCAL int ev__fcntl_getfd_unix(int fd)
 {
     int flags;
 
@@ -334,7 +334,7 @@ API_LOCAL int ev__fcntl_getfd_unix(int fd)
     return flags;
 }
 
-API_LOCAL ssize_t ev__readv_unix(int fd, ev_buf_t* iov, int iovcnt)
+EV_LOCAL ssize_t ev__readv_unix(int fd, ev_buf_t* iov, int iovcnt)
 {
     ssize_t read_size;
     do
@@ -360,7 +360,7 @@ API_LOCAL ssize_t ev__readv_unix(int fd, ev_buf_t* iov, int iovcnt)
     return ev__translate_sys_error(err);
 }
 
-API_LOCAL ssize_t ev__writev_unix(int fd, ev_buf_t* iov, int iovcnt)
+EV_LOCAL ssize_t ev__writev_unix(int fd, ev_buf_t* iov, int iovcnt)
 {
     ssize_t write_size;
     do
@@ -382,7 +382,7 @@ API_LOCAL ssize_t ev__writev_unix(int fd, ev_buf_t* iov, int iovcnt)
     return ev__translate_sys_error(err);
 }
 
-API_LOCAL ssize_t ev__write_unix(int fd, void* buffer, size_t size)
+EV_LOCAL ssize_t ev__write_unix(int fd, void* buffer, size_t size)
 {
     ssize_t send_size;
     do
@@ -404,7 +404,7 @@ API_LOCAL ssize_t ev__write_unix(int fd, void* buffer, size_t size)
     return ev__translate_sys_error(err);
 }
 
-API_LOCAL int ev__send_unix(int fd, ev_write_t* req,
+EV_LOCAL int ev__send_unix(int fd, ev_write_t* req,
     ssize_t(*do_write)(int fd, struct iovec* iov, int iovcnt, void* arg), void* arg)
 {
     ev_buf_t* iov = req->bufs;

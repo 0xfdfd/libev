@@ -7,8 +7,8 @@
 extern "C" {
 #endif
 
-API_LOCAL void ev__threadpool_init_win(ev_loop_t* loop);
-API_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop);
+EV_LOCAL void ev__threadpool_init_win(ev_loop_t* loop);
+EV_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop);
 
 #ifdef __cplusplus
 }

@@ -107,13 +107,13 @@ uint64_t ev_hrtime(void)
     return t.tv_sec * 1000 * 1000 + t.tv_nsec / 1000;
 }
 
-API_LOCAL void ev__init_once_unix(void)
+EV_LOCAL void ev__init_once_unix(void)
 {
     static ev_once_t once = EV_ONCE_INIT;
     ev_once_execute(&once, _ev_init_once_unix);
 }
 
-API_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
+EV_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
 {
     ev__init_once_unix();
     ev__init_io(loop);
@@ -122,13 +122,13 @@ API_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
     return 0;
 }
 
-API_LOCAL void ev__loop_exit_backend(ev_loop_t* loop)
+EV_LOCAL void ev__loop_exit_backend(ev_loop_t* loop)
 {
     ev__exit_work(loop);
     ev__exit_io(loop);
 }
 
-API_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
+EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
 {
     int nevts;
     int errcode;

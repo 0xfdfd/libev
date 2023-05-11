@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 #define EV_AMALGAMATE_BUILD
+#define EV_EXPOSE_SYMBOLS
 #define _GNU_SOURCE
 #include "ev.h"
 #line 1 "src/defs.h"
@@ -41,18 +42,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#if defined(EV_AMALGAMATE_BUILD)
-#   if defined(__GNUC__) || defined(__clang__)
-#       define API_LOCAL    static __attribute__((unused))
-#   else
-#       define API_LOCAL    static
-#   endif
-#elif (defined(__GNUC__) || defined(__clang__)) && !defined(_WIN32)
-#   define API_LOCAL    __attribute__((visibility ("hidden")))
-#else
-#   define API_LOCAL
 #endif
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -208,7 +197,7 @@ extern "C" {
 /**
  * @brief Same as [strdup(3)](https://man7.org/linux/man-pages/man3/strdup.3.html)
  */
-API_LOCAL char* ev__strdup(const char* str);
+EV_LOCAL char* ev__strdup(const char* str);
 
 #ifdef __cplusplus
 }
@@ -231,7 +220,7 @@ extern "C" {
  * @brief Force destroy #ev_async_t.
  * @param[in] handle    A initialized #ev_async_t handler.
  */
-API_LOCAL void ev__async_exit_force(ev_async_t* handle);
+EV_LOCAL void ev__async_exit_force(ev_async_t* handle);
 
 #ifdef __cplusplus
 }
@@ -287,7 +276,7 @@ typedef enum ev_handle_flag
  * @param[out] handle   A pointer to the structure
  * @param[in] role      Who we are
  */
-API_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t role);
+EV_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t role);
 
 /**
  * @brief Close the handle
@@ -299,35 +288,35 @@ API_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t r
  * @param[in] close_cb  Close callback. If non-null, the \p close_cb will be
  *   called in next event loop. If null, the handle will be closed synchronously.
  */
-API_LOCAL void ev__handle_exit(ev_handle_t* handle, ev_handle_cb close_cb);
+EV_LOCAL void ev__handle_exit(ev_handle_t* handle, ev_handle_cb close_cb);
 
 /**
  * @brief Add active event counter. If active event counter is non-zero,
  *   #EV_HANDLE_ACTIVE is appended.
  * @param[in] handle    Handler.
  */
-API_LOCAL void ev__handle_event_add(ev_handle_t* handle);
+EV_LOCAL void ev__handle_event_add(ev_handle_t* handle);
 
 /**
  * @brief Decrease active event counter. If active event counter is zero,
  *   #EV_HANDLE_ACTIVE is removed.
  * @param[in] handle    Handler.
  */
-API_LOCAL void ev__handle_event_dec(ev_handle_t* handle);
+EV_LOCAL void ev__handle_event_dec(ev_handle_t* handle);
 
 /**
  * @brief Check if the handle is in active state
  * @param[in] handle    handler
  * @return              bool
  */
-API_LOCAL int ev__handle_is_active(ev_handle_t* handle);
+EV_LOCAL int ev__handle_is_active(ev_handle_t* handle);
 
 /**
  * @brief Check if the handle is in closing or closed state
  * @param[in] handle    handler
  * @return              bool
  */
-API_LOCAL int ev__handle_is_closing(ev_handle_t* handle);
+EV_LOCAL int ev__handle_is_closing(ev_handle_t* handle);
 
 /**
  * @brief Queue a task.
@@ -336,19 +325,19 @@ API_LOCAL int ev__handle_is_closing(ev_handle_t* handle);
  * @param[in] callback  Task callback
  * @return              #ev_errno_t
  */
-API_LOCAL int ev__backlog_submit(ev_handle_t* handle, ev_handle_cb callback);
+EV_LOCAL int ev__backlog_submit(ev_handle_t* handle, ev_handle_cb callback);
 
 /**
  * @brief Process backlog events.
  * @param[in] loop Event loop.
  */
-API_LOCAL void ev__process_backlog(ev_loop_t* loop);
+EV_LOCAL void ev__process_backlog(ev_loop_t* loop);
 
 /**
  * @brief Process endgame events.
  * @param[in] loop Event loop.
  */
-API_LOCAL void ev__process_endgame(ev_loop_t* loop);
+EV_LOCAL void ev__process_endgame(ev_loop_t* loop);
 
 #ifdef __cplusplus
 }
@@ -376,7 +365,7 @@ typedef enum ev_ipc_frame_flag
  * @param[in] handle    handler
  * @return              Event loop
  */
-API_LOCAL ev_loop_t* ev__handle_loop(ev_handle_t* handle);
+EV_LOCAL ev_loop_t* ev__handle_loop(ev_handle_t* handle);
 
 /**
  * @brief Check IPC frame header
@@ -384,7 +373,7 @@ API_LOCAL ev_loop_t* ev__handle_loop(ev_handle_t* handle);
  * @param[in] size      Buffer size
  * @return              bool
  */
-API_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size);
+EV_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size);
 
 /**
  * @brief Initialize IPC frame header
@@ -393,21 +382,21 @@ API_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size);
  * @param[in] exsz      Extra information size
  * @param[in] dtsz      Data size
  */
-API_LOCAL void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr,
+EV_LOCAL void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr,
     uint8_t flags, uint16_t exsz, uint32_t dtsz);
 
 /**
  * @brief Update loop time
  * @param[in] loop  loop handler
  */
-API_LOCAL void ev__loop_update_time(ev_loop_t* loop);
+EV_LOCAL void ev__loop_update_time(ev_loop_t* loop);
 
 /**
  * @brief Get minimal length of specific \p addr type.
  * @param[in] addr  A valid sockaddr buffer
  * @return          A valid minimal length, or (socklen_t)-1 if error.
  */
-API_LOCAL socklen_t ev__get_addr_len(const struct sockaddr* addr);
+EV_LOCAL socklen_t ev__get_addr_len(const struct sockaddr* addr);
 
 /**
  * @brief Initialize #ev_write_t
@@ -416,13 +405,13 @@ API_LOCAL socklen_t ev__get_addr_len(const struct sockaddr* addr);
  * @param[in] nbuf  Buffer list size, can not larger than #EV_IOV_MAX.
  * @return          #ev_errno_t
  */
-API_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf);
+EV_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf);
 
 /**
  * @brief Cleanup write request
  * @param[in] req   Write request
  */
-API_LOCAL void ev__write_exit(ev_write_t* req);
+EV_LOCAL void ev__write_exit(ev_write_t* req);
 
 /**
  * @brief Initialize #ev_read_t
@@ -431,33 +420,33 @@ API_LOCAL void ev__write_exit(ev_write_t* req);
  * @param[in] nbuf  Buffer list size, can not larger than #EV_IOV_MAX.
  * @return          #ev_errno_t
  */
-API_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf);
+EV_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf);
 
 /**
  * @brief Cleanup read request
  * @param[in] req   read request
  */
-API_LOCAL void ev__read_exit(ev_read_t* req);
+EV_LOCAL void ev__read_exit(ev_read_t* req);
 
 /**
  * @brief Initialize backend
  * @param[in] loop      loop handler
  * @return              #ev_errno_t
  */
-API_LOCAL int ev__loop_init_backend(ev_loop_t* loop);
+EV_LOCAL int ev__loop_init_backend(ev_loop_t* loop);
 
 /**
  * @brief Destroy backend
  * @param[in] loop  loop handler
  */
-API_LOCAL void ev__loop_exit_backend(ev_loop_t* loop);
+EV_LOCAL void ev__loop_exit_backend(ev_loop_t* loop);
 
 /**
  * @brief Wait for IO event and process
  * @param[in] loop  loop handler
  * @param[in] timeout   timeout in milliseconds
  */
-API_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout);
+EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout);
 
 #ifdef __cplusplus
 }
@@ -487,7 +476,7 @@ typedef int (*ev_fs_readdir_cb)(ev_dirent_t* info, void* arg);
  * @brief Close         file handle.
  * @return              #ev_errno_t
  */
-API_LOCAL int ev__fs_close(ev_os_file_t file);
+EV_LOCAL int ev__fs_close(ev_os_file_t file);
 
 /**
  * @brief Open file.
@@ -497,7 +486,7 @@ API_LOCAL int ev__fs_close(ev_os_file_t file);
  * @param[in] mode      Creation mode.
  * @return              #ev_errno_t
  */
-API_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags,
+EV_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags,
     int mode);
 
 /**
@@ -507,7 +496,7 @@ API_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags,
  * @param[in] offset    Offset.
  * @return              #ev_errno_t
  */
-API_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset);
+EV_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset);
 
 /**
  * @brief Same as [readv(2)](https://linux.die.net/man/2/readv)
@@ -517,7 +506,7 @@ API_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset);
  * @param[in] nbuf      Buffer number
  * @return              #ev_errno_t
  */
-API_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf);
+EV_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf);
 
 /**
  * @brief Same as [preadv(2)](https://linux.die.net/man/2/preadv)
@@ -528,7 +517,7 @@ API_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf);
  * @param[in] offset    Offset.
  * @return              #ev_errno_t
  */
-API_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
+EV_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
     ssize_t offset);
 
 /**
@@ -539,7 +528,7 @@ API_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
  * @param[in] nbuf      Buffer number
  * @return              #ev_errno_t
  */
-API_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf);
+EV_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf);
 
 /**
  * @brief Same as [pwritev(2)](https://linux.die.net/man/2/pwritev)
@@ -550,7 +539,7 @@ API_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf);
  * @param[in] offset    Offset.
  * @return              #ev_errno_t
  */
-API_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
+EV_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
     ssize_t offset);
 
 /**
@@ -559,7 +548,7 @@ API_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
  * @param[out] statbuf  File information.
  * @return              #ev_errno_t
  */
-API_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf);
+EV_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf);
 
 /**
  * @brief Same as [readdir(3)](https://man7.org/linux/man-pages/man3/readdir.3.html)
@@ -568,7 +557,7 @@ API_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf);
  * @param[in] arg       User defined data.
  * @return              #ev_errno_t.
  */
-API_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg);
+EV_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg);
 
 /**
  * @brief Same as [mkdir(2)](https://man7.org/linux/man-pages/man2/mkdir.2.html),
@@ -577,7 +566,7 @@ API_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg);
  * @param[in] mode      The mode for the new directory.
  * @return              #ev_errno_t
  */
-API_LOCAL int ev__fs_mkdir(const char* path, int mode);
+EV_LOCAL int ev__fs_mkdir(const char* path, int mode);
 
 /**
  * @brief Remove file or directory.
@@ -585,7 +574,7 @@ API_LOCAL int ev__fs_mkdir(const char* path, int mode);
  * @param[in] recursive Recursive if it is a directory.
  * @return              #ev_errno_t
  */
-API_LOCAL int ev__fs_remove(const char* path, int recursive);
+EV_LOCAL int ev__fs_remove(const char* path, int recursive);
 
 #ifdef __cplusplus
 }
@@ -608,9 +597,9 @@ extern "C" {
  * @param[in] syserr    System error
  * @return              #ev_errno_t
  */
-API_LOCAL int ev__translate_sys_error(int syserr);
+EV_LOCAL int ev__translate_sys_error(int syserr);
 
-API_LOCAL int ev__translate_posix_sys_error(int syserr);
+EV_LOCAL int ev__translate_posix_sys_error(int syserr);
 
 #ifdef __cplusplus
 }
@@ -637,7 +626,7 @@ extern "C" {
  * @param[in] cb    Read complete callback
  * @return          #ev_errno_t
  */
-API_LOCAL int ev__pipe_read_init(ev_pipe_read_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_pipe_read_cb cb);
+EV_LOCAL int ev__pipe_read_init(ev_pipe_read_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_pipe_read_cb cb);
 
 /**
  * @brief Initialize #ev_pipe_write_req_t
@@ -647,7 +636,7 @@ API_LOCAL int ev__pipe_read_init(ev_pipe_read_req_t* req, ev_buf_t* bufs, size_t
  * @param[in] cb    Write complete callback
  * @return          #ev_errno_t
  */
-API_LOCAL int ev__pipe_write_init(ev_pipe_write_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_pipe_write_cb cb);
+EV_LOCAL int ev__pipe_write_init(ev_pipe_write_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_pipe_write_cb cb);
 
 /**
  * @brief Initialize #ev_pipe_write_req_t
@@ -676,7 +665,7 @@ API_LOCAL int ev__pipe_write_init(ev_pipe_write_req_t* req, ev_buf_t* bufs, size
  * @param[in] handle_size   The size of handle to send
  * @return                  #ev_errno_t
  */
-API_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t* req, ev_pipe_write_cb callback,
+EV_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t* req, ev_pipe_write_cb callback,
     ev_buf_t* bufs, size_t nbuf,
     ev_role_t handle_role, void* handle_addr, size_t handle_size);
 
@@ -798,7 +787,7 @@ typedef struct ring_buffer
  * @param[in] size          The size of memory area
  * @return                  Initialized ring buffer, the address is equal it \p buffer
  */
-API_LOCAL ring_buffer_t* ring_buffer_init(void* buffer, size_t size);
+EV_LOCAL ring_buffer_t* ring_buffer_init(void* buffer, size_t size);
 
 /**
  * @brief Acquire a token for write.
@@ -808,7 +797,7 @@ API_LOCAL ring_buffer_t* ring_buffer_init(void* buffer, size_t size);
  * @param[in] flags         #ring_buffer_flag_t
  * @return                  A token for write. This token must be committed by #ring_buffer_commit
  */
-API_LOCAL ring_buffer_token_t* ring_buffer_reserve(ring_buffer_t* handler, size_t size, int flags);
+EV_LOCAL ring_buffer_token_t* ring_buffer_reserve(ring_buffer_t* handler, size_t size, int flags);
 
 /**
  * @brief Acquire a token for read.
@@ -816,7 +805,7 @@ API_LOCAL ring_buffer_token_t* ring_buffer_reserve(ring_buffer_t* handler, size_
  * @param[in,out] handler   The pointer to the ring buffer
  * @return                  A token for read. This token must be committed by #ring_buffer_commit
  */
-API_LOCAL ring_buffer_token_t* ring_buffer_consume(ring_buffer_t* handler);
+EV_LOCAL ring_buffer_token_t* ring_buffer_consume(ring_buffer_t* handler);
 
 /**
  * @brief Commit a token.
@@ -850,7 +839,7 @@ API_LOCAL ring_buffer_token_t* ring_buffer_consume(ring_buffer_t* handler);
  * @param[in] flags         #ring_buffer_flag_t
  * @return                  0 if success, otherwise failure
  */
-API_LOCAL int ring_buffer_commit(ring_buffer_t* handler, ring_buffer_token_t* token, int flags);
+EV_LOCAL int ring_buffer_commit(ring_buffer_t* handler, ring_buffer_token_t* token, int flags);
 
 /**
  * @brief Get counter
@@ -858,27 +847,27 @@ API_LOCAL int ring_buffer_commit(ring_buffer_t* handler, ring_buffer_token_t* to
  * @param[out] counter  The pointer to counter
  * @return              The sum of all counter
  */
-API_LOCAL size_t ring_buffer_count(ring_buffer_t* handler, ring_buffer_counter_t* counter);
+EV_LOCAL size_t ring_buffer_count(ring_buffer_t* handler, ring_buffer_counter_t* counter);
 
 /**
  * @brief Get how much bytes the ring buffer structure cost
  * @return          size of ring_buffer_t
  */
-API_LOCAL size_t ring_buffer_heap_cost(void);
+EV_LOCAL size_t ring_buffer_heap_cost(void);
 
 /**
  * @brief Calculate the how much space of given size data will take place.
  * @param[in] size      The size of data
  * @return              The space of data will take place
  */
-API_LOCAL size_t ring_buffer_node_cost(size_t size);
+EV_LOCAL size_t ring_buffer_node_cost(size_t size);
 
 /**
  * @brief Get the begin node of ring buffer.
  * @param[in] handler   The ring buffer
  * @return              The iterator
  */
-API_LOCAL ring_buffer_token_t* ring_buffer_begin(const ring_buffer_t* handler);
+EV_LOCAL ring_buffer_token_t* ring_buffer_begin(const ring_buffer_t* handler);
 
 /**
  * @brief Get next token.
@@ -886,7 +875,7 @@ API_LOCAL ring_buffer_token_t* ring_buffer_begin(const ring_buffer_t* handler);
  * @param[in] token     The ring buffer token
  * @return              Next token
  */
-API_LOCAL ring_buffer_token_t* ring_buffer_next(const ring_buffer_t* handler,
+EV_LOCAL ring_buffer_token_t* ring_buffer_next(const ring_buffer_t* handler,
     const ring_buffer_token_t* token);
 
 #ifdef __cplusplus
@@ -960,9 +949,9 @@ struct ev_threadpool
         },\
     }
 
-API_LOCAL void ev__loop_link_to_default_threadpool(ev_loop_t* loop);
+EV_LOCAL void ev__loop_link_to_default_threadpool(ev_loop_t* loop);
 
-API_LOCAL int ev_loop_unlink_threadpool(ev_loop_t* loop);
+EV_LOCAL int ev_loop_unlink_threadpool(ev_loop_t* loop);
 
 /**
  * @brief Initialize thread pool
@@ -972,14 +961,14 @@ API_LOCAL int ev_loop_unlink_threadpool(ev_loop_t* loop);
  * @param[in] num       Storage size
  * @return              #ev_errno_t
  */
-API_LOCAL int ev_threadpool_init(ev_threadpool_t* pool, const ev_thread_opt_t* opt,
+EV_LOCAL int ev_threadpool_init(ev_threadpool_t* pool, const ev_thread_opt_t* opt,
     ev_os_thread_t* storage, size_t num);
 
 /**
  * @brief Exit thread pool
  * @param[in] pool      Thread pool
  */
-API_LOCAL void ev_threadpool_exit(ev_threadpool_t* pool);
+EV_LOCAL void ev_threadpool_exit(ev_threadpool_t* pool);
 
 /**
  * @brief Link loop with thread pool.
@@ -990,7 +979,7 @@ API_LOCAL void ev_threadpool_exit(ev_threadpool_t* pool);
  * @param[in] pool      The Thread pool.
  * @return              #ev_errno_t
  */
-API_LOCAL int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool);
+EV_LOCAL int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool);
 
 /**
  * @brief Submit task into thread pool
@@ -1004,7 +993,7 @@ API_LOCAL int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool);
  * @param[in] done_cb   Work done callback
  * @return              #ev_errno_t
  */
-API_LOCAL int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
+EV_LOCAL int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
     ev_work_t* token, ev_work_type_t type,
     ev_work_cb work_cb, ev_work_done_cb done_cb);
 
@@ -1017,7 +1006,7 @@ API_LOCAL int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
  * @param[in] done_cb   Work done callback.
  * @return              #ev_errno_t
  */
-API_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
+EV_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
     ev_work_t* work, ev_work_type_t type,
     ev_work_cb work_cb, ev_work_done_cb done_cb);
 
@@ -1025,13 +1014,13 @@ API_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
  * @brief Process thread pool events.
  * @param[in] loop Event loop.
  */
-API_LOCAL void ev__threadpool_process(ev_loop_t* loop);
+EV_LOCAL void ev__threadpool_process(ev_loop_t* loop);
 
 /**
  * @brief Wakeup event loop.
  * @param[in] loop Event loop.
  */
-API_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop);
+EV_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop);
 
 #ifdef __cplusplus
 }
@@ -1054,13 +1043,13 @@ extern "C" {
  * @brief Initialize timer context.
  * @param[out] loop Event loop
  */
-API_LOCAL void ev__init_timer(ev_loop_t* loop);
+EV_LOCAL void ev__init_timer(ev_loop_t* loop);
 
 /**
  * @brief Process timer.
  * @param[in] loop  Event loop
  */
-API_LOCAL void ev__process_timer(ev_loop_t* loop);
+EV_LOCAL void ev__process_timer(ev_loop_t* loop);
 
 #ifdef __cplusplus
 }
@@ -1107,7 +1096,7 @@ typedef enum ev_log_level
  * @param[in] fmt   Log format
  * @param[in] ...   Argument list
  */
-API_LOCAL void ev__log(ev_log_level_t level, const char* file, const char* func,
+EV_LOCAL void ev__log(ev_log_level_t level, const char* file, const char* func,
     int line, const char* fmt, ...);
 
 /**
@@ -1116,7 +1105,7 @@ API_LOCAL void ev__log(ev_log_level_t level, const char* file, const char* func,
  * @param[in] size  Data size
  * @param[in] width Line width
  */
-API_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width);
+EV_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width);
 
 #ifdef __cplusplus
 }
@@ -1141,7 +1130,7 @@ extern "C" {
  * @param[in] is_ipv6           Whether a IPv6 address. Only valid if \p interface_addr is NULL.
  * @return                      #ev_errno_t
  */
-API_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
+EV_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
         const char* interface_addr, int is_ipv6);
 
 /**
@@ -1150,7 +1139,7 @@ API_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
  * @param[in] req   Receive request
  * @return          #ev_errno_t
  */
-API_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req);
+EV_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req);
 
 /**
  * @brief Queue a UDP Send request
@@ -1158,7 +1147,7 @@ API_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req);
  * @param[in] req   Send request
  * @return          #ev_errno_t
  */
-API_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
+EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
     const struct sockaddr* addr, socklen_t addrlen);
 
 #ifdef __cplusplus
@@ -1243,7 +1232,7 @@ void ev_free(void* ptr)
     ev__allocator.free_func(ptr);
 }
 
-API_LOCAL char* ev__strdup(const char* s)
+EV_LOCAL char* ev__strdup(const char* s)
 {
     size_t len = strlen(s) + 1;
     char* m = ev_malloc(len);
@@ -2179,7 +2168,7 @@ ev_buf_t* ev_fs_get_filecontent(ev_fs_req_t* req)
     return &req->rsp.filecontent;
 }
 
-API_LOCAL int ev__fs_remove(const char* path, int recursive)
+EV_LOCAL int ev__fs_remove(const char* path, int recursive)
 {
     int ret;
 
@@ -2267,7 +2256,7 @@ static void _ev_to_close_handle(ev_handle_t* handle)
     handle->endgame.close_cb(handle);
 }
 
-API_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t role)
+EV_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t role)
 {
     handle->loop = loop;
     ev_list_push_back(&loop->handles.idle_list, &handle->handle_queue);
@@ -2284,7 +2273,7 @@ API_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t r
     handle->endgame.node = (ev_list_node_t)EV_LIST_NODE_INIT;
 }
 
-API_LOCAL void ev__handle_exit(ev_handle_t* handle, ev_handle_cb close_cb)
+EV_LOCAL void ev__handle_exit(ev_handle_t* handle, ev_handle_cb close_cb)
 {
     assert(!ev__handle_is_closing(handle));
 
@@ -2304,7 +2293,7 @@ API_LOCAL void ev__handle_exit(ev_handle_t* handle, ev_handle_cb close_cb)
     }
 }
 
-API_LOCAL void ev__handle_event_add(ev_handle_t* handle)
+EV_LOCAL void ev__handle_event_add(ev_handle_t* handle)
 {
     handle->data.active_events++;
 
@@ -2314,7 +2303,7 @@ API_LOCAL void ev__handle_event_add(ev_handle_t* handle)
     }
 }
 
-API_LOCAL void ev__handle_event_dec(ev_handle_t* handle)
+EV_LOCAL void ev__handle_event_dec(ev_handle_t* handle)
 {
     assert(handle->data.active_events != 0);
 
@@ -2326,17 +2315,17 @@ API_LOCAL void ev__handle_event_dec(ev_handle_t* handle)
     }
 }
 
-API_LOCAL int ev__handle_is_active(ev_handle_t* handle)
+EV_LOCAL int ev__handle_is_active(ev_handle_t* handle)
 {
     return handle->data.flags & EV_HANDLE_ACTIVE;
 }
 
-API_LOCAL int ev__handle_is_closing(ev_handle_t* handle)
+EV_LOCAL int ev__handle_is_closing(ev_handle_t* handle)
 {
     return handle->data.flags & (EV_HANDLE_CLOSING | EV_HANDLE_CLOSED);
 }
 
-API_LOCAL int ev__backlog_submit(ev_handle_t* handle, ev_handle_cb callback)
+EV_LOCAL int ev__backlog_submit(ev_handle_t* handle, ev_handle_cb callback)
 {
     if (handle->backlog.status != EV_ENOENT)
     {
@@ -2352,7 +2341,7 @@ API_LOCAL int ev__backlog_submit(ev_handle_t* handle, ev_handle_cb callback)
     return 0;
 }
 
-API_LOCAL void ev__process_backlog(ev_loop_t* loop)
+EV_LOCAL void ev__process_backlog(ev_loop_t* loop)
 {
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&loop->backlog_queue)) != NULL)
@@ -2366,7 +2355,7 @@ API_LOCAL void ev__process_backlog(ev_loop_t* loop)
     }
 }
 
-API_LOCAL void ev__process_endgame(ev_loop_t* loop)
+EV_LOCAL void ev__process_endgame(ev_loop_t* loop)
 {
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&loop->endgame_queue)) != NULL)
@@ -2589,7 +2578,7 @@ static char _ev_ascii_to_char(unsigned char c)
     return '.';
 }
 
-API_LOCAL void ev__log(ev_log_level_t level, const char* file, const char* func,
+EV_LOCAL void ev__log(ev_log_level_t level, const char* file, const char* func,
     int line, const char* fmt, ...)
 {
     va_list ap;
@@ -2619,7 +2608,7 @@ API_LOCAL void ev__log(ev_log_level_t level, const char* file, const char* func,
     va_end(ap);
 }
 
-API_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width)
+EV_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width)
 {
     const unsigned char* pdat = (unsigned char*)data;
 
@@ -2779,12 +2768,12 @@ static size_t _ev_calculate_write_size(const ev_write_t* req)
     return total;
 }
 
-API_LOCAL void ev__loop_update_time(ev_loop_t* loop)
+EV_LOCAL void ev__loop_update_time(ev_loop_t* loop)
 {
     loop->hwtime = ev_hrtime() / 1000;
 }
 
-API_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size)
+EV_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size)
 {
     const ev_ipc_frame_hdr_t* hdr = buffer;
     if (size < sizeof(ev_ipc_frame_hdr_t))
@@ -2800,7 +2789,7 @@ API_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size)
     return 1;
 }
 
-API_LOCAL void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr, uint8_t flags, uint16_t exsz, uint32_t dtsz)
+EV_LOCAL void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr, uint8_t flags, uint16_t exsz, uint32_t dtsz)
 {
     hdr->hdr_magic = EV_IPC_FRAME_HDR_MAGIC;
     hdr->hdr_flags = flags;
@@ -2811,7 +2800,7 @@ API_LOCAL void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr, uint8_t flags, ui
     hdr->reserved = 0;
 }
 
-API_LOCAL ev_loop_t* ev__handle_loop(ev_handle_t* handle)
+EV_LOCAL ev_loop_t* ev__handle_loop(ev_handle_t* handle)
 {
     return handle->loop;
 }
@@ -2911,7 +2900,7 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
     return ret;
 }
 
-API_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf)
+EV_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf)
 {
     req->nbuf = nbuf;
 
@@ -2934,7 +2923,7 @@ API_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf)
     return 0;
 }
 
-API_LOCAL void ev__write_exit(ev_write_t* req)
+EV_LOCAL void ev__write_exit(ev_write_t* req)
 {
     if (req->bufs != req->bufsml)
     {
@@ -2945,7 +2934,7 @@ API_LOCAL void ev__write_exit(ev_write_t* req)
     req->nbuf = 0;
 }
 
-API_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf)
+EV_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf)
 {
     req->data.nbuf = nbuf;
 
@@ -2968,7 +2957,7 @@ API_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf)
     return 0;
 }
 
-API_LOCAL void ev__read_exit(ev_read_t* req)
+EV_LOCAL void ev__read_exit(ev_read_t* req)
 {
     if (req->data.bufs != req->data.bufsml)
     {
@@ -2997,7 +2986,7 @@ const char* ev_strerror(int err)
 #undef EV_EXPAND_ERRMAP
 }
 
-API_LOCAL socklen_t ev__get_addr_len(const struct sockaddr* addr)
+EV_LOCAL socklen_t ev__get_addr_len(const struct sockaddr* addr)
 {
     if (addr->sa_family == AF_INET)
     {
@@ -3969,7 +3958,7 @@ void ev_buf_make_v(ev_buf_t bufs[], size_t nbuf, va_list ap)
     }
 }
 
-API_LOCAL int ev__translate_posix_sys_error(int syserr)
+EV_LOCAL int ev__translate_posix_sys_error(int syserr)
 {
 #define EV_EXPAND_ERRMAP(err, syserr, str) case syserr: return err;
 
@@ -4002,7 +3991,7 @@ int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req, ev_buf_t* bufs,
     return ev_pipe_write_ex(pipe, req, bufs, nbuf, EV_ROLE_UNKNOWN, NULL, 0, cb);
 }
 
-API_LOCAL int ev__pipe_read_init(ev_pipe_read_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_pipe_read_cb cb)
+EV_LOCAL int ev__pipe_read_init(ev_pipe_read_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_pipe_read_cb cb)
 {
     int ret;
     if ((ret = ev__read_init(&req->base, bufs, nbuf)) != 0)
@@ -4015,12 +4004,12 @@ API_LOCAL int ev__pipe_read_init(ev_pipe_read_req_t* req, ev_buf_t* bufs, size_t
     return 0;
 }
 
-API_LOCAL int ev__pipe_write_init(ev_pipe_write_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_pipe_write_cb cb)
+EV_LOCAL int ev__pipe_write_init(ev_pipe_write_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_pipe_write_cb cb)
 {
     return ev__pipe_write_init_ext(req, cb, bufs, nbuf, EV_ROLE_UNKNOWN, NULL, 0);
 }
 
-API_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t* req, ev_pipe_write_cb callback,
+EV_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t* req, ev_pipe_write_cb callback,
     ev_buf_t* bufs, size_t nbuf,
     ev_role_t handle_role, void* handle_addr, size_t handle_size)
 {
@@ -4578,18 +4567,18 @@ static int _ring_buffer_commit_for_consume(ring_buffer_t* rb,
         _ring_buffer_commit_for_consume_confirm(rb, node);
 }
 
-API_LOCAL size_t ring_buffer_heap_cost(void)
+EV_LOCAL size_t ring_buffer_heap_cost(void)
 {
     /* need to align with machine size */
     return ALIGN_SIZE(sizeof(struct ring_buffer), sizeof(void*));
 }
 
-API_LOCAL size_t ring_buffer_node_cost(size_t size)
+EV_LOCAL size_t ring_buffer_node_cost(size_t size)
 {
     return ALIGN_SIZE(sizeof(ring_buffer_node_t) + size, sizeof(void*));
 }
 
-API_LOCAL ring_buffer_t* ring_buffer_init(void* buffer, size_t size)
+EV_LOCAL ring_buffer_t* ring_buffer_init(void* buffer, size_t size)
 {
     /* Calculate start address */
     ring_buffer_t* handler = buffer;
@@ -4610,7 +4599,7 @@ API_LOCAL ring_buffer_t* ring_buffer_init(void* buffer, size_t size)
     return handler;
 }
 
-API_LOCAL ring_buffer_token_t* ring_buffer_reserve(ring_buffer_t* handler, size_t len,
+EV_LOCAL ring_buffer_token_t* ring_buffer_reserve(ring_buffer_t* handler, size_t len,
     int flags)
 {
     /* node must aligned */
@@ -4626,7 +4615,7 @@ API_LOCAL ring_buffer_token_t* ring_buffer_reserve(ring_buffer_t* handler, size_
     return _ring_buffer_reserve_none_empty(handler, len, node_size, flags);
 }
 
-API_LOCAL ring_buffer_token_t* ring_buffer_consume(ring_buffer_t* handler)
+EV_LOCAL ring_buffer_token_t* ring_buffer_consume(ring_buffer_t* handler)
 {
     ring_buffer_node_t* rb_oldest_reserve = EV_RB_NODE(handler, handler->node.off_reserve);
     if (handler->node.off_reserve == 0
@@ -4645,7 +4634,7 @@ API_LOCAL ring_buffer_token_t* ring_buffer_consume(ring_buffer_t* handler)
     return &token_node->token;
 }
 
-API_LOCAL int ring_buffer_commit(ring_buffer_t* handler, ring_buffer_token_t* token, int flags)
+EV_LOCAL int ring_buffer_commit(ring_buffer_t* handler, ring_buffer_token_t* token, int flags)
 {
     ring_buffer_node_t* node = EV_CONTAINER_OF(token, ring_buffer_node_t, token);
 
@@ -4654,7 +4643,7 @@ API_LOCAL int ring_buffer_commit(ring_buffer_t* handler, ring_buffer_token_t* to
         _ring_buffer_commit_for_consume(handler, node, flags);
 }
 
-API_LOCAL size_t ring_buffer_count(ring_buffer_t* handler, ring_buffer_counter_t* counter)
+EV_LOCAL size_t ring_buffer_count(ring_buffer_t* handler, ring_buffer_counter_t* counter)
 {
     if (counter != NULL)
     {
@@ -4664,13 +4653,13 @@ API_LOCAL size_t ring_buffer_count(ring_buffer_t* handler, ring_buffer_counter_t
     return handler->counter.committed + handler->counter.reading + handler->counter.writing;
 }
 
-API_LOCAL ring_buffer_token_t* ring_buffer_begin(const ring_buffer_t* handler)
+EV_LOCAL ring_buffer_token_t* ring_buffer_begin(const ring_buffer_t* handler)
 {
     ring_buffer_node_t* rb_tail = EV_RB_NODE(handler, handler->node.off_TAIL);
     return &(rb_tail->token);
 }
 
-API_LOCAL ring_buffer_token_t* ring_buffer_next(const ring_buffer_t* handler, const ring_buffer_token_t* token)
+EV_LOCAL ring_buffer_token_t* ring_buffer_next(const ring_buffer_t* handler, const ring_buffer_token_t* token)
 {
     ring_buffer_node_t* node = EV_CONTAINER_OF(token, ring_buffer_node_t, token);
     if (node->chain_time.off_newer == 0)
@@ -4981,7 +4970,7 @@ void ev_threadpool_exit(ev_threadpool_t* pool)
     ev_sem_exit(&pool->p2w_sem);
 }
 
-API_LOCAL void ev__loop_link_to_default_threadpool(ev_loop_t* loop)
+EV_LOCAL void ev__loop_link_to_default_threadpool(ev_loop_t* loop)
 {
     _ev_threadpool_init_default();
     if (loop->threadpool.pool == NULL)
@@ -4990,7 +4979,7 @@ API_LOCAL void ev__loop_link_to_default_threadpool(ev_loop_t* loop)
     }
 }
 
-API_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
+EV_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
     ev_work_t* work,
     ev_work_type_t type, ev_work_cb work_cb,
     ev_work_done_cb done_cb)
@@ -5000,7 +4989,7 @@ API_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
     return ev_threadpool_submit(pool, loop, work, type, work_cb, done_cb);
 }
 
-API_LOCAL int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool)
+EV_LOCAL int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool)
 {
     if (loop->threadpool.pool != NULL)
     {
@@ -5052,7 +5041,7 @@ int ev_loop_queue_work(ev_loop_t* loop, ev_work_t* token,
         EV_THREADPOOL_WORK_CPU, work_cb, done_cb);
 }
 
-API_LOCAL void ev__threadpool_process(ev_loop_t* loop)
+EV_LOCAL void ev__threadpool_process(ev_loop_t* loop)
 {
     ev_list_node_t* node;
     for (;;)
@@ -5107,12 +5096,12 @@ static void _ev_timer_on_close(ev_handle_t* handle)
     }
 }
 
-API_LOCAL void ev__init_timer(ev_loop_t* loop)
+EV_LOCAL void ev__init_timer(ev_loop_t* loop)
 {
     ev_map_init(&loop->timer.heap, _ev_cmp_timer, NULL);
 }
 
-API_LOCAL void ev__process_timer(ev_loop_t* loop)
+EV_LOCAL void ev__process_timer(ev_loop_t* loop)
 {
     ev_map_node_t* it;
     while ((it = ev_map_begin(&loop->timer.heap)) != NULL)
@@ -5188,7 +5177,7 @@ void ev_timer_stop(ev_timer_t* handle)
 /* AMALGAMATE: #include "udp.h" */
 #include <string.h>
 
-API_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
+EV_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
     const char* interface_addr, int is_ipv6)
 {
     struct sockaddr_in* addr_4 = (struct sockaddr_in*)dst;
@@ -5823,7 +5812,7 @@ extern ev_winapi_t ev_winapi;
 /**
  * @brief Initialize WinAPI
  */
-API_LOCAL void ev__winapi_init(void);
+EV_LOCAL void ev__winapi_init(void);
 
 #ifdef __cplusplus
 }
@@ -5883,14 +5872,14 @@ extern int ev_tcp_non_ifs_lsp_ipv6;
 extern struct sockaddr_in ev_addr_ip4_any_;
 extern struct sockaddr_in6 ev_addr_ip6_any_;
 
-API_LOCAL int WSAAPI ev__wsa_recv_workaround(SOCKET socket, WSABUF* buffers,
+EV_LOCAL int WSAAPI ev__wsa_recv_workaround(SOCKET socket, WSABUF* buffers,
 	DWORD buffer_count, DWORD* bytes, DWORD* flags, WSAOVERLAPPED* overlapped,
 	LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine);
 
 /**
  * @brief 
  */
-API_LOCAL int WSAAPI ev__wsa_recvfrom_workaround(SOCKET socket, WSABUF* buffers,
+EV_LOCAL int WSAAPI ev__wsa_recvfrom_workaround(SOCKET socket, WSABUF* buffers,
 	DWORD buffer_count, DWORD* bytes, DWORD* flags, struct sockaddr* addr,
 	int* addr_len, WSAOVERLAPPED* overlapped,
 	LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine);
@@ -5898,14 +5887,14 @@ API_LOCAL int WSAAPI ev__wsa_recvfrom_workaround(SOCKET socket, WSABUF* buffers,
 /**
  * @brief Initialize winsock.
  */
-API_LOCAL void ev__winsock_init(void);
+EV_LOCAL void ev__winsock_init(void);
 
 /**
  * @brief Convert typeof NTSTATUS error to typeof WinSock error
  * @param[in] status  NTSTATUS error
  * @return WinSock error
  */
-API_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status);
+EV_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status);
 
 #ifdef __cplusplus
 }
@@ -5951,7 +5940,7 @@ typedef int (*ev_readdir_w_cb)(ev_dirent_w_t* info, void* arg);
  * @param[in] arg       User defined data.
  * @return              #ev_errno_t
  */
-API_LOCAL int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg);
+EV_LOCAL int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg);
 
 #ifdef __cplusplus
 }
@@ -6002,7 +5991,7 @@ extern ev_loop_win_ctx_t        g_ev_loop_win_ctx;          /**< Global runtime 
 /**
  * @brief Initialize windows context.
  */
-API_LOCAL void ev__init_once_win(void);
+EV_LOCAL void ev__init_once_win(void);
 
 /**
  * @brief Initialize IOCP request
@@ -6010,14 +5999,14 @@ API_LOCAL void ev__init_once_win(void);
  * @param[in] callback  A callback when the request is finish
  * @param[in] arg       User defined argument passed to callback
  */
-API_LOCAL void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg);
+EV_LOCAL void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg);
 
 /**
  * @brief Post to specific IOCP request.
  * @param[in] loop      Event loop
  * @param[in] req       IOCP request
  */
-API_LOCAL void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req);
+EV_LOCAL void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req);
 
 /**
  * @brief Set \p sock as reusable address.
@@ -6025,7 +6014,7 @@ API_LOCAL void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req);
  * @param[in] opt   0 if not reusable, otherwise reusable.
  * @return          #ev_errnot_t
  */
-API_LOCAL int ev__reuse_win(SOCKET sock, int opt);
+EV_LOCAL int ev__reuse_win(SOCKET sock, int opt);
 
 /**
  * @brief Set \p sock as IPv6 only.
@@ -6033,7 +6022,7 @@ API_LOCAL int ev__reuse_win(SOCKET sock, int opt);
  * @param[in] opt   0 if IPv4 available, otherwise IPv6 only.
  * @return          #ev_errnot_t
  */
-API_LOCAL int ev__ipv6only_win(SOCKET sock, int opt);
+EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt);
 
 #ifdef __cplusplus
 }
@@ -6075,7 +6064,7 @@ extern "C" {
  * @param[in] src   Source string.
  * @return          The number of characters (not bytes) of \p dst, or #ev_errno_t if error.
  */
-API_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src);
+EV_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src);
 
 /**
  * @brief Maps a UTF-16 (wide character) string to a character string.
@@ -6083,9 +6072,9 @@ API_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src);
  * @param[in] src   Source string.
  * @return          The number of characters (not bytes) of \p dst, or #ev_errno_t if error.
  */
-API_LOCAL ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src);
+EV_LOCAL ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src);
 
-API_LOCAL void ev__fatal_syscall(const char* file, int line,
+EV_LOCAL void ev__fatal_syscall(const char* file, int line,
 	DWORD errcode, const char* syscall);
 
 #ifdef __cplusplus
@@ -6108,7 +6097,7 @@ extern "C" {
 /**
  * @brief Initialize thread context.
  */
-API_LOCAL void ev__thread_init_win(void);
+EV_LOCAL void ev__thread_init_win(void);
 
 #ifdef __cplusplus
 }
@@ -6125,8 +6114,8 @@ API_LOCAL void ev__thread_init_win(void);
 extern "C" {
 #endif
 
-API_LOCAL void ev__threadpool_init_win(ev_loop_t* loop);
-API_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop);
+EV_LOCAL void ev__threadpool_init_win(ev_loop_t* loop);
+EV_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop);
 
 #ifdef __cplusplus
 }
@@ -6151,7 +6140,7 @@ extern "C" {
  * @param[in] fd    fd
  * @return          #ev_errno_t
  */
-API_LOCAL int ev__tcp_open_win(ev_tcp_t* tcp, SOCKET fd);
+EV_LOCAL int ev__tcp_open_win(ev_tcp_t* tcp, SOCKET fd);
 
 #ifdef __cplusplus
 }
@@ -6191,7 +6180,7 @@ static void _ev_asyc_exit_win(ev_async_t* handle, ev_async_cb close_cb)
     ev__handle_exit(&handle->base, close_cb != NULL ? _ev_async_on_close_win : NULL);
 }
 
-API_LOCAL void ev__async_exit_force(ev_async_t* handle)
+EV_LOCAL void ev__async_exit_force(ev_async_t* handle)
 {
     _ev_asyc_exit_win(handle, NULL);
 }
@@ -6778,7 +6767,7 @@ static int _ev_fs_readdir_w_on_dirent(ev_dirent_w_t* info, void* arg)
     return (int)ret;
 }
 
-API_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mode)
+EV_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mode)
 {
     int ret;
     DWORD errcode;
@@ -6807,7 +6796,7 @@ API_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int m
     return 0;
 }
 
-API_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset)
+EV_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset)
 {
     DWORD errcode;
     LONG DistanceToMove = offset & 0XFFFFFFFF;
@@ -6822,7 +6811,7 @@ API_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset)
     return 0;
 }
 
-API_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
+EV_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
 {
     DWORD errcode;
     DWORD bytes = 0;
@@ -6860,7 +6849,7 @@ error:
 	return ev__translate_sys_error(errcode);
 }
 
-API_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
+EV_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
 {
     if (file == INVALID_HANDLE_VALUE)
     {
@@ -6904,7 +6893,7 @@ API_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, 
     return ev__translate_sys_error(err);
 }
 
-API_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
+EV_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
 {
     DWORD errcode;
     DWORD bytes = 0;
@@ -6938,7 +6927,7 @@ error:
 	return ev__translate_sys_error(errcode);
 }
 
-API_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
+EV_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
 {
     if (file == INVALID_HANDLE_VALUE)
     {
@@ -6977,12 +6966,12 @@ API_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
     return ev__translate_sys_error(err);
 }
 
-API_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
+EV_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
 {
     return _ev_file_fstat_win(file, statbuf, 0);
 }
 
-API_LOCAL int ev__fs_close(ev_os_file_t file)
+EV_LOCAL int ev__fs_close(ev_os_file_t file)
 {
     DWORD errcode;
     if (!CloseHandle(file))
@@ -6993,7 +6982,7 @@ API_LOCAL int ev__fs_close(ev_os_file_t file)
     return 0;
 }
 
-API_LOCAL int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg)
+EV_LOCAL int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg)
 {
     WIN32_FIND_DATAW info;
     ev_dirent_w_t dirent_info;
@@ -7052,7 +7041,7 @@ cleanup:
     return ret;
 }
 
-API_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
+EV_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
 {
     WCHAR* wide_path = NULL;
     size_t wide_path_len = ev__utf8_to_wide(&wide_path, path);
@@ -7068,7 +7057,7 @@ API_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
     return helper.errcode != 0 ? helper.errcode : ret;
 }
 
-API_LOCAL int ev__fs_mkdir(const char* path, int mode)
+EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
 {
     WCHAR* copy_wpath;
     ssize_t ret = ev__utf8_to_wide(&copy_wpath, path);
@@ -7172,7 +7161,7 @@ uint64_t ev_hrtime(void)
     return _ev_hrtime_win(1000000);
 }
 
-API_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
+EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
 {
     int repeat;
     BOOL success;
@@ -7222,14 +7211,14 @@ API_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
     }
 }
 
-API_LOCAL void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg)
+EV_LOCAL void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg)
 {
     req->cb = callback;
     req->arg = arg;
     memset(&req->overlapped, 0, sizeof(req->overlapped));
 }
 
-API_LOCAL void ev__loop_exit_backend(ev_loop_t* loop)
+EV_LOCAL void ev__loop_exit_backend(ev_loop_t* loop)
 {
     ev__threadpool_exit_win(loop);
 
@@ -7240,13 +7229,13 @@ API_LOCAL void ev__loop_exit_backend(ev_loop_t* loop)
     }
 }
 
-API_LOCAL void ev__init_once_win(void)
+EV_LOCAL void ev__init_once_win(void)
 {
     static ev_once_t once = EV_ONCE_INIT;
     ev_once_execute(&once, _ev_init_once_win);
 }
 
-API_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
+EV_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
 {
     ev__init_once_win();
 
@@ -7262,7 +7251,7 @@ API_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
     return 0;
 }
 
-API_LOCAL void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req)
+EV_LOCAL void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req)
 {
     DWORD errcode;
     if (!PostQueuedCompletionStatus(loop->backend.iocp, 0, 0, &req->overlapped))
@@ -7272,7 +7261,7 @@ API_LOCAL void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req)
     }
 }
 
-API_LOCAL int ev__reuse_win(SOCKET sock, int opt)
+EV_LOCAL int ev__reuse_win(SOCKET sock, int opt)
 {
     DWORD optval = !!opt;
     int optlen = sizeof(optval);
@@ -7287,7 +7276,7 @@ API_LOCAL int ev__reuse_win(SOCKET sock, int opt)
     return 0;
 }
 
-API_LOCAL int ev__ipv6only_win(SOCKET sock, int opt)
+EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt)
 {
     DWORD optval = !!opt;
     int optlen = sizeof(optval);
@@ -7308,7 +7297,7 @@ API_LOCAL int ev__ipv6only_win(SOCKET sock, int opt)
 /* AMALGAMATE: #include "misc_win.h" */
 #include <assert.h>
 
-API_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src)
+EV_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src)
 {
     int errcode;
     int pathw_len = MultiByteToWideChar(CP_UTF8, 0, src, -1, NULL, 0);
@@ -7333,7 +7322,7 @@ API_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src)
     return r;
 }
 
-API_LOCAL ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src)
+EV_LOCAL ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src)
 {
     int errcode;
     int target_len = WideCharToMultiByte(CP_UTF8, 0, src, -1, NULL, 0,
@@ -7358,7 +7347,7 @@ API_LOCAL ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src)
     return (ssize_t)ret;
 }
 
-API_LOCAL int ev__translate_sys_error(int err)
+EV_LOCAL int ev__translate_sys_error(int err)
 {
     switch (err)
     {
@@ -7465,7 +7454,7 @@ API_LOCAL int ev__translate_sys_error(int err)
     }
 }
 
-API_LOCAL void ev__fatal_syscall(const char* file, int line,
+EV_LOCAL void ev__fatal_syscall(const char* file, int line,
     DWORD errcode, const char* syscall)
 {
     const char* errmsg = "Unknown error";
@@ -10567,7 +10556,7 @@ int ev_tcp_read(ev_tcp_t* sock, ev_tcp_read_req_t* req,
     return 0;
 }
 
-API_LOCAL int ev__tcp_open_win(ev_tcp_t* tcp, SOCKET fd)
+EV_LOCAL int ev__tcp_open_win(ev_tcp_t* tcp, SOCKET fd)
 {
     tcp->sock = fd;
     if (!(tcp->base.data.flags & EV_HANDLE_TCP_STREAMING))
@@ -10620,7 +10609,7 @@ static unsigned __stdcall _ev_thread_proxy_proc_win(void* lpThreadParameter)
     return 0;
 }
 
-API_LOCAL void ev__thread_init_win(void)
+EV_LOCAL void ev__thread_init_win(void)
 {
     int ret = ev_tls_init(&g_ev_loop_win_ctx.thread.thread_key);
     if (ret != 0)
@@ -10778,17 +10767,17 @@ static void _on_work_win(ev_iocp_t* iocp, size_t transferred, void* arg)
     ev__threadpool_process(loop);
 }
 
-API_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop)
+EV_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop)
 {
     ev__iocp_post(loop, &loop->backend.threadpool.io);
 }
 
-API_LOCAL void ev__threadpool_init_win(ev_loop_t* loop)
+EV_LOCAL void ev__threadpool_init_win(ev_loop_t* loop)
 {
     ev__iocp_init(&loop->backend.threadpool.io, _on_work_win, NULL);
 }
 
-API_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop)
+EV_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop)
 {
     (void)loop;
 }
@@ -11282,7 +11271,7 @@ static int _ev_udp_maybe_bind_win(ev_udp_t* udp, const struct sockaddr* addr, un
     return 0;
 }
 
-API_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
+EV_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
 {
     WSABUF buf;
     buf.buf = g_ev_loop_win_ctx.net.zero_;
@@ -11314,7 +11303,7 @@ API_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
     return ev__translate_sys_error(err);
 }
 
-API_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
+EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
     const struct sockaddr* addr, socklen_t addrlen)
 {
     int ret, err;
@@ -11741,7 +11730,7 @@ ev_winapi_t ev_winapi = {
     NULL,
 };
 
-API_LOCAL void ev__winapi_init(void)
+EV_LOCAL void ev__winapi_init(void)
 {
 #define GET_NTDLL_FUNC(name)  \
     do {\
@@ -11770,7 +11759,7 @@ int ev_tcp_non_ifs_lsp_ipv6;
 struct sockaddr_in ev_addr_ip4_any_;
 struct sockaddr_in6 ev_addr_ip6_any_;
 
-API_LOCAL void ev__winsock_init(void)
+EV_LOCAL void ev__winsock_init(void)
 {
 #define DETECT_IFS_LSP(AF, flag)    \
     do {\
@@ -11824,7 +11813,7 @@ API_LOCAL void ev__winsock_init(void)
 #undef DETECT_IFS_LSP
 }
 
-API_LOCAL int WSAAPI ev__wsa_recv_workaround(SOCKET socket, WSABUF* buffers,
+EV_LOCAL int WSAAPI ev__wsa_recv_workaround(SOCKET socket, WSABUF* buffers,
     DWORD buffer_count, DWORD* bytes, DWORD* flags, WSAOVERLAPPED* overlapped,
     LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine)
 {
@@ -11919,7 +11908,7 @@ API_LOCAL int WSAAPI ev__wsa_recv_workaround(SOCKET socket, WSABUF* buffers,
 	return SOCKET_ERROR;
 }
 
-API_LOCAL int WSAAPI ev__wsa_recvfrom_workaround(SOCKET socket, WSABUF* buffers,
+EV_LOCAL int WSAAPI ev__wsa_recvfrom_workaround(SOCKET socket, WSABUF* buffers,
     DWORD buffer_count, DWORD* bytes, DWORD* flags, struct sockaddr* addr,
     int* addr_len, WSAOVERLAPPED* overlapped,
     LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine)
@@ -12019,7 +12008,7 @@ API_LOCAL int WSAAPI ev__wsa_recvfrom_workaround(SOCKET socket, WSABUF* buffers,
     return SOCKET_ERROR;
 }
 
-API_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status)
+EV_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status)
 {
     switch (status)
     {
@@ -12157,19 +12146,19 @@ extern "C" {
  * @brief Create a pair of eventfd.
  * Index 0 for read, index 1 for write.
  */
-API_LOCAL int ev__asyc_eventfd(int evtfd[2]);
+EV_LOCAL int ev__asyc_eventfd(int evtfd[2]);
 
-API_LOCAL void ev__async_eventfd_close(int fd);
+EV_LOCAL void ev__async_eventfd_close(int fd);
 
 /**
  * @brief Post event to eventfd.
  */
-API_LOCAL void ev__async_post(int wfd);
+EV_LOCAL void ev__async_post(int wfd);
 
 /**
  * @brief Pend event from eventfd.
  */
-API_LOCAL void ev__async_pend(int rfd);
+EV_LOCAL void ev__async_pend(int rfd);
 
 #ifdef __cplusplus
 }
@@ -12191,9 +12180,9 @@ API_LOCAL void ev__async_pend(int rfd);
 extern "C" {
 #endif
 
-API_LOCAL void ev__init_io(ev_loop_t* loop);
+EV_LOCAL void ev__init_io(ev_loop_t* loop);
 
-API_LOCAL void ev__exit_io(ev_loop_t* loop);
+EV_LOCAL void ev__exit_io(ev_loop_t* loop);
 
 /**
  * @brief Initialize io structure
@@ -12202,7 +12191,7 @@ API_LOCAL void ev__exit_io(ev_loop_t* loop);
  * @param[in] cb    IO active callback
  * @param[in] arg   User data
  */
-API_LOCAL void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb, void* arg);
+EV_LOCAL void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb, void* arg);
 
 /**
  * @brief Add events to IO structure
@@ -12210,7 +12199,7 @@ API_LOCAL void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io
  * @param[in] io    IO structure
  * @param[in] evts  #EV_IO_IN or #EV_IO_OUT
  */
-API_LOCAL void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts);
+EV_LOCAL void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts);
 
 /**
  * @brief Delete events from IO structure
@@ -12218,7 +12207,7 @@ API_LOCAL void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsign
  * @param[in] io    IO structure
  * @param[in] evts  #EV_IO_IN or #EV_IO_OUT
  */
-API_LOCAL void ev__nonblock_io_del(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts);
+EV_LOCAL void ev__nonblock_io_del(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts);
 
 /**
  * @brief Add or remove FD_CLOEXEC
@@ -12226,7 +12215,7 @@ API_LOCAL void ev__nonblock_io_del(ev_loop_t* loop, ev_nonblock_io_t* io, unsign
  * @param[in] set   bool
  * @return          #ev_errno_t
  */
-API_LOCAL int ev__cloexec(int fd, int set);
+EV_LOCAL int ev__cloexec(int fd, int set);
 
 /**
  * @brief Add or remove O_NONBLOCK
@@ -12234,41 +12223,41 @@ API_LOCAL int ev__cloexec(int fd, int set);
  * @param[in] set   bool
  * @return          #ev_errno_t
  */
-API_LOCAL int ev__nonblock(int fd, int set);
+EV_LOCAL int ev__nonblock(int fd, int set);
 
 /**
  * @brief Set reuse
  * @return          #ev_errno_t
  */
-API_LOCAL int ev__reuse_unix(int fd);
+EV_LOCAL int ev__reuse_unix(int fd);
 
 /**
  * @brief Return the file access mode and the file status flags
  */
-API_LOCAL int ev__fcntl_getfl_unix(int fd);
+EV_LOCAL int ev__fcntl_getfl_unix(int fd);
 
 /**
  * @brief Return the file descriptor flags.
  */
-API_LOCAL int ev__fcntl_getfd_unix(int fd);
+EV_LOCAL int ev__fcntl_getfd_unix(int fd);
 
 /**
  * @brief readv wrap
  * @return 0: try again; >0: read size; <0 errno
  */
-API_LOCAL ssize_t ev__readv_unix(int fd, ev_buf_t* iov, int iovcnt);
+EV_LOCAL ssize_t ev__readv_unix(int fd, ev_buf_t* iov, int iovcnt);
 
 /**
  * @brief readv wrap
  * @return 0: try again; >0: write size; <0 errno
  */
-API_LOCAL ssize_t ev__writev_unix(int fd, ev_buf_t* iov, int iovcnt);
+EV_LOCAL ssize_t ev__writev_unix(int fd, ev_buf_t* iov, int iovcnt);
 
 /**
  * @brief write
  * @return 0: try again; >0: write size; <0 errno
  */
-API_LOCAL ssize_t ev__write_unix(int fd, void* buffer, size_t size);
+EV_LOCAL ssize_t ev__write_unix(int fd, void* buffer, size_t size);
 
 /**
  * @brief Write \p req to \p fd
@@ -12280,7 +12269,7 @@ API_LOCAL ssize_t ev__write_unix(int fd, void* buffer, size_t size);
  *                      + #EV_EAGAIN: \p req not send finish, need to try again
  *                      + other value: error
  */
-API_LOCAL int ev__send_unix(int fd, ev_write_t* req,
+EV_LOCAL int ev__send_unix(int fd, ev_write_t* req,
     ssize_t(*do_write)(int fd, struct iovec* iov, int iovcnt, void* arg), void* arg);
 
 #ifdef __cplusplus
@@ -12308,7 +12297,7 @@ typedef struct ev_process_ctx_s
 /**
  * @brief Initialize process context.
  */
-API_LOCAL void ev__init_process_unix(void);
+EV_LOCAL void ev__init_process_unix(void);
 
 #ifdef __cplusplus
 }
@@ -12332,7 +12321,7 @@ extern "C" {
  * @param[in] fd    fd
  * @return          #ev_errno_t
  */
-API_LOCAL int ev__tcp_open(ev_tcp_t* tcp, int fd);
+EV_LOCAL int ev__tcp_open(ev_tcp_t* tcp, int fd);
 
 #ifdef __cplusplus
 }
@@ -12365,7 +12354,7 @@ extern ev_loop_unix_ctx_t g_ev_loop_unix_ctx;
 /**
  * @brief Initialize windows context.
  */
-API_LOCAL void ev__init_once_unix(void);
+EV_LOCAL void ev__init_once_unix(void);
 
 #ifdef __cplusplus
 }
@@ -12398,14 +12387,14 @@ extern "C" {
  * @param[in] wcb       Write callback
  * @param[in] rcb       Read callback
  */
-API_LOCAL void ev__nonblock_stream_init(ev_loop_t* loop, ev_nonblock_stream_t* stream,
+EV_LOCAL void ev__nonblock_stream_init(ev_loop_t* loop, ev_nonblock_stream_t* stream,
     int fd, ev_stream_write_cb wcb, ev_stream_read_cb rcb);
 
 /**
  * @brief Cleanup and exit stream
  * @param[in] stream    Stream handler
  */
-API_LOCAL void ev__nonblock_stream_exit(ev_nonblock_stream_t* stream);
+EV_LOCAL void ev__nonblock_stream_exit(ev_nonblock_stream_t* stream);
 
 /**
  * @brief Do stream write
@@ -12413,7 +12402,7 @@ API_LOCAL void ev__nonblock_stream_exit(ev_nonblock_stream_t* stream);
  * @param[in] req       Write request
  * @return              #ev_errno_t
  */
-API_LOCAL int ev__nonblock_stream_write(ev_nonblock_stream_t* stream, ev_write_t* req);
+EV_LOCAL int ev__nonblock_stream_write(ev_nonblock_stream_t* stream, ev_write_t* req);
 
 /**
  * @brief Do stream read
@@ -12421,7 +12410,7 @@ API_LOCAL int ev__nonblock_stream_write(ev_nonblock_stream_t* stream, ev_write_t
  * @param[in] req       Read request
  * @return              #ev_errno_t
  */
-API_LOCAL int ev__nonblock_stream_read(ev_nonblock_stream_t* stream, ev_read_t* req);
+EV_LOCAL int ev__nonblock_stream_read(ev_nonblock_stream_t* stream, ev_read_t* req);
 
 /**
  * @brief Get pending action count.
@@ -12429,21 +12418,21 @@ API_LOCAL int ev__nonblock_stream_read(ev_nonblock_stream_t* stream, ev_read_t* 
  * @param[in] evts      #EV_IO_IN or #EV_IO_OUT
  * @return              Action count
  */
-API_LOCAL size_t ev__nonblock_stream_size(ev_nonblock_stream_t* stream, unsigned evts);
+EV_LOCAL size_t ev__nonblock_stream_size(ev_nonblock_stream_t* stream, unsigned evts);
 
 /**
  * @brief Abort pending requests
  * @param[in] stream    Stream handle
  * @param[in] evts      #EV_IO_IN or #EV_IO_OUT
  */
-API_LOCAL void ev__nonblock_stream_abort(ev_nonblock_stream_t* stream);
+EV_LOCAL void ev__nonblock_stream_abort(ev_nonblock_stream_t* stream);
 
 /**
  * @brief Cleanup pending requests
  * @param[in] stream    Stream handle
  * @param[in] evts      #EV_IO_IN or #EV_IO_OUT
  */
-API_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned evts);
+EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned evts);
 
 #ifdef __cplusplus
 }
@@ -12460,9 +12449,9 @@ API_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigne
 extern "C" {
 #endif
 
-API_LOCAL void ev__init_work(ev_loop_t* loop);
+EV_LOCAL void ev__init_work(ev_loop_t* loop);
 
-API_LOCAL void ev__exit_work(ev_loop_t* loop);
+EV_LOCAL void ev__exit_work(ev_loop_t* loop);
 
 #ifdef __cplusplus
 }
@@ -12525,12 +12514,12 @@ static void _ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
     ev__handle_exit(&handle->base, close_cb != NULL ? _ev_async_on_close : NULL);
 }
 
-API_LOCAL void ev__async_exit_force(ev_async_t* handle)
+EV_LOCAL void ev__async_exit_force(ev_async_t* handle)
 {
     _ev_async_exit(handle, NULL);
 }
 
-API_LOCAL int ev__asyc_eventfd(int evtfd[2])
+EV_LOCAL int ev__asyc_eventfd(int evtfd[2])
 {
     int errcode;
 
@@ -12558,12 +12547,12 @@ API_LOCAL int ev__asyc_eventfd(int evtfd[2])
     return 0;
 }
 
-API_LOCAL void ev__async_eventfd_close(int fd)
+EV_LOCAL void ev__async_eventfd_close(int fd)
 {
     close(fd);
 }
 
-API_LOCAL void ev__async_post(int wfd)
+EV_LOCAL void ev__async_post(int wfd)
 {
     uint64_t val = 1;
 
@@ -12581,7 +12570,7 @@ API_LOCAL void ev__async_post(int wfd)
     }
 }
 
-API_LOCAL void ev__async_pend(int rfd)
+EV_LOCAL void ev__async_pend(int rfd)
 {
     uint64_t val;
     int errcode;
@@ -12721,7 +12710,7 @@ static int _ev_fs_mkpath(char* file_path, int mode)
     return 0;
 }
 
-API_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
+EV_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
 {
     int ret;
     int errcode;
@@ -12844,7 +12833,7 @@ err_errno:
     return ev__translate_sys_error(errcode);
 }
 
-API_LOCAL int ev__fs_close(ev_os_file_t file)
+EV_LOCAL int ev__fs_close(ev_os_file_t file)
 {
     int errcode;
     if (close(file) != 0)
@@ -12855,7 +12844,7 @@ API_LOCAL int ev__fs_close(ev_os_file_t file)
     return 0;
 }
 
-API_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mode)
+EV_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mode)
 {
     int errcode;
 
@@ -12882,7 +12871,7 @@ API_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int m
     return 0;
 }
 
-API_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset)
+EV_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset)
 {
     int errcode;
     if (lseek(file, offset, whence) == (off_t)-1)
@@ -12893,7 +12882,7 @@ API_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset)
     return 0;
 }
 
-API_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
+EV_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
 {
     ssize_t read_size = readv(file, (struct iovec*)bufs, nbuf);
     if (read_size >= 0)
@@ -12905,7 +12894,7 @@ API_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
     return ev__translate_sys_error(errcode);
 }
 
-API_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
+EV_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
 {
     ssize_t read_size = preadv(file, (struct iovec*)bufs, nbuf, offset);
     if (read_size >= 0)
@@ -12917,7 +12906,7 @@ API_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, 
     return ev__translate_sys_error(errcode);
 }
 
-API_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
+EV_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
 {
     ssize_t write_size = writev(file, (struct iovec*)bufs, nbuf);
     if (write_size >= 0)
@@ -12929,7 +12918,7 @@ API_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
     return ev__translate_sys_error(errcode);
 }
 
-API_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
+EV_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
 {
     ssize_t write_size = pwritev(file, (struct iovec*)bufs, nbuf, offset);
     if (write_size >= 0)
@@ -12941,7 +12930,7 @@ API_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
     return ev__translate_sys_error(errcode);
 }
 
-API_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
+EV_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
 {
     int ret = 0;
     DIR* dir = opendir(path);
@@ -12976,7 +12965,7 @@ API_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
     return ret;
 }
 
-API_LOCAL int ev__fs_mkdir(const char* path, int mode)
+EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
 {
     char* dup_path = ev__strdup(path);
     if (dup_path == NULL)
@@ -13045,7 +13034,7 @@ static int _ev_cmp_io_unix(const ev_map_node_t* key1, const ev_map_node_t* key2,
     return io1->data.fd - io2->data.fd;
 }
 
-API_LOCAL void ev__init_io(ev_loop_t* loop)
+EV_LOCAL void ev__init_io(ev_loop_t* loop)
 {
     int err;
     ev_map_init(&loop->backend.io, _ev_cmp_io_unix, NULL);
@@ -13062,7 +13051,7 @@ API_LOCAL void ev__init_io(ev_loop_t* loop)
     }
 }
 
-API_LOCAL void ev__exit_io(ev_loop_t* loop)
+EV_LOCAL void ev__exit_io(ev_loop_t* loop)
 {
     if (loop->backend.pollfd != -1)
     {
@@ -13071,7 +13060,7 @@ API_LOCAL void ev__exit_io(ev_loop_t* loop)
     }
 }
 
-API_LOCAL void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb, void* arg)
+EV_LOCAL void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb, void* arg)
 {
     io->data.fd = fd;
     io->data.c_events = 0;
@@ -13080,7 +13069,7 @@ API_LOCAL void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io
     io->data.arg = arg;
 }
 
-API_LOCAL void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
+EV_LOCAL void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
 {
     int errcode;
     struct epoll_event poll_event;
@@ -13110,7 +13099,7 @@ API_LOCAL void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsign
     }
 }
 
-API_LOCAL void ev__nonblock_io_del(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
+EV_LOCAL void ev__nonblock_io_del(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
 {
     int errcode;
     struct epoll_event poll_event;
@@ -13138,7 +13127,7 @@ API_LOCAL void ev__nonblock_io_del(ev_loop_t* loop, ev_nonblock_io_t* io, unsign
     }
 }
 
-API_LOCAL int ev__cloexec(int fd, int set)
+EV_LOCAL int ev__cloexec(int fd, int set)
 {
 #if defined(_AIX) || \
     defined(__APPLE__) || \
@@ -13199,7 +13188,7 @@ API_LOCAL int ev__cloexec(int fd, int set)
 #endif
 }
 
-API_LOCAL int ev__nonblock(int fd, int set)
+EV_LOCAL int ev__nonblock(int fd, int set)
 {
 #if defined(_AIX) || \
     defined(__APPLE__) || \
@@ -13260,7 +13249,7 @@ API_LOCAL int ev__nonblock(int fd, int set)
 #endif
 }
 
-API_LOCAL int ev__reuse_unix(int fd)
+EV_LOCAL int ev__reuse_unix(int fd)
 {
     int yes;
     yes = 1;
@@ -13305,7 +13294,7 @@ err:
     return ev__translate_sys_error(yes);
 }
 
-API_LOCAL int ev__fcntl_getfl_unix(int fd)
+EV_LOCAL int ev__fcntl_getfl_unix(int fd)
 {
     int mode;
     do
@@ -13315,7 +13304,7 @@ API_LOCAL int ev__fcntl_getfl_unix(int fd)
     return mode;
 }
 
-API_LOCAL int ev__fcntl_getfd_unix(int fd)
+EV_LOCAL int ev__fcntl_getfd_unix(int fd)
 {
     int flags;
 
@@ -13327,7 +13316,7 @@ API_LOCAL int ev__fcntl_getfd_unix(int fd)
     return flags;
 }
 
-API_LOCAL ssize_t ev__readv_unix(int fd, ev_buf_t* iov, int iovcnt)
+EV_LOCAL ssize_t ev__readv_unix(int fd, ev_buf_t* iov, int iovcnt)
 {
     ssize_t read_size;
     do
@@ -13353,7 +13342,7 @@ API_LOCAL ssize_t ev__readv_unix(int fd, ev_buf_t* iov, int iovcnt)
     return ev__translate_sys_error(err);
 }
 
-API_LOCAL ssize_t ev__writev_unix(int fd, ev_buf_t* iov, int iovcnt)
+EV_LOCAL ssize_t ev__writev_unix(int fd, ev_buf_t* iov, int iovcnt)
 {
     ssize_t write_size;
     do
@@ -13375,7 +13364,7 @@ API_LOCAL ssize_t ev__writev_unix(int fd, ev_buf_t* iov, int iovcnt)
     return ev__translate_sys_error(err);
 }
 
-API_LOCAL ssize_t ev__write_unix(int fd, void* buffer, size_t size)
+EV_LOCAL ssize_t ev__write_unix(int fd, void* buffer, size_t size)
 {
     ssize_t send_size;
     do
@@ -13397,7 +13386,7 @@ API_LOCAL ssize_t ev__write_unix(int fd, void* buffer, size_t size)
     return ev__translate_sys_error(err);
 }
 
-API_LOCAL int ev__send_unix(int fd, ev_write_t* req,
+EV_LOCAL int ev__send_unix(int fd, ev_write_t* req,
     ssize_t(*do_write)(int fd, struct iovec* iov, int iovcnt, void* arg), void* arg)
 {
     ev_buf_t* iov = req->bufs;
@@ -13532,13 +13521,13 @@ uint64_t ev_hrtime(void)
     return t.tv_sec * 1000 * 1000 + t.tv_nsec / 1000;
 }
 
-API_LOCAL void ev__init_once_unix(void)
+EV_LOCAL void ev__init_once_unix(void)
 {
     static ev_once_t once = EV_ONCE_INIT;
     ev_once_execute(&once, _ev_init_once_unix);
 }
 
-API_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
+EV_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
 {
     ev__init_once_unix();
     ev__init_io(loop);
@@ -13547,13 +13536,13 @@ API_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
     return 0;
 }
 
-API_LOCAL void ev__loop_exit_backend(ev_loop_t* loop)
+EV_LOCAL void ev__loop_exit_backend(ev_loop_t* loop)
 {
     ev__exit_work(loop);
     ev__exit_io(loop);
 }
 
-API_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
+EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
 {
     int nevts;
     int errcode;
@@ -13619,7 +13608,7 @@ API_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
 /* AMALGAMATE: #include "misc_unix.h" */
 #include <errno.h>
 
-API_LOCAL int ev__translate_sys_error(int syserr)
+EV_LOCAL int ev__translate_sys_error(int syserr)
 {
     return ev__translate_posix_sys_error(syserr);
 }
@@ -14939,7 +14928,7 @@ static int _ev_spawn_parent(ev_process_t* handle, spawn_helper_t* spawn_helper)
     return EV_EPIPE;
 }
 
-API_LOCAL void ev__init_process_unix(void)
+EV_LOCAL void ev__init_process_unix(void)
 {
     ev_list_init(&g_ev_loop_unix_ctx.process.wait_queue);
     ev_mutex_init(&g_ev_loop_unix_ctx.process.wait_queue_mutex, 0);
@@ -15698,7 +15687,7 @@ static void _ev_nonblock_stream_on_io(ev_nonblock_io_t* io, unsigned evts, void*
     }
 }
 
-API_LOCAL void ev__nonblock_stream_init(ev_loop_t* loop,
+EV_LOCAL void ev__nonblock_stream_init(ev_loop_t* loop,
     ev_nonblock_stream_t* stream, int fd, ev_stream_write_cb wcb,
     ev_stream_read_cb rcb)
 {
@@ -15717,7 +15706,7 @@ API_LOCAL void ev__nonblock_stream_init(ev_loop_t* loop,
     stream->callbacks.r_cb = rcb;
 }
 
-API_LOCAL void ev__nonblock_stream_exit(ev_nonblock_stream_t* stream)
+EV_LOCAL void ev__nonblock_stream_exit(ev_nonblock_stream_t* stream)
 {
     ev__nonblock_stream_abort(stream);
     ev__nonblock_stream_cleanup(stream, EV_IO_IN | EV_IO_OUT);
@@ -15726,7 +15715,7 @@ API_LOCAL void ev__nonblock_stream_exit(ev_nonblock_stream_t* stream)
     stream->callbacks.r_cb = NULL;
 }
 
-API_LOCAL int ev__nonblock_stream_write(ev_nonblock_stream_t* stream, ev_write_t* req)
+EV_LOCAL int ev__nonblock_stream_write(ev_nonblock_stream_t* stream, ev_write_t* req)
 {
     if (stream->flags.io_abort)
     {
@@ -15743,7 +15732,7 @@ API_LOCAL int ev__nonblock_stream_write(ev_nonblock_stream_t* stream, ev_write_t
     return 0;
 }
 
-API_LOCAL int ev__nonblock_stream_read(ev_nonblock_stream_t* stream, ev_read_t* req)
+EV_LOCAL int ev__nonblock_stream_read(ev_nonblock_stream_t* stream, ev_read_t* req)
 {
     if (stream->flags.io_abort)
     {
@@ -15760,7 +15749,7 @@ API_LOCAL int ev__nonblock_stream_read(ev_nonblock_stream_t* stream, ev_read_t* 
     return 0;
 }
 
-API_LOCAL size_t ev__nonblock_stream_size(ev_nonblock_stream_t* stream, unsigned evts)
+EV_LOCAL size_t ev__nonblock_stream_size(ev_nonblock_stream_t* stream, unsigned evts)
 {
     size_t ret = 0;
     if (evts & EV_IO_IN)
@@ -15774,7 +15763,7 @@ API_LOCAL size_t ev__nonblock_stream_size(ev_nonblock_stream_t* stream, unsigned
     return ret;
 }
 
-API_LOCAL void ev__nonblock_stream_abort(ev_nonblock_stream_t* stream)
+EV_LOCAL void ev__nonblock_stream_abort(ev_nonblock_stream_t* stream)
 {
     if (!stream->flags.io_abort)
     {
@@ -15783,7 +15772,7 @@ API_LOCAL void ev__nonblock_stream_abort(ev_nonblock_stream_t* stream)
     }
 }
 
-API_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned evts)
+EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned evts)
 {
     if (evts & EV_IO_OUT)
     {
@@ -16260,7 +16249,7 @@ err:
     return ret;
 }
 
-API_LOCAL int ev__tcp_open(ev_tcp_t* tcp, int fd)
+EV_LOCAL int ev__tcp_open(ev_tcp_t* tcp, int fd)
 {
     int busy_flags = EV_HANDLE_TCP_LISTING | EV_HANDLE_TCP_ACCEPTING |
             EV_HANDLE_TCP_STREAMING | EV_HANDLE_TCP_CONNECTING | EV_HABDLE_TCP_BOUND;
@@ -16478,12 +16467,12 @@ static void _on_work_unix(ev_nonblock_io_t* io, unsigned evts, void* arg)
     ev__threadpool_process(loop);
 }
 
-API_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop)
+EV_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop)
 {
     ev__async_post(loop->backend.threadpool.evtfd[1]);
 }
 
-API_LOCAL void ev__init_work(ev_loop_t* loop)
+EV_LOCAL void ev__init_work(ev_loop_t* loop)
 {
     ev__asyc_eventfd(loop->backend.threadpool.evtfd);
 
@@ -16491,7 +16480,7 @@ API_LOCAL void ev__init_work(ev_loop_t* loop)
     ev__nonblock_io_add(loop, &loop->backend.threadpool.io, EV_IO_IN);
 }
 
-API_LOCAL void ev__exit_work(ev_loop_t* loop)
+EV_LOCAL void ev__exit_work(ev_loop_t* loop)
 {
     ev__async_eventfd_close(loop->backend.threadpool.evtfd[0]);
     loop->backend.threadpool.evtfd[0] = -1;
@@ -17110,7 +17099,7 @@ static int _ev_udp_set_ttl_unix(ev_udp_t* udp, int ttl, int option4, int option6
     return 0;
 }
 
-API_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
+EV_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
 {
     (void)req;
     if (ev_list_size(&udp->recv_list) == 1)
@@ -17123,7 +17112,7 @@ API_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
     return 0;
 }
 
-API_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
+EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
     const struct sockaddr* addr, socklen_t addrlen)
 {
     int ret;

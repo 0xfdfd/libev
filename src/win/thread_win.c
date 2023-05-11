@@ -39,7 +39,7 @@ static unsigned __stdcall _ev_thread_proxy_proc_win(void* lpThreadParameter)
     return 0;
 }
 
-API_LOCAL void ev__thread_init_win(void)
+EV_LOCAL void ev__thread_init_win(void)
 {
     int ret = ev_tls_init(&g_ev_loop_win_ctx.thread.thread_key);
     if (ret != 0)

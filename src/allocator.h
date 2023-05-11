@@ -10,7 +10,7 @@ extern "C" {
 /**
  * @brief Same as [strdup(3)](https://man7.org/linux/man-pages/man3/strdup.3.html)
  */
-API_LOCAL char* ev__strdup(const char* str);
+EV_LOCAL char* ev__strdup(const char* str);
 
 #ifdef __cplusplus
 }

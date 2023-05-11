@@ -7,7 +7,7 @@ int ev_tcp_non_ifs_lsp_ipv6;
 struct sockaddr_in ev_addr_ip4_any_;
 struct sockaddr_in6 ev_addr_ip6_any_;
 
-API_LOCAL void ev__winsock_init(void)
+EV_LOCAL void ev__winsock_init(void)
 {
 #define DETECT_IFS_LSP(AF, flag)    \
     do {\
@@ -61,7 +61,7 @@ API_LOCAL void ev__winsock_init(void)
 #undef DETECT_IFS_LSP
 }
 
-API_LOCAL int WSAAPI ev__wsa_recv_workaround(SOCKET socket, WSABUF* buffers,
+EV_LOCAL int WSAAPI ev__wsa_recv_workaround(SOCKET socket, WSABUF* buffers,
     DWORD buffer_count, DWORD* bytes, DWORD* flags, WSAOVERLAPPED* overlapped,
     LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine)
 {
@@ -156,7 +156,7 @@ API_LOCAL int WSAAPI ev__wsa_recv_workaround(SOCKET socket, WSABUF* buffers,
 	return SOCKET_ERROR;
 }
 
-API_LOCAL int WSAAPI ev__wsa_recvfrom_workaround(SOCKET socket, WSABUF* buffers,
+EV_LOCAL int WSAAPI ev__wsa_recvfrom_workaround(SOCKET socket, WSABUF* buffers,
     DWORD buffer_count, DWORD* bytes, DWORD* flags, struct sockaddr* addr,
     int* addr_len, WSAOVERLAPPED* overlapped,
     LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine)
@@ -256,7 +256,7 @@ API_LOCAL int WSAAPI ev__wsa_recvfrom_workaround(SOCKET socket, WSABUF* buffers,
     return SOCKET_ERROR;
 }
 
-API_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status)
+EV_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status)
 {
     switch (status)
     {

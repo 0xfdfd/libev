@@ -13,12 +13,12 @@ static void _on_work_unix(ev_nonblock_io_t* io, unsigned evts, void* arg)
     ev__threadpool_process(loop);
 }
 
-API_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop)
+EV_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop)
 {
     ev__async_post(loop->backend.threadpool.evtfd[1]);
 }
 
-API_LOCAL void ev__init_work(ev_loop_t* loop)
+EV_LOCAL void ev__init_work(ev_loop_t* loop)
 {
     ev__asyc_eventfd(loop->backend.threadpool.evtfd);
 
@@ -26,7 +26,7 @@ API_LOCAL void ev__init_work(ev_loop_t* loop)
     ev__nonblock_io_add(loop, &loop->backend.threadpool.io, EV_IO_IN);
 }
 
-API_LOCAL void ev__exit_work(ev_loop_t* loop)
+EV_LOCAL void ev__exit_work(ev_loop_t* loop)
 {
     ev__async_eventfd_close(loop->backend.threadpool.evtfd[0]);
     loop->backend.threadpool.evtfd[0] = -1;

@@ -486,7 +486,7 @@ static int _ev_udp_maybe_bind_win(ev_udp_t* udp, const struct sockaddr* addr, un
     return 0;
 }
 
-API_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
+EV_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
 {
     WSABUF buf;
     buf.buf = g_ev_loop_win_ctx.net.zero_;
@@ -518,7 +518,7 @@ API_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
     return ev__translate_sys_error(err);
 }
 
-API_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
+EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
     const struct sockaddr* addr, socklen_t addrlen)
 {
     int ret, err;

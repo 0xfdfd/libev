@@ -1,5 +1,8 @@
 #ifndef __EV_VERSION_H__
 #define __EV_VERSION_H__
+
+#include "ev/expose.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -48,13 +51,13 @@ extern "C" {
  * @brief Get version code as c string.
  * @return      Version code.
  */
-const char* ev_version_str(void);
+EV_API const char* ev_version_str(void);
 
 /**
  * @brief Get version code as number.
  * @return      Version code
  */
-unsigned ev_version_code(void);
+EV_API unsigned ev_version_code(void);
 
 /**
  * @} EV_VERSION

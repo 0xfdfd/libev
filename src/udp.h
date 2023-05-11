@@ -15,7 +15,7 @@ extern "C" {
  * @param[in] is_ipv6           Whether a IPv6 address. Only valid if \p interface_addr is NULL.
  * @return                      #ev_errno_t
  */
-API_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
+EV_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
         const char* interface_addr, int is_ipv6);
 
 /**
@@ -24,7 +24,7 @@ API_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
  * @param[in] req   Receive request
  * @return          #ev_errno_t
  */
-API_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req);
+EV_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req);
 
 /**
  * @brief Queue a UDP Send request
@@ -32,7 +32,7 @@ API_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req);
  * @param[in] req   Send request
  * @return          #ev_errno_t
  */
-API_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
+EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
     const struct sockaddr* addr, socklen_t addrlen);
 
 #ifdef __cplusplus

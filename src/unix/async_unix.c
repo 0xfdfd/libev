@@ -52,12 +52,12 @@ static void _ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
     ev__handle_exit(&handle->base, close_cb != NULL ? _ev_async_on_close : NULL);
 }
 
-API_LOCAL void ev__async_exit_force(ev_async_t* handle)
+EV_LOCAL void ev__async_exit_force(ev_async_t* handle)
 {
     _ev_async_exit(handle, NULL);
 }
 
-API_LOCAL int ev__asyc_eventfd(int evtfd[2])
+EV_LOCAL int ev__asyc_eventfd(int evtfd[2])
 {
     int errcode;
 
@@ -85,12 +85,12 @@ API_LOCAL int ev__asyc_eventfd(int evtfd[2])
     return 0;
 }
 
-API_LOCAL void ev__async_eventfd_close(int fd)
+EV_LOCAL void ev__async_eventfd_close(int fd)
 {
     close(fd);
 }
 
-API_LOCAL void ev__async_post(int wfd)
+EV_LOCAL void ev__async_post(int wfd)
 {
     uint64_t val = 1;
 
@@ -108,7 +108,7 @@ API_LOCAL void ev__async_post(int wfd)
     }
 }
 
-API_LOCAL void ev__async_pend(int rfd)
+EV_LOCAL void ev__async_pend(int rfd)
 {
     uint64_t val;
     int errcode;

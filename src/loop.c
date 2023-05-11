@@ -124,12 +124,12 @@ static size_t _ev_calculate_write_size(const ev_write_t* req)
     return total;
 }
 
-API_LOCAL void ev__loop_update_time(ev_loop_t* loop)
+EV_LOCAL void ev__loop_update_time(ev_loop_t* loop)
 {
     loop->hwtime = ev_hrtime() / 1000;
 }
 
-API_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size)
+EV_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size)
 {
     const ev_ipc_frame_hdr_t* hdr = buffer;
     if (size < sizeof(ev_ipc_frame_hdr_t))
@@ -145,7 +145,7 @@ API_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size)
     return 1;
 }
 
-API_LOCAL void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr, uint8_t flags, uint16_t exsz, uint32_t dtsz)
+EV_LOCAL void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr, uint8_t flags, uint16_t exsz, uint32_t dtsz)
 {
     hdr->hdr_magic = EV_IPC_FRAME_HDR_MAGIC;
     hdr->hdr_flags = flags;
@@ -156,7 +156,7 @@ API_LOCAL void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr, uint8_t flags, ui
     hdr->reserved = 0;
 }
 
-API_LOCAL ev_loop_t* ev__handle_loop(ev_handle_t* handle)
+EV_LOCAL ev_loop_t* ev__handle_loop(ev_handle_t* handle)
 {
     return handle->loop;
 }
@@ -256,7 +256,7 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
     return ret;
 }
 
-API_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf)
+EV_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf)
 {
     req->nbuf = nbuf;
 
@@ -279,7 +279,7 @@ API_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf)
     return 0;
 }
 
-API_LOCAL void ev__write_exit(ev_write_t* req)
+EV_LOCAL void ev__write_exit(ev_write_t* req)
 {
     if (req->bufs != req->bufsml)
     {
@@ -290,7 +290,7 @@ API_LOCAL void ev__write_exit(ev_write_t* req)
     req->nbuf = 0;
 }
 
-API_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf)
+EV_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf)
 {
     req->data.nbuf = nbuf;
 
@@ -313,7 +313,7 @@ API_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf)
     return 0;
 }
 
-API_LOCAL void ev__read_exit(ev_read_t* req)
+EV_LOCAL void ev__read_exit(ev_read_t* req)
 {
     if (req->data.bufs != req->data.bufsml)
     {
@@ -342,7 +342,7 @@ const char* ev_strerror(int err)
 #undef EV_EXPAND_ERRMAP
 }
 
-API_LOCAL socklen_t ev__get_addr_len(const struct sockaddr* addr)
+EV_LOCAL socklen_t ev__get_addr_len(const struct sockaddr* addr)
 {
     if (addr->sa_family == AF_INET)
     {

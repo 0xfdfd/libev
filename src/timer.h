@@ -12,13 +12,13 @@ extern "C" {
  * @brief Initialize timer context.
  * @param[out] loop Event loop
  */
-API_LOCAL void ev__init_timer(ev_loop_t* loop);
+EV_LOCAL void ev__init_timer(ev_loop_t* loop);
 
 /**
  * @brief Process timer.
  * @param[in] loop  Event loop
  */
-API_LOCAL void ev__process_timer(ev_loop_t* loop);
+EV_LOCAL void ev__process_timer(ev_loop_t* loop);
 
 #ifdef __cplusplus
 }

@@ -2,7 +2,7 @@
 #include "misc_unix.h"
 #include <errno.h>
 
-API_LOCAL int ev__translate_sys_error(int syserr)
+EV_LOCAL int ev__translate_sys_error(int syserr)
 {
     return ev__translate_posix_sys_error(syserr);
 }

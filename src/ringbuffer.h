@@ -110,7 +110,7 @@ typedef struct ring_buffer
  * @param[in] size          The size of memory area
  * @return                  Initialized ring buffer, the address is equal it \p buffer
  */
-API_LOCAL ring_buffer_t* ring_buffer_init(void* buffer, size_t size);
+EV_LOCAL ring_buffer_t* ring_buffer_init(void* buffer, size_t size);
 
 /**
  * @brief Acquire a token for write.
@@ -120,7 +120,7 @@ API_LOCAL ring_buffer_t* ring_buffer_init(void* buffer, size_t size);
  * @param[in] flags         #ring_buffer_flag_t
  * @return                  A token for write. This token must be committed by #ring_buffer_commit
  */
-API_LOCAL ring_buffer_token_t* ring_buffer_reserve(ring_buffer_t* handler, size_t size, int flags);
+EV_LOCAL ring_buffer_token_t* ring_buffer_reserve(ring_buffer_t* handler, size_t size, int flags);
 
 /**
  * @brief Acquire a token for read.
@@ -128,7 +128,7 @@ API_LOCAL ring_buffer_token_t* ring_buffer_reserve(ring_buffer_t* handler, size_
  * @param[in,out] handler   The pointer to the ring buffer
  * @return                  A token for read. This token must be committed by #ring_buffer_commit
  */
-API_LOCAL ring_buffer_token_t* ring_buffer_consume(ring_buffer_t* handler);
+EV_LOCAL ring_buffer_token_t* ring_buffer_consume(ring_buffer_t* handler);
 
 /**
  * @brief Commit a token.
@@ -162,7 +162,7 @@ API_LOCAL ring_buffer_token_t* ring_buffer_consume(ring_buffer_t* handler);
  * @param[in] flags         #ring_buffer_flag_t
  * @return                  0 if success, otherwise failure
  */
-API_LOCAL int ring_buffer_commit(ring_buffer_t* handler, ring_buffer_token_t* token, int flags);
+EV_LOCAL int ring_buffer_commit(ring_buffer_t* handler, ring_buffer_token_t* token, int flags);
 
 /**
  * @brief Get counter
@@ -170,27 +170,27 @@ API_LOCAL int ring_buffer_commit(ring_buffer_t* handler, ring_buffer_token_t* to
  * @param[out] counter  The pointer to counter
  * @return              The sum of all counter
  */
-API_LOCAL size_t ring_buffer_count(ring_buffer_t* handler, ring_buffer_counter_t* counter);
+EV_LOCAL size_t ring_buffer_count(ring_buffer_t* handler, ring_buffer_counter_t* counter);
 
 /**
  * @brief Get how much bytes the ring buffer structure cost
  * @return          size of ring_buffer_t
  */
-API_LOCAL size_t ring_buffer_heap_cost(void);
+EV_LOCAL size_t ring_buffer_heap_cost(void);
 
 /**
  * @brief Calculate the how much space of given size data will take place.
  * @param[in] size      The size of data
  * @return              The space of data will take place
  */
-API_LOCAL size_t ring_buffer_node_cost(size_t size);
+EV_LOCAL size_t ring_buffer_node_cost(size_t size);
 
 /**
  * @brief Get the begin node of ring buffer.
  * @param[in] handler   The ring buffer
  * @return              The iterator
  */
-API_LOCAL ring_buffer_token_t* ring_buffer_begin(const ring_buffer_t* handler);
+EV_LOCAL ring_buffer_token_t* ring_buffer_begin(const ring_buffer_t* handler);
 
 /**
  * @brief Get next token.
@@ -198,7 +198,7 @@ API_LOCAL ring_buffer_token_t* ring_buffer_begin(const ring_buffer_t* handler);
  * @param[in] token     The ring buffer token
  * @return              Next token
  */
-API_LOCAL ring_buffer_token_t* ring_buffer_next(const ring_buffer_t* handler,
+EV_LOCAL ring_buffer_token_t* ring_buffer_next(const ring_buffer_t* handler,
     const ring_buffer_token_t* token);
 
 #ifdef __cplusplus

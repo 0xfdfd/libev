@@ -4,7 +4,7 @@
 #include "misc_win.h"
 #include <assert.h>
 
-API_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src)
+EV_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src)
 {
     int errcode;
     int pathw_len = MultiByteToWideChar(CP_UTF8, 0, src, -1, NULL, 0);
@@ -29,7 +29,7 @@ API_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src)
     return r;
 }
 
-API_LOCAL ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src)
+EV_LOCAL ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src)
 {
     int errcode;
     int target_len = WideCharToMultiByte(CP_UTF8, 0, src, -1, NULL, 0,
@@ -54,7 +54,7 @@ API_LOCAL ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src)
     return (ssize_t)ret;
 }
 
-API_LOCAL int ev__translate_sys_error(int err)
+EV_LOCAL int ev__translate_sys_error(int err)
 {
     switch (err)
     {
@@ -161,7 +161,7 @@ API_LOCAL int ev__translate_sys_error(int err)
     }
 }
 
-API_LOCAL void ev__fatal_syscall(const char* file, int line,
+EV_LOCAL void ev__fatal_syscall(const char* file, int line,
     DWORD errcode, const char* syscall)
 {
     const char* errmsg = "Unknown error";

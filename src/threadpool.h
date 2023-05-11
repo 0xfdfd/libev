@@ -63,9 +63,9 @@ struct ev_threadpool
         },\
     }
 
-API_LOCAL void ev__loop_link_to_default_threadpool(ev_loop_t* loop);
+EV_LOCAL void ev__loop_link_to_default_threadpool(ev_loop_t* loop);
 
-API_LOCAL int ev_loop_unlink_threadpool(ev_loop_t* loop);
+EV_LOCAL int ev_loop_unlink_threadpool(ev_loop_t* loop);
 
 /**
  * @brief Initialize thread pool
@@ -75,14 +75,14 @@ API_LOCAL int ev_loop_unlink_threadpool(ev_loop_t* loop);
  * @param[in] num       Storage size
  * @return              #ev_errno_t
  */
-API_LOCAL int ev_threadpool_init(ev_threadpool_t* pool, const ev_thread_opt_t* opt,
+EV_LOCAL int ev_threadpool_init(ev_threadpool_t* pool, const ev_thread_opt_t* opt,
     ev_os_thread_t* storage, size_t num);
 
 /**
  * @brief Exit thread pool
  * @param[in] pool      Thread pool
  */
-API_LOCAL void ev_threadpool_exit(ev_threadpool_t* pool);
+EV_LOCAL void ev_threadpool_exit(ev_threadpool_t* pool);
 
 /**
  * @brief Link loop with thread pool.
@@ -93,7 +93,7 @@ API_LOCAL void ev_threadpool_exit(ev_threadpool_t* pool);
  * @param[in] pool      The Thread pool.
  * @return              #ev_errno_t
  */
-API_LOCAL int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool);
+EV_LOCAL int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool);
 
 /**
  * @brief Submit task into thread pool
@@ -107,7 +107,7 @@ API_LOCAL int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool);
  * @param[in] done_cb   Work done callback
  * @return              #ev_errno_t
  */
-API_LOCAL int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
+EV_LOCAL int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
     ev_work_t* token, ev_work_type_t type,
     ev_work_cb work_cb, ev_work_done_cb done_cb);
 
@@ -120,7 +120,7 @@ API_LOCAL int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
  * @param[in] done_cb   Work done callback.
  * @return              #ev_errno_t
  */
-API_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
+EV_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
     ev_work_t* work, ev_work_type_t type,
     ev_work_cb work_cb, ev_work_done_cb done_cb);
 
@@ -128,13 +128,13 @@ API_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
  * @brief Process thread pool events.
  * @param[in] loop Event loop.
  */
-API_LOCAL void ev__threadpool_process(ev_loop_t* loop);
+EV_LOCAL void ev__threadpool_process(ev_loop_t* loop);
 
 /**
  * @brief Wakeup event loop.
  * @param[in] loop Event loop.
  */
-API_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop);
+EV_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop);
 
 #ifdef __cplusplus
 }

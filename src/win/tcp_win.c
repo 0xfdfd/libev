@@ -751,7 +751,7 @@ int ev_tcp_read(ev_tcp_t* sock, ev_tcp_read_req_t* req,
     return 0;
 }
 
-API_LOCAL int ev__tcp_open_win(ev_tcp_t* tcp, SOCKET fd)
+EV_LOCAL int ev__tcp_open_win(ev_tcp_t* tcp, SOCKET fd)
 {
     tcp->sock = fd;
     if (!(tcp->base.data.flags & EV_HANDLE_TCP_STREAMING))

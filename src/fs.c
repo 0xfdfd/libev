@@ -922,7 +922,7 @@ ev_buf_t* ev_fs_get_filecontent(ev_fs_req_t* req)
     return &req->rsp.filecontent;
 }
 
-API_LOCAL int ev__fs_remove(const char* path, int recursive)
+EV_LOCAL int ev__fs_remove(const char* path, int recursive)
 {
     int ret;
 

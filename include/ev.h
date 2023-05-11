@@ -64,6 +64,7 @@
 #include <inttypes.h>
 #include <stdarg.h>
 
+#include "ev/expose.h"
 #include "ev/list.h"
 #include "ev/map.h"
 #include "ev/version.h"
@@ -268,28 +269,28 @@ typedef void (*ev_free_fn)(void* ptr);
  * @param[in] free_func     Replacement function for free.
  * @return On success, it returns 0. if any of the function pointers is NULL it returns #EV_EINVAL.
  */
-int ev_replace_allocator(ev_malloc_fn malloc_func, ev_calloc_fn calloc_func,
+EV_API int ev_replace_allocator(ev_malloc_fn malloc_func, ev_calloc_fn calloc_func,
     ev_realloc_fn realloc_func, ev_free_fn free_func);
 
 /**
  * @brief Same as [malloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
  */
-void* ev_malloc(size_t size);
+EV_API void* ev_malloc(size_t size);
 
 /**
  * @brief Same as [calloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
  */
-void* ev_calloc(size_t nmemb, size_t size);
+EV_API void* ev_calloc(size_t nmemb, size_t size);
 
 /**
  * @brief Same as [realloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
  */
-void* ev_realloc(void* ptr, size_t size);
+EV_API void* ev_realloc(void* ptr, size_t size);
 
 /**
  * @brief Same as [free(3)](https://man7.org/linux/man-pages/man3/free.3.html)
  */
-void ev_free(void* ptr);
+EV_API void ev_free(void* ptr);
 
 /**
  * @} EV_ALLOCATOR
@@ -324,7 +325,7 @@ typedef struct ev_queue_node
  * @brief Initialize circular linked list
  * @param[out] head     List handle
  */
-void ev_queue_init(ev_queue_node_t* head);
+EV_API void ev_queue_init(ev_queue_node_t* head);
 
 /**
  * @brief Insert a node to the tail of the list.
@@ -332,7 +333,7 @@ void ev_queue_init(ev_queue_node_t* head);
  * @param[in,out] head  Pointer to list
  * @param[in,out] node  Pointer to a new node
  */
-void ev_queue_push_back(ev_queue_node_t* head, ev_queue_node_t* node);
+EV_API void ev_queue_push_back(ev_queue_node_t* head, ev_queue_node_t* node);
 
 /**
  * @brief Insert a node to the head of the list.
@@ -340,41 +341,41 @@ void ev_queue_push_back(ev_queue_node_t* head, ev_queue_node_t* node);
  * @param[in,out] head      Pointer to list
  * @param[in,out] node      Pointer to a new node
  */
-void ev_queue_push_front(ev_queue_node_t* head, ev_queue_node_t* node);
+EV_API void ev_queue_push_front(ev_queue_node_t* head, ev_queue_node_t* node);
 
 /**
  * @brief Delete a exist node
  * @param[in,out] node      The node you want to delete
  */
-void ev_queue_erase(ev_queue_node_t* node);
+EV_API void ev_queue_erase(ev_queue_node_t* node);
 
 /**
  * @brief Check whether list is empty
  * @param[in] node          Any node in list
  * @return                  bool
  */
-int ev_queue_empty(const ev_queue_node_t* node);
+EV_API int ev_queue_empty(const ev_queue_node_t* node);
 
 /**
  * @brief Get the first node and remove it from the list.
  * @param[in,out] head      Pointer to list
  * @return                  The first node
  */
-ev_queue_node_t* ev_queue_pop_front(ev_queue_node_t* head);
+EV_API ev_queue_node_t* ev_queue_pop_front(ev_queue_node_t* head);
 
 /**
  * @brief Get the last node and remove it from the list.
  * @param[in,out] head      Pointer to list
  * @return                  The last node
  */
-ev_queue_node_t* ev_queue_pop_back(ev_queue_node_t* head);
+EV_API ev_queue_node_t* ev_queue_pop_back(ev_queue_node_t* head);
 
 /**
  * @brief Get the first node.
  * @param[in] head      Pointer to list
  * @return              The first node
  */
-ev_queue_node_t* ev_queue_head(ev_queue_node_t* head);
+EV_API ev_queue_node_t* ev_queue_head(ev_queue_node_t* head);
 
 /**
 * @brief Get next node.
@@ -382,7 +383,7 @@ ev_queue_node_t* ev_queue_head(ev_queue_node_t* head);
 * @param[in] node   Current node
 * @return           The next node
 */
-ev_queue_node_t* ev_queue_next(ev_queue_node_t* head, ev_queue_node_t* node);
+EV_API ev_queue_node_t* ev_queue_next(ev_queue_node_t* head, ev_queue_node_t* node);
 
 /**
  * @} EV_UTILS_QUEUE
@@ -399,20 +400,6 @@ ev_queue_node_t* ev_queue_next(ev_queue_node_t* head, ev_queue_node_t* node);
  * @{
  */
 
-struct ev_thread_opt;
-
-/**
- * @brief Typedef of #ev_thread_opt.
- */
-typedef struct ev_thread_opt ev_thread_opt_t;
-
-struct ev_tls;
-
-/**
- * @brief Typedef of #ev_tls.
- */
-typedef struct ev_tls ev_tls_t;
-
 /**
  * @brief Thread callback
  * @param[in] arg       User data
@@ -422,22 +409,22 @@ typedef void (*ev_thread_cb)(void* arg);
 /**
  * @brief Thread attribute.
  */
-struct ev_thread_opt
+typedef struct ev_thread_opt
 {
     struct
     {
         unsigned    have_stack_size : 1;    /**< Enable stack size */
     }flags;
     size_t          stack_size;             /**< Stack size. */
-};
+} ev_thread_opt_t;
 
 /**
  * @brief Thread local storage.
  */
-struct ev_tls
+typedef struct ev_tls
 {
     ev_os_tls_t     tls;                    /**< Thread local storage */
-};
+} ev_tls_t;
 
 /**
  * @brief Create thread
@@ -447,7 +434,7 @@ struct ev_tls
  * @param[in] arg   User data
  * @return          #ev_errno_t
  */
-int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
+EV_API int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
     ev_thread_cb cb, void* arg);
 
 /**
@@ -458,19 +445,19 @@ int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
  * @return              #EV_ETIMEDOUT if timed out before thread terminated,
  *                      #EV_SUCCESS if thread terminated.
  */
-int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout);
+EV_API int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout);
 
 /**
  * @brief Get self handle
  * @return          Thread handle
  */
-ev_os_thread_t ev_thread_self(void);
+EV_API ev_os_thread_t ev_thread_self(void);
 
 /**
  * @brief Get current thread id,
  * @return          Thread ID
  */
-ev_os_tid_t ev_thread_id(void);
+EV_API ev_os_tid_t ev_thread_id(void);
 
 /**
  * @brief Check whether two thread handle points to same thread
@@ -478,40 +465,40 @@ ev_os_tid_t ev_thread_id(void);
  * @param[in] t2    2st thread
  * @return          bool
  */
-int ev_thread_equal(const ev_os_thread_t* t1, const ev_os_thread_t* t2);
+EV_API int ev_thread_equal(const ev_os_thread_t* t1, const ev_os_thread_t* t2);
 
 /**
  * @brief Suspends the execution of the calling thread.
  * @param[in] timeout   Timeout in milliseconds.
  */
-void ev_thread_sleep(uint32_t timeout);
+EV_API void ev_thread_sleep(uint32_t timeout);
 
 /**
  * @brief Initialize thread local storage.
  * @param[out] tls  A pointer to thread local storage.
  * @return          #ev_errno_t
  */
-int ev_tls_init(ev_tls_t* tls);
+EV_API int ev_tls_init(ev_tls_t* tls);
 
 /**
  * @brief Destroy thread local storage.
  * @param[in] tls   A initialized thread local storage handler.
  */
-void ev_tls_exit(ev_tls_t* tls);
+EV_API void ev_tls_exit(ev_tls_t* tls);
 
 /**
  * @brief Set thread local value.
  * @param[in] tls   A initialized thread local storage handler.
  * @param[in] val   A thread specific value.
  */
-void ev_tls_set(ev_tls_t* tls, void* val);
+EV_API void ev_tls_set(ev_tls_t* tls, void* val);
 
 /**
  * @brief Get thread local value.
  * @param[in] tls   A initialized thread local storage handler.
  * @return          A thread specific value.
  */
-void* ev_tls_get(ev_tls_t* tls);
+EV_API void* ev_tls_get(ev_tls_t* tls);
 
 /**
  * @} EV_Thread
@@ -552,25 +539,25 @@ typedef struct ev_mutex
  *   recursive mutex. However, a value of zero does not means it is a non-
  *   recursive mutex, it is implementation depend.
  */
-void ev_mutex_init(ev_mutex_t* handle, int recursive);
+EV_API void ev_mutex_init(ev_mutex_t* handle, int recursive);
 
 /**
  * @brief Destroy the mutex object referenced by \p handle
  * @param[in] handle    Mutex object
  */
-void ev_mutex_exit(ev_mutex_t* handle);
+EV_API void ev_mutex_exit(ev_mutex_t* handle);
 
 /**
  * @brief The mutex object referenced by \p handle shall be locked.
  * @param[in] handle    Mutex object
  */
-void ev_mutex_enter(ev_mutex_t* handle);
+EV_API void ev_mutex_enter(ev_mutex_t* handle);
 
 /**
  * @brief Release the mutex object referenced by \p handle.
  * @param[in] handle    Mutex object
  */
-void ev_mutex_leave(ev_mutex_t* handle);
+EV_API void ev_mutex_leave(ev_mutex_t* handle);
 
 /**
  * @brief If the mutex object referenced by \p handle is currently locked, the
@@ -579,7 +566,7 @@ void ev_mutex_leave(ev_mutex_t* handle);
  * @return              #EV_SUCCESS: a lock on the mutex object referenced by \p handle is acquired.
  * @return              #EV_EBUSY: The \p handle could not be acquired because it was already locked.
  */
-int ev_mutex_try_enter(ev_mutex_t* handle);
+EV_API int ev_mutex_try_enter(ev_mutex_t* handle);
 
 /**
  * @} EV_MUTEX
@@ -608,25 +595,25 @@ typedef struct ev_sem_s
  * @param[out] sem      Semaphore to be initialized.
  * @param[in] value     Initial value
  */
-void ev_sem_init(ev_sem_t* sem, unsigned value);
+EV_API void ev_sem_init(ev_sem_t* sem, unsigned value);
 
 /**
  * @brief Destroy the unnamed semaphore at the address pointed to by \p sem.
  * @param[in] sem       Semaphore handle
  */
-void ev_sem_exit(ev_sem_t* sem);
+EV_API void ev_sem_exit(ev_sem_t* sem);
 
 /**
  * @brief Increments (unlocks)  the  semaphore pointed to by \p sem.
  * @param[in] sem       Semaphore handle
  */
-void ev_sem_post(ev_sem_t* sem);
+EV_API void ev_sem_post(ev_sem_t* sem);
 
 /**
  * @brief Decrements (locks) the semaphore pointed to by \p sem.
  * @param[in] sem       Semaphore handle
  */
-void ev_sem_wait(ev_sem_t* sem);
+EV_API void ev_sem_wait(ev_sem_t* sem);
 
 /**
  * @brief If the decrement cannot be immediately performed, then call returns an
@@ -634,7 +621,7 @@ void ev_sem_wait(ev_sem_t* sem);
  * @param[in] sem       Semaphore handle
  * @return              #EV_SUCCESS if success, #EV_EAGAIN if failed.
  */
-int ev_sem_try_wait(ev_sem_t* sem);
+EV_API int ev_sem_try_wait(ev_sem_t* sem);
 
 /**
  * @} EV_SEMAPHORE
@@ -667,7 +654,7 @@ typedef void(*ev_once_cb)(void);
  * @param[in] guard     A pointer to the one-time initialized structure.
  * @param[in] cb        A pointer to an application-defined #ev_once_cb function.
  */
-void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
+EV_API void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
 
 /**
  * @} EV_ONCE
@@ -678,22 +665,15 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
  * @{
  */
 
-struct ev_shm;
-
-/**
- * @brief Typedef of #ev_shm.
- */
-typedef struct ev_shm ev_shm_t;
-
 /**
  * @brief Shared memory type.
  */
-struct ev_shm
+typedef struct ev_shm
 {
     void*                   addr;       /**< Shared memory address */
     size_t                  size;       /**< Shared memory size */
     EV_SHM_BACKEND          backend;    /**< Backend */
-};
+} ev_shm_t;
 #define EV_SHM_INIT         { NULL, 0, EV_SHM_BACKEND_INVALID }
 
 /**
@@ -703,7 +683,7 @@ struct ev_shm
  * @param[in] size  Shared memory size
  * @return          #ev_errno_t
  */
-int ev_shm_init(ev_shm_t* shm, const char* key, size_t size);
+EV_API int ev_shm_init(ev_shm_t* shm, const char* key, size_t size);
 
 /**
  * @brief Open a existing shared memory
@@ -711,27 +691,27 @@ int ev_shm_init(ev_shm_t* shm, const char* key, size_t size);
  * @param[in] key   Shared memory key
  * @return          #ev_errno_t
  */
-int ev_shm_open(ev_shm_t* shm, const char* key);
+EV_API int ev_shm_open(ev_shm_t* shm, const char* key);
 
 /**
  * @brief Close shared memory
  * @param[in] shm   Shared memory token
  */
-void ev_shm_exit(ev_shm_t* shm);
+EV_API void ev_shm_exit(ev_shm_t* shm);
 
 /**
  * @brief Get shared memory address
  * @param[in] shm   Shared memory token
  * @return          Shared memory address
  */
-void* ev_shm_addr(ev_shm_t* shm);
+EV_API void* ev_shm_addr(ev_shm_t* shm);
 
 /**
  * @brief Get shared memory size
  * @param[in] shm   Shared memory token
  * @return          Shared memory size
  */
-size_t ev_shm_size(ev_shm_t* shm);
+EV_API size_t ev_shm_size(ev_shm_t* shm);
 
 /**
  * @} EV_SHARED_MEMORY
@@ -1018,7 +998,7 @@ struct ev_loop
  * @param[out] loop     Event loop handler
  * @return              #ev_errno_t
  */
-int ev_loop_init(ev_loop_t* loop);
+EV_API int ev_loop_init(ev_loop_t* loop);
 
 /**
  * @brief Releases all internal loop resources.
@@ -1030,7 +1010,7 @@ int ev_loop_init(ev_loop_t* loop);
  * @param[in] loop      Event loop handler.
  * @return #ev_errno_t
  */
-int ev_loop_exit(ev_loop_t* loop);
+EV_API int ev_loop_exit(ev_loop_t* loop);
 
 /**
  * @brief Stop the event loop, causing uv_run() to end as soon as possible.
@@ -1041,7 +1021,7 @@ int ev_loop_exit(ev_loop_t* loop);
  *
  * @param[in] loop      Event loop handler
  */
-void ev_loop_stop(ev_loop_t* loop);
+EV_API void ev_loop_stop(ev_loop_t* loop);
 
 /**
  * @brief This function runs the event loop.
@@ -1053,7 +1033,7 @@ void ev_loop_stop(ev_loop_t* loop);
  *                      otherwise return non-zero
  * @see ev_loop_mode_t
  */
-int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode);
+EV_API int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode);
 
 /**
  * @brief Submit task into thread pool.
@@ -1063,7 +1043,7 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode);
  * @param[in] done_cb   Work done callback in event loop.
  * @return              #ev_errno_t
  */
-int ev_loop_queue_work(ev_loop_t* loop, ev_work_t* token,
+EV_API int ev_loop_queue_work(ev_loop_t* loop, ev_work_t* token,
     ev_work_cb work_cb, ev_work_done_cb done_cb);
 
 /**
@@ -1073,7 +1053,7 @@ int ev_loop_queue_work(ev_loop_t* loop, ev_work_t* token,
  * @param[in] token     Work token
  * @return              #ev_errno_t
  */
-int ev_loop_cancel(ev_work_t* token);
+EV_API int ev_loop_cancel(ev_work_t* token);
 
 /**
  * @brief Walk the list of handles.
@@ -1082,7 +1062,7 @@ int ev_loop_cancel(ev_work_t* token);
  * @param[in] cb        Walk callback.
  * @param[in] arg       User defined argument.
  */
-void ev_loop_walk(ev_loop_t* loop, ev_walk_cb cb, void* arg);
+EV_API void ev_loop_walk(ev_loop_t* loop, ev_walk_cb cb, void* arg);
 
 /**
  * @} EV_EVENT_LOOP
@@ -1139,21 +1119,21 @@ struct ev_async
  * @param[in] cb        Active callback
  * @return              #ev_errno_t
  */
-int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb);
+EV_API int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb);
 
 /**
  * @brief Destroy the structure.
  * @param[in] handle    Async handle
  * @param[in] close_cb  Close callback
  */
-void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb);
+EV_API void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb);
 
 /**
  * @brief Wake up the event loop and call the async handle's callback.
  * @note MT-Safe
  * @param[in] handle    Async handle
  */
-void ev_async_wakeup(ev_async_t* handle);
+EV_API void ev_async_wakeup(ev_async_t* handle);
 
 /**
  * @} EV_ASYNC
@@ -1222,7 +1202,7 @@ struct ev_timer
  * @param[out] handle   The structure to initialize
  * @return              #ev_errno_t
  */
-int ev_timer_init(ev_loop_t* loop, ev_timer_t* handle);
+EV_API int ev_timer_init(ev_loop_t* loop, ev_timer_t* handle);
 
 /**
  * @brief Destroy the timer
@@ -1230,7 +1210,7 @@ int ev_timer_init(ev_loop_t* loop, ev_timer_t* handle);
  * @param[in] handle    Timer handle
  * @param[in] close_cb  Close callback
  */
-void ev_timer_exit(ev_timer_t* handle, ev_timer_cb close_cb);
+EV_API void ev_timer_exit(ev_timer_t* handle, ev_timer_cb close_cb);
 
 /**
  * @brief Start the timer. timeout and repeat are in milliseconds.
@@ -1245,7 +1225,7 @@ void ev_timer_exit(ev_timer_t* handle, ev_timer_cb close_cb);
  * @param[in] repeat    Repeat timeout
  * @return              #ev_errno_t
  */
-int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_t repeat);
+EV_API int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_t repeat);
 
 /**
  * @brief Stop the timer.
@@ -1254,7 +1234,7 @@ int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_
  *
  * @param[in] handle    Timer handle
  */
-void ev_timer_stop(ev_timer_t* handle);
+EV_API void ev_timer_stop(ev_timer_t* handle);
 
 /**
  * @} EV_TIMER
@@ -1420,14 +1400,14 @@ struct ev_tcp_write_req
  * @param[in] loop      Event loop
  * @param[out] tcp      TCP handle
  */
-int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp);
+EV_API int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp);
 
 /**
  * @brief Destroy socket
  * @param[in] sock      Socket
  * @param[in] cb        Destroy callback
  */
-void ev_tcp_exit(ev_tcp_t* sock, ev_tcp_close_cb cb);
+EV_API void ev_tcp_exit(ev_tcp_t* sock, ev_tcp_close_cb cb);
 
 /**
  * @brief Bind the handle to an address and port.
@@ -1437,7 +1417,7 @@ void ev_tcp_exit(ev_tcp_t* sock, ev_tcp_close_cb cb);
  * @param[in] addrlen   Address length
  * @return              #ev_errno_t
  */
-int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen);
+EV_API int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen);
 
 /**
  * @brief Start listening for incoming connections.
@@ -1445,7 +1425,7 @@ int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen);
  * @param[in] backlog   The number of connections the kernel might queue
  * @return              #ev_errno_t
  */
-int ev_tcp_listen(ev_tcp_t* sock, int backlog);
+EV_API int ev_tcp_listen(ev_tcp_t* sock, int backlog);
 
 /**
  * @brief Accept a connection from listen socket
@@ -1454,7 +1434,7 @@ int ev_tcp_listen(ev_tcp_t* sock, int backlog);
  * @param[in] cb    Accept callback
  * @return          #ev_errno_t
  */
-int ev_tcp_accept(ev_tcp_t* acpt, ev_tcp_t* conn, ev_tcp_accept_cb cb);
+EV_API int ev_tcp_accept(ev_tcp_t* acpt, ev_tcp_t* conn, ev_tcp_accept_cb cb);
 
 /**
  * @brief Connect to address
@@ -1464,7 +1444,7 @@ int ev_tcp_accept(ev_tcp_t* acpt, ev_tcp_t* conn, ev_tcp_accept_cb cb);
  * @param[in] cb    Connect callback
  * @return          #ev_errno_t
  */
-int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size,
+EV_API int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size,
     ev_tcp_connect_cb cb);
 
 /**
@@ -1486,7 +1466,7 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size,
  * @param[in] cb    Send result callback
  * @return          #ev_errno_t
  */
-int ev_tcp_write(ev_tcp_t* sock, ev_tcp_write_req_t* req,
+EV_API int ev_tcp_write(ev_tcp_t* sock, ev_tcp_write_req_t* req,
     ev_buf_t* bufs, size_t nbuf, ev_tcp_write_cb cb);
 
 /**
@@ -1508,7 +1488,7 @@ int ev_tcp_write(ev_tcp_t* sock, ev_tcp_write_req_t* req,
  * @param[in] cb    Read result callback
  * @return          #ev_errno_t
  */
-int ev_tcp_read(ev_tcp_t* sock, ev_tcp_read_req_t* req,
+EV_API int ev_tcp_read(ev_tcp_t* sock, ev_tcp_read_req_t* req,
     ev_buf_t* bufs, size_t nbuf, ev_tcp_read_cb cb);
 
 /**
@@ -1518,7 +1498,7 @@ int ev_tcp_read(ev_tcp_t* sock, ev_tcp_read_req_t* req,
  * @param[in,out] len   buffer size
  * @return          #ev_errno_t
  */
-int ev_tcp_getsockname(ev_tcp_t* sock, struct sockaddr* name, size_t* len);
+EV_API int ev_tcp_getsockname(ev_tcp_t* sock, struct sockaddr* name, size_t* len);
 
 /**
  * @brief Get the address of the peer connected to the socket.
@@ -1527,7 +1507,7 @@ int ev_tcp_getsockname(ev_tcp_t* sock, struct sockaddr* name, size_t* len);
  * @param[in,out] len   buffer size
  * @return          #ev_errno_t
  */
-int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len);
+EV_API int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len);
 
 /**
  * @} EV_TCP
@@ -1653,14 +1633,14 @@ struct ev_udp_read
  * @param[in] domain    AF_INET / AF_INET6 / AF_UNSPEC
  * @return              #ev_errno_t
  */
-int ev_udp_init(ev_loop_t* loop, ev_udp_t* udp, int domain);
+EV_API int ev_udp_init(ev_loop_t* loop, ev_udp_t* udp, int domain);
 
 /**
  * @brief Close UDP handle
  * @param[in] udp       A UDP handle
  * @param[in] close_cb  Close callback
  */
-void ev_udp_exit(ev_udp_t* udp, ev_udp_cb close_cb);
+EV_API void ev_udp_exit(ev_udp_t* udp, ev_udp_cb close_cb);
 
 /**
  * @brief Open a existing UDP socket
@@ -1669,7 +1649,7 @@ void ev_udp_exit(ev_udp_t* udp, ev_udp_cb close_cb);
  * @param[in] sock      A system UDP socket
  * @return              #ev_errno_t
  */
-int ev_udp_open(ev_udp_t* udp, ev_os_socket_t sock);
+EV_API int ev_udp_open(ev_udp_t* udp, ev_os_socket_t sock);
 
 /**
  * @brief Bind the UDP handle to an IP address and port.
@@ -1679,7 +1659,7 @@ int ev_udp_open(ev_udp_t* udp, ev_os_socket_t sock);
  * @param[in] flags     #ev_udp_flags_t
  * @return              #ev_errno_t
  */
-int ev_udp_bind(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags);
+EV_API int ev_udp_bind(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags);
 
 /**
  * @brief Associate the UDP handle to a remote address and port, so every message
@@ -1688,7 +1668,7 @@ int ev_udp_bind(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags);
  * @param[in] addr      Remote address
  * @return              #ev_errno_t
  */
-int ev_udp_connect(ev_udp_t* udp, const struct sockaddr* addr);
+EV_API int ev_udp_connect(ev_udp_t* udp, const struct sockaddr* addr);
 
 /**
  * @brief Get the local IP and port of the UDP handle.
@@ -1699,7 +1679,7 @@ int ev_udp_connect(ev_udp_t* udp, const struct sockaddr* addr);
  *   On output it indicates how much of it was filled.
  * @return              #ev_errno_t
  */
-int ev_udp_getsockname(ev_udp_t* udp, struct sockaddr* name, size_t* len);
+EV_API int ev_udp_getsockname(ev_udp_t* udp, struct sockaddr* name, size_t* len);
 
 /**
  * @brief Get the remote IP and port of the UDP handle on connected UDP handles.
@@ -1710,7 +1690,7 @@ int ev_udp_getsockname(ev_udp_t* udp, struct sockaddr* name, size_t* len);
  *   On output it indicates how much of it was filled.
  * @return              #ev_errno_t
  */
-int ev_udp_getpeername(ev_udp_t* udp, struct sockaddr* name, size_t* len);
+EV_API int ev_udp_getpeername(ev_udp_t* udp, struct sockaddr* name, size_t* len);
 
 /**
  * @brief Set membership for a multicast address.
@@ -1720,7 +1700,7 @@ int ev_udp_getpeername(ev_udp_t* udp, struct sockaddr* name, size_t* len);
  * @param[in] membership        #ev_udp_membership_t
  * @return                      #ev_errno_t
  */
-int ev_udp_set_membership(ev_udp_t* udp, const char* multicast_addr,
+EV_API int ev_udp_set_membership(ev_udp_t* udp, const char* multicast_addr,
     const char* interface_addr, ev_udp_membership_t membership);
 
 /**
@@ -1732,7 +1712,7 @@ int ev_udp_set_membership(ev_udp_t* udp, const char* multicast_addr,
  * @param[in] membership        #ev_udp_membership_t
  * @return                      #ev_errno_t
  */
-int ev_udp_set_source_membership(ev_udp_t* udp, const char* multicast_addr,
+EV_API int ev_udp_set_source_membership(ev_udp_t* udp, const char* multicast_addr,
     const char* interface_addr, const char* source_addr, ev_udp_membership_t membership);
 
 /**
@@ -1741,7 +1721,7 @@ int ev_udp_set_source_membership(ev_udp_t* udp, const char* multicast_addr,
  * @param[in] on    bool
  * @return          #ev_errno_t
  */
-int ev_udp_set_multicast_loop(ev_udp_t* udp, int on);
+EV_API int ev_udp_set_multicast_loop(ev_udp_t* udp, int on);
 
 /**
  * @brief Set the multicast ttl.
@@ -1749,7 +1729,7 @@ int ev_udp_set_multicast_loop(ev_udp_t* udp, int on);
  * @param[in] ttl   1 through 255
  * @return          #ev_errno_t
  */
-int ev_udp_set_multicast_ttl(ev_udp_t* udp, int ttl);
+EV_API int ev_udp_set_multicast_ttl(ev_udp_t* udp, int ttl);
 
 /**
  * @brief Set the multicast interface to send or receive data on.
@@ -1757,7 +1737,7 @@ int ev_udp_set_multicast_ttl(ev_udp_t* udp, int ttl);
  * @param[in] interface_addr    interface address.
  * @return                      #ev_errno_t
  */
-int ev_udp_set_multicast_interface(ev_udp_t* udp, const char* interface_addr);
+EV_API int ev_udp_set_multicast_interface(ev_udp_t* udp, const char* interface_addr);
 
 /**
  * @brief Set broadcast on or off.
@@ -1765,7 +1745,7 @@ int ev_udp_set_multicast_interface(ev_udp_t* udp, const char* interface_addr);
  * @param[in] on    1 for on, 0 for off
  * @return          #ev_errno_t
  */
-int ev_udp_set_broadcast(ev_udp_t* udp, int on);
+EV_API int ev_udp_set_broadcast(ev_udp_t* udp, int on);
 
 /**
  * @brief Set the time to live.
@@ -1773,7 +1753,7 @@ int ev_udp_set_broadcast(ev_udp_t* udp, int on);
  * @param[in] ttl   1 through 255.
  * @return          #ev_errno_t
  */
-int ev_udp_set_ttl(ev_udp_t* udp, int ttl);
+EV_API int ev_udp_set_ttl(ev_udp_t* udp, int ttl);
 
 /**
  * @brief Send data over the UDP socket.
@@ -1789,8 +1769,8 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl);
  * @param[in] cb    Send result callback
  * @return          #ev_errno_t
  */
-int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
-    const struct sockaddr* addr, ev_udp_write_cb cb);
+EV_API int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs,
+    size_t nbuf, const struct sockaddr* addr, ev_udp_write_cb cb);
 
 /**
  * @brief Same as #ev_udp_send(), but won't queue a send request if it can't be
@@ -1803,8 +1783,8 @@ int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
  * @param[in] cb    Send result callback
  * @return          #ev_errno_t
  */
-int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
-    const struct sockaddr* addr, ev_udp_write_cb cb);
+EV_API int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs,
+    size_t nbuf, const struct sockaddr* addr, ev_udp_write_cb cb);
 
 /**
  * @brief Queue a read request.
@@ -1815,8 +1795,8 @@ int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t n
  * @param[in] cb    Receive callback
  * @return          #ev_errno_t
  */
-int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf,
-    ev_udp_recv_cb cb);
+EV_API int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs,
+    size_t nbuf, ev_udp_recv_cb cb);
 
 /**
  * @} EV_UDP
@@ -1998,14 +1978,14 @@ struct ev_pipe_read_req
  * @param[in] ipc       Initialize as IPC mode.
  * @return              #ev_errno_t
  */
-int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe, int ipc);
+EV_API int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe, int ipc);
 
 /**
  * @brief Destroy pipe
  * @param[in] pipe      Pipe handle.
  * @param[in] cb        Destroy callback
  */
-void ev_pipe_exit(ev_pipe_t* pipe, ev_pipe_cb cb);
+EV_API void ev_pipe_exit(ev_pipe_t* pipe, ev_pipe_cb cb);
 
 /**
  * @brief Open an existing file descriptor or HANDLE as a pipe.
@@ -2014,7 +1994,7 @@ void ev_pipe_exit(ev_pipe_t* pipe, ev_pipe_cb cb);
  * @param[in] handle    File descriptor or HANDLE
  * @return              #ev_errno_t
  */
-int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle);
+EV_API int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle);
 
 /**
  * @brief Write data
@@ -2035,7 +2015,7 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle);
  * @param[in] cb    Write result callback
  * @return          #ev_errno_t
  */
-int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req, ev_buf_t* bufs,
+EV_API int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req, ev_buf_t* bufs,
     size_t nbuf, ev_pipe_write_cb cb);
 
 /**
@@ -2055,10 +2035,9 @@ int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req, ev_buf_t* bufs,
  * @param[in] cb            Write result callback
  * @return                  #ev_errno_t
  */
-int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
-    ev_buf_t* bufs, size_t nbuf,
-    ev_role_t handle_role, void* handle_addr, size_t handle_size,
-    ev_pipe_write_cb cb);
+EV_API int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
+    ev_buf_t* bufs, size_t nbuf, ev_role_t handle_role, void* handle_addr,
+    size_t handle_size, ev_pipe_write_cb cb);
 
 /**
  * @brief Read data
@@ -2079,7 +2058,7 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
  * @param[in] cb    Receive callback
  * @return          #ev_errno_t
  */
-int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
+EV_API int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
     size_t nbuf, ev_pipe_read_cb cb);
 
 /**
@@ -2095,7 +2074,7 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
  * @return  #EV_ENOENT: \p req does not receive a handle.
  * @return  #EV_ENOMEM: \p handle_size is too small.
  */
-int ev_pipe_accept(ev_pipe_t* pipe, ev_pipe_read_req_t* req,
+EV_API int ev_pipe_accept(ev_pipe_t* pipe, ev_pipe_read_req_t* req,
     ev_role_t handle_role, void* handle_addr, size_t handle_size);
 
 /**
@@ -2113,13 +2092,13 @@ int ev_pipe_accept(ev_pipe_t* pipe, ev_pipe_read_req_t* req,
  * @param[in] wflags    Bit-OR of #ev_pipe_flags_t for write pipe.
  * @return          #ev_errno_t
  */
-int ev_pipe_make(ev_os_pipe_t fds[2], int rflags, int wflags);
+EV_API int ev_pipe_make(ev_os_pipe_t fds[2], int rflags, int wflags);
 
 /**
  * @brief Close OS pipe.
  * @param[in] fd    pipe create by #ev_pipe_make().
  */
-void ev_pipe_close(ev_os_pipe_t fd);
+EV_API void ev_pipe_close(ev_os_pipe_t fd);
 
 /**
  * @} EV_PIPE
@@ -2388,14 +2367,14 @@ struct ev_fs_req_s
  * @param[out] file     File handle
  * @return              #ev_errno_t
  */
-int ev_file_init(ev_loop_t* loop, ev_file_t* file);
+EV_API int ev_file_init(ev_loop_t* loop, ev_file_t* file);
 
 /**
  * @brief Destroy a file handle
  * @param[in] file      File handle
  * @param[in] cb        Close callback
  */
-void ev_file_exit(ev_file_t* file, ev_file_close_cb cb);
+EV_API void ev_file_exit(ev_file_t* file, ev_file_close_cb cb);
 
 /**
  * @brief Equivalent to [open(2)](https://man7.org/linux/man-pages/man2/open.2.html).
@@ -2426,7 +2405,7 @@ void ev_file_exit(ev_file_t* file, ev_file_close_cb cb);
  * @param[in] cb        Open result callback.
  * @return              #ev_errno_t
  */
-int ev_file_open(ev_file_t* file, ev_fs_req_t* req, const char* path,
+EV_API int ev_file_open(ev_file_t* file, ev_fs_req_t* req, const char* path,
     int flags, int mode, ev_file_cb cb);
 
 /**
@@ -2438,7 +2417,8 @@ int ev_file_open(ev_file_t* file, ev_fs_req_t* req, const char* path,
  * @param[in] mode      Open mode.
  * @return              #ev_errno_t
  */
-int ev_file_open_sync(ev_file_t* file, const char* path, int flags, int mode);
+EV_API int ev_file_open_sync(ev_file_t* file, const char* path, int flags,
+    int mode);
 
 /**
  * @brief Set the file position indicator for the stream pointed to by \p file.
@@ -2452,7 +2432,8 @@ int ev_file_open_sync(ev_file_t* file, const char* path, int flags, int mode);
  * @param[in] cb        Result callback.
  * @return              #ev_errno_t
  */
-int ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence, ssize_t offset, ev_file_cb cb);
+EV_API int ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence,
+    ssize_t offset, ev_file_cb cb);
 
 /**
  * @brief Read data.
@@ -2463,7 +2444,7 @@ int ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence, ssize_t offset, 
  * @param[in] cb        Read callback.
  * @return              #ev_errno_t
  */
-int ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+EV_API int ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ev_file_cb cb);
 
 /**
@@ -2474,7 +2455,7 @@ int ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
  * @param[in] nbuf      Buffer amount.
  * @return              #ev_errno_t
  */
-ssize_t ev_file_read_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf);
+EV_API ssize_t ev_file_read_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf);
 
 /**
  * @brief Read position data.
@@ -2486,7 +2467,7 @@ ssize_t ev_file_read_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf);
  * @param[in] cb        Read callback.
  * @return              #ev_errno_t
  */
-int ev_file_pread(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+EV_API int ev_file_pread(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb);
 
 /**
@@ -2498,7 +2479,7 @@ int ev_file_pread(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
  * @param[in] offset    Offset of file.
  * @return              #ev_errno_t
  */
-ssize_t ev_file_pread_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
+EV_API ssize_t ev_file_pread_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
     ssize_t offset);
 
 /**
@@ -2511,7 +2492,7 @@ ssize_t ev_file_pread_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
  * @param[in] cb        Write callback.
  * @return              #ev_errno_t
  */
-int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+EV_API int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ev_file_cb cb);
 
 /**
@@ -2522,7 +2503,7 @@ int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
  * @param[in] nbuf      Buffer amount.
  * @return              #ev_errno_t
  */
-ssize_t ev_file_write_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf);
+EV_API ssize_t ev_file_write_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf);
 
 /**
  * @brief Write position data
@@ -2534,7 +2515,7 @@ ssize_t ev_file_write_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf);
  * @param[in] cb        Write callback.
  * @return              #ev_errno_t
  */
-int ev_file_pwrite(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+EV_API int ev_file_pwrite(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb);
 
 /**
@@ -2546,7 +2527,7 @@ int ev_file_pwrite(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
  * @param[in] offset    Offset of file.
  * @return              #ev_errno_t
  */
-ssize_t ev_file_pwrite_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
+EV_API ssize_t ev_file_pwrite_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
     ssize_t offset);
 
 /**
@@ -2556,7 +2537,7 @@ ssize_t ev_file_pwrite_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
  * @param[in] cb        Result callback.
  * @return              #ev_errno_t
  */
-int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_file_cb cb);
+EV_API int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_file_cb cb);
 
 /**
  * @brief Like #ev_file_stat(), but work in synchronous mode.
@@ -2565,7 +2546,7 @@ int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_file_cb cb);
  * @param[out] stat     File status.
  * @return              #ev_errno_t
  */
-int ev_file_stat_sync(ev_file_t* file, ev_fs_stat_t* stat);
+EV_API int ev_file_stat_sync(ev_file_t* file, ev_fs_stat_t* stat);
 
 /**
  * @brief Get all entry in directory.
@@ -2585,7 +2566,7 @@ int ev_file_stat_sync(ev_file_t* file, ev_fs_stat_t* stat);
  * @param[in] callback  Result callback.
  * @return              #ev_errno_t
  */
-int ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
+EV_API int ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
     ev_file_cb callback);
 
 /**
@@ -2599,7 +2580,7 @@ int ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
  * @param[in] cb        Result callback.
  * @return              #ev_errno_t
  */
-int ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
+EV_API int ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
     ev_file_cb cb);
 
 /**
@@ -2618,8 +2599,8 @@ int ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
  * @param[in] cb        Result callback.
  * @return              #ev_errno_t
  */
-int ev_fs_mkdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path, int mode,
-    ev_file_cb cb);
+EV_API int ev_fs_mkdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
+    int mode, ev_file_cb cb);
 
 /**
  * @brief Like #ev_fs_mkdir(), but work in synchronous mode.
@@ -2628,7 +2609,7 @@ int ev_fs_mkdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path, int mode,
  * @param[in] mode      Creation mode.
  * @return              #ev_errno_t
  */
-int ev_fs_mkdir_sync(const char* path, int mode);
+EV_API int ev_fs_mkdir_sync(const char* path, int mode);
 
 /**
  * @brief Delete a name for the file system.
@@ -2638,7 +2619,7 @@ int ev_fs_mkdir_sync(const char* path, int mode);
  * @param[in] cb        Result callback.
  * @return              #ev_errno_t
  */
-int ev_fs_remove(ev_loop_t* loop, ev_fs_req_t* req, const char* path, 
+EV_API int ev_fs_remove(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
     int recursion, ev_file_cb cb);
 
 /**
@@ -2647,48 +2628,48 @@ int ev_fs_remove(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
  * @param[in] recursion Recursion delete if path is a directory.
  * @return              #ev_errno_t
  */
-int ev_fs_remove_sync(const char* path, int recursion);
+EV_API int ev_fs_remove_sync(const char* path, int recursion);
 
 /**
  * @brief Cleanup file system request
  * @param[in] req       File system request
  */
-void ev_fs_req_cleanup(ev_fs_req_t* req);
+EV_API void ev_fs_req_cleanup(ev_fs_req_t* req);
 
 /**
  * @brief Get file handle from request.
  * @param[in] req       File system request.
  * @return              File handle.
  */
-ev_file_t* ev_fs_get_file(ev_fs_req_t* req);
+EV_API ev_file_t* ev_fs_get_file(ev_fs_req_t* req);
 
 /**
  * @brief Get stat buffer from \p req.
  * @param[in] req       A finish file system request
  * @return              Stat buf
  */
-ev_fs_stat_t* ev_fs_get_statbuf(ev_fs_req_t* req);
+EV_API ev_fs_stat_t* ev_fs_get_statbuf(ev_fs_req_t* req);
 
 /**
  * @brief Get first dirent information from \p req.
  * @param[in] req       File system request.
  * @return              Dirent information.
  */
-ev_dirent_t* ev_fs_get_first_dirent(ev_fs_req_t* req);
+EV_API ev_dirent_t* ev_fs_get_first_dirent(ev_fs_req_t* req);
 
 /**
  * @brief Get next dirent information.
  * @param[in] curr      Current dirent information.
  * @return              Next dirent information, or NULL if non-exists.
  */
-ev_dirent_t* ev_fs_get_next_dirent(ev_dirent_t* curr);
+EV_API ev_dirent_t* ev_fs_get_next_dirent(ev_dirent_t* curr);
 
 /**
  * @brief Get content of file.
  * @param[in] req       A finish file system request
  * @return              File content buffer.
  */
-ev_buf_t* ev_fs_get_filecontent(ev_fs_req_t* req);
+EV_API ev_buf_t* ev_fs_get_filecontent(ev_fs_req_t* req);
 
 /**
  * @} EV_FILESYSTEM
@@ -2872,14 +2853,15 @@ struct ev_process_s
  * @param[in] opt       Process options.
  * @return              #ev_errno_t
  */
-int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_options_t* opt);
+EV_API int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle,
+    const ev_process_options_t* opt);
 
 /**
  * @brief Exit process handle.
  * @param[in] handle    Process handle.
  * @param[in] cb        Exit callback.
  */
-void ev_process_exit(ev_process_t* handle, ev_process_exit_cb cb);
+EV_API void ev_process_exit(ev_process_t* handle, ev_process_exit_cb cb);
 
 /**
  * @brief Notify when process receive SIGCHLD.
@@ -2894,7 +2876,7 @@ void ev_process_exit(ev_process_t* handle, ev_process_exit_cb cb);
  *
  * @param[in] signum    Must always SIGCHLD.
  */
-void ev_process_sigchld(int signum);
+EV_API void ev_process_sigchld(int signum);
 
 /**
  * @brief Get current working directory.
@@ -2907,7 +2889,7 @@ void ev_process_sigchld(int signum);
  *   that the output was truncated.
  * @return #ev_errno_t if error occur.
  */
-ssize_t ev_getcwd(char* buffer, size_t size);
+EV_API ssize_t ev_getcwd(char* buffer, size_t size);
 
 /**
  * @brief Gets the executable path.
@@ -2919,7 +2901,7 @@ ssize_t ev_getcwd(char* buffer, size_t size);
  *   that the output was truncated.
  * @return #ev_errno_t if error occur.
  */
-ssize_t ev_exepath(char* buffer, size_t size);
+EV_API ssize_t ev_exepath(char* buffer, size_t size);
 
 /**
  * @}
@@ -2942,7 +2924,7 @@ ssize_t ev_exepath(char* buffer, size_t size);
  * @param[out] addr network address structure
  * @return          #ev_errno_t
  */
-int ev_ipv4_addr(const char* ip, int port, struct sockaddr_in* addr);
+EV_API int ev_ipv4_addr(const char* ip, int port, struct sockaddr_in* addr);
 
 /**
  * @brief Convert IPv6 ip and port into network address
@@ -2951,7 +2933,7 @@ int ev_ipv4_addr(const char* ip, int port, struct sockaddr_in* addr);
  * @param[out] addr network address structure
  * @return          #ev_errno_t
  */
-int ev_ipv6_addr(const char* ip, int port, struct sockaddr_in6* addr);
+EV_API int ev_ipv6_addr(const char* ip, int port, struct sockaddr_in6* addr);
 
 /**
  * @brief Convert ip and port into network address
@@ -2960,7 +2942,7 @@ int ev_ipv6_addr(const char* ip, int port, struct sockaddr_in6* addr);
  * @param[out] addr network address structure
  * @return          #ev_errno_t
  */
-int ev_ip_addr(const char* ip, int port, struct sockaddr* addr, size_t size);
+EV_API int ev_ip_addr(const char* ip, int port, struct sockaddr* addr, size_t size);
 
 /**
  * @brief Convert IPv4 network address into ip and port
@@ -2970,7 +2952,7 @@ int ev_ip_addr(const char* ip, int port, struct sockaddr* addr, size_t size);
  * @param[in] len   Buffer length
  * @return          #ev_errno_t
  */
-int ev_ipv4_name(const struct sockaddr_in* addr, int* port, char* ip, size_t len);
+EV_API int ev_ipv4_name(const struct sockaddr_in* addr, int* port, char* ip, size_t len);
 
 /**
  * @brief Convert IPv6 network address into ip and port
@@ -2980,7 +2962,7 @@ int ev_ipv4_name(const struct sockaddr_in* addr, int* port, char* ip, size_t len
  * @param[in] len   Buffer length
  * @return          #ev_errno_t
  */
-int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t len);
+EV_API int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t len);
 
 /**
  * @brief Convert network address into ip and port
@@ -2990,7 +2972,7 @@ int ev_ipv6_name(const struct sockaddr_in6* addr, int* port, char* ip, size_t le
  * @param[in] len   Buffer length
  * @return          #ev_errno_t
  */
-int ev_ip_name(const struct sockaddr* addr, int* port, char* ip, size_t len);
+EV_API int ev_ip_name(const struct sockaddr* addr, int* port, char* ip, size_t len);
 
 /**
  * @} EV_MISC_NET
@@ -3002,7 +2984,7 @@ int ev_ip_name(const struct sockaddr* addr, int* port, char* ip, size_t len);
  * @param[in] len   Buffer length
  * @return          A buffer
  */
-ev_buf_t ev_buf_make(void* buf, size_t len);
+EV_API ev_buf_t ev_buf_make(void* buf, size_t len);
 
 /**
  * @brief Constructor for #ev_buf_t list
@@ -3027,7 +3009,7 @@ ev_buf_t ev_buf_make(void* buf, size_t len);
  * @param[in] nbuf  Buffer number
  * @param[in] ...   Buffer info, must a pair of (void*, size_t)
  */
-void ev_buf_make_n(ev_buf_t bufs[], size_t nbuf, ...);
+EV_API void ev_buf_make_n(ev_buf_t bufs[], size_t nbuf, ...);
 
 /**
  * @brief Constructor for #ev_buf_t list
@@ -3037,7 +3019,7 @@ void ev_buf_make_n(ev_buf_t bufs[], size_t nbuf, ...);
  * @param[in] nbuf  Buffer number
  * @param[in] ap    va_list for Buffer array
  */
-void ev_buf_make_v(ev_buf_t bufs[], size_t nbuf, va_list ap);
+EV_API void ev_buf_make_v(ev_buf_t bufs[], size_t nbuf, va_list ap);
 
 /**
  * @brief Release any global state that holding onto.
@@ -3046,13 +3028,13 @@ void ev_buf_make_v(ev_buf_t bufs[], size_t nbuf, va_list ap);
  *   or I/O requests active.
  * @warning Don’t call libev functions after calling #ev_library_shutdown().
  */
-void ev_library_shutdown(void);
+EV_API void ev_library_shutdown(void);
 
 /**
  * @brief Returns the current high-resolution real time in microsecond.
  * @return Time in microsecond.
  */
-uint64_t ev_hrtime(void);
+EV_API uint64_t ev_hrtime(void);
 
 /**
  * @} EV_MISC

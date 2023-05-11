@@ -30,7 +30,7 @@ static void _ev_asyc_exit_win(ev_async_t* handle, ev_async_cb close_cb)
     ev__handle_exit(&handle->base, close_cb != NULL ? _ev_async_on_close_win : NULL);
 }
 
-API_LOCAL void ev__async_exit_force(ev_async_t* handle)
+EV_LOCAL void ev__async_exit_force(ev_async_t* handle)
 {
     _ev_asyc_exit_win(handle, NULL);
 }

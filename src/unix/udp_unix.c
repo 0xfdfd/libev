@@ -607,7 +607,7 @@ static int _ev_udp_set_ttl_unix(ev_udp_t* udp, int ttl, int option4, int option6
     return 0;
 }
 
-API_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
+EV_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
 {
     (void)req;
     if (ev_list_size(&udp->recv_list) == 1)
@@ -620,7 +620,7 @@ API_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
     return 0;
 }
 
-API_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
+EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
     const struct sockaddr* addr, socklen_t addrlen)
 {
     int ret;

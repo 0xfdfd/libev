@@ -28,7 +28,7 @@ typedef int (*ev_readdir_w_cb)(ev_dirent_w_t* info, void* arg);
  * @param[in] arg       User defined data.
  * @return              #ev_errno_t
  */
-API_LOCAL int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg);
+EV_LOCAL int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg);
 
 #ifdef __cplusplus
 }

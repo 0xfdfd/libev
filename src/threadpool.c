@@ -283,7 +283,7 @@ void ev_threadpool_exit(ev_threadpool_t* pool)
     ev_sem_exit(&pool->p2w_sem);
 }
 
-API_LOCAL void ev__loop_link_to_default_threadpool(ev_loop_t* loop)
+EV_LOCAL void ev__loop_link_to_default_threadpool(ev_loop_t* loop)
 {
     _ev_threadpool_init_default();
     if (loop->threadpool.pool == NULL)
@@ -292,7 +292,7 @@ API_LOCAL void ev__loop_link_to_default_threadpool(ev_loop_t* loop)
     }
 }
 
-API_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
+EV_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
     ev_work_t* work,
     ev_work_type_t type, ev_work_cb work_cb,
     ev_work_done_cb done_cb)
@@ -302,7 +302,7 @@ API_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
     return ev_threadpool_submit(pool, loop, work, type, work_cb, done_cb);
 }
 
-API_LOCAL int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool)
+EV_LOCAL int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool)
 {
     if (loop->threadpool.pool != NULL)
     {
@@ -354,7 +354,7 @@ int ev_loop_queue_work(ev_loop_t* loop, ev_work_t* token,
         EV_THREADPOOL_WORK_CPU, work_cb, done_cb);
 }
 
-API_LOCAL void ev__threadpool_process(ev_loop_t* loop)
+EV_LOCAL void ev__threadpool_process(ev_loop_t* loop)
 {
     ev_list_node_t* node;
     for (;;)

@@ -257,7 +257,7 @@ static int _ev_spawn_parent(ev_process_t* handle, spawn_helper_t* spawn_helper)
     return EV_EPIPE;
 }
 
-API_LOCAL void ev__init_process_unix(void)
+EV_LOCAL void ev__init_process_unix(void)
 {
     ev_list_init(&g_ev_loop_unix_ctx.process.wait_queue);
     ev_mutex_init(&g_ev_loop_unix_ctx.process.wait_queue_mutex, 0);

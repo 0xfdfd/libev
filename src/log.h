@@ -36,7 +36,7 @@ typedef enum ev_log_level
  * @param[in] fmt   Log format
  * @param[in] ...   Argument list
  */
-API_LOCAL void ev__log(ev_log_level_t level, const char* file, const char* func,
+EV_LOCAL void ev__log(ev_log_level_t level, const char* file, const char* func,
     int line, const char* fmt, ...);
 
 /**
@@ -45,7 +45,7 @@ API_LOCAL void ev__log(ev_log_level_t level, const char* file, const char* func,
  * @param[in] size  Data size
  * @param[in] width Line width
  */
-API_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width);
+EV_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width);
 
 #ifdef __cplusplus
 }

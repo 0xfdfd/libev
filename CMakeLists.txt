@@ -135,6 +135,7 @@ add_custom_command(
             --out       ${CMAKE_CURRENT_SOURCE_DIR}/ev.h
             --commit    ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
             --commit    ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md
+            --source    "include/ev/expose.h"
             --source    "include/ev/version.h"
             --source    "include/ev/list.h"
             --source    "include/ev/map.h"
@@ -149,6 +150,7 @@ add_custom_command(
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.lua
             ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
             ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/expose.h
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/version.h
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/list.h
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/map.h
@@ -165,6 +167,7 @@ add_custom_command(
             --out               ${CMAKE_CURRENT_SOURCE_DIR}/ev.c
             --commit            ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
             --string            "#define EV_AMALGAMATE_BUILD"
+            --string            "#define EV_EXPOSE_SYMBOLS"
             --string            "#define _GNU_SOURCE"
             --string            "#include \"ev.h\""
             --source            ${escaped_ev_src}

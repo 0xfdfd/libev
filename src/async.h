@@ -12,7 +12,7 @@ extern "C" {
  * @brief Force destroy #ev_async_t.
  * @param[in] handle    A initialized #ev_async_t handler.
  */
-API_LOCAL void ev__async_exit_force(ev_async_t* handle);
+EV_LOCAL void ev__async_exit_force(ev_async_t* handle);
 
 #ifdef __cplusplus
 }

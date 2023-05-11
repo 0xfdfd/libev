@@ -74,7 +74,7 @@ void ev_free(void* ptr)
     ev__allocator.free_func(ptr);
 }
 
-API_LOCAL char* ev__strdup(const char* s)
+EV_LOCAL char* ev__strdup(const char* s)
 {
     size_t len = strlen(s) + 1;
     char* m = ev_malloc(len);

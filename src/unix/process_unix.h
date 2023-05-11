@@ -17,7 +17,7 @@ typedef struct ev_process_ctx_s
 /**
  * @brief Initialize process context.
  */
-API_LOCAL void ev__init_process_unix(void);
+EV_LOCAL void ev__init_process_unix(void);
 
 #ifdef __cplusplus
 }

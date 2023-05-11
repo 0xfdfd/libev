@@ -498,7 +498,7 @@ extern ev_winapi_t ev_winapi;
 /**
  * @brief Initialize WinAPI
  */
-API_LOCAL void ev__winapi_init(void);
+EV_LOCAL void ev__winapi_init(void);
 
 #ifdef __cplusplus
 }

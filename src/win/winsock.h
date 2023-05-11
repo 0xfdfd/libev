@@ -50,14 +50,14 @@ extern int ev_tcp_non_ifs_lsp_ipv6;
 extern struct sockaddr_in ev_addr_ip4_any_;
 extern struct sockaddr_in6 ev_addr_ip6_any_;
 
-API_LOCAL int WSAAPI ev__wsa_recv_workaround(SOCKET socket, WSABUF* buffers,
+EV_LOCAL int WSAAPI ev__wsa_recv_workaround(SOCKET socket, WSABUF* buffers,
 	DWORD buffer_count, DWORD* bytes, DWORD* flags, WSAOVERLAPPED* overlapped,
 	LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine);
 
 /**
  * @brief 
  */
-API_LOCAL int WSAAPI ev__wsa_recvfrom_workaround(SOCKET socket, WSABUF* buffers,
+EV_LOCAL int WSAAPI ev__wsa_recvfrom_workaround(SOCKET socket, WSABUF* buffers,
 	DWORD buffer_count, DWORD* bytes, DWORD* flags, struct sockaddr* addr,
 	int* addr_len, WSAOVERLAPPED* overlapped,
 	LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine);
@@ -65,14 +65,14 @@ API_LOCAL int WSAAPI ev__wsa_recvfrom_workaround(SOCKET socket, WSABUF* buffers,
 /**
  * @brief Initialize winsock.
  */
-API_LOCAL void ev__winsock_init(void);
+EV_LOCAL void ev__winsock_init(void);
 
 /**
  * @brief Convert typeof NTSTATUS error to typeof WinSock error
  * @param[in] status  NTSTATUS error
  * @return WinSock error
  */
-API_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status);
+EV_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status);
 
 #ifdef __cplusplus
 }

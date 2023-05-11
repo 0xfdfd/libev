@@ -86,7 +86,7 @@ uint64_t ev_hrtime(void)
     return _ev_hrtime_win(1000000);
 }
 
-API_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
+EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
 {
     int repeat;
     BOOL success;
@@ -136,14 +136,14 @@ API_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
     }
 }
 
-API_LOCAL void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg)
+EV_LOCAL void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg)
 {
     req->cb = callback;
     req->arg = arg;
     memset(&req->overlapped, 0, sizeof(req->overlapped));
 }
 
-API_LOCAL void ev__loop_exit_backend(ev_loop_t* loop)
+EV_LOCAL void ev__loop_exit_backend(ev_loop_t* loop)
 {
     ev__threadpool_exit_win(loop);
 
@@ -154,13 +154,13 @@ API_LOCAL void ev__loop_exit_backend(ev_loop_t* loop)
     }
 }
 
-API_LOCAL void ev__init_once_win(void)
+EV_LOCAL void ev__init_once_win(void)
 {
     static ev_once_t once = EV_ONCE_INIT;
     ev_once_execute(&once, _ev_init_once_win);
 }
 
-API_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
+EV_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
 {
     ev__init_once_win();
 
@@ -176,7 +176,7 @@ API_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
     return 0;
 }
 
-API_LOCAL void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req)
+EV_LOCAL void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req)
 {
     DWORD errcode;
     if (!PostQueuedCompletionStatus(loop->backend.iocp, 0, 0, &req->overlapped))
@@ -186,7 +186,7 @@ API_LOCAL void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req)
     }
 }
 
-API_LOCAL int ev__reuse_win(SOCKET sock, int opt)
+EV_LOCAL int ev__reuse_win(SOCKET sock, int opt)
 {
     DWORD optval = !!opt;
     int optlen = sizeof(optval);
@@ -201,7 +201,7 @@ API_LOCAL int ev__reuse_win(SOCKET sock, int opt)
     return 0;
 }
 
-API_LOCAL int ev__ipv6only_win(SOCKET sock, int opt)
+EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt)
 {
     DWORD optval = !!opt;
     int optlen = sizeof(optval);

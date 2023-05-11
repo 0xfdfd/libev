@@ -31,12 +31,12 @@ static void _ev_timer_on_close(ev_handle_t* handle)
     }
 }
 
-API_LOCAL void ev__init_timer(ev_loop_t* loop)
+EV_LOCAL void ev__init_timer(ev_loop_t* loop)
 {
     ev_map_init(&loop->timer.heap, _ev_cmp_timer, NULL);
 }
 
-API_LOCAL void ev__process_timer(ev_loop_t* loop)
+EV_LOCAL void ev__process_timer(ev_loop_t* loop)
 {
     ev_map_node_t* it;
     while ((it = ev_map_begin(&loop->timer.heap)) != NULL)

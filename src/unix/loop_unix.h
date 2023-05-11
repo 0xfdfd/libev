@@ -23,7 +23,7 @@ extern ev_loop_unix_ctx_t g_ev_loop_unix_ctx;
 /**
  * @brief Initialize windows context.
  */
-API_LOCAL void ev__init_once_unix(void);
+EV_LOCAL void ev__init_once_unix(void);
 
 #ifdef __cplusplus
 }

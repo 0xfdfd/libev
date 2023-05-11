@@ -32,7 +32,7 @@ extern ev_loop_win_ctx_t        g_ev_loop_win_ctx;          /**< Global runtime 
 /**
  * @brief Initialize windows context.
  */
-API_LOCAL void ev__init_once_win(void);
+EV_LOCAL void ev__init_once_win(void);
 
 /**
  * @brief Initialize IOCP request
@@ -40,14 +40,14 @@ API_LOCAL void ev__init_once_win(void);
  * @param[in] callback  A callback when the request is finish
  * @param[in] arg       User defined argument passed to callback
  */
-API_LOCAL void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg);
+EV_LOCAL void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg);
 
 /**
  * @brief Post to specific IOCP request.
  * @param[in] loop      Event loop
  * @param[in] req       IOCP request
  */
-API_LOCAL void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req);
+EV_LOCAL void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req);
 
 /**
  * @brief Set \p sock as reusable address.
@@ -55,7 +55,7 @@ API_LOCAL void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req);
  * @param[in] opt   0 if not reusable, otherwise reusable.
  * @return          #ev_errnot_t
  */
-API_LOCAL int ev__reuse_win(SOCKET sock, int opt);
+EV_LOCAL int ev__reuse_win(SOCKET sock, int opt);
 
 /**
  * @brief Set \p sock as IPv6 only.
@@ -63,7 +63,7 @@ API_LOCAL int ev__reuse_win(SOCKET sock, int opt);
  * @param[in] opt   0 if IPv4 available, otherwise IPv6 only.
  * @return          #ev_errnot_t
  */
-API_LOCAL int ev__ipv6only_win(SOCKET sock, int opt);
+EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt);
 
 #ifdef __cplusplus
 }

@@ -151,7 +151,7 @@ void ev_buf_make_v(ev_buf_t bufs[], size_t nbuf, va_list ap)
     }
 }
 
-API_LOCAL int ev__translate_posix_sys_error(int syserr)
+EV_LOCAL int ev__translate_posix_sys_error(int syserr)
 {
 #define EV_EXPAND_ERRMAP(err, syserr, str) case syserr: return err;
 

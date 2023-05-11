@@ -17,7 +17,7 @@ typedef enum ev_ipc_frame_flag
  * @param[in] handle    handler
  * @return              Event loop
  */
-API_LOCAL ev_loop_t* ev__handle_loop(ev_handle_t* handle);
+EV_LOCAL ev_loop_t* ev__handle_loop(ev_handle_t* handle);
 
 /**
  * @brief Check IPC frame header
@@ -25,7 +25,7 @@ API_LOCAL ev_loop_t* ev__handle_loop(ev_handle_t* handle);
  * @param[in] size      Buffer size
  * @return              bool
  */
-API_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size);
+EV_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size);
 
 /**
  * @brief Initialize IPC frame header
@@ -34,21 +34,21 @@ API_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size);
  * @param[in] exsz      Extra information size
  * @param[in] dtsz      Data size
  */
-API_LOCAL void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr,
+EV_LOCAL void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr,
     uint8_t flags, uint16_t exsz, uint32_t dtsz);
 
 /**
  * @brief Update loop time
  * @param[in] loop  loop handler
  */
-API_LOCAL void ev__loop_update_time(ev_loop_t* loop);
+EV_LOCAL void ev__loop_update_time(ev_loop_t* loop);
 
 /**
  * @brief Get minimal length of specific \p addr type.
  * @param[in] addr  A valid sockaddr buffer
  * @return          A valid minimal length, or (socklen_t)-1 if error.
  */
-API_LOCAL socklen_t ev__get_addr_len(const struct sockaddr* addr);
+EV_LOCAL socklen_t ev__get_addr_len(const struct sockaddr* addr);
 
 /**
  * @brief Initialize #ev_write_t
@@ -57,13 +57,13 @@ API_LOCAL socklen_t ev__get_addr_len(const struct sockaddr* addr);
  * @param[in] nbuf  Buffer list size, can not larger than #EV_IOV_MAX.
  * @return          #ev_errno_t
  */
-API_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf);
+EV_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf);
 
 /**
  * @brief Cleanup write request
  * @param[in] req   Write request
  */
-API_LOCAL void ev__write_exit(ev_write_t* req);
+EV_LOCAL void ev__write_exit(ev_write_t* req);
 
 /**
  * @brief Initialize #ev_read_t
@@ -72,33 +72,33 @@ API_LOCAL void ev__write_exit(ev_write_t* req);
  * @param[in] nbuf  Buffer list size, can not larger than #EV_IOV_MAX.
  * @return          #ev_errno_t
  */
-API_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf);
+EV_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf);
 
 /**
  * @brief Cleanup read request
  * @param[in] req   read request
  */
-API_LOCAL void ev__read_exit(ev_read_t* req);
+EV_LOCAL void ev__read_exit(ev_read_t* req);
 
 /**
  * @brief Initialize backend
  * @param[in] loop      loop handler
  * @return              #ev_errno_t
  */
-API_LOCAL int ev__loop_init_backend(ev_loop_t* loop);
+EV_LOCAL int ev__loop_init_backend(ev_loop_t* loop);
 
 /**
  * @brief Destroy backend
  * @param[in] loop  loop handler
  */
-API_LOCAL void ev__loop_exit_backend(ev_loop_t* loop);
+EV_LOCAL void ev__loop_exit_backend(ev_loop_t* loop);
 
 /**
  * @brief Wait for IO event and process
  * @param[in] loop  loop handler
  * @param[in] timeout   timeout in milliseconds
  */
-API_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout);
+EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout);
 
 #ifdef __cplusplus
 }

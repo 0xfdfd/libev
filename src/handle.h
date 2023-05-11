@@ -46,7 +46,7 @@ typedef enum ev_handle_flag
  * @param[out] handle   A pointer to the structure
  * @param[in] role      Who we are
  */
-API_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t role);
+EV_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t role);
 
 /**
  * @brief Close the handle
@@ -58,35 +58,35 @@ API_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t r
  * @param[in] close_cb  Close callback. If non-null, the \p close_cb will be
  *   called in next event loop. If null, the handle will be closed synchronously.
  */
-API_LOCAL void ev__handle_exit(ev_handle_t* handle, ev_handle_cb close_cb);
+EV_LOCAL void ev__handle_exit(ev_handle_t* handle, ev_handle_cb close_cb);
 
 /**
  * @brief Add active event counter. If active event counter is non-zero,
  *   #EV_HANDLE_ACTIVE is appended.
  * @param[in] handle    Handler.
  */
-API_LOCAL void ev__handle_event_add(ev_handle_t* handle);
+EV_LOCAL void ev__handle_event_add(ev_handle_t* handle);
 
 /**
  * @brief Decrease active event counter. If active event counter is zero,
  *   #EV_HANDLE_ACTIVE is removed.
  * @param[in] handle    Handler.
  */
-API_LOCAL void ev__handle_event_dec(ev_handle_t* handle);
+EV_LOCAL void ev__handle_event_dec(ev_handle_t* handle);
 
 /**
  * @brief Check if the handle is in active state
  * @param[in] handle    handler
  * @return              bool
  */
-API_LOCAL int ev__handle_is_active(ev_handle_t* handle);
+EV_LOCAL int ev__handle_is_active(ev_handle_t* handle);
 
 /**
  * @brief Check if the handle is in closing or closed state
  * @param[in] handle    handler
  * @return              bool
  */
-API_LOCAL int ev__handle_is_closing(ev_handle_t* handle);
+EV_LOCAL int ev__handle_is_closing(ev_handle_t* handle);
 
 /**
  * @brief Queue a task.
@@ -95,19 +95,19 @@ API_LOCAL int ev__handle_is_closing(ev_handle_t* handle);
  * @param[in] callback  Task callback
  * @return              #ev_errno_t
  */
-API_LOCAL int ev__backlog_submit(ev_handle_t* handle, ev_handle_cb callback);
+EV_LOCAL int ev__backlog_submit(ev_handle_t* handle, ev_handle_cb callback);
 
 /**
  * @brief Process backlog events.
  * @param[in] loop Event loop.
  */
-API_LOCAL void ev__process_backlog(ev_loop_t* loop);
+EV_LOCAL void ev__process_backlog(ev_loop_t* loop);
 
 /**
  * @brief Process endgame events.
  * @param[in] loop Event loop.
  */
-API_LOCAL void ev__process_endgame(ev_loop_t* loop);
+EV_LOCAL void ev__process_endgame(ev_loop_t* loop);
 
 #ifdef __cplusplus
 }

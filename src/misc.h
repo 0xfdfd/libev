@@ -13,9 +13,9 @@ extern "C" {
  * @param[in] syserr    System error
  * @return              #ev_errno_t
  */
-API_LOCAL int ev__translate_sys_error(int syserr);
+EV_LOCAL int ev__translate_sys_error(int syserr);
 
-API_LOCAL int ev__translate_posix_sys_error(int syserr);
+EV_LOCAL int ev__translate_posix_sys_error(int syserr);
 
 #ifdef __cplusplus
 }

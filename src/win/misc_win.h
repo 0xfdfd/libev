@@ -16,7 +16,7 @@ extern "C" {
  * @param[in] src   Source string.
  * @return          The number of characters (not bytes) of \p dst, or #ev_errno_t if error.
  */
-API_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src);
+EV_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src);
 
 /**
  * @brief Maps a UTF-16 (wide character) string to a character string.
@@ -24,9 +24,9 @@ API_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src);
  * @param[in] src   Source string.
  * @return          The number of characters (not bytes) of \p dst, or #ev_errno_t if error.
  */
-API_LOCAL ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src);
+EV_LOCAL ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src);
 
-API_LOCAL void ev__fatal_syscall(const char* file, int line,
+EV_LOCAL void ev__fatal_syscall(const char* file, int line,
 	DWORD errcode, const char* syscall);
 
 #ifdef __cplusplus

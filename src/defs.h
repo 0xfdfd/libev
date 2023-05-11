@@ -16,18 +16,6 @@
 extern "C" {
 #endif
 
-#if defined(EV_AMALGAMATE_BUILD)
-#   if defined(__GNUC__) || defined(__clang__)
-#       define API_LOCAL    static __attribute__((unused))
-#   else
-#       define API_LOCAL    static
-#   endif
-#elif (defined(__GNUC__) || defined(__clang__)) && !defined(_WIN32)
-#   define API_LOCAL    __attribute__((visibility ("hidden")))
-#else
-#   define API_LOCAL
-#endif
-
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #   define EV_IPC_FRAME_HDR_MAGIC  (0x48465645)
 #elif __BYTE_ORDER == __BIG_ENDIAN

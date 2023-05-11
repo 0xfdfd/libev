@@ -143,7 +143,7 @@ static void _ev_nonblock_stream_on_io(ev_nonblock_io_t* io, unsigned evts, void*
     }
 }
 
-API_LOCAL void ev__nonblock_stream_init(ev_loop_t* loop,
+EV_LOCAL void ev__nonblock_stream_init(ev_loop_t* loop,
     ev_nonblock_stream_t* stream, int fd, ev_stream_write_cb wcb,
     ev_stream_read_cb rcb)
 {
@@ -162,7 +162,7 @@ API_LOCAL void ev__nonblock_stream_init(ev_loop_t* loop,
     stream->callbacks.r_cb = rcb;
 }
 
-API_LOCAL void ev__nonblock_stream_exit(ev_nonblock_stream_t* stream)
+EV_LOCAL void ev__nonblock_stream_exit(ev_nonblock_stream_t* stream)
 {
     ev__nonblock_stream_abort(stream);
     ev__nonblock_stream_cleanup(stream, EV_IO_IN | EV_IO_OUT);
@@ -171,7 +171,7 @@ API_LOCAL void ev__nonblock_stream_exit(ev_nonblock_stream_t* stream)
     stream->callbacks.r_cb = NULL;
 }
 
-API_LOCAL int ev__nonblock_stream_write(ev_nonblock_stream_t* stream, ev_write_t* req)
+EV_LOCAL int ev__nonblock_stream_write(ev_nonblock_stream_t* stream, ev_write_t* req)
 {
     if (stream->flags.io_abort)
     {
@@ -188,7 +188,7 @@ API_LOCAL int ev__nonblock_stream_write(ev_nonblock_stream_t* stream, ev_write_t
     return 0;
 }
 
-API_LOCAL int ev__nonblock_stream_read(ev_nonblock_stream_t* stream, ev_read_t* req)
+EV_LOCAL int ev__nonblock_stream_read(ev_nonblock_stream_t* stream, ev_read_t* req)
 {
     if (stream->flags.io_abort)
     {
@@ -205,7 +205,7 @@ API_LOCAL int ev__nonblock_stream_read(ev_nonblock_stream_t* stream, ev_read_t* 
     return 0;
 }
 
-API_LOCAL size_t ev__nonblock_stream_size(ev_nonblock_stream_t* stream, unsigned evts)
+EV_LOCAL size_t ev__nonblock_stream_size(ev_nonblock_stream_t* stream, unsigned evts)
 {
     size_t ret = 0;
     if (evts & EV_IO_IN)
@@ -219,7 +219,7 @@ API_LOCAL size_t ev__nonblock_stream_size(ev_nonblock_stream_t* stream, unsigned
     return ret;
 }
 
-API_LOCAL void ev__nonblock_stream_abort(ev_nonblock_stream_t* stream)
+EV_LOCAL void ev__nonblock_stream_abort(ev_nonblock_stream_t* stream)
 {
     if (!stream->flags.io_abort)
     {
@@ -228,7 +228,7 @@ API_LOCAL void ev__nonblock_stream_abort(ev_nonblock_stream_t* stream)
     }
 }
 
-API_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned evts)
+EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned evts)
 {
     if (evts & EV_IO_OUT)
     {

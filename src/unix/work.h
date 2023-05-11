@@ -7,9 +7,9 @@
 extern "C" {
 #endif
 
-API_LOCAL void ev__init_work(ev_loop_t* loop);
+EV_LOCAL void ev__init_work(ev_loop_t* loop);
 
-API_LOCAL void ev__exit_work(ev_loop_t* loop);
+EV_LOCAL void ev__exit_work(ev_loop_t* loop);
 
 #ifdef __cplusplus
 }

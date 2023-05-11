@@ -553,7 +553,7 @@ static int _ev_fs_readdir_w_on_dirent(ev_dirent_w_t* info, void* arg)
     return (int)ret;
 }
 
-API_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mode)
+EV_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mode)
 {
     int ret;
     DWORD errcode;
@@ -582,7 +582,7 @@ API_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int m
     return 0;
 }
 
-API_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset)
+EV_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset)
 {
     DWORD errcode;
     LONG DistanceToMove = offset & 0XFFFFFFFF;
@@ -597,7 +597,7 @@ API_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset)
     return 0;
 }
 
-API_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
+EV_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
 {
     DWORD errcode;
     DWORD bytes = 0;
@@ -635,7 +635,7 @@ error:
 	return ev__translate_sys_error(errcode);
 }
 
-API_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
+EV_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
 {
     if (file == INVALID_HANDLE_VALUE)
     {
@@ -679,7 +679,7 @@ API_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, 
     return ev__translate_sys_error(err);
 }
 
-API_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
+EV_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
 {
     DWORD errcode;
     DWORD bytes = 0;
@@ -713,7 +713,7 @@ error:
 	return ev__translate_sys_error(errcode);
 }
 
-API_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
+EV_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
 {
     if (file == INVALID_HANDLE_VALUE)
     {
@@ -752,12 +752,12 @@ API_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
     return ev__translate_sys_error(err);
 }
 
-API_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
+EV_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
 {
     return _ev_file_fstat_win(file, statbuf, 0);
 }
 
-API_LOCAL int ev__fs_close(ev_os_file_t file)
+EV_LOCAL int ev__fs_close(ev_os_file_t file)
 {
     DWORD errcode;
     if (!CloseHandle(file))
@@ -768,7 +768,7 @@ API_LOCAL int ev__fs_close(ev_os_file_t file)
     return 0;
 }
 
-API_LOCAL int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg)
+EV_LOCAL int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg)
 {
     WIN32_FIND_DATAW info;
     ev_dirent_w_t dirent_info;
@@ -827,7 +827,7 @@ cleanup:
     return ret;
 }
 
-API_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
+EV_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
 {
     WCHAR* wide_path = NULL;
     size_t wide_path_len = ev__utf8_to_wide(&wide_path, path);
@@ -843,7 +843,7 @@ API_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
     return helper.errcode != 0 ? helper.errcode : ret;
 }
 
-API_LOCAL int ev__fs_mkdir(const char* path, int mode)
+EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
 {
     WCHAR* copy_wpath;
     ssize_t ret = ev__utf8_to_wide(&copy_wpath, path);

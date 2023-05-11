@@ -461,7 +461,7 @@ err:
     return ret;
 }
 
-API_LOCAL int ev__tcp_open(ev_tcp_t* tcp, int fd)
+EV_LOCAL int ev__tcp_open(ev_tcp_t* tcp, int fd)
 {
     int busy_flags = EV_HANDLE_TCP_LISTING | EV_HANDLE_TCP_ACCEPTING |
             EV_HANDLE_TCP_STREAMING | EV_HANDLE_TCP_CONNECTING | EV_HABDLE_TCP_BOUND;

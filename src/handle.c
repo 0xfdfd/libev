@@ -56,7 +56,7 @@ static void _ev_to_close_handle(ev_handle_t* handle)
     handle->endgame.close_cb(handle);
 }
 
-API_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t role)
+EV_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t role)
 {
     handle->loop = loop;
     ev_list_push_back(&loop->handles.idle_list, &handle->handle_queue);
@@ -73,7 +73,7 @@ API_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t r
     handle->endgame.node = (ev_list_node_t)EV_LIST_NODE_INIT;
 }
 
-API_LOCAL void ev__handle_exit(ev_handle_t* handle, ev_handle_cb close_cb)
+EV_LOCAL void ev__handle_exit(ev_handle_t* handle, ev_handle_cb close_cb)
 {
     assert(!ev__handle_is_closing(handle));
 
@@ -93,7 +93,7 @@ API_LOCAL void ev__handle_exit(ev_handle_t* handle, ev_handle_cb close_cb)
     }
 }
 
-API_LOCAL void ev__handle_event_add(ev_handle_t* handle)
+EV_LOCAL void ev__handle_event_add(ev_handle_t* handle)
 {
     handle->data.active_events++;
 
@@ -103,7 +103,7 @@ API_LOCAL void ev__handle_event_add(ev_handle_t* handle)
     }
 }
 
-API_LOCAL void ev__handle_event_dec(ev_handle_t* handle)
+EV_LOCAL void ev__handle_event_dec(ev_handle_t* handle)
 {
     assert(handle->data.active_events != 0);
 
@@ -115,17 +115,17 @@ API_LOCAL void ev__handle_event_dec(ev_handle_t* handle)
     }
 }
 
-API_LOCAL int ev__handle_is_active(ev_handle_t* handle)
+EV_LOCAL int ev__handle_is_active(ev_handle_t* handle)
 {
     return handle->data.flags & EV_HANDLE_ACTIVE;
 }
 
-API_LOCAL int ev__handle_is_closing(ev_handle_t* handle)
+EV_LOCAL int ev__handle_is_closing(ev_handle_t* handle)
 {
     return handle->data.flags & (EV_HANDLE_CLOSING | EV_HANDLE_CLOSED);
 }
 
-API_LOCAL int ev__backlog_submit(ev_handle_t* handle, ev_handle_cb callback)
+EV_LOCAL int ev__backlog_submit(ev_handle_t* handle, ev_handle_cb callback)
 {
     if (handle->backlog.status != EV_ENOENT)
     {
@@ -141,7 +141,7 @@ API_LOCAL int ev__backlog_submit(ev_handle_t* handle, ev_handle_cb callback)
     return 0;
 }
 
-API_LOCAL void ev__process_backlog(ev_loop_t* loop)
+EV_LOCAL void ev__process_backlog(ev_loop_t* loop)
 {
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&loop->backlog_queue)) != NULL)
@@ -155,7 +155,7 @@ API_LOCAL void ev__process_backlog(ev_loop_t* loop)
     }
 }
 
-API_LOCAL void ev__process_endgame(ev_loop_t* loop)
+EV_LOCAL void ev__process_endgame(ev_loop_t* loop)
 {
     ev_list_node_t* it;
     while ((it = ev_list_pop_front(&loop->endgame_queue)) != NULL)

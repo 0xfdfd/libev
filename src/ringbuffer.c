@@ -443,18 +443,18 @@ static int _ring_buffer_commit_for_consume(ring_buffer_t* rb,
         _ring_buffer_commit_for_consume_confirm(rb, node);
 }
 
-API_LOCAL size_t ring_buffer_heap_cost(void)
+EV_LOCAL size_t ring_buffer_heap_cost(void)
 {
     /* need to align with machine size */
     return ALIGN_SIZE(sizeof(struct ring_buffer), sizeof(void*));
 }
 
-API_LOCAL size_t ring_buffer_node_cost(size_t size)
+EV_LOCAL size_t ring_buffer_node_cost(size_t size)
 {
     return ALIGN_SIZE(sizeof(ring_buffer_node_t) + size, sizeof(void*));
 }
 
-API_LOCAL ring_buffer_t* ring_buffer_init(void* buffer, size_t size)
+EV_LOCAL ring_buffer_t* ring_buffer_init(void* buffer, size_t size)
 {
     /* Calculate start address */
     ring_buffer_t* handler = buffer;
@@ -475,7 +475,7 @@ API_LOCAL ring_buffer_t* ring_buffer_init(void* buffer, size_t size)
     return handler;
 }
 
-API_LOCAL ring_buffer_token_t* ring_buffer_reserve(ring_buffer_t* handler, size_t len,
+EV_LOCAL ring_buffer_token_t* ring_buffer_reserve(ring_buffer_t* handler, size_t len,
     int flags)
 {
     /* node must aligned */
@@ -491,7 +491,7 @@ API_LOCAL ring_buffer_token_t* ring_buffer_reserve(ring_buffer_t* handler, size_
     return _ring_buffer_reserve_none_empty(handler, len, node_size, flags);
 }
 
-API_LOCAL ring_buffer_token_t* ring_buffer_consume(ring_buffer_t* handler)
+EV_LOCAL ring_buffer_token_t* ring_buffer_consume(ring_buffer_t* handler)
 {
     ring_buffer_node_t* rb_oldest_reserve = EV_RB_NODE(handler, handler->node.off_reserve);
     if (handler->node.off_reserve == 0
@@ -510,7 +510,7 @@ API_LOCAL ring_buffer_token_t* ring_buffer_consume(ring_buffer_t* handler)
     return &token_node->token;
 }
 
-API_LOCAL int ring_buffer_commit(ring_buffer_t* handler, ring_buffer_token_t* token, int flags)
+EV_LOCAL int ring_buffer_commit(ring_buffer_t* handler, ring_buffer_token_t* token, int flags)
 {
     ring_buffer_node_t* node = EV_CONTAINER_OF(token, ring_buffer_node_t, token);
 
@@ -519,7 +519,7 @@ API_LOCAL int ring_buffer_commit(ring_buffer_t* handler, ring_buffer_token_t* to
         _ring_buffer_commit_for_consume(handler, node, flags);
 }
 
-API_LOCAL size_t ring_buffer_count(ring_buffer_t* handler, ring_buffer_counter_t* counter)
+EV_LOCAL size_t ring_buffer_count(ring_buffer_t* handler, ring_buffer_counter_t* counter)
 {
     if (counter != NULL)
     {
@@ -529,13 +529,13 @@ API_LOCAL size_t ring_buffer_count(ring_buffer_t* handler, ring_buffer_counter_t
     return handler->counter.committed + handler->counter.reading + handler->counter.writing;
 }
 
-API_LOCAL ring_buffer_token_t* ring_buffer_begin(const ring_buffer_t* handler)
+EV_LOCAL ring_buffer_token_t* ring_buffer_begin(const ring_buffer_t* handler)
 {
     ring_buffer_node_t* rb_tail = EV_RB_NODE(handler, handler->node.off_TAIL);
     return &(rb_tail->token);
 }
 
-API_LOCAL ring_buffer_token_t* ring_buffer_next(const ring_buffer_t* handler, const ring_buffer_token_t* token)
+EV_LOCAL ring_buffer_token_t* ring_buffer_next(const ring_buffer_t* handler, const ring_buffer_token_t* token)
 {
     ring_buffer_node_t* node = EV_CONTAINER_OF(token, ring_buffer_node_t, token);
     if (node->chain_time.off_newer == 0)

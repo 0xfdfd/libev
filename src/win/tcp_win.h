@@ -14,7 +14,7 @@ extern "C" {
  * @param[in] fd    fd
  * @return          #ev_errno_t
  */
-API_LOCAL int ev__tcp_open_win(ev_tcp_t* tcp, SOCKET fd);
+EV_LOCAL int ev__tcp_open_win(ev_tcp_t* tcp, SOCKET fd);
 
 #ifdef __cplusplus
 }

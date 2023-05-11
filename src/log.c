@@ -25,7 +25,7 @@ static char _ev_ascii_to_char(unsigned char c)
     return '.';
 }
 
-API_LOCAL void ev__log(ev_log_level_t level, const char* file, const char* func,
+EV_LOCAL void ev__log(ev_log_level_t level, const char* file, const char* func,
     int line, const char* fmt, ...)
 {
     va_list ap;
@@ -55,7 +55,7 @@ API_LOCAL void ev__log(ev_log_level_t level, const char* file, const char* func,
     va_end(ap);
 }
 
-API_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width)
+EV_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width)
 {
     const unsigned char* pdat = (unsigned char*)data;
 

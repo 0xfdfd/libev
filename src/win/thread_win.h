@@ -11,7 +11,7 @@ extern "C" {
 /**
  * @brief Initialize thread context.
  */
-API_LOCAL void ev__thread_init_win(void);
+EV_LOCAL void ev__thread_init_win(void);
 
 #ifdef __cplusplus
 }
