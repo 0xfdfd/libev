@@ -99,26 +99,26 @@ set(ev_src_os_unix
 )
 
 set(ev_src_lua
-    "lua/src/ev.lua.internal.h"
-    "lua/src/channel.lua.h"
-    "lua/src/fs.lua.h"
-    "lua/src/misc.lua.h"
-    "lua/src/pipe.lua.h"
-    "lua/src/process.lua.h"
-    "lua/src/promise.lua.h"
-    "lua/src/tcp.lua.h"
-    "lua/src/timer.lua.h"
-    "lua/src/udp.lua.h"
-    "lua/src/ev.lua.c"
-    "lua/src/channel.lua.c"
-    "lua/src/fs.lua.c"
-    "lua/src/misc.lua.c"
-    "lua/src/pipe.lua.c"
-    "lua/src/process.lua.c"
-    "lua/src/promise.lua.c"
-    "lua/src/tcp.lua.c"
-    "lua/src/timer.lua.c"
-    "lua/src/udp.lua.c"
+    "src/lua/ev.lua.internal.h"
+    "src/lua/channel.lua.h"
+    "src/lua/fs.lua.h"
+    "src/lua/misc.lua.h"
+    "src/lua/pipe.lua.h"
+    "src/lua/process.lua.h"
+    "src/lua/promise.lua.h"
+    "src/lua/tcp.lua.h"
+    "src/lua/timer.lua.h"
+    "src/lua/udp.lua.h"
+    "src/lua/ev.lua.c"
+    "src/lua/channel.lua.c"
+    "src/lua/fs.lua.c"
+    "src/lua/misc.lua.c"
+    "src/lua/pipe.lua.c"
+    "src/lua/process.lua.c"
+    "src/lua/promise.lua.c"
+    "src/lua/tcp.lua.c"
+    "src/lua/timer.lua.c"
+    "src/lua/udp.lua.c"
 )
 
 include(third_party/lua54.cmake)
@@ -145,7 +145,7 @@ add_custom_command(
             --source    "include/ev/unix.h"
             --string    "#endif              /* AMALGAMATE: ev.h (3/3) */"
             --source    "include/ev.h"
-            --source    "lua/include/ev.lua.h"
+            --source    "include/ev/lua.h"
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.lua
             ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
@@ -157,7 +157,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev.h
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/win.h
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/unix.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/lua/include/ev.lua.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/lua.h
     VERBATIM
 )
 
@@ -238,5 +238,8 @@ if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
 endif()
 
 if (EV_HAVE_LUA_BINDING)
-    include(lua/CMakeLists.txt)
+	find_package(Lua REQUIRED)
+	target_compile_options(${PROJECT_NAME} PRIVATE -DEV_HAVE_LUA_BINDING)
+	target_include_directories(ev PRIVATE ${LUA_INCLUDE_DIR})
+	target_link_libraries(ev PRIVATE ${LUA_LIBRARIES})
 endif ()

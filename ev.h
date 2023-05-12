@@ -4556,6 +4556,9 @@ EV_API uint64_t ev_hrtime(void);
 #ifdef __cplusplus
 }
 #endif
+
+/* AMALGAMATE: #include "ev/lua.h" */
+
 #endif
 
 #ifndef __EV_LUA_H__

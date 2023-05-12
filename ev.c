@@ -17445,7 +17445,7 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
 #if defined(EV_HAVE_LUA_BINDING) /* FEATURE: EV_HAVE_LUA_BINDING (1/2) */
 #include "lua.h"
 #include "lauxlib.h"
-#line 1 "lua/src/ev.lua.internal.h"
+#line 1 "src/lua/ev.lua.internal.h"
 #ifndef __EV_LUA_INTERNAL_H__
 #define __EV_LUA_INTERNAL_H__
 
@@ -17517,7 +17517,7 @@ int lev_error_ex(const char* file, int line, lua_State* L, ev_loop_t* loop, int 
 
 #endif
 
-#line 1 "lua/src/channel.lua.h"
+#line 1 "src/lua/channel.lua.h"
 #ifndef __EV_LUA_CHANNEL_H__
 #define __EV_LUA_CHANNEL_H__
 
@@ -17535,7 +17535,7 @@ int lev_channel(lua_State* L);
 
 #endif
 
-#line 1 "lua/src/fs.lua.h"
+#line 1 "src/lua/fs.lua.h"
 #ifndef __EV_LUA_FS_H__
 #define __EV_LUA_FS_H__
 
@@ -17593,7 +17593,7 @@ ev_file_t* lev_try_to_file(lua_State* L, int idx);
 
 #endif
 
-#line 1 "lua/src/misc.lua.h"
+#line 1 "src/lua/misc.lua.h"
 #ifndef __EV_LUA_MISC_H__
 #define __EV_LUA_MISC_H__
 
@@ -17655,7 +17655,7 @@ int lev_arg_unpack(lua_State* L);
 
 #endif
 
-#line 1 "lua/src/pipe.lua.h"
+#line 1 "src/lua/pipe.lua.h"
 #ifndef __EV_LUA_PIPE_H__
 #define __EV_LUA_PIPE_H__
 
@@ -17675,7 +17675,7 @@ ev_pipe_t* lev_try_to_pipe(lua_State* L, int idx);
 
 #endif
 
-#line 1 "lua/src/process.lua.h"
+#line 1 "src/lua/process.lua.h"
 #ifndef __EV_LUA_PROCESS_H__
 #define __EV_LUA_PROCESS_H__
 
@@ -17697,7 +17697,7 @@ int lev_exepath(lua_State* L);
 
 #endif
 
-#line 1 "lua/src/promise.lua.h"
+#line 1 "src/lua/promise.lua.h"
 #ifndef __EV_LUA_PROMISE_H__
 #define __EV_LUA_PROMISE_H__
 
@@ -17760,7 +17760,7 @@ int lev_promise_get_value(lua_State* L, lev_promise_t* promise, lev_promise_cb c
 #endif
 #endif
 
-#line 1 "lua/src/tcp.lua.h"
+#line 1 "src/lua/tcp.lua.h"
 #ifndef __EV_LUA_TCP_H__
 #define __EV_LUA_TCP_H__
 
@@ -17783,7 +17783,7 @@ int lev_tcp(lua_State* L);
 
 #endif
 
-#line 1 "lua/src/timer.lua.h"
+#line 1 "src/lua/timer.lua.h"
 #ifndef __EV_LUA_TIMER_H__
 #define __EV_LUA_TIMER_H__
 
@@ -17800,7 +17800,7 @@ int lev_sleep(lua_State* L);
 #endif
 #endif
 
-#line 1 "lua/src/udp.lua.h"
+#line 1 "src/lua/udp.lua.h"
 #ifndef __EV_LUA_UDP_H__
 #define __EV_LUA_UDP_H__
 
@@ -17829,7 +17829,7 @@ int lev_udp(lua_State* L);
 
 #endif
 
-#line 1 "lua/src/ev.lua.c"
+#line 1 "src/lua/ev.lua.c"
 /* AMALGAMATE: #include "channel.lua.h" */
 /* AMALGAMATE: #include "fs.lua.h" */
 /* AMALGAMATE: #include "misc.lua.h" */
@@ -18415,7 +18415,7 @@ void lev_wakeup(ev_loop_t* loop)
     ev_async_wakeup(&self->async);
 }
 
-#line 1 "lua/src/channel.lua.c"
+#line 1 "src/lua/channel.lua.c"
 /* AMALGAMATE: #include "channel.lua.h" */
 #include <string.h>
 
@@ -18683,7 +18683,7 @@ int lev_channel(lua_State* L)
     return 1;
 }
 
-#line 1 "lua/src/fs.lua.c"
+#line 1 "src/lua/fs.lua.c"
 /* AMALGAMATE: #include "fs.lua.h" */
 
 #define LEV_FILE_NAME   "__ev_file"
@@ -19196,7 +19196,7 @@ ev_file_t* lev_try_to_file(lua_State* L, int idx)
     return self != NULL ? &self->file : NULL;
 }
 
-#line 1 "lua/src/misc.lua.c"
+#line 1 "src/lua/misc.lua.c"
 /* AMALGAMATE: #include "misc.lua.h" */
 
 #define LEV_SOCKADDR_STORAGE_NAME   "__ev_sockaddr_storage"
@@ -19307,7 +19307,7 @@ int lev_arg_unpack(lua_State* L)
     return tmp_sp;
 }
 
-#line 1 "lua/src/pipe.lua.c"
+#line 1 "src/lua/pipe.lua.c"
 /* AMALGAMATE: #include "pipe.lua.h" */
 #include <string.h>
 
@@ -19557,7 +19557,7 @@ ev_pipe_t* lev_try_to_pipe(lua_State* L, int idx)
     return self != NULL ? &self->pipe : NULL;
 }
 
-#line 1 "lua/src/process.lua.c"
+#line 1 "src/lua/process.lua.c"
 /* AMALGAMATE: #include "process.lua.h" */
 /* AMALGAMATE: #include "fs.lua.h" */
 /* AMALGAMATE: #include "pipe.lua.h" */
@@ -19948,7 +19948,7 @@ int lev_exepath(lua_State* L)
     return _lev_path_template(L, ev_exepath);
 }
 
-#line 1 "lua/src/promise.lua.c"
+#line 1 "src/lua/promise.lua.c"
 /* AMALGAMATE: #include "promise.lua.h" */
 
 #define LEV_PROMISE_NAME    "__ev_promise"
@@ -20208,7 +20208,7 @@ int lev_promise_set_value(lua_State* L, lev_promise_t* promise, int narg)
     return 0;
 }
 
-#line 1 "lua/src/tcp.lua.c"
+#line 1 "src/lua/tcp.lua.c"
 /* AMALGAMATE: #include "tcp.lua.h" */
 /* AMALGAMATE: #include "misc.lua.h" */
 #include <string.h>
@@ -20601,7 +20601,7 @@ int lev_tcp(lua_State* L)
     return 1;
 }
 
-#line 1 "lua/src/timer.lua.c"
+#line 1 "src/lua/timer.lua.c"
 /* AMALGAMATE: #include "timer.lua.h" */
 
 typedef struct lev_timer
@@ -20667,7 +20667,7 @@ int lev_sleep(lua_State* L)
     return lua_yieldk(L, 0, (lua_KContext)NULL, _lev_on_sleep_resume);
 }
 
-#line 1 "lua/src/udp.lua.c"
+#line 1 "src/lua/udp.lua.c"
 /* AMALGAMATE: #include "udp.lua.h" */
 /* AMALGAMATE: #include "misc.lua.h" */
 #include <string.h>

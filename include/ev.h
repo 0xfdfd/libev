@@ -3043,4 +3043,7 @@ EV_API uint64_t ev_hrtime(void);
 #ifdef __cplusplus
 }
 #endif
+
+#include "ev/lua.h"
+
 #endif
