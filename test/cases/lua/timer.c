@@ -15,6 +15,5 @@ TEST_F(lua, timer)
 "loop:run()\n"
 "assert(t2 - t1 >= sleep_time * 1000)\n";
 
-    ASSERT_EQ_INT(test_lua_dostring(g_test_lua.L, script), LUA_OK,
-        "%s", lua_tostring(g_test_lua.L, -1));
+    TEST_CALL_LUA(script);
 }

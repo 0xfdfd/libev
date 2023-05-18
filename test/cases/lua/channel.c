@@ -28,6 +28,5 @@ TEST_F(lua, channel)
 "loop:co(sender)\n"
 "loop:run()\n";
 
-    ASSERT_EQ_INT(test_lua_dostring(g_test_lua.L, script), LUA_OK,
-        "%s", lua_tostring(g_test_lua.L, -1));
+    TEST_CALL_LUA(script);
 }

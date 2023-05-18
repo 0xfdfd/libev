@@ -7,15 +7,12 @@ TEST_F(lua, promise)
 "local promise = loop:promise()\n"
 "loop:co(function()\n"
 "    local v = promise:get_value()\n"
-"    assert(v == test.value)\n"
+"    assert(v == arg[1])\n"
 "end)\n"
 "loop:co(function()\n"
-"    promise:set_value(test.value)\n"
+"    promise:set_value(arg[1])\n"
 "end)\n"
 "loop:run()\n";
 
-    test_lua_set_test_string("value", "a7366500-985c-45c9-9ea8-8775a9cf745b");
-
-    ASSERT_EQ_INT(test_lua_dostring(g_test_lua.L, script), LUA_OK,
-        "%s", lua_tostring(g_test_lua.L, -1));
+    TEST_CALL_LUA(script, "a7366500-985c-45c9-9ea8-8775a9cf745b");
 }

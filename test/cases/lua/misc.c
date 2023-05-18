@@ -10,6 +10,5 @@ TEST_F(lua, arg_pack)
 "assert(v3 == 3)\n"
 "assert(v4 == nil)\n";
 
-    ASSERT_EQ_INT(test_lua_dostring(g_test_lua.L, script), LUA_OK,
-        "%s", lua_tostring(g_test_lua.L, -1));
+    TEST_CALL_LUA(script);
 }

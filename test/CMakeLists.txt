@@ -52,8 +52,10 @@ add_executable(ev_test
 
 if (EV_HAVE_LUA_BINDING)
     target_sources(ev_test PRIVATE
-        "test/cases/lua/file.c"
+        "test/cases/lua/benchmark_binary_trees.c"
+        "test/cases/lua/benchmark_fannkuch_redux.c"
         "test/cases/lua/channel.c"
+        "test/cases/lua/file.c"
         "test/cases/lua/loop.c"
         "test/cases/lua/misc.c"
         "test/cases/lua/process.c"
