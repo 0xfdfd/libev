@@ -26,17 +26,25 @@ TEST_F(lua, process_pipe)
 "local loop = ev.loop()\n"
 "local self_path = ev.exepath()\n"
 "local out_pipe = loop:pipe()\n"
+"local in_pipe = loop:pipe()\n"
 "loop:co(function()\n"
-"    local opt = { file = self_path, stdout = out_pipe, argv = { self_path, \"--help\" } }\n"
-"    local _, process = loop:process(opt)\n"
+"    local opt = {\n"
+"        file = self_path,\n"
+"        stdin = in_pipe,\n"
+"        stdout = out_pipe,\n"
+"        stderr = ev.NULL,\n"
+"        argv = { self_path, \"--\", \"echoserver\" }\n"
+"    }\n"
+"    local err, process = loop:process(opt)\n"
+"    assert(err == nil)\n"
 "    assert(process ~= nil)\n"
+"    in_pipe:send(arg[1])\n"
 "    local _, data = out_pipe:recv()\n"
-"    assert(data ~= nil)\n"
+"    assert(data == arg[1])\n"
 "end)\n"
 "loop:run()\n";
 
-    ASSERT_EQ_INT(test_lua_dostring(g_test_lua.L, script, NULL), LUA_OK,
-        "%s", lua_tostring(g_test_lua.L, -1));
+    TEST_CALL_LUA(script, "hello world");
 }
 
 TEST_F(lua, process_file)

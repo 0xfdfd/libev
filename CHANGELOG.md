@@ -11,7 +11,7 @@
 
 ### Bug Fixes
 1. fix: loop may wait infinite with EV_LOOP_MODE_ONCE if there are only endgame events
-
+2. fix: memory leak in create process
 
 ## v0.0.8 (2023/04/07)
 

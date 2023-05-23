@@ -51,12 +51,14 @@ static void _lev_process_cleanup_opt(ev_process_options_t* opt)
     {
         free(opt->argv[i]);
     }
+    free((void*)opt->argv);
     opt->argv = NULL;
 
     for (i = 0; opt->envp != NULL && opt->envp[i] != NULL; i++)
     {
         free(opt->envp[i]);
     }
+    free((void*)opt->envp);
     opt->envp = NULL;
 
     if (opt->cwd != NULL)
