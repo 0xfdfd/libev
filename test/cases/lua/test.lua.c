@@ -41,7 +41,10 @@ static void _test_lua_setup_arg(lua_State* L, const char** args)
     }
     lua_setglobal(L, "arg");
 
-    luaL_dostring(L, script);
+    if (luaL_dostring(L, script) != LUA_OK)
+    {
+        abort();
+    }
 }
 
 void test_lua_setup(void)

@@ -200,6 +200,13 @@ target_include_directories(${PROJECT_NAME}
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
 
+if (EV_HAVE_LUA_BINDING)
+	find_package(Lua REQUIRED)
+	target_compile_options(${PROJECT_NAME} PRIVATE -DEV_HAVE_LUA_BINDING)
+	target_include_directories(ev PRIVATE ${LUA_INCLUDE_DIR})
+	target_link_libraries(ev PRIVATE ${LUA_LIBRARIES})
+endif ()
+
 # add library dependencies
 find_package(Threads REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
@@ -237,10 +244,3 @@ if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
     add_subdirectory(third_party/cutest)
     include(test/CMakeLists.txt)
 endif()
-
-if (EV_HAVE_LUA_BINDING)
-	find_package(Lua REQUIRED)
-	target_compile_options(${PROJECT_NAME} PRIVATE -DEV_HAVE_LUA_BINDING)
-	target_include_directories(ev PRIVATE ${LUA_INCLUDE_DIR})
-	target_link_libraries(ev PRIVATE ${LUA_LIBRARIES})
-endif ()
