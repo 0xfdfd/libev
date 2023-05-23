@@ -67,6 +67,8 @@ EV_LOCAL void ev__loop_link_to_default_threadpool(ev_loop_t* loop);
 
 EV_LOCAL int ev_loop_unlink_threadpool(ev_loop_t* loop);
 
+EV_LOCAL void ev_threadpool_default_cleanup(void);
+
 /**
  * @brief Initialize thread pool
  * @param[out] pool     Thread pool

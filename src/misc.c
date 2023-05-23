@@ -172,3 +172,8 @@ EV_LOCAL int ev__translate_posix_sys_error(int syserr)
 
 #undef EV_EXPAND_ERRMAP
 }
+
+void ev_library_shutdown(void)
+{
+    ev_threadpool_default_cleanup();
+}

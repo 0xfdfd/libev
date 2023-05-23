@@ -347,6 +347,14 @@ int ev_loop_unlink_threadpool(ev_loop_t* loop)
     return 0;
 }
 
+void ev_threadpool_default_cleanup(void)
+{
+    if (s_default_threadpool.pool.looping)
+    {
+        ev_threadpool_exit(&s_default_threadpool.pool);
+    }
+}
+
 int ev_loop_queue_work(ev_loop_t* loop, ev_work_t* token,
     ev_work_cb work_cb, ev_work_done_cb done_cb)
 {

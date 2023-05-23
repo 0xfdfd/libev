@@ -191,8 +191,3 @@ EV_LOCAL void ev__fatal_syscall(const char* file, int line,
     __debugbreak();
     abort();
 }
-
-void ev_library_shutdown(void)
-{
-
-}

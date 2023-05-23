@@ -945,6 +945,8 @@ EV_LOCAL void ev__loop_link_to_default_threadpool(ev_loop_t* loop);
 
 EV_LOCAL int ev_loop_unlink_threadpool(ev_loop_t* loop);
 
+EV_LOCAL void ev_threadpool_default_cleanup(void);
+
 /**
  * @brief Initialize thread pool
  * @param[out] pool     Thread pool
@@ -3986,6 +3988,11 @@ EV_LOCAL int ev__translate_posix_sys_error(int syserr)
 #undef EV_EXPAND_ERRMAP
 }
 
+void ev_library_shutdown(void)
+{
+    ev_threadpool_default_cleanup();
+}
+
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop.h" */
 /* AMALGAMATE: #include "pipe.h" */
@@ -5033,6 +5040,14 @@ int ev_loop_unlink_threadpool(ev_loop_t* loop)
     ev_mutex_leave(&pool->mutex);
 
     return 0;
+}
+
+void ev_threadpool_default_cleanup(void)
+{
+    if (s_default_threadpool.pool.looping)
+    {
+        ev_threadpool_exit(&s_default_threadpool.pool);
+    }
 }
 
 int ev_loop_queue_work(ev_loop_t* loop, ev_work_t* token,
@@ -7470,11 +7485,6 @@ EV_LOCAL void ev__fatal_syscall(const char* file, int line,
 
     __debugbreak();
     abort();
-}
-
-void ev_library_shutdown(void)
-{
-
 }
 
 /* AMALGAMATE: #include "ev.h" */
@@ -13573,11 +13583,6 @@ EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
 EV_LOCAL int ev__translate_sys_error(int syserr)
 {
     return ev__translate_posix_sys_error(syserr);
-}
-
-void ev_library_shutdown(void)
-{
-    // Do nothing
 }
 
 /* AMALGAMATE: #include "ev.h" */
