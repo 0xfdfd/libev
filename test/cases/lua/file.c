@@ -32,6 +32,30 @@ TEST_F(lua, fs_file)
     TEST_CALL_LUA(script, TMPFILE_PATH);
 }
 
+TEST_F(lua, fs_file_read)
+{
+    static const char* s =
+"local loop = ev.loop()\n"
+"loop:co(function()\n"
+"    local err,file = loop:fs_file(arg[1])\n"
+"    assert(err == nil)\n"
+"    assert(file ~= nil)\n"
+"    local data = \"\"\n"
+"    while true do\n"
+"        local err,content = file:read()\n"
+"        assert(err == nil)\n"
+"        if content == nil then\n"
+"            break\n"
+"        end\n"
+"        data = data .. content\n"
+"    end\n"
+"    file:close()\n"
+"end)\n"
+"loop:run()\n";
+
+    TEST_CALL_LUA(s, test_get_self_exe());
+}
+
 TEST_F(lua, fs_readdir)
 {
     static const char* script =

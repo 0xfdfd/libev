@@ -134,7 +134,14 @@ static int _lev_file_on_read_resume(lua_State* L, int status, lua_KContext ctx)
     }
 
     lua_pushnil(L);
-    lua_pushlstring(L, token->buf, result);
+    if (result != 0)
+    {
+        lua_pushlstring(L, token->buf, result);
+    }
+    else
+    {
+        lua_pushnil(L);
+    }
     return 2;
 }
 
@@ -385,9 +392,8 @@ static int _lev_file_close(lua_State* L)
     }
 
     file->closed = 1;
-    ev_file_exit(&file->file, _lev_file_on_close_done);
-
     file->close_L = L;
+    ev_file_exit(&file->file, _lev_file_on_close_done);
     lev_set_state(L, file->loop, 0);
 
     return lua_yieldk(L, 0, (lua_KContext)NULL, _lev_file_on_close_resume);
@@ -472,7 +478,7 @@ int lev_fs_file(lua_State* L)
     int ret;
     ev_loop_t* loop = lev_to_loop(L, 1);
     const char* path = luaL_checkstring(L, 2);
-    int flags = EV_FS_O_RDWR;
+    int flags = EV_FS_O_RDONLY;
     if (lua_type(L, 3) == LUA_TNUMBER)
     {
         flags = (int)lua_tointeger(L, 3);
