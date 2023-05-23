@@ -15,19 +15,34 @@ local function split_string (inputstr)
     return t
 end
 
+-- Read file and return content
+local function read_file(path)
+    local file = io.open(path)
+    local data = file:read("a")
+    file:close()
+    return data
+end
+
+-- Write content into file
+local function write_file(path, content)
+    local f = io.open(path, "w")
+    f:write(content)
+    f:close()
+end
+
 local function append_source(paths)
     local path_list = split_string(paths)
     for _,v in ipairs(path_list) do
-        local f = io.open(v)
-        local d = f:read("a")
+        local content = read_file(v)
+        local pattern = "#%s*include%s+\"([-_%w%./]+)%.h\""
+        local replace = "/* AMALGAMATE: %0 */"
 
-        d = string.gsub(d, "#%s*include%s+\"([-_%w%./]+)%.h\"", "/* AMALGAMATE: %0 */")
-        f:close()
+        content = string.gsub(content, pattern, replace)
 
         if opt.no_line == false then
             out_data = out_data .. "#line 1 \"" .. v .. "\"\n"
         end
-        out_data = out_data .. d .. "\n"
+        out_data = out_data .. content .. "\n"
     end
 end
 
@@ -74,8 +89,4 @@ end
 assert(out_path ~= nil)
 
 -- Write file
-do
-    local f = io.open(out_path, "w")
-    f:write(out_data)
-    f:close()
-end
+write_file(out_path, out_data)
