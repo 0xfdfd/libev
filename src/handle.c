@@ -141,9 +141,11 @@ EV_LOCAL int ev__backlog_submit(ev_handle_t* handle, ev_handle_cb callback)
     return 0;
 }
 
-EV_LOCAL void ev__process_backlog(ev_loop_t* loop)
+EV_LOCAL size_t ev__process_backlog(ev_loop_t* loop)
 {
     ev_list_node_t* it;
+    size_t active_count = 0;
+
     while ((it = ev_list_pop_front(&loop->backlog_queue)) != NULL)
     {
         ev_handle_t* handle = EV_CONTAINER_OF(it, ev_handle_t, backlog.node);
@@ -152,15 +154,23 @@ EV_LOCAL void ev__process_backlog(ev_loop_t* loop)
         handle->backlog.status = EV_ENOENT;
 
         handle->backlog.cb(handle);
+        active_count++;
     }
+
+    return active_count;
 }
 
-EV_LOCAL void ev__process_endgame(ev_loop_t* loop)
+EV_LOCAL size_t ev__process_endgame(ev_loop_t* loop)
 {
     ev_list_node_t* it;
+    size_t active_count = 0;
+
     while ((it = ev_list_pop_front(&loop->endgame_queue)) != NULL)
     {
         ev_handle_t* handle = EV_CONTAINER_OF(it, ev_handle_t, endgame.node);
         _ev_to_close_handle(handle);
+        active_count++;
     }
+
+    return active_count;
 }

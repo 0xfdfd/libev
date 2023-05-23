@@ -198,28 +198,42 @@ void ev_loop_stop(ev_loop_t* loop)
     loop->mask.b_stop = 1;
 }
 
+static uint32_t _ev_loop_calculate_timeout(ev_loop_t* loop, ev_loop_mode_t mode, size_t active_count)
+{
+    if (mode == EV_LOOP_MODE_NOWAIT)
+    {
+        return 0;
+    }
+
+    if (mode == EV_LOOP_MODE_ONCE && active_count != 0)
+    {
+        return 0;
+    }
+
+    return _ev_backend_timeout(loop);
+}
+
 int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
 {
-    uint32_t timeout;
-
     int ret;
+    uint32_t timeout;
+    size_t active_count = 0;
+
     while ((ret = _ev_loop_alive(loop)) != 0 && !loop->mask.b_stop)
     {
         ev__loop_update_time(loop);
 
-        ev__process_timer(loop);
-        ev__process_backlog(loop);
-        ev__process_endgame(loop);
+        active_count += ev__process_timer(loop);
+        active_count += ev__process_backlog(loop);
+        active_count += ev__process_endgame(loop);
 
         if ((ret = _ev_loop_alive(loop)) == 0)
         {
             break;
         }
 
-        /* Calculate timeout */
-        timeout = mode != EV_LOOP_MODE_NOWAIT ?
-            _ev_backend_timeout(loop) : 0;
-
+        /* IO multiplexing */
+        timeout = _ev_loop_calculate_timeout(loop, mode, active_count);
         ev__poll(loop, timeout);
 
         /**
@@ -231,15 +245,15 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
          * #EV_LOOP_MODE_NOWAIT makes no guarantees about progress so it's omitted from
          * the check.
          */
-        if (mode == EV_LOOP_MODE_ONCE)
+        if (timeout != 0)
         {
             ev__loop_update_time(loop);
-            ev__process_timer(loop);
+            active_count += ev__process_timer(loop);
         }
 
         /* Callback maybe added */
-        ev__process_backlog(loop);
-        ev__process_endgame(loop);
+        active_count += ev__process_backlog(loop);
+        active_count += ev__process_endgame(loop);
 
         if (mode != EV_LOOP_MODE_DEFAULT)
         {

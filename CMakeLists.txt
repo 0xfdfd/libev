@@ -164,6 +164,7 @@ add_custom_command(
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/ev.c
     COMMAND $<TARGET_FILE:lua54> ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.lua
+            --no_line
             --out               ${CMAKE_CURRENT_SOURCE_DIR}/ev.c
             --commit            ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
             --string            "#define EV_AMALGAMATE_BUILD"

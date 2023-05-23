@@ -25,7 +25,6 @@
 #define EV_EXPOSE_SYMBOLS
 #define _GNU_SOURCE
 #include "ev.h"
-#line 1 "src/defs.h"
 #ifndef __EV_DEFINES_INTERNAL_H__
 #define __EV_DEFINES_INTERNAL_H__
 
@@ -184,7 +183,6 @@ extern "C" {
 #endif
 #endif
 
-#line 1 "src/allocator.h"
 #ifndef __EV_ALLOCATOR_INTERNAL_H__
 #define __EV_ALLOCATOR_INTERNAL_H__
 
@@ -205,7 +203,6 @@ EV_LOCAL char* ev__strdup(const char* str);
 
 #endif
 
-#line 1 "src/async.h"
 #ifndef __EV_ASYNC_COMMON_H__
 #define __EV_ASYNC_COMMON_H__
 
@@ -227,7 +224,6 @@ EV_LOCAL void ev__async_exit_force(ev_async_t* handle);
 #endif
 #endif
 
-#line 1 "src/handle.h"
 #ifndef __EV_HANDLE_INTERNAL_H__
 #define __EV_HANDLE_INTERNAL_H__
 
@@ -329,15 +325,17 @@ EV_LOCAL int ev__backlog_submit(ev_handle_t* handle, ev_handle_cb callback);
 
 /**
  * @brief Process backlog events.
- * @param[in] loop Event loop.
+ * @param[in] loop  Event loop.
+ * @return          Active count.
  */
-EV_LOCAL void ev__process_backlog(ev_loop_t* loop);
+EV_LOCAL size_t ev__process_backlog(ev_loop_t* loop);
 
 /**
  * @brief Process endgame events.
- * @param[in] loop Event loop.
+ * @param[in] loop  Event loop.
+ * @return          Active count.
  */
-EV_LOCAL void ev__process_endgame(ev_loop_t* loop);
+EV_LOCAL size_t ev__process_endgame(ev_loop_t* loop);
 
 #ifdef __cplusplus
 }
@@ -345,7 +343,6 @@ EV_LOCAL void ev__process_endgame(ev_loop_t* loop);
 
 #endif
 
-#line 1 "src/loop.h"
 #ifndef __EV_LOOP_INTERNAL_H__
 #define __EV_LOOP_INTERNAL_H__
 #ifdef __cplusplus
@@ -453,7 +450,6 @@ EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout);
 #endif
 #endif
 
-#line 1 "src/fs.h"
 #ifndef __EV_FILE_INTERNAL_H__
 #define __EV_FILE_INTERNAL_H__
 
@@ -581,7 +577,6 @@ EV_LOCAL int ev__fs_remove(const char* path, int recursive);
 #endif
 #endif
 
-#line 1 "src/misc.h"
 #ifndef __EV_MISC_INTERNAL_H__
 #define __EV_MISC_INTERNAL_H__
 
@@ -607,7 +602,6 @@ EV_LOCAL int ev__translate_posix_sys_error(int syserr);
 
 #endif
 
-#line 1 "src/pipe.h"
 #ifndef __EV_PIPE_COMMON_INTERNAL_H__
 #define __EV_PIPE_COMMON_INTERNAL_H__
 
@@ -674,7 +668,6 @@ EV_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t* req, ev_pipe_write_cb 
 #endif
 #endif
 
-#line 1 "src/ringbuffer.h"
 #ifndef __EV_RINGBUFFER_INTERNAL_H__
 #define __EV_RINGBUFFER_INTERNAL_H__
 
@@ -883,7 +876,6 @@ EV_LOCAL ring_buffer_token_t* ring_buffer_next(const ring_buffer_t* handler,
 #endif
 #endif
 
-#line 1 "src/threadpool.h"
 #ifndef __EV_THREADPOOL_INTERNAL_H__
 #define __EV_THREADPOOL_INTERNAL_H__
 
@@ -1028,7 +1020,6 @@ EV_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop);
 
 #endif
 
-#line 1 "src/timer.h"
 #ifndef __EV_TIMER_INTERNAL_H__
 #define __EV_TIMER_INTERNAL_H__
 
@@ -1048,8 +1039,9 @@ EV_LOCAL void ev__init_timer(ev_loop_t* loop);
 /**
  * @brief Process timer.
  * @param[in] loop  Event loop
+ * @return			Active counter
  */
-EV_LOCAL void ev__process_timer(ev_loop_t* loop);
+EV_LOCAL size_t ev__process_timer(ev_loop_t* loop);
 
 #ifdef __cplusplus
 }
@@ -1057,7 +1049,6 @@ EV_LOCAL void ev__process_timer(ev_loop_t* loop);
 
 #endif
 
-#line 1 "src/log.h"
 #ifndef __EV_LOG_INTERNAL_H__
 #define __EV_LOG_INTERNAL_H__
 
@@ -1112,7 +1103,6 @@ EV_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width);
 #endif
 #endif
 
-#line 1 "src/udp.h"
 #ifndef __EV_UDP_COMMON_INTERNAL_H__
 #define __EV_UDP_COMMON_INTERNAL_H__
 
@@ -1155,7 +1145,6 @@ EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
 #endif
 #endif
 
-#line 1 "src/allocator.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "allocator.h" */
 #include <stdlib.h>
@@ -1243,7 +1232,6 @@ EV_LOCAL char* ev__strdup(const char* s)
     return memcpy(m, s, len);
 }
 
-#line 1 "src/fs.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop.h" */
 /* AMALGAMATE: #include "fs.h" */
@@ -2197,7 +2185,6 @@ finish:
     return _ev_fs_remove(path);
 }
 
-#line 1 "src/handle.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop.h" */
 /* AMALGAMATE: #include "handle.h" */
@@ -2341,9 +2328,11 @@ EV_LOCAL int ev__backlog_submit(ev_handle_t* handle, ev_handle_cb callback)
     return 0;
 }
 
-EV_LOCAL void ev__process_backlog(ev_loop_t* loop)
+EV_LOCAL size_t ev__process_backlog(ev_loop_t* loop)
 {
     ev_list_node_t* it;
+    size_t active_count = 0;
+
     while ((it = ev_list_pop_front(&loop->backlog_queue)) != NULL)
     {
         ev_handle_t* handle = EV_CONTAINER_OF(it, ev_handle_t, backlog.node);
@@ -2352,20 +2341,27 @@ EV_LOCAL void ev__process_backlog(ev_loop_t* loop)
         handle->backlog.status = EV_ENOENT;
 
         handle->backlog.cb(handle);
+        active_count++;
     }
+
+    return active_count;
 }
 
-EV_LOCAL void ev__process_endgame(ev_loop_t* loop)
+EV_LOCAL size_t ev__process_endgame(ev_loop_t* loop)
 {
     ev_list_node_t* it;
+    size_t active_count = 0;
+
     while ((it = ev_list_pop_front(&loop->endgame_queue)) != NULL)
     {
         ev_handle_t* handle = EV_CONTAINER_OF(it, ev_handle_t, endgame.node);
         _ev_to_close_handle(handle);
+        active_count++;
     }
+
+    return active_count;
 }
 
-#line 1 "src/list.c"
 #include <string.h>
 /* AMALGAMATE: #include "ev.h" */
 
@@ -2550,7 +2546,6 @@ void ev_list_migrate(ev_list_t* dst, ev_list_t* src)
     src->size = 0;
 }
 
-#line 1 "src/log.c"
 /* AMALGAMATE: #include "log.h" */
 #include <stdarg.h>
 #include <stdio.h>
@@ -2641,7 +2636,6 @@ EV_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width)
 
 }
 
-#line 1 "src/loop.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop.h" */
 /* AMALGAMATE: #include "allocator.h" */
@@ -2842,28 +2836,42 @@ void ev_loop_stop(ev_loop_t* loop)
     loop->mask.b_stop = 1;
 }
 
+static uint32_t _ev_loop_calculate_timeout(ev_loop_t* loop, ev_loop_mode_t mode, size_t active_count)
+{
+    if (mode == EV_LOOP_MODE_NOWAIT)
+    {
+        return 0;
+    }
+
+    if (mode == EV_LOOP_MODE_ONCE && active_count != 0)
+    {
+        return 0;
+    }
+
+    return _ev_backend_timeout(loop);
+}
+
 int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
 {
-    uint32_t timeout;
-
     int ret;
+    uint32_t timeout;
+    size_t active_count = 0;
+
     while ((ret = _ev_loop_alive(loop)) != 0 && !loop->mask.b_stop)
     {
         ev__loop_update_time(loop);
 
-        ev__process_timer(loop);
-        ev__process_backlog(loop);
-        ev__process_endgame(loop);
+        active_count += ev__process_timer(loop);
+        active_count += ev__process_backlog(loop);
+        active_count += ev__process_endgame(loop);
 
         if ((ret = _ev_loop_alive(loop)) == 0)
         {
             break;
         }
 
-        /* Calculate timeout */
-        timeout = mode != EV_LOOP_MODE_NOWAIT ?
-            _ev_backend_timeout(loop) : 0;
-
+        /* IO multiplexing */
+        timeout = _ev_loop_calculate_timeout(loop, mode, active_count);
         ev__poll(loop, timeout);
 
         /**
@@ -2875,15 +2883,15 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
          * #EV_LOOP_MODE_NOWAIT makes no guarantees about progress so it's omitted from
          * the check.
          */
-        if (mode == EV_LOOP_MODE_ONCE)
+        if (timeout != 0)
         {
             ev__loop_update_time(loop);
-            ev__process_timer(loop);
+            active_count += ev__process_timer(loop);
         }
 
         /* Callback maybe added */
-        ev__process_backlog(loop);
-        ev__process_endgame(loop);
+        active_count += ev__process_backlog(loop);
+        active_count += ev__process_endgame(loop);
 
         if (mode != EV_LOOP_MODE_DEFAULT)
         {
@@ -3028,7 +3036,6 @@ void ev_loop_walk(ev_loop_t* loop, ev_walk_cb cb, void* arg)
     }
 }
 
-#line 1 "src/map.c"
 /* AMALGAMATE: #include "ev.h" */
 #include <stdint.h>
 #include <inttypes.h>
@@ -3804,7 +3811,6 @@ ev_map_node_t* ev_map_prev(const ev_map_node_t* node)
     return _ev_map_low_prev(node);
 }
 
-#line 1 "src/misc.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "misc.h" */
 /* AMALGAMATE: #include "loop.h" */
@@ -3980,7 +3986,6 @@ EV_LOCAL int ev__translate_posix_sys_error(int syserr)
 #undef EV_EXPAND_ERRMAP
 }
 
-#line 1 "src/pipe.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop.h" */
 /* AMALGAMATE: #include "pipe.h" */
@@ -4043,7 +4048,6 @@ EV_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t* req, ev_pipe_write_cb 
     return 0;
 }
 
-#line 1 "src/queue.c"
 /* AMALGAMATE: #include "ev.h" */
 #include <stdlib.h>
 
@@ -4121,7 +4125,6 @@ int ev_queue_empty(const ev_queue_node_t* node)
     return EV_QUEUE_NEXT(node) == node;
 }
 
-#line 1 "src/ringbuffer.c"
 /* AMALGAMATE: #include "ringbuffer.h" */
 
 #define EV_RB_BEG_POS(rb) \
@@ -4671,7 +4674,6 @@ EV_LOCAL ring_buffer_token_t* ring_buffer_next(const ring_buffer_t* handler, con
     return &(node->token);
 }
 
-#line 1 "src/shmem.c"
 /* AMALGAMATE: #include "shmem.h" */
 
 void* ev_shm_addr(ev_shm_t* shm)
@@ -4684,7 +4686,6 @@ size_t ev_shm_size(ev_shm_t* shm)
     return shm->size;
 }
 
-#line 1 "src/threadpool.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop.h" */
 /* AMALGAMATE: #include "handle.h" */
@@ -5062,7 +5063,6 @@ EV_LOCAL void ev__threadpool_process(ev_loop_t* loop)
     }
 }
 
-#line 1 "src/timer.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "timer.h" */
 /* AMALGAMATE: #include "handle.h" */
@@ -5101,9 +5101,11 @@ EV_LOCAL void ev__init_timer(ev_loop_t* loop)
     ev_map_init(&loop->timer.heap, _ev_cmp_timer, NULL);
 }
 
-EV_LOCAL void ev__process_timer(ev_loop_t* loop)
+EV_LOCAL size_t ev__process_timer(ev_loop_t* loop)
 {
     ev_map_node_t* it;
+    size_t counter = 0;
+
     while ((it = ev_map_begin(&loop->timer.heap)) != NULL)
     {
         ev_timer_t* timer = EV_CONTAINER_OF(it, ev_timer_t, node);
@@ -5118,7 +5120,10 @@ EV_LOCAL void ev__process_timer(ev_loop_t* loop)
             ev_timer_start(timer, timer->attr.cb, timer->attr.repeat, timer->attr.repeat);
         }
         timer->attr.cb(timer);
+        counter++;
     }
+
+    return counter;
 }
 
 int ev_timer_init(ev_loop_t* loop, ev_timer_t* handle)
@@ -5170,7 +5175,6 @@ void ev_timer_stop(ev_timer_t* handle)
     ev_map_erase(&handle->base.loop->timer.heap, &handle->node);
 }
 
-#line 1 "src/udp.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop.h" */
 /* AMALGAMATE: #include "handle.h" */
@@ -5285,7 +5289,6 @@ err:
     return ret;
 }
 
-#line 1 "src/version.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop.h" */
 
@@ -5311,7 +5314,6 @@ unsigned ev_version_code(void)
 }
 
 #if defined(_WIN32) /* AMALGAMATE: ev.c (1/3) */
-#line 1 "src/win/winapi.h"
 #ifndef __EV_WINAPI_INTERNAL_H__
 #define __EV_WINAPI_INTERNAL_H__
 #ifdef __cplusplus
@@ -5819,7 +5821,6 @@ EV_LOCAL void ev__winapi_init(void);
 #endif
 #endif
 
-#line 1 "src/win/winsock.h"
 #ifndef __EV_WINSOCK_INTERNAL_H__
 #define __EV_WINSOCK_INTERNAL_H__
 
@@ -5901,7 +5902,6 @@ EV_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status);
 #endif
 #endif
 
-#line 1 "src/win/async_win.h"
 #ifndef __EV_ASYNC_WIN_INTERNAL_H__
 #define __EV_ASYNC_WIN_INTERNAL_H__
 
@@ -5909,7 +5909,6 @@ EV_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status);
 
 #endif
 
-#line 1 "src/win/fs_win.h"
 #ifndef __EV_FS_WIN_INTERNAL_H__
 #define __EV_FS_WIN_INTERNAL_H__
 
@@ -5948,7 +5947,6 @@ EV_LOCAL int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg);
 
 #endif
 
-#line 1 "src/win/udp_win.h"
 #ifndef __EV_UDP_WIN_INTERNAL_H__
 #define __EV_UDP_WIN_INTERNAL_H__
 
@@ -5956,7 +5954,6 @@ EV_LOCAL int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg);
 
 #endif
 
-#line 1 "src/win/loop_win.h"
 #ifndef __EV_LOOP_WIN_INTERNAL_H__
 #define __EV_LOOP_WIN_INTERNAL_H__
 #ifdef __cplusplus
@@ -6029,7 +6026,6 @@ EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt);
 #endif
 #endif
 
-#line 1 "src/win/process_win.h"
 #ifndef __EV_PROCESS_WIN_INTERNAL_H__
 #define __EV_PROCESS_WIN_INTERNAL_H__
 
@@ -6037,7 +6033,6 @@ EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt);
 
 #endif
 
-#line 1 "src/win/pipe_win.h"
 #ifndef __EV_PIPE_WIN_INTERNAL_H__
 #define __EV_PIPE_WIN_INTERNAL_H__
 
@@ -6045,7 +6040,6 @@ EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt);
 
 #endif
 
-#line 1 "src/win/misc_win.h"
 #ifndef __EV_MISC_WIN_INTERNAL_H__
 #define __EV_MISC_WIN_INTERNAL_H__
 
@@ -6083,7 +6077,6 @@ EV_LOCAL void ev__fatal_syscall(const char* file, int line,
 
 #endif
 
-#line 1 "src/win/thread_win.h"
 #ifndef __EV_THREAD_WIN_INTERNAL_H__
 #define __EV_THREAD_WIN_INTERNAL_H__
 
@@ -6104,7 +6097,6 @@ EV_LOCAL void ev__thread_init_win(void);
 #endif
 #endif
 
-#line 1 "src/win/threadpool_win.h"
 #ifndef __EV_THREADPOOL_WIN_INTERNAL_H__
 #define __EV_THREADPOOL_WIN_INTERNAL_H__
 
@@ -6123,7 +6115,6 @@ EV_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop);
 
 #endif
 
-#line 1 "src/win/tcp_win.h"
 #ifndef __EV_TCP_WIN_INTERNAL_H__
 #define __EV_TCP_WIN_INTERNAL_H__
 
@@ -6147,7 +6138,6 @@ EV_LOCAL int ev__tcp_open_win(ev_tcp_t* tcp, SOCKET fd);
 #endif
 #endif
 
-#line 1 "src/win/async_win.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "async_win.h" */
 /* AMALGAMATE: #include "handle.h" */
@@ -6211,7 +6201,6 @@ void ev_async_wakeup(ev_async_t* handle)
     }
 }
 
-#line 1 "src/win/fs_win.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop.h" */
 /* AMALGAMATE: #include "allocator.h" */
@@ -7072,7 +7061,6 @@ EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
     return (int)ret;
 }
 
-#line 1 "src/win/loop_win.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "misc.h" */
 /* AMALGAMATE: #include "allocator.h" */
@@ -7290,7 +7278,6 @@ EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt)
     return 0;
 }
 
-#line 1 "src/win/misc_win.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "allocator.h" */
 /* AMALGAMATE: #include "winapi.h" */
@@ -7490,7 +7477,6 @@ void ev_library_shutdown(void)
 
 }
 
-#line 1 "src/win/mutex_win.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop.h" */
 
@@ -7525,7 +7511,6 @@ int ev_mutex_try_enter(ev_mutex_t* handle)
     return EV_EBUSY;
 }
 
-#line 1 "src/win/once_win.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop_win.h" */
 
@@ -7547,7 +7532,6 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
     }
 }
 
-#line 1 "src/win/pipe_win.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "handle.h" */
 /* AMALGAMATE: #include "loop_win.h" */
@@ -9005,7 +8989,6 @@ void ev_pipe_close(ev_os_pipe_t fd)
     CloseHandle(fd);
 }
 
-#line 1 "src/win/process_win.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "async.h" */
 /* AMALGAMATE: #include "loop.h" */
@@ -9655,7 +9638,6 @@ error:
     return ev__translate_sys_error(err);
 }
 
-#line 1 "src/win/sem_win.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop.h" */
 
@@ -9718,7 +9700,6 @@ int ev_sem_try_wait(ev_sem_t* sem)
     EV_ABORT("ret:%lu, GetLastError:%lu", ret, errcode);
 }
 
-#line 1 "src/win/shmem_win.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "misc_win.h" */
 /* AMALGAMATE: #include "loop.h" */
@@ -9802,7 +9783,6 @@ void ev_shm_exit(ev_shm_t* shm)
     }
 }
 
-#line 1 "src/win/tcp_win.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "handle.h" */
 /* AMALGAMATE: #include "loop_win.h" */
@@ -10567,7 +10547,6 @@ EV_LOCAL int ev__tcp_open_win(ev_tcp_t* tcp, SOCKET fd)
     return 0;
 }
 
-#line 1 "src/win/thread_win.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop_win.h" */
 /* AMALGAMATE: #include "misc_win.h" */
@@ -10754,7 +10733,6 @@ void* ev_tls_get(ev_tls_t* tls)
     return val;
 }
 
-#line 1 "src/win/threadpool_win.c"
 /* AMALGAMATE: #include "threadpool_win.h" */
 /* AMALGAMATE: #include "loop_win.h" */
 
@@ -10782,7 +10760,6 @@ EV_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop)
     (void)loop;
 }
 
-#line 1 "src/win/udp_win.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "misc.h" */
 /* AMALGAMATE: #include "loop_win.h" */
@@ -11719,7 +11696,6 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
     return 0;
 }
 
-#line 1 "src/win/winapi.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "winapi.h" */
 #include <assert.h>
@@ -11749,7 +11725,6 @@ EV_LOCAL void ev__winapi_init(void)
 #undef GET_NTDLL_FUNC
 }
 
-#line 1 "src/win/winsock.c"
 /* AMALGAMATE: #include "winsock.h" */
 /* AMALGAMATE: #include "misc_win.h" */
 
@@ -12132,7 +12107,6 @@ EV_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status)
 }
 
 #else               /* AMALGAMATE: ev.c (2/3) */
-#line 1 "src/unix/async_unix.h"
 #ifndef __EV_ASYNC_UNIX_INTERNAL_H__
 #define __EV_ASYNC_UNIX_INTERNAL_H__
 
@@ -12166,7 +12140,6 @@ EV_LOCAL void ev__async_pend(int rfd);
 
 #endif
 
-#line 1 "src/unix/io_unix.h"
 #ifndef __EV_IO_UNIX_H__
 #define __EV_IO_UNIX_H__
 
@@ -12277,7 +12250,6 @@ EV_LOCAL int ev__send_unix(int fd, ev_write_t* req,
 #endif
 #endif
 
-#line 1 "src/unix/process_unix.h"
 #ifndef __EV_PROCESS_UNIX_H__
 #define __EV_PROCESS_UNIX_H__
 
@@ -12304,7 +12276,6 @@ EV_LOCAL void ev__init_process_unix(void);
 #endif
 #endif
 
-#line 1 "src/unix/tcp_unix.h"
 #ifndef __EV_TCP_UNIX_H__
 #define __EV_TCP_UNIX_H__
 
@@ -12328,7 +12299,6 @@ EV_LOCAL int ev__tcp_open(ev_tcp_t* tcp, int fd);
 #endif
 #endif
 
-#line 1 "src/unix/loop_unix.h"
 #ifndef __EV_LOOP_UNIX_H__
 #define __EV_LOOP_UNIX_H__
 
@@ -12361,7 +12331,6 @@ EV_LOCAL void ev__init_once_unix(void);
 #endif
 #endif
 
-#line 1 "src/unix/misc_unix.h"
 #ifndef __EV_MISC_UNIX_INTERNAL_H__
 #define __EV_MISC_UNIX_INTERNAL_H__
 
@@ -12369,7 +12338,6 @@ EV_LOCAL void ev__init_once_unix(void);
 
 #endif
 
-#line 1 "src/unix/stream_unix.h"
 #ifndef __EV_STREAM_UNIX_H__
 #define __EV_STREAM_UNIX_H__
 
@@ -12439,7 +12407,6 @@ EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned
 #endif
 #endif
 
-#line 1 "src/unix/work.h"
 #ifndef __EV_WORK_INTERNAL_H__
 #define __EV_WORK_INTERNAL_H__
 
@@ -12459,7 +12426,6 @@ EV_LOCAL void ev__exit_work(ev_loop_t* loop);
 
 #endif
 
-#line 1 "src/unix/async_unix.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "io_unix.h" */
 /* AMALGAMATE: #include "loop.h" */
@@ -12624,7 +12590,6 @@ void ev_async_wakeup(ev_async_t* handle)
     ev__async_post(handle->backend.pipfd[1]);
 }
 
-#line 1 "src/unix/fs_unix.c"
 #define _GNU_SOURCE
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop.h" */
@@ -12979,7 +12944,6 @@ EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
     return ret;
 }
 
-#line 1 "src/unix/io_unix.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "misc_unix.h" */
 /* AMALGAMATE: #include "io_unix.h" */
@@ -13411,7 +13375,6 @@ EV_LOCAL int ev__send_unix(int fd, ev_write_t* req,
     return _ev_io_finalize_send_req_unix(req, (size_t)write_size);
 }
 
-#line 1 "src/unix/loop_unix.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop_unix.h" */
 /* AMALGAMATE: #include "io_unix.h" */
@@ -13603,7 +13566,6 @@ EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
     }
 }
 
-#line 1 "src/unix/misc_unix.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "misc_unix.h" */
 #include <errno.h>
@@ -13618,7 +13580,6 @@ void ev_library_shutdown(void)
     // Do nothing
 }
 
-#line 1 "src/unix/mutex_unix.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop.h" */
 
@@ -13731,7 +13692,6 @@ int ev_mutex_try_enter(ev_mutex_t* handle)
     return EV_EBUSY;
 }
 
-#line 1 "src/unix/once_unix.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop.h" */
 #include <stdlib.h>
@@ -13744,7 +13704,6 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
     }
 }
 
-#line 1 "src/unix/pipe_unix.c"
 #define _GNU_SOURCE
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop_unix.h" */
@@ -14668,7 +14627,6 @@ void ev_pipe_close(ev_os_pipe_t fd)
     }
 }
 
-#line 1 "src/unix/process_unix.c"
 #define _GNU_SOURCE
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "allocator.h" */
@@ -15371,7 +15329,6 @@ error:
     return errcode;
 }
 
-#line 1 "src/unix/sem_unix.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop.h" */
 
@@ -15434,7 +15391,6 @@ int ev_sem_try_wait(ev_sem_t* sem)
     return 0;
 }
 
-#line 1 "src/unix/shmem_unix.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "shmem.h" */
 /* AMALGAMATE: #include "loop.h" */
@@ -15541,7 +15497,6 @@ void ev_shm_exit(ev_shm_t* shm)
     close(shm->backend.map_file);
 }
 
-#line 1 "src/unix/stream_unix.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "stream_unix.h" */
 
@@ -15785,7 +15740,6 @@ EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned
     }
 }
 
-#line 1 "src/unix/tcp_unix.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "loop_unix.h" */
 /* AMALGAMATE: #include "stream_unix.h" */
@@ -16264,7 +16218,6 @@ EV_LOCAL int ev__tcp_open(ev_tcp_t* tcp, int fd)
     return 0;
 }
 
-#line 1 "src/unix/thread_unix.c"
 #define _GNU_SOURCE
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "misc_unix.h" */
@@ -16451,7 +16404,6 @@ void* ev_tls_get(ev_tls_t* tls)
     return pthread_getspecific(tls->tls);
 }
 
-#line 1 "src/unix/threadpool_unix.c"
 /* AMALGAMATE: #include "threadpool.h" */
 /* AMALGAMATE: #include "loop_unix.h" */
 /* AMALGAMATE: #include "async_unix.h" */
@@ -16489,7 +16441,6 @@ EV_LOCAL void ev__exit_work(ev_loop_t* loop)
     loop->backend.threadpool.evtfd[1] = -1;
 }
 
-#line 1 "src/unix/udp_unix.c"
 /* AMALGAMATE: #include "ev.h" */
 /* AMALGAMATE: #include "io_unix.h" */
 /* AMALGAMATE: #include "misc_unix.h" */
@@ -17445,7 +17396,6 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
 #if defined(EV_HAVE_LUA_BINDING) /* FEATURE: EV_HAVE_LUA_BINDING (1/2) */
 #include "lua.h"
 #include "lauxlib.h"
-#line 1 "src/lua/ev.lua.internal.h"
 #ifndef __EV_LUA_INTERNAL_H__
 #define __EV_LUA_INTERNAL_H__
 
@@ -17517,7 +17467,6 @@ int lev_error_ex(const char* file, int line, lua_State* L, ev_loop_t* loop, int 
 
 #endif
 
-#line 1 "src/lua/channel.lua.h"
 #ifndef __EV_LUA_CHANNEL_H__
 #define __EV_LUA_CHANNEL_H__
 
@@ -17535,7 +17484,6 @@ int lev_channel(lua_State* L);
 
 #endif
 
-#line 1 "src/lua/fs.lua.h"
 #ifndef __EV_LUA_FS_H__
 #define __EV_LUA_FS_H__
 
@@ -17600,7 +17548,6 @@ ev_file_t* lev_try_to_file(lua_State* L, int idx);
 
 #endif
 
-#line 1 "src/lua/misc.lua.h"
 #ifndef __EV_LUA_MISC_H__
 #define __EV_LUA_MISC_H__
 
@@ -17662,7 +17609,6 @@ int lev_arg_unpack(lua_State* L);
 
 #endif
 
-#line 1 "src/lua/pipe.lua.h"
 #ifndef __EV_LUA_PIPE_H__
 #define __EV_LUA_PIPE_H__
 
@@ -17682,7 +17628,6 @@ ev_pipe_t* lev_try_to_pipe(lua_State* L, int idx);
 
 #endif
 
-#line 1 "src/lua/process.lua.h"
 #ifndef __EV_LUA_PROCESS_H__
 #define __EV_LUA_PROCESS_H__
 
@@ -17704,7 +17649,6 @@ int lev_exepath(lua_State* L);
 
 #endif
 
-#line 1 "src/lua/promise.lua.h"
 #ifndef __EV_LUA_PROMISE_H__
 #define __EV_LUA_PROMISE_H__
 
@@ -17767,7 +17711,6 @@ int lev_promise_get_value(lua_State* L, lev_promise_t* promise, lev_promise_cb c
 #endif
 #endif
 
-#line 1 "src/lua/tcp.lua.h"
 #ifndef __EV_LUA_TCP_H__
 #define __EV_LUA_TCP_H__
 
@@ -17790,7 +17733,6 @@ int lev_tcp(lua_State* L);
 
 #endif
 
-#line 1 "src/lua/timer.lua.h"
 #ifndef __EV_LUA_TIMER_H__
 #define __EV_LUA_TIMER_H__
 
@@ -17807,7 +17749,6 @@ int lev_sleep(lua_State* L);
 #endif
 #endif
 
-#line 1 "src/lua/udp.lua.h"
 #ifndef __EV_LUA_UDP_H__
 #define __EV_LUA_UDP_H__
 
@@ -17836,7 +17777,6 @@ int lev_udp(lua_State* L);
 
 #endif
 
-#line 1 "src/lua/ev.lua.c"
 /* AMALGAMATE: #include "channel.lua.h" */
 /* AMALGAMATE: #include "fs.lua.h" */
 /* AMALGAMATE: #include "misc.lua.h" */
@@ -18423,7 +18363,6 @@ void lev_wakeup(ev_loop_t* loop)
     ev_async_wakeup(&self->async);
 }
 
-#line 1 "src/lua/channel.lua.c"
 /* AMALGAMATE: #include "channel.lua.h" */
 #include <string.h>
 
@@ -18691,7 +18630,6 @@ int lev_channel(lua_State* L)
     return 1;
 }
 
-#line 1 "src/lua/fs.lua.c"
 /* AMALGAMATE: #include "fs.lua.h" */
 
 #define LEV_FILE_NAME   "__ev_file"
@@ -19287,7 +19225,6 @@ ev_file_t* lev_try_to_file(lua_State* L, int idx)
     return self != NULL ? &self->file : NULL;
 }
 
-#line 1 "src/lua/misc.lua.c"
 /* AMALGAMATE: #include "misc.lua.h" */
 
 #define LEV_SOCKADDR_STORAGE_NAME   "__ev_sockaddr_storage"
@@ -19398,7 +19335,6 @@ int lev_arg_unpack(lua_State* L)
     return tmp_sp;
 }
 
-#line 1 "src/lua/pipe.lua.c"
 /* AMALGAMATE: #include "pipe.lua.h" */
 #include <string.h>
 
@@ -19648,7 +19584,6 @@ ev_pipe_t* lev_try_to_pipe(lua_State* L, int idx)
     return self != NULL ? &self->pipe : NULL;
 }
 
-#line 1 "src/lua/process.lua.c"
 /* AMALGAMATE: #include "process.lua.h" */
 /* AMALGAMATE: #include "fs.lua.h" */
 /* AMALGAMATE: #include "pipe.lua.h" */
@@ -20039,7 +19974,6 @@ int lev_exepath(lua_State* L)
     return _lev_path_template(L, ev_exepath);
 }
 
-#line 1 "src/lua/promise.lua.c"
 /* AMALGAMATE: #include "promise.lua.h" */
 
 #define LEV_PROMISE_NAME    "__ev_promise"
@@ -20299,7 +20233,6 @@ int lev_promise_set_value(lua_State* L, lev_promise_t* promise, int narg)
     return 0;
 }
 
-#line 1 "src/lua/tcp.lua.c"
 /* AMALGAMATE: #include "tcp.lua.h" */
 /* AMALGAMATE: #include "misc.lua.h" */
 #include <string.h>
@@ -20692,7 +20625,6 @@ int lev_tcp(lua_State* L)
     return 1;
 }
 
-#line 1 "src/lua/timer.lua.c"
 /* AMALGAMATE: #include "timer.lua.h" */
 
 typedef struct lev_timer
@@ -20758,7 +20690,6 @@ int lev_sleep(lua_State* L)
     return lua_yieldk(L, 0, (lua_KContext)NULL, _lev_on_sleep_resume);
 }
 
-#line 1 "src/lua/udp.lua.c"
 /* AMALGAMATE: #include "udp.lua.h" */
 /* AMALGAMATE: #include "misc.lua.h" */
 #include <string.h>

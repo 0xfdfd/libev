@@ -99,15 +99,17 @@ EV_LOCAL int ev__backlog_submit(ev_handle_t* handle, ev_handle_cb callback);
 
 /**
  * @brief Process backlog events.
- * @param[in] loop Event loop.
+ * @param[in] loop  Event loop.
+ * @return          Active count.
  */
-EV_LOCAL void ev__process_backlog(ev_loop_t* loop);
+EV_LOCAL size_t ev__process_backlog(ev_loop_t* loop);
 
 /**
  * @brief Process endgame events.
- * @param[in] loop Event loop.
+ * @param[in] loop  Event loop.
+ * @return          Active count.
  */
-EV_LOCAL void ev__process_endgame(ev_loop_t* loop);
+EV_LOCAL size_t ev__process_endgame(ev_loop_t* loop);
 
 #ifdef __cplusplus
 }

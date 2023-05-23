@@ -36,9 +36,11 @@ EV_LOCAL void ev__init_timer(ev_loop_t* loop)
     ev_map_init(&loop->timer.heap, _ev_cmp_timer, NULL);
 }
 
-EV_LOCAL void ev__process_timer(ev_loop_t* loop)
+EV_LOCAL size_t ev__process_timer(ev_loop_t* loop)
 {
     ev_map_node_t* it;
+    size_t counter = 0;
+
     while ((it = ev_map_begin(&loop->timer.heap)) != NULL)
     {
         ev_timer_t* timer = EV_CONTAINER_OF(it, ev_timer_t, node);
@@ -53,7 +55,10 @@ EV_LOCAL void ev__process_timer(ev_loop_t* loop)
             ev_timer_start(timer, timer->attr.cb, timer->attr.repeat, timer->attr.repeat);
         }
         timer->attr.cb(timer);
+        counter++;
     }
+
+    return counter;
 }
 
 int ev_timer_init(ev_loop_t* loop, ev_timer_t* handle)
