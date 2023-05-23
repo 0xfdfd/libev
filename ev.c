@@ -17580,6 +17580,13 @@ int lev_fs_file(lua_State* L);
 int lev_fs_remove(lua_State* L);
 
 /**
+ * @brief Read dir.
+ * @param[in] L     Lua stack.
+ * @return          Always 1.
+ */
+int lev_fs_readdir(lua_State* L);
+
+/**
  * @brief Try to convert file handle.
  * @param[in] L     Lua stack.
  * @param[in] idx   Stack index.
@@ -17861,6 +17868,7 @@ int lev_udp(lua_State* L);
 #define LEV_LOOP_API_MAP(xx)            \
     xx("channel",       lev_channel)    \
     xx("fs_file",       lev_fs_file)    \
+    xx("fs_readdir",    lev_fs_readdir) \
     xx("fs_remove",     lev_fs_remove)  \
     xx("pipe",          lev_pipe)       \
     xx("process",       lev_process)    \
@@ -18749,6 +18757,13 @@ typedef struct lev_file_remove
     ev_loop_t*  loop;
 } lev_file_remove_t;
 
+typedef struct lev_file_readdir
+{
+    ev_fs_req_t req;
+    lua_State*  L;
+    ev_loop_t*  loop;
+} lev_file_readdir_t;
+
 static void _lev_file_on_open(ev_fs_req_t* req)
 {
     lev_file_open_t* token = EV_CONTAINER_OF(req, lev_file_open_t, req);
@@ -19098,6 +19113,54 @@ static int _lev_fs_on_remove_resume(lua_State* L, int status, lua_KContext ctx)
     return 1;
 }
 
+static void _lev_fs_on_readdir_done(ev_fs_req_t* req)
+{
+    lev_file_readdir_t* token = EV_CONTAINER_OF(req, lev_file_readdir_t, req);
+    lev_set_state(token->L, token->loop, 1);
+}
+
+static const char* _lev_fs_dirent_type_tostring(ev_dirent_type_t type)
+{
+    switch (type)
+    {
+    case EV_DIRENT_FILE:    return "file";
+    case EV_DIRENT_DIR:     return "dir";
+    case EV_DIRENT_LINK:    return "link";
+    case EV_DIRENT_FIFO:    return "fifo";
+    case EV_DIRENT_SOCKET:  return "socket";
+    case EV_DIRENT_CHR:     return "chr";
+    case EV_DIRENT_BLOCK:   return "block";
+    default:                return "unknown";
+    }
+}
+
+static int _lev_fs_on_readdir_resume(lua_State* L, int status, lua_KContext ctx)
+{
+    (void)status;
+
+    lev_file_readdir_t* token = (lev_file_readdir_t*)ctx;
+    if (token->req.result < 0)
+    {
+        lua_pushinteger(L, token->req.result);
+        lua_pushnil(L);
+        goto finish;
+    }
+
+    lua_pushnil(L);
+    lua_newtable(L);
+
+    ev_dirent_t* dir = ev_fs_get_first_dirent(&token->req);
+    for (; dir != NULL; dir = ev_fs_get_next_dirent(dir))
+    {
+        lua_pushstring(L, _lev_fs_dirent_type_tostring(dir->type));
+        lua_setfield(L, -2, dir->name);
+    }
+
+finish:
+    ev_fs_req_cleanup(&token->req);
+    return 2;
+}
+
 int lev_fs_file(lua_State* L)
 {
     int ret;
@@ -19188,6 +19251,28 @@ int lev_fs_remove(lua_State* L)
     lev_set_state(L, loop, 0);
 
     return lua_yieldk(L, 0, (lua_KContext)token, _lev_fs_on_remove_resume);
+}
+
+int lev_fs_readdir(lua_State* L)
+{
+    ev_loop_t* loop = lev_to_loop(L, 1);
+    const char* path = luaL_checkstring(L, 2);
+
+    lev_file_readdir_t* token = lua_newuserdata(L, sizeof(lev_file_readdir_t));
+
+    int ret = ev_fs_readdir(loop, &token->req, path, _lev_fs_on_readdir_done);
+    if (ret != 0)
+    {
+        lua_pushinteger(L, ret);
+        lua_pushnil(L);
+        return 2;
+    }
+
+    token->loop = loop;
+    token->L = L;
+    lev_set_state(L, loop, 0);
+
+    return lua_yieldk(L, 0, (lua_KContext)token, _lev_fs_on_readdir_resume);
 }
 
 ev_file_t* lev_try_to_file(lua_State* L, int idx)

@@ -41,7 +41,7 @@ target_include_directories(liblua54
 
 if (UNIX)
     target_compile_options(liblua54 PRIVATE -DLUA_USE_LINUX)
-    target_link_libraries(liblua54 PRIVATE m)
+    target_link_libraries(liblua54 PRIVATE m dl)
 endif ()
 
 add_executable(lua54

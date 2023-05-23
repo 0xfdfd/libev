@@ -2145,7 +2145,7 @@ struct ev_timespec_s
 /**
  * @brief Directory type.
  */
-enum ev_dirent_type_e
+typedef enum ev_dirent_type_e
 {
     EV_DIRENT_UNKNOWN,
     EV_DIRENT_FILE,
@@ -2155,12 +2155,7 @@ enum ev_dirent_type_e
     EV_DIRENT_SOCKET,
     EV_DIRENT_CHR,
     EV_DIRENT_BLOCK
-};
-
-/**
- * @brief Typedef of #ev_dirent_type_e.
- */
-typedef enum ev_dirent_type_e ev_dirent_type_t;
+} ev_dirent_type_t;
 
 /**
  * @brief File system request type.

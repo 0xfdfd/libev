@@ -29,6 +29,7 @@
 #define LEV_LOOP_API_MAP(xx)            \
     xx("channel",       lev_channel)    \
     xx("fs_file",       lev_fs_file)    \
+    xx("fs_readdir",    lev_fs_readdir) \
     xx("fs_remove",     lev_fs_remove)  \
     xx("pipe",          lev_pipe)       \
     xx("process",       lev_process)    \

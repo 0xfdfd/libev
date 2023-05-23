@@ -5,6 +5,9 @@
 ### BREAKING CHANGES
 1. `ev_map_insert()` now return conflict node address
 
+### Features
+1. add lua bindings
+
 
 ## v0.0.8 (2023/04/07)
 

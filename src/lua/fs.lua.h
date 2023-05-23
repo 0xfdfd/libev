@@ -42,6 +42,13 @@ int lev_fs_file(lua_State* L);
 int lev_fs_remove(lua_State* L);
 
 /**
+ * @brief Read dir.
+ * @param[in] L     Lua stack.
+ * @return          Always 1.
+ */
+int lev_fs_readdir(lua_State* L);
+
+/**
  * @brief Try to convert file handle.
  * @param[in] L     Lua stack.
  * @param[in] idx   Stack index.

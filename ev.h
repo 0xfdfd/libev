@@ -29,6 +29,9 @@
  * ### BREAKING CHANGES
  * 1. `ev_map_insert()` now return conflict node address
  * 
+ * ### Features
+ * 1. add lua bindings
+ * 
  * 
  * ## v0.0.8 (2023/04/07)
  * 
@@ -197,7 +200,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           1
+#define EV_VERSION_PREREL           2
 
 /**
  * @brief Version calculate helper macro.
@@ -3658,7 +3661,7 @@ struct ev_timespec_s
 /**
  * @brief Directory type.
  */
-enum ev_dirent_type_e
+typedef enum ev_dirent_type_e
 {
     EV_DIRENT_UNKNOWN,
     EV_DIRENT_FILE,
@@ -3668,12 +3671,7 @@ enum ev_dirent_type_e
     EV_DIRENT_SOCKET,
     EV_DIRENT_CHR,
     EV_DIRENT_BLOCK
-};
-
-/**
- * @brief Typedef of #ev_dirent_type_e.
- */
-typedef enum ev_dirent_type_e ev_dirent_type_t;
+} ev_dirent_type_t;
 
 /**
  * @brief File system request type.

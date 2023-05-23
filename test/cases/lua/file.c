@@ -31,3 +31,25 @@ TEST_F(lua, fs_file)
 
     TEST_CALL_LUA(script, TMPFILE_PATH);
 }
+
+TEST_F(lua, fs_readdir)
+{
+    static const char* script =
+"local loop = ev.loop()\n"
+"local dir = {}\n"
+"loop:co(function()\n"
+"    local err,ret = loop:fs_readdir(arg[1])\n"
+"    assert(err == nil)\n"
+"    dir = ret\n"
+"end)\n"
+"loop:run()\n"
+"local flag_have_info = false\n"
+"for k,v in pairs(dir) do\n"
+"    if k == arg[2] then\n"
+"        flag_have_info = true\n"
+"    end\n"
+"end\n"
+"assert(flag_have_info == true)\n";
+
+    TEST_CALL_LUA(script, test_get_self_dir(), test_self_exe_name());
+}
