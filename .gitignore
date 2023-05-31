@@ -71,6 +71,7 @@ dkms.conf
 /out
 *.tmp
 /CMakeSettings.json
+/cmake-build-debug
 
 # Html document files
 /docs/html

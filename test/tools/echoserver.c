@@ -34,7 +34,7 @@ static int tool_echoserver(int argc, char* argv[])
         if (!bSuccess)
         {
             errcode = GetLastError();
-            fprintf(stderr, "ReadFile failed: %d.\n", (long)errcode);
+            fprintf(stderr, "ReadFile failed: %ld.\n", (long)errcode);
             return EXIT_SUCCESS;
         }
 
@@ -43,7 +43,7 @@ static int tool_echoserver(int argc, char* argv[])
         if (!bSuccess)
         {
             errcode = GetLastError();
-            fprintf(stderr, "WriteFile failed: %d.\n", (long)errcode);
+            fprintf(stderr, "WriteFile failed: %ld.\n", (long)errcode);
             return EXIT_SUCCESS;
         }
     }
