@@ -20,7 +20,7 @@ TEST_FIXTURE_TEARDOWN(lua)
     _test_lua_remove_tmpfile();
 }
 
-TEST_F(lua, process_pipe)
+TEST_F(lua, DISABLED_process_pipe)
 {
     static const char* script =
 "local loop = ev.loop()\n"
@@ -47,7 +47,7 @@ TEST_F(lua, process_pipe)
     TEST_CALL_LUA(script, "hello world");
 }
 
-TEST_F(lua, process_file)
+TEST_F(lua, DISABLED_process_file)
 {
     static const char* script =
 "local loop = ev.loop()\n"

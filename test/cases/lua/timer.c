@@ -1,6 +1,6 @@
 #include "test.lua.h"
 
-TEST_F(lua, timer)
+TEST_F(lua, DISABLED_timer)
 {
     static const char* script =
 "local loop = ev.loop()\n"

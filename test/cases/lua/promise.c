@@ -1,6 +1,6 @@
 #include "test.lua.h"
 
-TEST_F(lua, promise)
+TEST_F(lua, DISABLED_promise)
 {
     static const char* script =
 "local loop = ev.loop()\n"

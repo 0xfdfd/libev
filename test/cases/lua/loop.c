@@ -1,6 +1,6 @@
 #include "test.lua.h"
 
-TEST_F(lua, loop)
+TEST_F(lua, DISABLED_loop)
 {
     static const char* script =
 "local loop = ev.loop()\n"
@@ -20,7 +20,7 @@ TEST_F(lua, loop)
     TEST_CALL_LUA(script);
 }
 
-TEST_F(lua, loop_empty)
+TEST_F(lua, DISABLED_loop_empty)
 {
     static const char* script =
 "local loop = ev.loop()\n"

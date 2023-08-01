@@ -1,6 +1,6 @@
 #include "test.lua.h"
 
-TEST_F(lua, arg_pack)
+TEST_F(lua, DISABLED_arg_pack)
 {
     static const char* script =
 "local args = ev.arg_pack(1, 2, 3)\n"

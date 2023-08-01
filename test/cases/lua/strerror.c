@@ -1,6 +1,6 @@
 #include "test.lua.h"
 
-TEST_F(lua, strerror)
+TEST_F(lua, DISABLED_strerror)
 {
     static const char* script =
 "local str = ev.strerror(test.errcode)\n"

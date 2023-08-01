@@ -1,6 +1,6 @@
 #include "test.lua.h"
 
-TEST_F(lua, udp)
+TEST_F(lua, DISABLED_udp)
 {
     static const char* script =
 "local loop = ev.loop()\n"

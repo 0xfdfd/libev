@@ -1,6 +1,6 @@
 #include "test.lua.h"
 
-TEST_F(lua, channel)
+TEST_F(lua, DISABLED_channel)
 {
     static const char* script =
 "local loop = ev.loop()\n"

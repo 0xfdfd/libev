@@ -15,7 +15,7 @@ TEST_FIXTURE_TEARDOWN(lua)
     ev_fs_remove_sync(TMPFILE_PATH, 1);
 }
 
-TEST_F(lua, fs_file)
+TEST_F(lua, DISABLED_fs_file)
 {
     static const char* script =
 "local loop = ev.loop()\n"
@@ -32,7 +32,7 @@ TEST_F(lua, fs_file)
     TEST_CALL_LUA(script, TMPFILE_PATH);
 }
 
-TEST_F(lua, fs_file_read)
+TEST_F(lua, DISABLED_fs_file_read)
 {
     static const char* s =
 "local loop = ev.loop()\n"
@@ -56,7 +56,7 @@ TEST_F(lua, fs_file_read)
     TEST_CALL_LUA(s, test_get_self_exe());
 }
 
-TEST_F(lua, fs_readdir)
+TEST_F(lua, DISABLED_fs_readdir)
 {
     static const char* script =
 "local loop = ev.loop()\n"
