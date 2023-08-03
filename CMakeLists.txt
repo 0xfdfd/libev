@@ -121,8 +121,26 @@ set(ev_src_lua
     "src/lua/udp.lua.c"
 )
 
-include(third_party/lua54.cmake)
+###############################################################################
+# Support functions
+###############################################################################
+function(ev_setup_target_wall name)
+    if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+        target_compile_options(${name} PRIVATE /W4 /WX)
+    else ()
+        target_compile_options(${name} PRIVATE -Wall -Wextra -Werror)
+    endif ()
+endfunction()
 
+###############################################################################
+# Dependency
+###############################################################################
+include(third_party/lua54.cmake)
+include(tool/CMakeLists.txt)
+
+###############################################################################
+# Build libev
+###############################################################################
 string(REPLACE ";" "," escaped_ev_src                   "${ev_src}")
 string(REPLACE ";" "," escaped_ev_src_os_win            "${ev_src_os_win}")
 string(REPLACE ";" "," escaped_ev_src_os_unix           "${ev_src_os_unix}")
@@ -130,7 +148,7 @@ string(REPLACE ";" "," escaped_ev_src_lua               "${ev_src_lua}")
 
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/ev.h
-    COMMAND $<TARGET_FILE:lua54> ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.lua
+    COMMAND $<TARGET_FILE:amalgamate>
             --no_line
             --out       ${CMAKE_CURRENT_SOURCE_DIR}/ev.h
             --commit    ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
@@ -147,8 +165,7 @@ add_custom_command(
             --source    "include/ev.h"
             --source    "include/ev/lua.h"
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.lua
-            ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
             ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/expose.h
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/version.h
@@ -163,8 +180,7 @@ add_custom_command(
 
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/ev.c
-    COMMAND $<TARGET_FILE:lua54> ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.lua
-            --no_line
+    COMMAND $<TARGET_FILE:amalgamate>
             --out               ${CMAKE_CURRENT_SOURCE_DIR}/ev.c
             --commit            ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
             --string            "#define EV_AMALGAMATE_BUILD"
@@ -183,8 +199,7 @@ add_custom_command(
             --source            ${escaped_ev_src_lua}
             --string            "#endif                           /* FEATURE: EV_HAVE_LUA_BINDING (2/2) */"
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.lua
-            ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
             ${CMAKE_CURRENT_SOURCE_DIR}/ev.h
             ${ev_src}
             ${ev_src_os_win}
@@ -216,14 +231,6 @@ else()
     target_link_libraries(${PROJECT_NAME} PRIVATE rt)
 endif()
 
-function(ev_setup_target_wall name)
-    if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-        target_compile_options(${name} PRIVATE /W4 /WX)
-    else ()
-        target_compile_options(${name} PRIVATE -Wall -Wextra -Werror)
-    endif ()
-endfunction()
-
 # add warning check
 ev_setup_target_wall(${PROJECT_NAME})
 
@@ -233,10 +240,14 @@ if (EV_ENABLE_COVERAGE AND CMAKE_C_COMPILER_ID MATCHES "(GNU|Clang)")
     set(EV_HAVE_COVERAGE true)
 endif ()
 
-# build examples
+###############################################################################
+# Build examples
+###############################################################################
 add_subdirectory(example)
 
-# build test
+###############################################################################
+# Build test
+###############################################################################
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     include(CTest)
 endif()

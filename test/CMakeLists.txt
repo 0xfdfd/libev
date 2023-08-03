@@ -1,6 +1,7 @@
 
 add_executable(ev_test
     "test/tools/echoserver.c"
+    "test/tools/eolcheck.c"
     "test/tools/help.c"
     "test/tools/init.c"
     "test/tools/ls.c"
@@ -86,7 +87,9 @@ target_include_directories(ev_test
 ev_setup_target_wall(ev_test)
 
 target_link_libraries(ev_test PRIVATE ev cutest)
-add_test(NAME ev_test COMMAND $<TARGET_FILE:ev_test>)
+add_test(NAME ev_unittest COMMAND $<TARGET_FILE:ev_test>)
+add_test(NAME ev_eol_h COMMAND $<TARGET_FILE:ev_test> -- eolcheck --file=${CMAKE_CURRENT_SOURCE_DIR}/ev.h --eol=LF)
+add_test(NAME ev_eol_c COMMAND $<TARGET_FILE:ev_test> -- eolcheck --file=${CMAKE_CURRENT_SOURCE_DIR}/ev.c --eol=LF)
 
 if(EV_HAVE_COVERAGE)
     setup_target_for_coverage_lcov(

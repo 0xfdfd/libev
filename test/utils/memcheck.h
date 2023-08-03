@@ -108,6 +108,8 @@ void mmc_snapshot_free(mmc_snapshot_t** snapshot);
 void mmc_snapshot_compare(mmc_snapshot_t* snap1, mmc_snapshot_t* snap2,
     mmc_cmp_cb cb, void* arg);
 
+void mmc_dump_hex(const void* data, size_t size, size_t width);
+
 #ifdef __cplusplus
 }
 #endif

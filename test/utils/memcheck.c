@@ -231,6 +231,15 @@ static void _mmc_dump_add_snapshot(mmc_info_t* info, mmc_snapshot_t* snapshot)
     ev_mutex_leave(&snapshot->guard);
 }
 
+static char _mmc_ascii_to_char(unsigned char c)
+{
+	if (c >= 32 && c <= 126)
+	{
+		return c;
+	}
+	return '.';
+}
+
 void mmc_dump(mmc_info_t* info)
 {
     memset(info, 0, sizeof(*info));
@@ -317,4 +326,38 @@ void mmc_snapshot_compare(mmc_snapshot_t* snap1, mmc_snapshot_t* snap2,
     }
 
     _mmc_do_compare(snap1, snap2, cb, arg);
+}
+
+void mmc_dump_hex(const void* data, size_t size, size_t width)
+{
+	const unsigned char* pdat = (unsigned char*)data;
+
+	size_t idx_line;
+	for (idx_line = 0; idx_line < size; idx_line += width)
+	{
+        fprintf(stdout, "%p: ", pdat + idx_line);
+
+		/* printf hex */
+        size_t idx_colume;
+		for (idx_colume = 0; idx_colume < width; idx_colume++)
+		{
+			const char* postfix = (idx_colume < width - 1) ? "" : "|";
+
+			if (idx_colume + idx_line < size)
+			{
+				fprintf(stdout, "%02x %s", pdat[idx_colume + idx_line], postfix);
+			}
+			else
+			{
+				fprintf(stdout, "   %s", postfix);
+			}
+		}
+		fprintf(stdout, " ");
+		/* printf char */
+		for (idx_colume = 0; (idx_colume < width) && (idx_colume + idx_line < size); idx_colume++)
+		{
+			fprintf(stdout, "%c", _mmc_ascii_to_char(pdat[idx_colume + idx_line]));
+		}
+		fprintf(stdout, "\n");
+	}
 }
