@@ -28,10 +28,7 @@
  * 
  * ### BREAKING CHANGES
  * 1. `ev_map_insert()` now return conflict node address
- * 2. lua: loop:fs_file now open with RDONLY if no options specificed
- * 
- * ### Features
- * 1. add lua bindings
+ * 2. remove `active_events` field
  * 
  * ### Bug Fixes
  * 1. fix: loop may wait infinite with EV_LOOP_MODE_ONCE if there are only endgame events
@@ -596,8 +593,8 @@ EV_API ev_map_node_t* ev_map_prev(const ev_map_node_t* node);
 #if defined(_WIN32) /* AMALGAMATE: ev.h (1/3) */
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    include/ev/win.h
-// SIZE:    15736
-// SHA-256: 4ee4e4483d83b41d8c5513f7da5262e3ebfef8cb934156dc0e120b377b1ba8a2
+// SIZE:    15743
+// SHA-256: 510b3e56c8315c30f4e3bf5341e806224968f20f5d5c949562c0bd8f61fe996a
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * @file
@@ -755,7 +752,7 @@ typedef DWORD                   ev_os_tid_t;
 typedef HANDLE                  ev_os_thread_t;
 #define EV_OS_THREAD_INVALID    INVALID_HANDLE_VALUE
 
-typedef DWORD                   ev_os_tls_t;
+typedef DWORD                   ev_os_tl_storage_t;
 typedef CRITICAL_SECTION        ev_os_mutex_t;
 typedef HANDLE                  ev_os_sem_t;
 
@@ -1096,8 +1093,8 @@ typedef struct ev_pipe_win_ipc_info
 #else               /* AMALGAMATE: ev.h (2/3) */
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    include/ev/unix.h
-// SIZE:    12749
-// SHA-256: 4687e6b6ab33c5351d907b4941f68d293b381d97cb7831f2d32b426bc1f16017
+// SIZE:    12756
+// SHA-256: abca0369c718a99b7f42ec549cc980ce14b8a1a1110369b5105eb97b3d9f9ac8
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * @file
@@ -1197,7 +1194,7 @@ typedef int                     ev_os_file_t;
 typedef pthread_t               ev_os_thread_t;
 #define EV_OS_THREAD_INVALID    ((pthread_t)(-1))
 
-typedef pthread_key_t           ev_os_tls_t;
+typedef pthread_key_t           ev_os_tl_storage_t;
 typedef pthread_mutex_t         ev_os_mutex_t;
 typedef sem_t                   ev_os_sem_t;
 
@@ -1553,8 +1550,8 @@ struct ev_nonblock_stream
 #endif              /* AMALGAMATE: ev.h (3/3) */
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    include/ev.h
-// SIZE:    90158
-// SHA-256: 6bac7bbc3f8cdd6a6764b8a795655a6ccafd11733c00dd2a9512f34b6cd03323
+// SIZE:    90541
+// SHA-256: 12e94613f9b73cbafc61e4de15a74502059f204f7d347a566de16748e3e8dcab
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * @mainpage libev
@@ -1977,12 +1974,12 @@ typedef struct ev_thread_opt
 } ev_thread_opt_t;
 
 /**
- * @brief Thread local storage.
+ * @brief Thread-local storage.
  */
-typedef struct ev_tls
+typedef struct ev_tl_storage
 {
-    ev_os_tls_t     tls;                    /**< Thread local storage */
-} ev_tls_t;
+    ev_os_tl_storage_t  tls;                    /**< Thread local storage */
+} ev_tl_storage_t;
 
 /**
  * @brief Create thread
@@ -2036,27 +2033,27 @@ EV_API void ev_thread_sleep(uint32_t timeout);
  * @param[out] tls  A pointer to thread local storage.
  * @return          #ev_errno_t
  */
-EV_API int ev_tls_init(ev_tls_t* tls);
+EV_API int ev_tl_storage_init(ev_tl_storage_t* tls);
 
 /**
  * @brief Destroy thread local storage.
  * @param[in] tls   A initialized thread local storage handler.
  */
-EV_API void ev_tls_exit(ev_tls_t* tls);
+EV_API void ev_tl_storage_exit(ev_tl_storage_t* tls);
 
 /**
  * @brief Set thread local value.
  * @param[in] tls   A initialized thread local storage handler.
  * @param[in] val   A thread specific value.
  */
-EV_API void ev_tls_set(ev_tls_t* tls, void* val);
+EV_API void ev_tl_storage_set(ev_tl_storage_t* tls, void* val);
 
 /**
  * @brief Get thread local value.
  * @param[in] tls   A initialized thread local storage handler.
  * @return          A thread specific value.
  */
-EV_API void* ev_tls_get(ev_tls_t* tls);
+EV_API void* ev_tl_storage_get(ev_tl_storage_t* tls);
 
 /**
  * @} EV_Thread
@@ -3350,6 +3347,29 @@ EV_API int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs,
 
 /**
  * @} EV_UDP
+ */
+
+/**
+ * @defgroup EV_TLS TLS
+ * @{
+ */
+
+typedef struct ev_tls ev_tls_t;
+
+typedef void (*ev_tls_cb)(ev_tls_t* tls);
+
+struct ev_tls
+{
+    ev_tcp_t    tcp;
+    ev_tls_cb   on_exit;
+};
+
+int ev_tls_init(ev_loop_t* loop, ev_tls_t* tls);
+
+void ev_tls_exit(ev_tls_t* tls, ev_tls_cb on_exit);
+
+/**
+ * @} // EV_TLS
  */
 
 /**

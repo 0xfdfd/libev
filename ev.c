@@ -5330,6 +5330,42 @@ void ev_timer_stop(ev_timer_t* handle)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// FILE:    src/tls.c
+// SIZE:    521
+// SHA-256: 62f28ee4e14a93aecb53574db15e1317bea968e2d9406c4f533bfd662a49f0a0
+////////////////////////////////////////////////////////////////////////////////
+#line 1 "src/tls.c"
+/* AMALGAMATE: #include "ev.h" */
+
+int ev_tls_init(ev_loop_t* loop, ev_tls_t* tls)
+{
+    int ret;
+
+    if ((ret = ev_tcp_init(loop, &tls->tcp)) != 0)
+    {
+        return ret;
+    }
+
+    tls->on_exit = NULL;
+    return 0;
+}
+
+static void _ev_tls_on_tcp_close(ev_tcp_t* sock)
+{
+    ev_tls_t* tls = EV_CONTAINER_OF(sock, ev_tls_t, tcp);
+    if (tls->on_exit != NULL)
+    {
+        tls->on_exit(tls);
+    }
+}
+
+void ev_tls_exit(ev_tls_t* tls, ev_tls_cb on_exit)
+{
+    tls->on_exit = on_exit;
+    ev_tcp_exit(&tls->tcp, _ev_tls_on_tcp_close);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/udp.c
 // SIZE:    2683
 // SHA-256: 29a078bc3516c529ad5978f87ccda9c506c814b2f80a3785a10382e3cfedeeb8
@@ -6153,7 +6189,7 @@ EV_LOCAL int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg);
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/win/loop_win.h
 // SIZE:    1754
-// SHA-256: 098f2ef5d09d12304bd6afad86dd4ded5c04f839e59420ca3ff5318fde1a9c50
+// SHA-256: a14e545d018d6021f85adfd72a3dc99971a1050d0dc0385b5be1179f6479e43a
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/win/loop_win.h"
 #ifndef __EV_LOOP_WIN_INTERNAL_H__
@@ -6181,7 +6217,7 @@ typedef struct ev_loop_win_ctx
 
     struct
     {
-        ev_tls_t                thread_key;                 /**< Thread handle */
+        ev_tl_storage_t         thread_key;                 /**< Thread handle */
     }thread;
 } ev_loop_win_ctx_t;
 
@@ -10925,8 +10961,8 @@ EV_LOCAL int ev__tcp_open_win(ev_tcp_t* tcp, SOCKET fd)
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/win/thread_win.c
-// SIZE:    4201
-// SHA-256: 0a6e3a7e5eb55af1169d25bdacc190dabc83b1bfdd25a2e6e524430939a0aa73
+// SIZE:    4278
+// SHA-256: 155b6b8fb0a882079675ec930c6103fd4106b0f7145e9c9e07f34739e8da4d71
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/win/thread_win.c"
 /* AMALGAMATE: #include "ev.h" */
@@ -10959,7 +10995,7 @@ static unsigned __stdcall _ev_thread_proxy_proc_win(void* lpThreadParameter)
     ev_thread_helper_win_t* p_helper = lpThreadParameter;
     ev_thread_helper_win_t helper = *p_helper;
 
-    ev_tls_set(&g_ev_loop_win_ctx.thread.thread_key, (void*)p_helper->thread_id);
+    ev_tl_storage_set(&g_ev_loop_win_ctx.thread.thread_key, (void*)p_helper->thread_id);
     if (!ReleaseSemaphore(p_helper->start_sem, 1, NULL))
     {
         errcode = GetLastError();
@@ -10972,7 +11008,7 @@ static unsigned __stdcall _ev_thread_proxy_proc_win(void* lpThreadParameter)
 
 EV_LOCAL void ev__thread_init_win(void)
 {
-    int ret = ev_tls_init(&g_ev_loop_win_ctx.thread.thread_key);
+    int ret = ev_tl_storage_init(&g_ev_loop_win_ctx.thread.thread_key);
     if (ret != 0)
     {
         EV_ABORT("ret:%d", ret);
@@ -11050,7 +11086,7 @@ int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
 ev_os_thread_t ev_thread_self(void)
 {
     ev__init_once_win();
-    return ev_tls_get(&g_ev_loop_win_ctx.thread.thread_key);
+    return ev_tl_storage_get(&g_ev_loop_win_ctx.thread.thread_key);
 }
 
 ev_os_tid_t ev_thread_id(void)
@@ -11068,7 +11104,7 @@ void ev_thread_sleep(uint32_t timeout)
     Sleep(timeout);
 }
 
-int ev_tls_init(ev_tls_t* tls)
+int ev_tl_storage_init(ev_tl_storage_t* tls)
 {
     int err;
     if ((tls->tls = TlsAlloc()) == TLS_OUT_OF_INDEXES)
@@ -11080,7 +11116,7 @@ int ev_tls_init(ev_tls_t* tls)
     return 0;
 }
 
-void ev_tls_exit(ev_tls_t* tls)
+void ev_tl_storage_exit(ev_tl_storage_t* tls)
 {
     DWORD errcode;
     if (TlsFree(tls->tls) == FALSE)
@@ -11091,7 +11127,7 @@ void ev_tls_exit(ev_tls_t* tls)
     tls->tls = TLS_OUT_OF_INDEXES;
 }
 
-void ev_tls_set(ev_tls_t* tls, void* val)
+void ev_tl_storage_set(ev_tl_storage_t* tls, void* val)
 {
     DWORD errcode;
     if (TlsSetValue(tls->tls, val) == FALSE)
@@ -11101,7 +11137,7 @@ void ev_tls_set(ev_tls_t* tls, void* val)
     }
 }
 
-void* ev_tls_get(ev_tls_t* tls)
+void* ev_tl_storage_get(ev_tl_storage_t* tls)
 {
     DWORD errcode;
     void* val = TlsGetValue(tls->tls);
@@ -16837,8 +16873,8 @@ EV_LOCAL int ev__tcp_open(ev_tcp_t* tcp, int fd)
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/unix/thread_unix.c
-// SIZE:    3701
-// SHA-256: ae44c0c1638ecfe7328a446f7a7ceca46f30cb339b963289b9abc263cb142c1c
+// SIZE:    3757
+// SHA-256: 5daf8f13c486a8e790c3de5da3aec5027994797b93d39556ea49437f95d2c44a
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/unix/thread_unix.c"
 #define _GNU_SOURCE
@@ -16994,7 +17030,7 @@ void ev_thread_sleep(uint32_t timeout)
     }
 }
 
-int ev_tls_init(ev_tls_t* tls)
+int ev_tl_storage_init(ev_tl_storage_t* tls)
 {
     int ret = pthread_key_create(&tls->tls, NULL);
     if (ret == 0)
@@ -17004,7 +17040,7 @@ int ev_tls_init(ev_tls_t* tls)
     return ev__translate_sys_error(ret);
 }
 
-void ev_tls_exit(ev_tls_t* tls)
+void ev_tl_storage_exit(ev_tl_storage_t* tls)
 {
     int ret = pthread_key_delete(tls->tls);
     if (ret != 0)
@@ -17013,7 +17049,7 @@ void ev_tls_exit(ev_tls_t* tls)
     }
 }
 
-void ev_tls_set(ev_tls_t* tls, void* val)
+void ev_tl_storage_set(ev_tl_storage_t* tls, void* val)
 {
     int ret = pthread_setspecific(tls->tls, val);
     if (ret != 0)
@@ -17022,7 +17058,7 @@ void ev_tls_set(ev_tls_t* tls, void* val)
     }
 }
 
-void* ev_tls_get(ev_tls_t* tls)
+void* ev_tl_storage_get(ev_tl_storage_t* tls)
 {
     return pthread_getspecific(tls->tls);
 }

@@ -151,7 +151,7 @@ void ev_thread_sleep(uint32_t timeout)
     }
 }
 
-int ev_tls_init(ev_tls_t* tls)
+int ev_tl_storage_init(ev_tl_storage_t* tls)
 {
     int ret = pthread_key_create(&tls->tls, NULL);
     if (ret == 0)
@@ -161,7 +161,7 @@ int ev_tls_init(ev_tls_t* tls)
     return ev__translate_sys_error(ret);
 }
 
-void ev_tls_exit(ev_tls_t* tls)
+void ev_tl_storage_exit(ev_tl_storage_t* tls)
 {
     int ret = pthread_key_delete(tls->tls);
     if (ret != 0)
@@ -170,7 +170,7 @@ void ev_tls_exit(ev_tls_t* tls)
     }
 }
 
-void ev_tls_set(ev_tls_t* tls, void* val)
+void ev_tl_storage_set(ev_tl_storage_t* tls, void* val)
 {
     int ret = pthread_setspecific(tls->tls, val);
     if (ret != 0)
@@ -179,7 +179,7 @@ void ev_tls_set(ev_tls_t* tls, void* val)
     }
 }
 
-void* ev_tls_get(ev_tls_t* tls)
+void* ev_tl_storage_get(ev_tl_storage_t* tls)
 {
     return pthread_getspecific(tls->tls);
 }

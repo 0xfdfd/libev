@@ -23,7 +23,7 @@ typedef struct ev_loop_win_ctx
 
     struct
     {
-        ev_tls_t                thread_key;                 /**< Thread handle */
+        ev_tl_storage_t         thread_key;                 /**< Thread handle */
     }thread;
 } ev_loop_win_ctx_t;
 

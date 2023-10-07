@@ -28,7 +28,7 @@ static unsigned __stdcall _ev_thread_proxy_proc_win(void* lpThreadParameter)
     ev_thread_helper_win_t* p_helper = lpThreadParameter;
     ev_thread_helper_win_t helper = *p_helper;
 
-    ev_tls_set(&g_ev_loop_win_ctx.thread.thread_key, (void*)p_helper->thread_id);
+    ev_tl_storage_set(&g_ev_loop_win_ctx.thread.thread_key, (void*)p_helper->thread_id);
     if (!ReleaseSemaphore(p_helper->start_sem, 1, NULL))
     {
         errcode = GetLastError();
@@ -41,7 +41,7 @@ static unsigned __stdcall _ev_thread_proxy_proc_win(void* lpThreadParameter)
 
 EV_LOCAL void ev__thread_init_win(void)
 {
-    int ret = ev_tls_init(&g_ev_loop_win_ctx.thread.thread_key);
+    int ret = ev_tl_storage_init(&g_ev_loop_win_ctx.thread.thread_key);
     if (ret != 0)
     {
         EV_ABORT("ret:%d", ret);
@@ -119,7 +119,7 @@ int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
 ev_os_thread_t ev_thread_self(void)
 {
     ev__init_once_win();
-    return ev_tls_get(&g_ev_loop_win_ctx.thread.thread_key);
+    return ev_tl_storage_get(&g_ev_loop_win_ctx.thread.thread_key);
 }
 
 ev_os_tid_t ev_thread_id(void)
@@ -137,7 +137,7 @@ void ev_thread_sleep(uint32_t timeout)
     Sleep(timeout);
 }
 
-int ev_tls_init(ev_tls_t* tls)
+int ev_tl_storage_init(ev_tl_storage_t* tls)
 {
     int err;
     if ((tls->tls = TlsAlloc()) == TLS_OUT_OF_INDEXES)
@@ -149,7 +149,7 @@ int ev_tls_init(ev_tls_t* tls)
     return 0;
 }
 
-void ev_tls_exit(ev_tls_t* tls)
+void ev_tl_storage_exit(ev_tl_storage_t* tls)
 {
     DWORD errcode;
     if (TlsFree(tls->tls) == FALSE)
@@ -160,7 +160,7 @@ void ev_tls_exit(ev_tls_t* tls)
     tls->tls = TLS_OUT_OF_INDEXES;
 }
 
-void ev_tls_set(ev_tls_t* tls, void* val)
+void ev_tl_storage_set(ev_tl_storage_t* tls, void* val)
 {
     DWORD errcode;
     if (TlsSetValue(tls->tls, val) == FALSE)
@@ -170,7 +170,7 @@ void ev_tls_set(ev_tls_t* tls, void* val)
     }
 }
 
-void* ev_tls_get(ev_tls_t* tls)
+void* ev_tl_storage_get(ev_tl_storage_t* tls)
 {
     DWORD errcode;
     void* val = TlsGetValue(tls->tls);

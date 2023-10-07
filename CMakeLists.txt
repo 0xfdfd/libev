@@ -36,6 +36,7 @@ set(ev_src
     "src/shmem.c"
     "src/threadpool.c"
     "src/timer.c"
+    "src/tls.c"
     "src/udp.c"
     "src/version.c"
 )
