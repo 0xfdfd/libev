@@ -1550,8 +1550,8 @@ struct ev_nonblock_stream
 #endif              /* AMALGAMATE: ev.h (3/3) */
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    include/ev.h
-// SIZE:    90425
-// SHA-256: f3c22f2eeda5bdf16d9483908e3674e873812636ca3f73cf90ee64a9e560ffde
+// SIZE:    90158
+// SHA-256: 6bac7bbc3f8cdd6a6764b8a795655a6ccafd11733c00dd2a9512f34b6cd03323
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * @mainpage libev
@@ -2322,13 +2322,6 @@ struct ev_handle
     {
         ev_role_t           role;               /**< The type of this object */
         unsigned            flags;              /**< Handle flags */
-
-        /**
-         * @brief Active event counter.
-         * When active event counter set to zero, the active flag is removed
-         * immediately.
-         */
-        size_t              active_events;
     } data;                                     /**< Data field */
 
     struct
@@ -2362,7 +2355,6 @@ struct ev_handle
         {/* .data */\
             EV_ROLE_UNKNOWN,        /* .role */\
             0,                      /* .flags */\
-            0,                      /* .active_events */\
         },\
         {/* .backlog */\
             EV_ECANCELED,           /* .status */\

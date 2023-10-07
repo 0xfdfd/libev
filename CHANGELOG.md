@@ -4,6 +4,7 @@
 
 ### BREAKING CHANGES
 1. `ev_map_insert()` now return conflict node address
+2. remove `active_events` field
 
 ### Bug Fixes
 1. fix: loop may wait infinite with EV_LOOP_MODE_ONCE if there are only endgame events

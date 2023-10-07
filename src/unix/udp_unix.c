@@ -16,9 +16,22 @@ static void _ev_udp_close_unix(ev_udp_t* udp)
     }
 }
 
+static void _ev_udp_smart_deactive(ev_udp_t* udp)
+{
+    size_t io_sz = 0;
+
+    io_sz += ev_list_size(&udp->send_list);
+    io_sz += ev_list_size(&udp->recv_list);
+
+    if (io_sz == 0)
+    {
+        ev__handle_deactive(&udp->base);
+    }
+}
+
 static void _ev_udp_w_user_callback_unix(ev_udp_t* udp, ev_udp_write_t* req, ssize_t size)
 {
-    ev__handle_event_dec(&udp->base);
+    _ev_udp_smart_deactive(udp);
     ev__write_exit(&req->base);
     ev__handle_exit(&req->handle, NULL);
     req->usr_cb(req, size);
@@ -27,7 +40,7 @@ static void _ev_udp_w_user_callback_unix(ev_udp_t* udp, ev_udp_write_t* req, ssi
 static void _ev_udp_r_user_callback_unix(ev_udp_t* udp, ev_udp_read_t* req,
     const struct sockaddr* addr, ssize_t size)
 {
-    ev__handle_event_dec(&udp->base);
+    _ev_udp_smart_deactive(udp);
     ev__read_exit(&req->base);
     ev__handle_exit(&req->handle, NULL);
     req->usr_cb(req, addr, size);
@@ -615,7 +628,7 @@ EV_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
         ev__nonblock_io_add(udp->base.loop, &udp->backend.io, EPOLLIN);
     }
 
-    ev__handle_event_add(&udp->base);
+    ev__handle_active(&udp->base);
 
     return 0;
 }
@@ -649,7 +662,7 @@ EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
         ev__nonblock_io_add(udp->base.loop, &udp->backend.io, EPOLLOUT);
     }
 
-    ev__handle_event_add(&udp->base);
+    ev__handle_active(&udp->base);
 
     return 0;
 }

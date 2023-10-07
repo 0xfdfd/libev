@@ -61,18 +61,16 @@ EV_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t ro
 EV_LOCAL void ev__handle_exit(ev_handle_t* handle, ev_handle_cb close_cb);
 
 /**
- * @brief Add active event counter. If active event counter is non-zero,
- *   #EV_HANDLE_ACTIVE is appended.
+ * @brief Active handle.
  * @param[in] handle    Handler.
  */
-EV_LOCAL void ev__handle_event_add(ev_handle_t* handle);
+EV_LOCAL void ev__handle_active(ev_handle_t* handle);
 
 /**
- * @brief Decrease active event counter. If active event counter is zero,
- *   #EV_HANDLE_ACTIVE is removed.
+ * @brief De-active handle.
  * @param[in] handle    Handler.
  */
-EV_LOCAL void ev__handle_event_dec(ev_handle_t* handle);
+EV_LOCAL void ev__handle_deactive(ev_handle_t* handle);
 
 /**
  * @brief Check if the handle is in active state

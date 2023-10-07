@@ -33,17 +33,44 @@ static void _ev_pipe_on_close_unix(ev_handle_t* handle)
     }
 }
 
+static void _ev_pipe_smart_deactive(ev_pipe_t* pipe)
+{
+    size_t io_sz = 0;
+
+    if (!ev__handle_is_active(&pipe->base))
+    {
+        return;
+    }
+
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
+    {
+        io_sz += ev_list_size(&pipe->backend.ipc_mode.rio.rqueue);
+        io_sz += pipe->backend.ipc_mode.rio.curr.reading != NULL ? 1 : 0;
+        io_sz += ev_list_size(&pipe->backend.ipc_mode.wio.wqueue);
+        io_sz += pipe->backend.ipc_mode.wio.curr.writing != NULL ? 1 : 0;
+    }
+    else
+    {
+        io_sz = ev__nonblock_stream_size(&pipe->backend.data_mode.stream, EV_IO_IN | EV_IO_OUT);
+    }
+
+    if (io_sz == 0)
+    {
+        ev__handle_deactive(&pipe->base);
+    }
+}
+
 static void _ev_pipe_w_user_callback_unix(ev_pipe_t* pipe,
     ev_pipe_write_req_t* req, ssize_t size)
 {
-    ev__handle_event_dec(&pipe->base);
+    _ev_pipe_smart_deactive(pipe);
     ev__write_exit(&req->base);
     req->ucb(req, size);
 }
 
 static void _ev_pipe_r_user_callback_unix(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ssize_t size)
 {
-    ev__handle_event_dec(&pipe->base);
+    _ev_pipe_smart_deactive(pipe);
     ev__read_exit(&req->base);
     req->ucb(req, size);
 }
@@ -837,7 +864,7 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
         return ret;
     }
 
-    ev__handle_event_add(&pipe->base);
+    ev__handle_active(&pipe->base);
 
     if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
@@ -850,8 +877,10 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
 
     if (ret != 0)
     {
-        ev__handle_event_dec(&pipe->base);
         _ev_pipe_abort_unix(pipe, ret);
+
+        /* The final state must be non-active. */
+        ev__handle_deactive(&pipe->base);
     }
 
     return ret;
@@ -871,7 +900,7 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
         return ret;
     }
 
-    ev__handle_event_add(&pipe->base);
+    ev__handle_active(&pipe->base);
 
     if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
@@ -884,8 +913,10 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
 
     if (ret != 0)
     {
-        ev__handle_event_dec(&pipe->base);
         _ev_pipe_abort_unix(pipe, ret);
+
+        /* The final state must be non-active. */
+        ev__handle_deactive(&pipe->base);
     }
 
     return ret;

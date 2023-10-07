@@ -53,10 +53,33 @@ static int _ev_pipe_make_c(HANDLE* pipe_handle, const char* name, int flags)
     return ev__translate_sys_error(errcode);
 }
 
+static void _ev_pipe_smart_deactive_win(ev_pipe_t* pipe)
+{
+    size_t io_sz = 0;
+
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
+    {
+        io_sz += ev_list_size(&pipe->backend.ipc_mode.rio.pending);
+        io_sz += ev_list_size(&pipe->backend.ipc_mode.wio.pending);
+        io_sz += pipe->backend.ipc_mode.wio.sending.w_req != NULL ? 1 : 0;
+    }
+    else
+    {
+        io_sz += ev_list_size(&pipe->backend.data_mode.rio.r_pending);
+        io_sz += ev_list_size(&pipe->backend.data_mode.wio.w_pending);
+        io_sz += ev_list_size(&pipe->backend.data_mode.wio.w_doing);
+    }
+
+    if (io_sz == 0)
+    {
+        ev__handle_deactive(&pipe->base);
+    }
+}
+
 static void _ev_pipe_r_user_callback_win(ev_pipe_read_req_t* req, ssize_t size)
 {
     ev_pipe_t* pipe = req->backend.owner;
-    ev__handle_event_dec(&pipe->base);
+    _ev_pipe_smart_deactive_win(pipe);
 
     ev__read_exit(&req->base);
     req->ucb(req, size);
@@ -67,8 +90,8 @@ static void _ev_pipe_cancel_all_r_ipc_mode(ev_pipe_t* pipe, int stat)
     ev_pipe_read_req_t* req;
     if ((req = pipe->backend.ipc_mode.rio.reading.reading) != NULL)
     {
-        _ev_pipe_r_user_callback_win(req, stat);
         pipe->backend.ipc_mode.rio.reading.reading = NULL;
+        _ev_pipe_r_user_callback_win(req, stat);
     }
     pipe->backend.ipc_mode.rio.reading.buf_idx = 0;
     pipe->backend.ipc_mode.rio.reading.buf_pos = 0;
@@ -86,8 +109,8 @@ static void _ev_pipe_cancel_all_r_data_mode(ev_pipe_t* pipe, int stat)
     ev_pipe_read_req_t* req;
     if ((req = pipe->backend.data_mode.rio.r_doing) != NULL)
     {
-        _ev_pipe_r_user_callback_win(req, stat);
         pipe->backend.data_mode.rio.r_doing = NULL;
+        _ev_pipe_r_user_callback_win(req, stat);
     }
 
     ev_list_node_t* it;
@@ -113,7 +136,7 @@ static void _ev_pipe_cancel_all_r(ev_pipe_t* pipe, int stat)
 static void _ev_pipe_w_user_callback_win(ev_pipe_write_req_t* req, ssize_t size)
 {
     ev_pipe_t* pipe = req->backend.owner;
-    ev__handle_event_dec(&pipe->base);
+    _ev_pipe_smart_deactive_win(pipe);
 
     ev__write_exit(&req->base);
     req->ucb(req, size);
@@ -142,8 +165,8 @@ static void _ev_pipe_cancel_all_w_ipc_mode(ev_pipe_t* pipe, int stat)
     ev_pipe_write_req_t* req;
     if ((req = pipe->backend.ipc_mode.wio.sending.w_req) != NULL)
     {
-        _ev_pipe_w_user_callback_win(req, stat);
         pipe->backend.ipc_mode.wio.sending.w_req = NULL;
+        _ev_pipe_w_user_callback_win(req, stat);
     }
     pipe->backend.ipc_mode.wio.sending.donecnt = 0;
 
@@ -1070,7 +1093,7 @@ static int _ev_pipe_data_mode_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
         ev_list_push_back(&pipe->backend.data_mode.wio.w_doing, &req->base.node);
     }
 
-    ev__handle_event_add(&pipe->base);
+    ev__handle_active(&pipe->base);
     return 0;
 }
 
@@ -1320,6 +1343,7 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
         return ev__translate_sys_error(GetLastError());
     }
     pipe->pipfd = handle;
+    pipe->base.data.flags |= EV_HANDLE_PIPE_STREAMING;
 
     if (!(pipe->base.data.flags & EV_HANDLE_PIPE_IPC))
     {
@@ -1374,7 +1398,7 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
     }
 
     req->backend.owner = pipe;
-    ev__handle_event_add(&pipe->base);
+    ev__handle_active(&pipe->base);
 
     if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
@@ -1388,7 +1412,7 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
     if (ret != 0)
     {
         ev__write_exit(&req->base);
-        ev__handle_event_dec(&pipe->base);
+        _ev_pipe_smart_deactive_win(pipe);
     }
 
     return ret;
@@ -1408,7 +1432,7 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
         return ret;
     }
 
-    ev__handle_event_add(&pipe->base);
+    ev__handle_active(&pipe->base);
 
     if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
@@ -1421,7 +1445,7 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
 
     if (ret != 0)
     {
-        ev__handle_event_dec(&pipe->base);
+        _ev_pipe_smart_deactive_win(pipe);
         ev__read_exit(&req->base);
     }
 
