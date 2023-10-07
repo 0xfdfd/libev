@@ -28,10 +28,7 @@
  * 
  * ### BREAKING CHANGES
  * 1. `ev_map_insert()` now return conflict node address
- * 2. lua: loop:fs_file now open with RDONLY if no options specificed
- * 
- * ### Features
- * 1. add lua bindings
+ * 2. remove `active_events` field
  * 
  * ### Bug Fixes
  * 1. fix: loop may wait infinite with EV_LOOP_MODE_ONCE if there are only endgame events
@@ -4599,31 +4596,5 @@ EV_API uint64_t ev_hrtime(void);
 
 /* AMALGAMATE: #include "ev/lua.h" */
 
-#endif
-
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/lua.h
-// SIZE:    274
-// SHA-256: 1900fa9b33c3b32a4cdeabe096b0529116ddf06e4881ff5ae59a14283d58ca6a
-////////////////////////////////////////////////////////////////////////////////
-#ifndef __EV_LUA_H__
-#define __EV_LUA_H__
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-struct lua_State;
-
-/**
- * @brief Load libev package.
- * @param[in] L     Lua Stack.
- * @return          Always 1.
- */
-int luaopen_ev(struct lua_State* L);
-
-#ifdef __cplusplus
-}
-#endif
 #endif
 
