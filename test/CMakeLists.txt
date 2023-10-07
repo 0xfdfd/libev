@@ -51,32 +51,6 @@ add_executable(ev_test
     "test/cases/c/version.c"
 )
 
-if (EV_HAVE_LUA_BINDING)
-    target_sources(ev_test PRIVATE
-        "test/cases/lua/benchmark_binary_trees.c"
-        "test/cases/lua/benchmark_fannkuch_redux.c"
-        "test/cases/lua/channel.c"
-        "test/cases/lua/file.c"
-        "test/cases/lua/loop.c"
-        "test/cases/lua/misc.c"
-        "test/cases/lua/process.c"
-        "test/cases/lua/promise.c"
-        "test/cases/lua/strerror.c"
-        "test/cases/lua/tcp.c"
-        "test/cases/lua/test.lua.c"
-        "test/cases/lua/timer.c"
-        "test/cases/lua/udp.c"
-    )
-    target_include_directories(ev_test
-        PRIVATE
-            ${LUA_INCLUDE_DIR}
-    )
-    target_link_libraries(ev_test
-        PRIVATE
-            ${LUA_LIBRARIES}
-    )
-endif ()
-
 target_include_directories(ev_test
     PUBLIC
         $<INSTALL_INTERFACE:include>

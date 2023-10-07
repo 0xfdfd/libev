@@ -4,10 +4,6 @@
 
 ### BREAKING CHANGES
 1. `ev_map_insert()` now return conflict node address
-2. lua: loop:fs_file now open with RDONLY if no options specificed
-
-### Features
-1. add lua bindings
 
 ### Bug Fixes
 1. fix: loop may wait infinite with EV_LOOP_MODE_ONCE if there are only endgame events

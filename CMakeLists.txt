@@ -98,29 +98,6 @@ set(ev_src_os_unix
     "src/unix/udp_unix.c"
 )
 
-set(ev_src_lua
-    "src/lua/ev.lua.internal.h"
-    "src/lua/channel.lua.h"
-    "src/lua/fs.lua.h"
-    "src/lua/misc.lua.h"
-    "src/lua/pipe.lua.h"
-    "src/lua/process.lua.h"
-    "src/lua/promise.lua.h"
-    "src/lua/tcp.lua.h"
-    "src/lua/timer.lua.h"
-    "src/lua/udp.lua.h"
-    "src/lua/ev.lua.c"
-    "src/lua/channel.lua.c"
-    "src/lua/fs.lua.c"
-    "src/lua/misc.lua.c"
-    "src/lua/pipe.lua.c"
-    "src/lua/process.lua.c"
-    "src/lua/promise.lua.c"
-    "src/lua/tcp.lua.c"
-    "src/lua/timer.lua.c"
-    "src/lua/udp.lua.c"
-)
-
 ###############################################################################
 # Support functions
 ###############################################################################
@@ -144,7 +121,6 @@ include(tool/CMakeLists.txt)
 string(REPLACE ";" "," escaped_ev_src                   "${ev_src}")
 string(REPLACE ";" "," escaped_ev_src_os_win            "${ev_src_os_win}")
 string(REPLACE ";" "," escaped_ev_src_os_unix           "${ev_src_os_unix}")
-string(REPLACE ";" "," escaped_ev_src_lua               "${ev_src_lua}")
 
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/ev.h
@@ -193,18 +169,12 @@ add_custom_command(
             --string            "#else               /* AMALGAMATE: ev.c (2/3) */"
             --source            ${escaped_ev_src_os_unix}
             --string            "#endif              /* AMALGAMATE: ev.c (3/3) */"
-            --string            "#if defined(EV_HAVE_LUA_BINDING) /* FEATURE: EV_HAVE_LUA_BINDING (1/2) */"
-            --string            "#include \"lua.h\""
-            --string            "#include \"lauxlib.h\""
-            --source            ${escaped_ev_src_lua}
-            --string            "#endif                           /* FEATURE: EV_HAVE_LUA_BINDING (2/2) */"
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
             ${CMAKE_CURRENT_SOURCE_DIR}/ev.h
             ${ev_src}
             ${ev_src_os_win}
             ${ev_src_os_unix}
-            ${ev_src_lua}
     VERBATIM
 )
 
