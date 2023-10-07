@@ -4,11 +4,10 @@
 #include <assert.h>
 
 /**
- * @brief Set handle as inactive
- * @see ev__handle_event_dec()
+ * @brief Set handle as inactive.
  * @param[in] handle    handler
  */
-static void ev__handle_deactive(ev_handle_t* handle)
+EV_LOCAL void ev__handle_deactive(ev_handle_t* handle)
 {
     if (!(handle->data.flags & EV_HANDLE_ACTIVE))
     {
@@ -22,11 +21,10 @@ static void ev__handle_deactive(ev_handle_t* handle)
 }
 
 /**
- * @brief Force set handle as active, regardless the active event counter.
- * @see ev__handle_event_add()
+ * @brief Force set handle as active.
  * @param[in] handle    handler
  */
-static void ev__handle_active(ev_handle_t* handle)
+EV_LOCAL void ev__handle_active(ev_handle_t* handle)
 {
     if (handle->data.flags & EV_HANDLE_ACTIVE)
     {
@@ -41,8 +39,6 @@ static void ev__handle_active(ev_handle_t* handle)
 
 static void _ev_to_close_handle(ev_handle_t* handle)
 {
-    ev__handle_event_dec(handle);
-
     /**
      * Deactive but not reset #ev_handle_t::data::active_events, for debug
      * purpose.
@@ -63,7 +59,6 @@ EV_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t ro
 
     handle->data.role = role;
     handle->data.flags = 0;
-    handle->data.active_events = 0;
 
     handle->backlog.status = EV_ENOENT;
     handle->backlog.cb = NULL;
@@ -82,7 +77,6 @@ EV_LOCAL void ev__handle_exit(ev_handle_t* handle, ev_handle_cb close_cb)
 
     if (close_cb != NULL)
     {
-        ev__handle_event_add(handle);
         ev_list_push_back(&handle->loop->endgame_queue, &handle->endgame.node);
     }
     else
@@ -90,28 +84,6 @@ EV_LOCAL void ev__handle_exit(ev_handle_t* handle, ev_handle_cb close_cb)
         ev__handle_deactive(handle);
         handle->data.flags |= EV_HANDLE_CLOSED;
         ev_list_erase(&handle->loop->handles.idle_list, &handle->handle_queue);
-    }
-}
-
-EV_LOCAL void ev__handle_event_add(ev_handle_t* handle)
-{
-    handle->data.active_events++;
-
-    if (handle->data.active_events != 0)
-    {
-        ev__handle_active(handle);
-    }
-}
-
-EV_LOCAL void ev__handle_event_dec(ev_handle_t* handle)
-{
-    assert(handle->data.active_events != 0);
-
-    handle->data.active_events--;
-
-    if (handle->data.active_events == 0)
-    {
-        ev__handle_deactive(handle);
     }
 }
 
@@ -134,7 +106,6 @@ EV_LOCAL int ev__backlog_submit(ev_handle_t* handle, ev_handle_cb callback)
 
     handle->backlog.status = EV_EEXIST;
     handle->backlog.cb = callback;
-    ev__handle_event_add(handle);
 
     ev_list_push_back(&handle->loop->backlog_queue, &handle->backlog.node);
 
@@ -150,7 +121,6 @@ EV_LOCAL size_t ev__process_backlog(ev_loop_t* loop)
     {
         ev_handle_t* handle = EV_CONTAINER_OF(it, ev_handle_t, backlog.node);
 
-        ev__handle_event_dec(handle);
         handle->backlog.status = EV_ENOENT;
 
         handle->backlog.cb(handle);

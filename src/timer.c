@@ -94,7 +94,7 @@ int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_
     {
         EV_ABORT("duplicate timer");
     }
-    ev__handle_event_add(&handle->base);
+    ev__handle_active(&handle->base);
 
     return 0;
 }
@@ -106,6 +106,6 @@ void ev_timer_stop(ev_timer_t* handle)
         return;
     }
 
-    ev__handle_event_dec(&handle->base);
+    ev__handle_deactive(&handle->base);
     ev_map_erase(&handle->base.loop->timer.heap, &handle->node);
 }

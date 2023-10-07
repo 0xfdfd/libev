@@ -48,7 +48,7 @@ static void _ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
     handle->close_cb = close_cb;
     _async_close_pipe(handle);
 
-    ev__handle_event_dec(&handle->base);
+    ev__handle_deactive(&handle->base);
     ev__handle_exit(&handle->base, close_cb != NULL ? _ev_async_on_close : NULL);
 }
 
@@ -142,7 +142,7 @@ int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
     ev__nonblock_io_init(&handle->backend.io, handle->backend.pipfd[0],
         _async_on_wakeup_unix, NULL);
     ev__nonblock_io_add(loop, &handle->backend.io, EV_IO_IN);
-    ev__handle_event_add(&handle->base);
+    ev__handle_active(&handle->base);
 
     return 0;
 

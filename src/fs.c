@@ -331,6 +331,15 @@ err_nomem:
     return -1;
 }
 
+static void _ev_fs_smart_deactive(ev_file_t* file)
+{
+    size_t io_sz = ev_list_size(&file->work_queue);
+    if (io_sz == 0)
+    {
+        ev__handle_deactive(&file->base);
+    }
+}
+
 static void _ev_fs_on_done(ev_work_t* work, int status)
 {
     ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
@@ -344,8 +353,8 @@ static void _ev_fs_on_done(ev_work_t* work, int status)
 
     if (file != NULL)
     {
-        ev__handle_event_dec(&file->base);
         _ev_fs_erase_req(file, req);
+        _ev_fs_smart_deactive(file);
     }
     req->cb(req);
 
@@ -489,14 +498,14 @@ static int _ev_file_read_template(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bu
         return ret;
     }
 
-    ev__handle_event_add(&file->base);
+    ev__handle_active(&file->base);
 
     ret = ev__loop_submit_threadpool(loop, &req->work_token,
         EV_THREADPOOL_WORK_IO_FAST, work_cb, _ev_fs_on_done);
     if (ret != 0)
     {
         _ev_fs_cleanup_req_as_read(req);
-        ev__handle_event_dec(&file->base);
+        _ev_fs_smart_deactive(file);
         return ret;
     }
 
@@ -515,14 +524,14 @@ static int _ev_file_pwrite_template(ev_file_t* file, ev_fs_req_t* req, ev_buf_t 
         return ret;
     }
 
-    ev__handle_event_add(&file->base);
+    ev__handle_active(&file->base);
 
     ret = ev__loop_submit_threadpool(loop, &req->work_token,
         EV_THREADPOOL_WORK_IO_FAST, work_cb, _ev_fs_on_done);
     if (ret != 0)
     {
         _ev_fs_cleanup_req_as_write(req);
-        ev__handle_event_dec(&file->base);
+        _ev_fs_smart_deactive(file);
         return ret;
     }
 
@@ -629,14 +638,14 @@ int ev_file_open(ev_file_t* file, ev_fs_req_t* token, const char* path,
         return ret;
     }
 
-    ev__handle_event_add(&file->base);
+    ev__handle_active(&file->base);
 
     ret = ev__loop_submit_threadpool(loop, &token->work_token,
         EV_THREADPOOL_WORK_IO_FAST, _ev_file_on_open, _ev_fs_on_done);
     if (ret != 0)
     {
         _ev_fs_cleanup_req_as_open(token);
-        ev__handle_event_dec(&file->base);
+        _ev_fs_smart_deactive(file);
         return ret;
     }
 
@@ -654,13 +663,13 @@ int ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence, ssize_t offset, 
     ev_loop_t* loop = file->base.loop;
     _ev_fs_init_req_as_seek(req, file, whence, offset, cb);
 
-    ev__handle_event_add(&file->base);
+    ev__handle_active(&file->base);
 
     ret = ev__loop_submit_threadpool(loop, &req->work_token,
         EV_THREADPOOL_WORK_IO_FAST, _ev_fs_on_seek, _ev_fs_on_done);
     if (ret != 0)
     {
-        ev__handle_event_dec(&file->base);
+        _ev_fs_smart_deactive(file);
         return ret;
     }
 
@@ -719,14 +728,14 @@ int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_file_cb cb)
     ev_loop_t* loop = file->base.loop;
 
     _ev_fs_init_req_as_fstat(req, file, cb);
-    ev__handle_event_add(&file->base);
+    ev__handle_active(&file->base);
 
     ret = ev__loop_submit_threadpool(loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
         _ev_file_on_fstat, _ev_fs_on_done);
     if (ret != 0)
     {
         _ev_fs_cleanup_req_as_fstat(req);
-        ev__handle_event_dec(&file->base);
+        _ev_fs_smart_deactive(file);
         return ret;
     }
 

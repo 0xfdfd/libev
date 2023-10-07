@@ -321,10 +321,23 @@ static int _ev_udp_set_source_membership_ipv6(ev_udp_t* udp,
     return 0;
 }
 
+static void _ev_udp_smart_deactive(ev_udp_t* udp)
+{
+    size_t io_sz = 0;
+
+    io_sz += ev_list_size(&udp->send_list);
+    io_sz += ev_list_size(&udp->recv_list);
+
+    if (io_sz == 0)
+    {
+        ev__handle_deactive(&udp->base);
+    }
+}
+
 static void _ev_udp_w_user_callback_win(ev_udp_write_t* req, ssize_t size)
 {
     ev_udp_t* udp = req->backend.owner;
-    ev__handle_event_dec(&udp->base);
+    _ev_udp_smart_deactive(udp);
 
     ev__write_exit(&req->base);
     ev__handle_exit(&req->handle, NULL);
@@ -335,7 +348,7 @@ static void _ev_udp_w_user_callback_win(ev_udp_write_t* req, ssize_t size)
 static void _ev_udp_r_user_callback_win(ev_udp_read_t* req, const struct sockaddr* addr, ssize_t size)
 {
     ev_udp_t* udp = req->backend.owner;
-    ev__handle_event_dec(&udp->base);
+    _ev_udp_smart_deactive(udp);
 
     ev__read_exit(&req->base);
     ev__handle_exit(&req->handle, NULL);
@@ -499,7 +512,7 @@ EV_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
     req->backend.stat = EV_EINPROGRESS;
     ev__iocp_init(&req->backend.io, _ev_udp_on_recv_iocp_win, udp);
 
-    ev__handle_event_add(&udp->base);
+    ev__handle_active(&udp->base);
 
     int ret = WSARecv(udp->sock, &buf, 1, &bytes, &flags, &req->backend.io.overlapped, NULL);
     if (ret == 0 && (udp->base.data.flags & EV_HANDLE_UDP_BYPASS_IOCP))
@@ -514,7 +527,7 @@ EV_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
         return 0;
     }
 
-    ev__handle_event_dec(&udp->base);
+    _ev_udp_smart_deactive(udp);
     return ev__translate_sys_error(err);
 }
 
@@ -542,7 +555,7 @@ EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
 
     DWORD send_bytes;
 
-    ev__handle_event_add(&udp->base);
+    ev__handle_active(&udp->base);
     ret = WSASendTo(udp->sock, (WSABUF*)req->base.bufs, (DWORD)req->base.nbuf,
         &send_bytes, 0, addr, addrlen, &req->backend.io.overlapped, NULL);
 
@@ -560,7 +573,7 @@ EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
         return 0;
     }
 
-    ev__handle_event_dec(&udp->base);
+    _ev_udp_smart_deactive(udp);
     return ev__translate_sys_error(err);
 }
 

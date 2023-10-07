@@ -26,7 +26,7 @@ static void _ev_async_on_close_win(ev_handle_t* handle)
 static void _ev_asyc_exit_win(ev_async_t* handle, ev_async_cb close_cb)
 {
     handle->close_cb = close_cb;
-    ev__handle_event_dec(&handle->base);
+    ev__handle_deactive(&handle->base);
     ev__handle_exit(&handle->base, close_cb != NULL ? _ev_async_on_close_win : NULL);
 }
 
@@ -43,7 +43,7 @@ int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
 
     ev__iocp_init(&handle->backend.io, _async_on_iocp_win, NULL);
     ev__handle_init(loop, &handle->base, EV_ROLE_EV_ASYNC);
-    ev__handle_event_add(&handle->base);
+    ev__handle_active(&handle->base);
 
     return 0;
 }

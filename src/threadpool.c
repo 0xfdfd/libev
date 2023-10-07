@@ -32,7 +32,7 @@ static void _ev_threadpool_on_loop(ev_handle_t* handle)
 {
     ev_work_t* work = EV_CONTAINER_OF(handle, ev_work_t, base);
 
-    ev__handle_event_dec(&work->base);
+    ev__handle_deactive(&work->base);
     ev__handle_exit(&work->base, NULL);
 
     work->data.done_cb(work, work->data.status);
@@ -192,7 +192,7 @@ int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
     assert(type < ARRAY_SIZE(pool->work_queue));
 
     ev__handle_init(loop, &work->base, EV_ROLE_EV_WORK);
-    ev__handle_event_add(&work->base);
+    ev__handle_active(&work->base);
     work->data.pool = pool;
     work->data.status = EV_ELOOP;
     work->data.work_cb = work_cb;

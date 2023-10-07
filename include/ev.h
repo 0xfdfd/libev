@@ -767,13 +767,6 @@ struct ev_handle
     {
         ev_role_t           role;               /**< The type of this object */
         unsigned            flags;              /**< Handle flags */
-
-        /**
-         * @brief Active event counter.
-         * When active event counter set to zero, the active flag is removed
-         * immediately.
-         */
-        size_t              active_events;
     } data;                                     /**< Data field */
 
     struct
@@ -807,7 +800,6 @@ struct ev_handle
         {/* .data */\
             EV_ROLE_UNKNOWN,        /* .role */\
             0,                      /* .flags */\
-            0,                      /* .active_events */\
         },\
         {/* .backlog */\
             EV_ECANCELED,           /* .status */\

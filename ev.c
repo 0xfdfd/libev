@@ -244,8 +244,8 @@ EV_LOCAL void ev__async_exit_force(ev_async_t* handle);
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/handle.h
-// SIZE:    4242
-// SHA-256: da6ff247fe73aa9705bf038f0e66c3247b4aa9fc8ad9ca4800276ec61d94aac7
+// SIZE:    4073
+// SHA-256: 2f60940423bf7ee8e0addbf1e723d86ff4d86900f96f155416683538d7ba64f5
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/handle.h"
 #ifndef __EV_HANDLE_INTERNAL_H__
@@ -311,18 +311,16 @@ EV_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t ro
 EV_LOCAL void ev__handle_exit(ev_handle_t* handle, ev_handle_cb close_cb);
 
 /**
- * @brief Add active event counter. If active event counter is non-zero,
- *   #EV_HANDLE_ACTIVE is appended.
+ * @brief Active handle.
  * @param[in] handle    Handler.
  */
-EV_LOCAL void ev__handle_event_add(ev_handle_t* handle);
+EV_LOCAL void ev__handle_active(ev_handle_t* handle);
 
 /**
- * @brief Decrease active event counter. If active event counter is zero,
- *   #EV_HANDLE_ACTIVE is removed.
+ * @brief De-active handle.
  * @param[in] handle    Handler.
  */
-EV_LOCAL void ev__handle_event_dec(ev_handle_t* handle);
+EV_LOCAL void ev__handle_deactive(ev_handle_t* handle);
 
 /**
  * @brief Check if the handle is in active state
@@ -1320,8 +1318,8 @@ EV_LOCAL char* ev__strdup(const char* s)
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/fs.c
-// SIZE:    22829
-// SHA-256: 59a77b68de4da98635a19ac3cdc4cc5122ef4b893b55c4d2e2256d1c4941beda
+// SIZE:    22960
+// SHA-256: 29a4936d52f801c19b1800a5745738391e42b0d72acb75cc7c9f0c06a2829ff4
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/fs.c"
 /* AMALGAMATE: #include "ev.h" */
@@ -1657,6 +1655,15 @@ err_nomem:
     return -1;
 }
 
+static void _ev_fs_smart_deactive(ev_file_t* file)
+{
+    size_t io_sz = ev_list_size(&file->work_queue);
+    if (io_sz == 0)
+    {
+        ev__handle_deactive(&file->base);
+    }
+}
+
 static void _ev_fs_on_done(ev_work_t* work, int status)
 {
     ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
@@ -1670,8 +1677,8 @@ static void _ev_fs_on_done(ev_work_t* work, int status)
 
     if (file != NULL)
     {
-        ev__handle_event_dec(&file->base);
         _ev_fs_erase_req(file, req);
+        _ev_fs_smart_deactive(file);
     }
     req->cb(req);
 
@@ -1815,14 +1822,14 @@ static int _ev_file_read_template(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bu
         return ret;
     }
 
-    ev__handle_event_add(&file->base);
+    ev__handle_active(&file->base);
 
     ret = ev__loop_submit_threadpool(loop, &req->work_token,
         EV_THREADPOOL_WORK_IO_FAST, work_cb, _ev_fs_on_done);
     if (ret != 0)
     {
         _ev_fs_cleanup_req_as_read(req);
-        ev__handle_event_dec(&file->base);
+        _ev_fs_smart_deactive(file);
         return ret;
     }
 
@@ -1841,14 +1848,14 @@ static int _ev_file_pwrite_template(ev_file_t* file, ev_fs_req_t* req, ev_buf_t 
         return ret;
     }
 
-    ev__handle_event_add(&file->base);
+    ev__handle_active(&file->base);
 
     ret = ev__loop_submit_threadpool(loop, &req->work_token,
         EV_THREADPOOL_WORK_IO_FAST, work_cb, _ev_fs_on_done);
     if (ret != 0)
     {
         _ev_fs_cleanup_req_as_write(req);
-        ev__handle_event_dec(&file->base);
+        _ev_fs_smart_deactive(file);
         return ret;
     }
 
@@ -1955,14 +1962,14 @@ int ev_file_open(ev_file_t* file, ev_fs_req_t* token, const char* path,
         return ret;
     }
 
-    ev__handle_event_add(&file->base);
+    ev__handle_active(&file->base);
 
     ret = ev__loop_submit_threadpool(loop, &token->work_token,
         EV_THREADPOOL_WORK_IO_FAST, _ev_file_on_open, _ev_fs_on_done);
     if (ret != 0)
     {
         _ev_fs_cleanup_req_as_open(token);
-        ev__handle_event_dec(&file->base);
+        _ev_fs_smart_deactive(file);
         return ret;
     }
 
@@ -1980,13 +1987,13 @@ int ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence, ssize_t offset, 
     ev_loop_t* loop = file->base.loop;
     _ev_fs_init_req_as_seek(req, file, whence, offset, cb);
 
-    ev__handle_event_add(&file->base);
+    ev__handle_active(&file->base);
 
     ret = ev__loop_submit_threadpool(loop, &req->work_token,
         EV_THREADPOOL_WORK_IO_FAST, _ev_fs_on_seek, _ev_fs_on_done);
     if (ret != 0)
     {
-        ev__handle_event_dec(&file->base);
+        _ev_fs_smart_deactive(file);
         return ret;
     }
 
@@ -2045,14 +2052,14 @@ int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_file_cb cb)
     ev_loop_t* loop = file->base.loop;
 
     _ev_fs_init_req_as_fstat(req, file, cb);
-    ev__handle_event_add(&file->base);
+    ev__handle_active(&file->base);
 
     ret = ev__loop_submit_threadpool(loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
         _ev_file_on_fstat, _ev_fs_on_done);
     if (ret != 0)
     {
         _ev_fs_cleanup_req_as_fstat(req);
-        ev__handle_event_dec(&file->base);
+        _ev_fs_smart_deactive(file);
         return ret;
     }
 
@@ -2279,8 +2286,8 @@ finish:
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/handle.c
-// SIZE:    4387
-// SHA-256: 0ade9e28b8ffa1155d151d49a9dd2b5836ea886de9c6d74d28050edda636784f
+// SIZE:    3696
+// SHA-256: e2caaa30483957e42a199880529246208b1c4bc691d7e167edaa2398e06cb8da
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/handle.c"
 /* AMALGAMATE: #include "ev.h" */
@@ -2289,11 +2296,10 @@ finish:
 #include <assert.h>
 
 /**
- * @brief Set handle as inactive
- * @see ev__handle_event_dec()
+ * @brief Set handle as inactive.
  * @param[in] handle    handler
  */
-static void ev__handle_deactive(ev_handle_t* handle)
+EV_LOCAL void ev__handle_deactive(ev_handle_t* handle)
 {
     if (!(handle->data.flags & EV_HANDLE_ACTIVE))
     {
@@ -2307,11 +2313,10 @@ static void ev__handle_deactive(ev_handle_t* handle)
 }
 
 /**
- * @brief Force set handle as active, regardless the active event counter.
- * @see ev__handle_event_add()
+ * @brief Force set handle as active.
  * @param[in] handle    handler
  */
-static void ev__handle_active(ev_handle_t* handle)
+EV_LOCAL void ev__handle_active(ev_handle_t* handle)
 {
     if (handle->data.flags & EV_HANDLE_ACTIVE)
     {
@@ -2326,8 +2331,6 @@ static void ev__handle_active(ev_handle_t* handle)
 
 static void _ev_to_close_handle(ev_handle_t* handle)
 {
-    ev__handle_event_dec(handle);
-
     /**
      * Deactive but not reset #ev_handle_t::data::active_events, for debug
      * purpose.
@@ -2348,7 +2351,6 @@ EV_LOCAL void ev__handle_init(ev_loop_t* loop, ev_handle_t* handle, ev_role_t ro
 
     handle->data.role = role;
     handle->data.flags = 0;
-    handle->data.active_events = 0;
 
     handle->backlog.status = EV_ENOENT;
     handle->backlog.cb = NULL;
@@ -2367,7 +2369,6 @@ EV_LOCAL void ev__handle_exit(ev_handle_t* handle, ev_handle_cb close_cb)
 
     if (close_cb != NULL)
     {
-        ev__handle_event_add(handle);
         ev_list_push_back(&handle->loop->endgame_queue, &handle->endgame.node);
     }
     else
@@ -2375,28 +2376,6 @@ EV_LOCAL void ev__handle_exit(ev_handle_t* handle, ev_handle_cb close_cb)
         ev__handle_deactive(handle);
         handle->data.flags |= EV_HANDLE_CLOSED;
         ev_list_erase(&handle->loop->handles.idle_list, &handle->handle_queue);
-    }
-}
-
-EV_LOCAL void ev__handle_event_add(ev_handle_t* handle)
-{
-    handle->data.active_events++;
-
-    if (handle->data.active_events != 0)
-    {
-        ev__handle_active(handle);
-    }
-}
-
-EV_LOCAL void ev__handle_event_dec(ev_handle_t* handle)
-{
-    assert(handle->data.active_events != 0);
-
-    handle->data.active_events--;
-
-    if (handle->data.active_events == 0)
-    {
-        ev__handle_deactive(handle);
     }
 }
 
@@ -2419,7 +2398,6 @@ EV_LOCAL int ev__backlog_submit(ev_handle_t* handle, ev_handle_cb callback)
 
     handle->backlog.status = EV_EEXIST;
     handle->backlog.cb = callback;
-    ev__handle_event_add(handle);
 
     ev_list_push_back(&handle->loop->backlog_queue, &handle->backlog.node);
 
@@ -2435,7 +2413,6 @@ EV_LOCAL size_t ev__process_backlog(ev_loop_t* loop)
     {
         ev_handle_t* handle = EV_CONTAINER_OF(it, ev_handle_t, backlog.node);
 
-        ev__handle_event_dec(handle);
         handle->backlog.status = EV_ENOENT;
 
         handle->backlog.cb(handle);
@@ -4845,8 +4822,8 @@ size_t ev_shm_size(ev_shm_t* shm)
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/threadpool.c
-// SIZE:    8922
-// SHA-256: b45c41e8f75e3294c0f49ee7ab226f69a0cf494833ac35664cd8be2fe4cb7a26
+// SIZE:    8918
+// SHA-256: a3b869d48e9a4396e07dc774c9c8b989167a623285b8585e99dde63ede43caab
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/threadpool.c"
 /* AMALGAMATE: #include "ev.h" */
@@ -4883,7 +4860,7 @@ static void _ev_threadpool_on_loop(ev_handle_t* handle)
 {
     ev_work_t* work = EV_CONTAINER_OF(handle, ev_work_t, base);
 
-    ev__handle_event_dec(&work->base);
+    ev__handle_deactive(&work->base);
     ev__handle_exit(&work->base, NULL);
 
     work->data.done_cb(work, work->data.status);
@@ -5043,7 +5020,7 @@ int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
     assert(type < ARRAY_SIZE(pool->work_queue));
 
     ev__handle_init(loop, &work->base, EV_ROLE_EV_WORK);
-    ev__handle_event_add(&work->base);
+    ev__handle_active(&work->base);
     work->data.pool = pool;
     work->data.status = EV_ELOOP;
     work->data.work_cb = work_cb;
@@ -5236,8 +5213,8 @@ EV_LOCAL void ev__threadpool_process(ev_loop_t* loop)
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/timer.c
-// SIZE:    2546
-// SHA-256: 423fd61d22de01be995765d2696b388574d944c09f6ab57f657456715da0b1ee
+// SIZE:    2542
+// SHA-256: 6727d0797948f1d3b71507363798aa1884780e6ffa804eb2a85c022d6883baf7
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/timer.c"
 /* AMALGAMATE: #include "ev.h" */
@@ -5336,7 +5313,7 @@ int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_
     {
         EV_ABORT("duplicate timer");
     }
-    ev__handle_event_add(&handle->base);
+    ev__handle_active(&handle->base);
 
     return 0;
 }
@@ -5348,7 +5325,7 @@ void ev_timer_stop(ev_timer_t* handle)
         return;
     }
 
-    ev__handle_event_dec(&handle->base);
+    ev__handle_deactive(&handle->base);
     ev_map_erase(&handle->base.loop->timer.heap, &handle->node);
 }
 
@@ -6401,8 +6378,8 @@ EV_LOCAL int ev__tcp_open_win(ev_tcp_t* tcp, SOCKET fd);
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/win/async_win.c
-// SIZE:    1535
-// SHA-256: 12a93fa8dd8b4f511cc782bbc05f15d60ba14479953741e7b5fe2cc8f3c5f676
+// SIZE:    1531
+// SHA-256: 7bb33e2fa2cd1eafefcfdd393987d2a50bf0c21a3fd6646a09956a35381a754e
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/win/async_win.c"
 /* AMALGAMATE: #include "ev.h" */
@@ -6433,7 +6410,7 @@ static void _ev_async_on_close_win(ev_handle_t* handle)
 static void _ev_asyc_exit_win(ev_async_t* handle, ev_async_cb close_cb)
 {
     handle->close_cb = close_cb;
-    ev__handle_event_dec(&handle->base);
+    ev__handle_deactive(&handle->base);
     ev__handle_exit(&handle->base, close_cb != NULL ? _ev_async_on_close_win : NULL);
 }
 
@@ -6450,7 +6427,7 @@ int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
 
     ev__iocp_init(&handle->backend.io, _async_on_iocp_win, NULL);
     ev__handle_init(loop, &handle->base, EV_ROLE_EV_ASYNC);
-    ev__handle_event_add(&handle->base);
+    ev__handle_active(&handle->base);
 
     return 0;
 }
@@ -7826,8 +7803,8 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/win/pipe_win.c
-// SIZE:    39807
-// SHA-256: da6f45d48d76f5d43aa25cd2e8d96499d788c3e64b79a655c8a0e9f4cf581281
+// SIZE:    40520
+// SHA-256: 2a18c8e4b3cb4c1b21982ae484a8f0e8d3b7a0db29b169322dc03b3e0b774bc1
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/win/pipe_win.c"
 /* AMALGAMATE: #include "ev.h" */
@@ -7885,10 +7862,33 @@ static int _ev_pipe_make_c(HANDLE* pipe_handle, const char* name, int flags)
     return ev__translate_sys_error(errcode);
 }
 
+static void _ev_pipe_smart_deactive_win(ev_pipe_t* pipe)
+{
+    size_t io_sz = 0;
+
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
+    {
+        io_sz += ev_list_size(&pipe->backend.ipc_mode.rio.pending);
+        io_sz += ev_list_size(&pipe->backend.ipc_mode.wio.pending);
+        io_sz += pipe->backend.ipc_mode.wio.sending.w_req != NULL ? 1 : 0;
+    }
+    else
+    {
+        io_sz += ev_list_size(&pipe->backend.data_mode.rio.r_pending);
+        io_sz += ev_list_size(&pipe->backend.data_mode.wio.w_pending);
+        io_sz += ev_list_size(&pipe->backend.data_mode.wio.w_doing);
+    }
+
+    if (io_sz == 0)
+    {
+        ev__handle_deactive(&pipe->base);
+    }
+}
+
 static void _ev_pipe_r_user_callback_win(ev_pipe_read_req_t* req, ssize_t size)
 {
     ev_pipe_t* pipe = req->backend.owner;
-    ev__handle_event_dec(&pipe->base);
+    _ev_pipe_smart_deactive_win(pipe);
 
     ev__read_exit(&req->base);
     req->ucb(req, size);
@@ -7899,8 +7899,8 @@ static void _ev_pipe_cancel_all_r_ipc_mode(ev_pipe_t* pipe, int stat)
     ev_pipe_read_req_t* req;
     if ((req = pipe->backend.ipc_mode.rio.reading.reading) != NULL)
     {
-        _ev_pipe_r_user_callback_win(req, stat);
         pipe->backend.ipc_mode.rio.reading.reading = NULL;
+        _ev_pipe_r_user_callback_win(req, stat);
     }
     pipe->backend.ipc_mode.rio.reading.buf_idx = 0;
     pipe->backend.ipc_mode.rio.reading.buf_pos = 0;
@@ -7918,8 +7918,8 @@ static void _ev_pipe_cancel_all_r_data_mode(ev_pipe_t* pipe, int stat)
     ev_pipe_read_req_t* req;
     if ((req = pipe->backend.data_mode.rio.r_doing) != NULL)
     {
-        _ev_pipe_r_user_callback_win(req, stat);
         pipe->backend.data_mode.rio.r_doing = NULL;
+        _ev_pipe_r_user_callback_win(req, stat);
     }
 
     ev_list_node_t* it;
@@ -7945,7 +7945,7 @@ static void _ev_pipe_cancel_all_r(ev_pipe_t* pipe, int stat)
 static void _ev_pipe_w_user_callback_win(ev_pipe_write_req_t* req, ssize_t size)
 {
     ev_pipe_t* pipe = req->backend.owner;
-    ev__handle_event_dec(&pipe->base);
+    _ev_pipe_smart_deactive_win(pipe);
 
     ev__write_exit(&req->base);
     req->ucb(req, size);
@@ -7974,8 +7974,8 @@ static void _ev_pipe_cancel_all_w_ipc_mode(ev_pipe_t* pipe, int stat)
     ev_pipe_write_req_t* req;
     if ((req = pipe->backend.ipc_mode.wio.sending.w_req) != NULL)
     {
-        _ev_pipe_w_user_callback_win(req, stat);
         pipe->backend.ipc_mode.wio.sending.w_req = NULL;
+        _ev_pipe_w_user_callback_win(req, stat);
     }
     pipe->backend.ipc_mode.wio.sending.donecnt = 0;
 
@@ -8902,7 +8902,7 @@ static int _ev_pipe_data_mode_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
         ev_list_push_back(&pipe->backend.data_mode.wio.w_doing, &req->base.node);
     }
 
-    ev__handle_event_add(&pipe->base);
+    ev__handle_active(&pipe->base);
     return 0;
 }
 
@@ -9152,6 +9152,7 @@ int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
         return ev__translate_sys_error(GetLastError());
     }
     pipe->pipfd = handle;
+    pipe->base.data.flags |= EV_HANDLE_PIPE_STREAMING;
 
     if (!(pipe->base.data.flags & EV_HANDLE_PIPE_IPC))
     {
@@ -9206,7 +9207,7 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
     }
 
     req->backend.owner = pipe;
-    ev__handle_event_add(&pipe->base);
+    ev__handle_active(&pipe->base);
 
     if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
@@ -9220,7 +9221,7 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
     if (ret != 0)
     {
         ev__write_exit(&req->base);
-        ev__handle_event_dec(&pipe->base);
+        _ev_pipe_smart_deactive_win(pipe);
     }
 
     return ret;
@@ -9240,7 +9241,7 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
         return ret;
     }
 
-    ev__handle_event_add(&pipe->base);
+    ev__handle_active(&pipe->base);
 
     if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
@@ -9253,7 +9254,7 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
 
     if (ret != 0)
     {
-        ev__handle_event_dec(&pipe->base);
+        _ev_pipe_smart_deactive_win(pipe);
         ev__read_exit(&req->base);
     }
 
@@ -10101,8 +10102,8 @@ void ev_shm_exit(ev_shm_t* shm)
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/win/tcp_win.c
-// SIZE:    20319
-// SHA-256: fc905f9f437fa791366f0e02d758ba6b9f03c023dae4093b3f67d5b1167dcfa6
+// SIZE:    21629
+// SHA-256: 0c8e5c9b96d855ba9327540ebdf923b1cb6446dc63cff7b05663bea9c397d20b
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/win/tcp_win.c"
 /* AMALGAMATE: #include "ev.h" */
@@ -10123,6 +10124,51 @@ static void _ev_tcp_close_socket(ev_tcp_t* sock)
     }
 }
 
+static void _ev_tcp_smart_deactive_win(ev_tcp_t* sock)
+{
+    size_t io_sz = 0;
+    if (sock->base.data.flags & EV_HANDLE_TCP_LISTING)
+    {
+        io_sz = ev_list_size(&sock->backend.u.listen.a_queue);
+        if (io_sz != 0)
+        {
+            return;
+        }
+    }
+    else if (sock->base.data.flags & EV_HANDLE_TCP_ACCEPTING)
+    {
+        if (sock->backend.u.accept.cb != NULL)
+        {
+            return;
+        }
+    }
+    else if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
+    {
+        if (sock->backend.u.client.cb != NULL)
+        {
+            return;
+        }
+    }
+    else if (sock->base.data.flags & EV_HANDLE_TCP_STREAMING)
+    {
+        io_sz += ev_list_size(&sock->backend.u.stream.w_queue);
+        io_sz += ev_list_size(&sock->backend.u.stream.r_queue);
+        if (io_sz != 0)
+        {
+            return;
+        }
+    }
+
+    ev__handle_deactive(&sock->base);
+}
+
+static void _ev_tcp_accept_callback_once(ev_tcp_t* lisn, ev_tcp_t* conn, int stat)
+{
+    ev_tcp_accept_cb bak_cb = conn->backend.u.accept.cb;
+    conn->backend.u.accept.cb = NULL;
+    bak_cb(lisn, conn, stat);
+}
+
 static void _ev_tcp_finialize_accept(ev_tcp_t* conn)
 {
     ev_tcp_t* lisn = conn->backend.u.accept.listen;
@@ -10138,23 +10184,23 @@ static void _ev_tcp_finialize_accept(ev_tcp_t* conn)
         ev_list_erase(&lisn->backend.u.listen.a_queue_done, &conn->backend.u.accept.node);
     }
 
-    ev__handle_event_dec(&lisn->base);
-    ev__handle_event_dec(&conn->base);
-
     conn->base.data.flags &= ~EV_HANDLE_TCP_ACCEPTING;
-    conn->backend.u.accept.cb(lisn, conn, conn->backend.u.accept.stat);
+    _ev_tcp_smart_deactive_win(lisn);
+    _ev_tcp_smart_deactive_win(conn);
+
+    _ev_tcp_accept_callback_once(lisn, conn, conn->backend.u.accept.stat);
 }
 
 static void _ev_tcp_cleanup_connection_in_listen(ev_tcp_t* conn)
 {
     ev_tcp_t* lisn = conn->backend.u.accept.listen;
 
-    ev__handle_event_dec(&lisn->base);
-    ev__handle_event_dec(&conn->base);
+    conn->base.data.flags &= ~EV_HANDLE_TCP_ACCEPTING;
+    _ev_tcp_smart_deactive_win(lisn);
+    _ev_tcp_smart_deactive_win(conn);
 
     _ev_tcp_close_socket(conn);
-    conn->base.data.flags &= ~EV_HANDLE_TCP_ACCEPTING;
-    conn->backend.u.accept.cb(lisn, conn, EV_ECANCELED);
+    _ev_tcp_accept_callback_once(lisn, conn, EV_ECANCELED);
 }
 
 static void _ev_tcp_cleanup_listen(ev_tcp_t* sock)
@@ -10174,14 +10220,14 @@ static void _ev_tcp_cleanup_listen(ev_tcp_t* sock)
 
 static void _ev_tcp_w_user_callback_win(ev_tcp_t* sock, ev_tcp_write_req_t* req, ssize_t size)
 {
-    ev__handle_event_dec(&sock->base);
+    _ev_tcp_smart_deactive_win(sock);
     ev__write_exit(&req->base);
     req->user_callback(req, size);
 }
 
 static void _ev_tcp_r_user_callbak_win(ev_tcp_t* sock, ev_tcp_read_req_t* req, ssize_t size)
 {
-    ev__handle_event_dec(&sock->base);
+    _ev_tcp_smart_deactive_win(sock);
     ev__read_exit(&req->base);
     req->user_callback(req, size);
 }
@@ -10211,13 +10257,21 @@ static void _ev_tcp_cleanup_stream(ev_tcp_t* sock)
     }
 }
 
+static void _ev_tcp_connect_callback_once_win(ev_tcp_t* sock, int stat)
+{
+    ev_tcp_connect_cb bak_cb = sock->backend.u.client.cb;
+    sock->backend.u.client.cb = NULL;
+    bak_cb(sock, stat);
+}
+
 static void _ev_tcp_cleanup_connect(ev_tcp_t* sock)
 {
     if (sock->backend.u.client.stat == EV_EINPROGRESS)
     {
         sock->backend.u.client.stat = EV_ECANCELED;
     }
-    sock->backend.u.client.cb(sock, sock->backend.u.client.stat);
+
+    _ev_tcp_connect_callback_once_win(sock, sock->backend.u.client.stat);
 }
 
 static void _ev_tcp_on_close_win(ev_handle_t* handle)
@@ -10384,10 +10438,10 @@ static void _ev_tcp_process_connect(ev_tcp_t* sock)
         }
     }
 
-    ev__handle_event_dec(&sock->base);
-
     sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
-    sock->backend.u.client.cb(sock, sock->backend.u.client.stat);
+    _ev_tcp_smart_deactive_win(sock);
+
+    _ev_tcp_connect_callback_once_win(sock, sock->backend.u.client.stat);
 }
 
 static void _ev_tcp_on_task_done(ev_handle_t* handle)
@@ -10655,8 +10709,8 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_tcp_accept_cb cb)
     }
     _ev_tcp_setup_accept_win(lisn, conn, cb);
 
-    ev__handle_event_add(&lisn->base);
-    ev__handle_event_add(&conn->base);
+    ev__handle_active(&lisn->base);
+    ev__handle_active(&conn->base);
 
     DWORD bytes = 0;
     ret = AcceptEx(lisn->sock, conn->sock,
@@ -10674,9 +10728,9 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_tcp_accept_cb cb)
 
     if ((ret = WSAGetLastError()) != WSA_IO_PENDING)
     {
-        ev__handle_event_dec(&lisn->base);
-        ev__handle_event_dec(&conn->base);
         conn->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
+        _ev_tcp_smart_deactive_win(lisn);
+        _ev_tcp_smart_deactive_win(conn);
         return ev__translate_sys_error(ret);
     }
     conn->base.data.flags |= EV_HANDLE_TCP_ACCEPTING;
@@ -10751,7 +10805,7 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_tcp_co
     {
         goto err;
     }
-    ev__handle_event_add(&sock->base);
+    ev__handle_active(&sock->base);
 
     DWORD bytes;
     ret = sock->backend.u.client.fn_connectex(sock->sock, addr, (int)size,
@@ -10767,7 +10821,7 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_tcp_co
     if (ret != WSA_IO_PENDING)
     {
         sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
-        ev__handle_event_dec(&sock->base);
+        _ev_tcp_smart_deactive_win(sock);
         ret = ev__translate_sys_error(ret);
         goto err;
     }
@@ -10797,7 +10851,7 @@ int ev_tcp_write(ev_tcp_t* sock, ev_tcp_write_req_t* req, ev_buf_t* bufs,
     }
 
     ev_list_push_back(&sock->backend.u.stream.w_queue, &req->base.node);
-    ev__handle_event_add(&sock->base);
+    ev__handle_active(&sock->base);
 
     ret = WSASend(sock->sock, (WSABUF*)req->base.bufs, (DWORD)req->base.nbuf,
         NULL, 0, &req->backend.io.overlapped, NULL);
@@ -10812,7 +10866,7 @@ int ev_tcp_write(ev_tcp_t* sock, ev_tcp_write_req_t* req, ev_buf_t* bufs,
 
     if ((ret = WSAGetLastError()) != WSA_IO_PENDING)
     {
-        ev__handle_event_dec(&sock->base);
+        _ev_tcp_smart_deactive_win(sock);
         return ev__translate_sys_error(ret);
     }
 
@@ -10835,7 +10889,7 @@ int ev_tcp_read(ev_tcp_t* sock, ev_tcp_read_req_t* req,
     }
 
     ev_list_push_back(&sock->backend.u.stream.r_queue, &req->base.node);
-    ev__handle_event_add(&sock->base);
+    ev__handle_active(&sock->base);
 
     DWORD flags = 0;
     ret = WSARecv(sock->sock, (WSABUF*)req->base.data.bufs, (DWORD)req->base.data.nbuf,
@@ -10851,7 +10905,7 @@ int ev_tcp_read(ev_tcp_t* sock, ev_tcp_read_req_t* req,
 
     if ((ret = WSAGetLastError()) != WSA_IO_PENDING)
     {
-        ev__handle_event_dec(&sock->base);
+        _ev_tcp_smart_deactive_win(sock);
         return ev__translate_sys_error(ret);
     }
 
@@ -11096,8 +11150,8 @@ EV_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop)
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/win/udp_win.c
-// SIZE:    24125
-// SHA-256: e09c230471127844609c8cf1c0b10076939040dea54db5e0a0977dd17da1cff4
+// SIZE:    24339
+// SHA-256: 445cf9c099247e582f82f192c63e8406fb38fad650120ac6b8b2d93def9b521f
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/win/udp_win.c"
 /* AMALGAMATE: #include "ev.h" */
@@ -11423,10 +11477,23 @@ static int _ev_udp_set_source_membership_ipv6(ev_udp_t* udp,
     return 0;
 }
 
+static void _ev_udp_smart_deactive(ev_udp_t* udp)
+{
+    size_t io_sz = 0;
+
+    io_sz += ev_list_size(&udp->send_list);
+    io_sz += ev_list_size(&udp->recv_list);
+
+    if (io_sz == 0)
+    {
+        ev__handle_deactive(&udp->base);
+    }
+}
+
 static void _ev_udp_w_user_callback_win(ev_udp_write_t* req, ssize_t size)
 {
     ev_udp_t* udp = req->backend.owner;
-    ev__handle_event_dec(&udp->base);
+    _ev_udp_smart_deactive(udp);
 
     ev__write_exit(&req->base);
     ev__handle_exit(&req->handle, NULL);
@@ -11437,7 +11504,7 @@ static void _ev_udp_w_user_callback_win(ev_udp_write_t* req, ssize_t size)
 static void _ev_udp_r_user_callback_win(ev_udp_read_t* req, const struct sockaddr* addr, ssize_t size)
 {
     ev_udp_t* udp = req->backend.owner;
-    ev__handle_event_dec(&udp->base);
+    _ev_udp_smart_deactive(udp);
 
     ev__read_exit(&req->base);
     ev__handle_exit(&req->handle, NULL);
@@ -11601,7 +11668,7 @@ EV_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
     req->backend.stat = EV_EINPROGRESS;
     ev__iocp_init(&req->backend.io, _ev_udp_on_recv_iocp_win, udp);
 
-    ev__handle_event_add(&udp->base);
+    ev__handle_active(&udp->base);
 
     int ret = WSARecv(udp->sock, &buf, 1, &bytes, &flags, &req->backend.io.overlapped, NULL);
     if (ret == 0 && (udp->base.data.flags & EV_HANDLE_UDP_BYPASS_IOCP))
@@ -11616,7 +11683,7 @@ EV_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
         return 0;
     }
 
-    ev__handle_event_dec(&udp->base);
+    _ev_udp_smart_deactive(udp);
     return ev__translate_sys_error(err);
 }
 
@@ -11644,7 +11711,7 @@ EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
 
     DWORD send_bytes;
 
-    ev__handle_event_add(&udp->base);
+    ev__handle_active(&udp->base);
     ret = WSASendTo(udp->sock, (WSABUF*)req->base.bufs, (DWORD)req->base.nbuf,
         &send_bytes, 0, addr, addrlen, &req->backend.io.overlapped, NULL);
 
@@ -11662,7 +11729,7 @@ EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
         return 0;
     }
 
-    ev__handle_event_dec(&udp->base);
+    _ev_udp_smart_deactive(udp);
     return ev__translate_sys_error(err);
 }
 
@@ -12828,8 +12895,8 @@ EV_LOCAL void ev__exit_work(ev_loop_t* loop);
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/unix/async_unix.c
-// SIZE:    3433
-// SHA-256: e161c8b4fa0221c961d0bedf0f54df72fb2a29c3ac0f6407ad03af284fe4232a
+// SIZE:    3429
+// SHA-256: 2b3cd7bedadfea909b1fa93ecfe5b2708fa954a3d27c2e76cb1ac0e55b29241e
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/unix/async_unix.c"
 /* AMALGAMATE: #include "ev.h" */
@@ -12882,7 +12949,7 @@ static void _ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
     handle->close_cb = close_cb;
     _async_close_pipe(handle);
 
-    ev__handle_event_dec(&handle->base);
+    ev__handle_deactive(&handle->base);
     ev__handle_exit(&handle->base, close_cb != NULL ? _ev_async_on_close : NULL);
 }
 
@@ -12976,7 +13043,7 @@ int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
     ev__nonblock_io_init(&handle->backend.io, handle->backend.pipfd[0],
         _async_on_wakeup_unix, NULL);
     ev__nonblock_io_add(loop, &handle->backend.io, EV_IO_IN);
-    ev__handle_event_add(&handle->base);
+    ev__handle_active(&handle->base);
 
     return 0;
 
@@ -14143,8 +14210,8 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/unix/pipe_unix.c
-// SIZE:    24988
-// SHA-256: 6b43efbeac03930e4f88370f79aff8c4702a668d35a726589363d75501214cf7
+// SIZE:    25767
+// SHA-256: 7e47d5db4f0f393b641095100dff6f2da6f005ac62a6fd3dad44e27efc86d90e
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/unix/pipe_unix.c"
 #define _GNU_SOURCE
@@ -14182,17 +14249,44 @@ static void _ev_pipe_on_close_unix(ev_handle_t* handle)
     }
 }
 
+static void _ev_pipe_smart_deactive(ev_pipe_t* pipe)
+{
+    size_t io_sz = 0;
+
+    if (!ev__handle_is_active(&pipe->base))
+    {
+        return;
+    }
+
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
+    {
+        io_sz += ev_list_size(&pipe->backend.ipc_mode.rio.rqueue);
+        io_sz += pipe->backend.ipc_mode.rio.curr.reading != NULL ? 1 : 0;
+        io_sz += ev_list_size(&pipe->backend.ipc_mode.wio.wqueue);
+        io_sz += pipe->backend.ipc_mode.wio.curr.writing != NULL ? 1 : 0;
+    }
+    else
+    {
+        io_sz = ev__nonblock_stream_size(&pipe->backend.data_mode.stream, EV_IO_IN | EV_IO_OUT);
+    }
+
+    if (io_sz == 0)
+    {
+        ev__handle_deactive(&pipe->base);
+    }
+}
+
 static void _ev_pipe_w_user_callback_unix(ev_pipe_t* pipe,
     ev_pipe_write_req_t* req, ssize_t size)
 {
-    ev__handle_event_dec(&pipe->base);
+    _ev_pipe_smart_deactive(pipe);
     ev__write_exit(&req->base);
     req->ucb(req, size);
 }
 
 static void _ev_pipe_r_user_callback_unix(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ssize_t size)
 {
-    ev__handle_event_dec(&pipe->base);
+    _ev_pipe_smart_deactive(pipe);
     ev__read_exit(&req->base);
     req->ucb(req, size);
 }
@@ -14986,7 +15080,7 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
         return ret;
     }
 
-    ev__handle_event_add(&pipe->base);
+    ev__handle_active(&pipe->base);
 
     if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
@@ -14999,8 +15093,10 @@ int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
 
     if (ret != 0)
     {
-        ev__handle_event_dec(&pipe->base);
         _ev_pipe_abort_unix(pipe, ret);
+
+        /* The final state must be non-active. */
+        ev__handle_deactive(&pipe->base);
     }
 
     return ret;
@@ -15020,7 +15116,7 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
         return ret;
     }
 
-    ev__handle_event_add(&pipe->base);
+    ev__handle_active(&pipe->base);
 
     if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
     {
@@ -15033,8 +15129,10 @@ int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
 
     if (ret != 0)
     {
-        ev__handle_event_dec(&pipe->base);
         _ev_pipe_abort_unix(pipe, ret);
+
+        /* The final state must be non-active. */
+        ev__handle_deactive(&pipe->base);
     }
 
     return ret;
@@ -16209,8 +16307,8 @@ EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/unix/tcp_unix.c
-// SIZE:    12063
-// SHA-256: 50bb94acf66ef5c21a4ae73e8de7d07e9b11bab97143344c03aa52db43c3c7fc
+// SIZE:    13188
+// SHA-256: 3c5cf4b02cfccf9f45bc4aa112d1f99ff30dfe8abbdb08c957c1ac1eee8a5591
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/unix/tcp_unix.c"
 /* AMALGAMATE: #include "ev.h" */
@@ -16242,6 +16340,13 @@ static void _ev_tcp_cleanup_listen_queue(ev_tcp_t* s_sock, int stat)
     }
 }
 
+static void _ev_tcp_connect_callback_once(ev_tcp_t* sock, int stat)
+{
+    ev_tcp_connect_cb bak_cb = sock->backend.u.client.cb;
+    sock->backend.u.client.cb = NULL;
+    bak_cb(sock, stat);
+}
+
 static void _ev_tcp_on_close(ev_handle_t* handle)
 {
     ev_tcp_t* sock = EV_CONTAINER_OF(handle, ev_tcp_t, base);
@@ -16260,7 +16365,7 @@ static void _ev_tcp_on_close(ev_handle_t* handle)
 
     if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
     {
-        sock->backend.u.client.cb(sock, EV_ECANCELED);
+        _ev_tcp_connect_callback_once(sock, EV_ECANCELED);
         sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
     }
 
@@ -16270,13 +16375,48 @@ static void _ev_tcp_on_close(ev_handle_t* handle)
     }
 }
 
+static void _ev_tcp_smart_deactive(ev_tcp_t* sock)
+{
+    if (sock->base.data.flags & EV_HANDLE_TCP_LISTING)
+    {
+        size_t size = ev_list_size(&sock->backend.u.listen.accept_queue);
+        if (size != 0)
+        {
+            return;
+        }
+    }
+    else if (sock->base.data.flags & EV_HANDLE_TCP_ACCEPTING)
+    {
+        if (sock->backend.u.accept.cb != NULL)
+        {
+            return;
+        }
+    }
+    else if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
+    {
+        if (sock->backend.u.client.cb != NULL)
+        {
+            return;
+        }
+    }
+    else if (sock->base.data.flags & EV_HANDLE_TCP_STREAMING)
+    {
+        size_t io_sz = ev__nonblock_stream_size(&sock->backend.u.stream, EV_IO_IN | EV_IO_OUT);
+        if (io_sz != 0)
+        {
+            return;
+        }
+    }
+
+    ev__handle_deactive(&sock->base);
+}
+
 static void _ev_tcp_on_connect(ev_tcp_t* sock)
 {
     int ret;
     socklen_t result_len = sizeof(ret);
 
     ev__nonblock_io_del(sock->base.loop, &sock->backend.u.client.io, EV_IO_OUT);
-    sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
 
     /* Get connect result */
     if (getsockopt(sock->sock, SOL_SOCKET, SO_ERROR, &ret, &result_len) < 0)
@@ -16289,20 +16429,21 @@ static void _ev_tcp_on_connect(ev_tcp_t* sock)
     sock->backend.u.client.stat = ev__translate_sys_error(ret);
 
 fin:
-    ev__handle_event_dec(&sock->base);
-    sock->backend.u.client.cb(sock, sock->backend.u.client.stat);
+    sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
+    _ev_tcp_connect_callback_once(sock, sock->backend.u.client.stat);
+    _ev_tcp_smart_deactive(sock);
 }
 
 static void _ev_tcp_w_user_callback_unix(ev_tcp_t* sock, ev_tcp_write_req_t* req, ssize_t size)
 {
-    ev__handle_event_dec(&sock->base);
+    _ev_tcp_smart_deactive(sock);
     ev__write_exit(&req->base);
     req->user_callback(req, size);
 }
 
 static void _ev_tcp_r_user_callback_unix(ev_tcp_t* sock, ev_tcp_read_req_t* req, ssize_t size)
 {
-    ev__handle_event_dec(&sock->base);
+    _ev_tcp_smart_deactive(sock);
     ev__read_exit(&req->base);
     req->user_callback(req, size);
 }
@@ -16324,9 +16465,13 @@ static void _on_tcp_read_done(ev_nonblock_stream_t* stream, ev_read_t* req, ssiz
 
 static void _ev_tcp_accept_user_callback_unix(ev_tcp_t* acpt, ev_tcp_t* conn, int ret)
 {
-    ev__handle_event_dec(&conn->base);
-    ev__handle_event_dec(&acpt->base);
-    conn->backend.u.accept.cb(acpt, conn, ret);
+    conn->base.data.flags &= ~EV_HANDLE_TCP_ACCEPTING;
+    _ev_tcp_smart_deactive(conn);
+    _ev_tcp_smart_deactive(acpt);
+
+    ev_tcp_accept_cb bak_cb = conn->backend.u.accept.cb;
+    conn->backend.u.accept.cb = NULL;
+    bak_cb(acpt, conn, ret);
 }
 
 static void _ev_tcp_on_accept(ev_tcp_t* acpt)
@@ -16344,8 +16489,6 @@ static void _ev_tcp_on_accept(ev_tcp_t* acpt)
     {
         conn->sock = accept(acpt->sock, NULL, NULL);
     } while (conn->sock == -1 && errno == EINTR);
-
-    conn->base.data.flags &= ~EV_HANDLE_TCP_ACCEPTING;
 
     int ret = conn->sock >= 0 ? 0 : ev__translate_sys_error(errno);
     if (ret == 0)
@@ -16440,7 +16583,7 @@ static void _ev_tcp_to_connect(ev_handle_t* handle)
     ev_tcp_t* sock = EV_CONTAINER_OF(handle, ev_tcp_t, base);
 
     sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
-    sock->backend.u.client.cb(sock, 0);
+    _ev_tcp_connect_callback_once(sock, 0);
 }
 
 static void _ev_tcp_setup_stream_once(ev_tcp_t* sock)
@@ -16544,8 +16687,8 @@ int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_tcp_accept_cb cb)
     ev_list_push_back(&lisn->backend.u.listen.accept_queue, &conn->backend.u.accept.accept_node);
     ev__nonblock_io_add(lisn->base.loop, &lisn->backend.u.listen.io, EV_IO_IN);
 
-    ev__handle_event_add(&lisn->base);
-    ev__handle_event_add(&conn->base);
+    ev__handle_active(&lisn->base);
+    ev__handle_active(&conn->base);
 
     return 0;
 }
@@ -16566,12 +16709,12 @@ int ev_tcp_write(ev_tcp_t* sock, ev_tcp_write_req_t* req, ev_buf_t* bufs, size_t
 
     _ev_tcp_setup_stream_once(sock);
 
-    ev__handle_event_add(&sock->base);
+    ev__handle_active(&sock->base);
     ret = ev__nonblock_stream_write(&sock->backend.u.stream, &req->base);
 
     if (ret != 0)
     {
-        ev__handle_event_dec(&sock->base);
+        _ev_tcp_smart_deactive(sock);
         return ret;
     }
     return 0;
@@ -16593,12 +16736,12 @@ int ev_tcp_read(ev_tcp_t* sock, ev_tcp_read_req_t* req, ev_buf_t* bufs, size_t n
 
     _ev_tcp_setup_stream_once(sock);
 
-    ev__handle_event_add(&sock->base);
+    ev__handle_active(&sock->base);
     ret = ev__nonblock_stream_read(&sock->backend.u.stream, &req->base);
 
     if (ret != 0)
     {
-        ev__handle_event_dec(&sock->base);
+        _ev_tcp_smart_deactive(sock);
         return ret;
     }
     return 0;
@@ -16666,13 +16809,14 @@ int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_tcp_co
         goto err;
     }
 
-    ev__handle_event_add(&sock->base);
+    ev__handle_active(&sock->base);
     ev__nonblock_io_add(loop, &sock->backend.u.client.io, EV_IO_OUT);
 
     return 0;
 
 err:
     _ev_tcp_close_fd(sock);
+    ev__handle_deactive(&sock->base);
     return ret;
 }
 
@@ -16928,8 +17072,8 @@ EV_LOCAL void ev__exit_work(ev_loop_t* loop)
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/unix/udp_unix.c
-// SIZE:    23050
-// SHA-256: f5bfb171047f1d0d9ce433a258446d74cda471260abd606ed85b6e2a18313bfe
+// SIZE:    23274
+// SHA-256: 282a44b705ede996c58065b00ccfeeb7bb7e3c6f6d98df66a3292a96c20d597c
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/unix/udp_unix.c"
 /* AMALGAMATE: #include "ev.h" */
@@ -16950,9 +17094,22 @@ static void _ev_udp_close_unix(ev_udp_t* udp)
     }
 }
 
+static void _ev_udp_smart_deactive(ev_udp_t* udp)
+{
+    size_t io_sz = 0;
+
+    io_sz += ev_list_size(&udp->send_list);
+    io_sz += ev_list_size(&udp->recv_list);
+
+    if (io_sz == 0)
+    {
+        ev__handle_deactive(&udp->base);
+    }
+}
+
 static void _ev_udp_w_user_callback_unix(ev_udp_t* udp, ev_udp_write_t* req, ssize_t size)
 {
-    ev__handle_event_dec(&udp->base);
+    _ev_udp_smart_deactive(udp);
     ev__write_exit(&req->base);
     ev__handle_exit(&req->handle, NULL);
     req->usr_cb(req, size);
@@ -16961,7 +17118,7 @@ static void _ev_udp_w_user_callback_unix(ev_udp_t* udp, ev_udp_write_t* req, ssi
 static void _ev_udp_r_user_callback_unix(ev_udp_t* udp, ev_udp_read_t* req,
     const struct sockaddr* addr, ssize_t size)
 {
-    ev__handle_event_dec(&udp->base);
+    _ev_udp_smart_deactive(udp);
     ev__read_exit(&req->base);
     ev__handle_exit(&req->handle, NULL);
     req->usr_cb(req, addr, size);
@@ -17549,7 +17706,7 @@ EV_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
         ev__nonblock_io_add(udp->base.loop, &udp->backend.io, EPOLLIN);
     }
 
-    ev__handle_event_add(&udp->base);
+    ev__handle_active(&udp->base);
 
     return 0;
 }
@@ -17583,7 +17740,7 @@ EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
         ev__nonblock_io_add(udp->base.loop, &udp->backend.io, EPOLLOUT);
     }
 
-    ev__handle_event_add(&udp->base);
+    ev__handle_active(&udp->base);
 
     return 0;
 }
