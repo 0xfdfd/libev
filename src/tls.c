@@ -27,3 +27,8 @@ void ev_tls_exit(ev_tls_t* tls, ev_tls_cb on_exit)
     tls->on_exit = on_exit;
     ev_tcp_exit(&tls->tcp, _ev_tls_on_tcp_close);
 }
+
+int ev_tls_bind(ev_tls_t* tls, const struct sockaddr* addr, size_t addrlen)
+{
+    return ev_tcp_bind(&tls->tcp, addr, addrlen);
+}

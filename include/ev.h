@@ -1403,7 +1403,9 @@ EV_API void ev_tcp_exit(ev_tcp_t* sock, ev_tcp_close_cb cb);
 
 /**
  * @brief Bind the handle to an address and port.
- * addr should point to an initialized struct sockaddr_in or struct sockaddr_in6.
+ *
+ * \p addr should point to an initialized struct sockaddr_in or struct sockaddr_in6.
+ *
  * @param[in] tcp       Socket handler
  * @param[in] addr      Bind address
  * @param[in] addrlen   Address length
@@ -1809,9 +1811,52 @@ struct ev_tls
     ev_tls_cb   on_exit;
 };
 
-int ev_tls_init(ev_loop_t* loop, ev_tls_t* tls);
+/**
+ * @brief Initialize a tls socket.
+ * @param[in] loop      Event loop
+ * @param[out] tcp      TLS handle
+ * @return              #ev_errno_t
+ */
+EV_API int ev_tls_init(ev_loop_t* loop, ev_tls_t* tls);
 
-void ev_tls_exit(ev_tls_t* tls, ev_tls_cb on_exit);
+/**
+ * @brief Destroy socket
+ * @param[in] sock      Socket
+ * @param[in] cb        Destroy callback
+ */
+EV_API void ev_tls_exit(ev_tls_t* tls, ev_tls_cb on_exit);
+
+/**
+ * @brief Bind the handle to an address and port.
+ * \p addr should point to an initialized struct sockaddr_in or struct sockaddr_in6.
+ * @param[in] tcp       Socket handler
+ * @param[in] addr      Bind address
+ * @param[in] addrlen   Address length
+ * @return              #ev_errno_t
+ */
+EV_API int ev_tls_bind(ev_tls_t* tls, const struct sockaddr* addr, size_t addrlen);
+
+/**
+ * @brief Write data
+ *
+ * Once #ev_tls_write() return #EV_SUCCESS, it take the ownership of \p req, so
+ * you should not modify the content of it until bounded callback is called.
+ *
+ * It is a guarantee that every bounded callback of \p req will be called, with
+ * following scene:
+ *   + If write success or failure. The callback will be called with write status.
+ *   + If \p pipe is exiting but there are pending write request. The callback
+ *     will be called with status #EV_ECANCELED.
+ *
+ * @param[in] tls   Socket handle
+ * @param[in] req   Write request
+ * @param[in] bufs  Buffer list
+ * @param[in] nbuf  Buffer number
+ * @param[in] cb    Send result callback
+ * @return          #ev_errno_t
+ */
+EV_API int ev_tls_write(ev_tls_t* tls, ev_tcp_write_req_t* req,
+    ev_buf_t* bufs, size_t nbuf, ev_tcp_write_cb cb);
 
 /**
  * @} // EV_TLS
