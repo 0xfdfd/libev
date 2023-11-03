@@ -6,7 +6,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/third_party/cmake-modules")
 
 # Build options
 option(EV_ENABLE_COVERAGE "Enable code coverage. GCC/Clang only" OFF)
-option(EV_HAVE_LUA_BINDING "Build with lua binding" OFF)
 
 set(ev_src
     "src/defs.h"
@@ -139,6 +138,20 @@ add_custom_command(
             --source    "include/ev/unix.h"
             --string    "#endif              /* AMALGAMATE: ev.h (3/3) */"
             --source    "include/ev.h"
+            --source    "include/ev/mutex.h"
+            --source    "include/ev/sem.h"
+            --source    "include/ev/once.h"
+            --source    "include/ev/shm.h"
+            --source    "include/ev/handle.h"
+            --source    "include/ev/loop.h"
+            --source    "include/ev/async.h"
+            --source    "include/ev/timer.h"
+            --source    "include/ev/tcp.h"
+            --source    "include/ev/udp.h"
+            --source    "include/ev/pipe.h"
+            --source    "include/ev/fs.h"
+            --source    "include/ev/process.h"
+            --source    "include/ev/misc.h"
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
             ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md
@@ -149,6 +162,20 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev.h
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/win.h
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/unix.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/mutex.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/sem.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/once.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/shm.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/handle.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/loop.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/async.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/timer.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/tcp.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/udp.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/pipe.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/fs.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/process.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/misc.h
     VERBATIM
 )
 
@@ -182,13 +209,6 @@ target_include_directories(${PROJECT_NAME}
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
-
-if (EV_HAVE_LUA_BINDING)
-	find_package(Lua REQUIRED)
-	target_compile_options(${PROJECT_NAME} PRIVATE -DEV_HAVE_LUA_BINDING)
-	target_include_directories(ev PRIVATE ${LUA_INCLUDE_DIR})
-	target_link_libraries(ev PRIVATE ${LUA_LIBRARIES})
-endif ()
 
 # add library dependencies
 find_package(Threads REQUIRED)

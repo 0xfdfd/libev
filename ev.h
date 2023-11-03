@@ -1550,8 +1550,8 @@ struct ev_nonblock_stream
 #endif              /* AMALGAMATE: ev.h (3/3) */
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    include/ev.h
-// SIZE:    90158
-// SHA-256: 6bac7bbc3f8cdd6a6764b8a795655a6ccafd11733c00dd2a9512f34b6cd03323
+// SIZE:    19599
+// SHA-256: 9e9bc795b6d896d5aee8eff039f58f15e3c0d700bbef07dee756cf6f4da1a11a
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * @mainpage libev
@@ -2059,6 +2059,122 @@ EV_API void* ev_tls_get(ev_tls_t* tls);
  * @} EV_Thread
  */
 
+struct ev_loop;
+
+/**
+ * @brief Read request
+ */
+typedef struct ev_read
+{
+    ev_list_node_t          node;               /**< Intrusive node */
+    struct
+    {
+        ev_buf_t*           bufs;               /**< Buffer list */
+        size_t              nbuf;               /**< Buffer list count */
+        size_t              capacity;           /**< Total bytes of buffer */
+        size_t              size;               /**< Data size */
+        ev_buf_t            bufsml[EV_IOV_MAX]; /**< Bound buffer list */
+    }data;                                      /**< Data field */
+} ev_read_t;
+#define EV_READ_INVALID     \
+    {\
+        EV_LIST_NODE_INIT,/* .node */\
+        {/* .data */\
+            NULL,                                                   /* .data.bufs */\
+            0,                                                      /* .data.nbuf */\
+            0,                                                      /* .data.capacity */\
+            0,                                                      /* .data.size */\
+            { EV_INIT_REPEAT(EV_IOV_MAX, EV_BUF_INIT(NULL, 0)), },  /* .data.bufsml */\
+        },\
+    }
+
+/**
+ * @brief Write request
+ */
+typedef struct ev_write
+{
+    ev_list_node_t          node;               /**< Intrusive node */
+    ev_buf_t*               bufs;               /**< Buffer list */
+    size_t                  nbuf;               /**< Buffer list count */
+    size_t                  size;               /**< Write size */
+    size_t                  capacity;           /**< Total bytes need to send */
+    ev_buf_t                bufsml[EV_IOV_MAX]; /**< Bound buffer list */
+} ev_write_t;
+#define EV_WRITE_INVALID    \
+    {\
+        EV_LIST_NODE_INIT,                                          /* .node */\
+        NULL,                                                       /* .data.bufs */\
+        0,                                                          /* .data.nbuf */\
+        0,                                                          /* .data.size */\
+        0,                                                          /* .data.capacity */\
+        { EV_INIT_REPEAT(EV_IOV_MAX, EV_BUF_INIT(NULL, 0)), }       /* .data.bufsml */\
+    }
+
+/**
+ * @defgroup EV_TIME Time
+ * @{
+ */
+
+/**
+ * @brief Time spec
+ */
+struct ev_timespec_s;
+
+/**
+ * @brief Typedef of #ev_timespec_s.
+ */
+typedef struct ev_timespec_s ev_timespec_t;
+
+/**
+ * @brief High-accuracy time type.
+ */
+struct ev_timespec_s
+{
+    uint64_t    tv_sec;     /**< seconds */
+    uint32_t    tv_nsec;    /**< nanoseconds */
+};
+#define EV_TIMESPEC_INVALID \
+    {\
+        0,\
+        0,\
+    }
+
+/**
+ * @} EV_TIME
+ */
+
+#ifdef __cplusplus
+}
+#endif
+
+/* AMALGAMATE: #include "ev/mutex.h" */
+/* AMALGAMATE: #include "ev/sem.h" */
+/* AMALGAMATE: #include "ev/once.h" */
+/* AMALGAMATE: #include "ev/shm.h" */
+/* AMALGAMATE: #include "ev/handle.h" */
+/* AMALGAMATE: #include "ev/loop.h" */
+/* AMALGAMATE: #include "ev/async.h" */
+/* AMALGAMATE: #include "ev/timer.h" */
+/* AMALGAMATE: #include "ev/tcp.h" */
+/* AMALGAMATE: #include "ev/udp.h" */
+/* AMALGAMATE: #include "ev/pipe.h" */
+/* AMALGAMATE: #include "ev/fs.h" */
+/* AMALGAMATE: #include "ev/process.h" */
+/* AMALGAMATE: #include "ev/misc.h" */
+
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    include/ev/mutex.h
+// SIZE:    1792
+// SHA-256: 1515bf5bea434cab023869083c48b79f29217f86906e6a25b904773a4bcc41f7
+////////////////////////////////////////////////////////////////////////////////
+#ifndef __EV_MUTEX_H__
+#define __EV_MUTEX_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @defgroup EV_MUTEX Mutex
  * @{
@@ -2127,6 +2243,22 @@ EV_API int ev_mutex_try_enter(ev_mutex_t* handle);
  * @} EV_MUTEX
  */
 
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    include/ev/sem.h
+// SIZE:    1395
+// SHA-256: a0afad2d20e37aea4276faf384c07a5e5ff142befbe53fd25008be6eea37aca2
+////////////////////////////////////////////////////////////////////////////////
+#ifndef __EV_SEMAPHORE_H__
+#define __EV_SEMAPHORE_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @defgroup EV_SEMAPHORE Semaphore
  * @{
@@ -2182,6 +2314,22 @@ EV_API int ev_sem_try_wait(ev_sem_t* sem);
  * @} EV_SEMAPHORE
  */
 
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    include/ev/once.h
+// SIZE:    906
+// SHA-256: ba57dd7e547b66796c6bf4dcd9e63ad01d89c6a542f9125bb9fa35b29ee4e0d6
+////////////////////////////////////////////////////////////////////////////////
+#ifndef __EV_ONCE_H__
+#define __EV_ONCE_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @defgroup EV_ONCE Once
  * @{
@@ -2214,6 +2362,22 @@ EV_API void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
 /**
  * @} EV_ONCE
  */
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    include/ev/shm.h
+// SIZE:    1487
+// SHA-256: 05ee79576229bd508f77925351f441e9258257235501bf38571784df54f22659
+////////////////////////////////////////////////////////////////////////////////
+#ifndef __EV_SHARD_MEMORY_H__
+#define __EV_SHARD_MEMORY_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @defgroup EV_SHARED_MEMORY Shared memory
@@ -2272,7 +2436,21 @@ EV_API size_t ev_shm_size(ev_shm_t* shm);
  * @} EV_SHARED_MEMORY
  */
 
-struct ev_loop;
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    include/ev/handle.h
+// SIZE:    3412
+// SHA-256: 0f125dc97a9228af87f8e33bfb974e19d1ae70208f1782d5626a9270b2e28ee8
+////////////////////////////////////////////////////////////////////////////////
+#ifndef __EV_HANDLE_H__
+#define __EV_HANDLE_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @defgroup EV_HANDLE Handle
@@ -2370,6 +2548,22 @@ struct ev_handle
 /**
  * @} EV_HANDLE
  */
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    include/ev/loop.h
+// SIZE:    7464
+// SHA-256: b2c4cb340ac7f5ee0520b902b8310031d5c5f48c83ea84c170317252c860abe3
+////////////////////////////////////////////////////////////////////////////////
+#ifndef __EV_LOOP_H__
+#define __EV_LOOP_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @defgroup EV_EVENT_LOOP Event loop
@@ -2615,6 +2809,22 @@ EV_API void ev_loop_walk(ev_loop_t* loop, ev_walk_cb cb, void* arg);
  * @} EV_EVENT_LOOP
  */
 
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    include/ev/async.h
+// SIZE:    1757
+// SHA-256: 3b549d2b411bec8b520cd7402b3be3716b73b796bd9bc2f7147c3389165120a6
+////////////////////////////////////////////////////////////////////////////////
+#ifndef __EV_ASYNC_H__
+#define __EV_ASYNC_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @defgroup EV_ASYNC Async
  * @{
@@ -2685,6 +2895,22 @@ EV_API void ev_async_wakeup(ev_async_t* handle);
 /**
  * @} EV_ASYNC
  */
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    include/ev/timer.h
+// SIZE:    2594
+// SHA-256: a72db5cb895e95bcf0e00b3a711574f2987310332dfbf8f4fcd100a97813e51f
+////////////////////////////////////////////////////////////////////////////////
+#ifndef __EV_TIMER_H__
+#define __EV_TIMER_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @defgroup EV_TIMER Timer
@@ -2787,54 +3013,21 @@ EV_API void ev_timer_stop(ev_timer_t* handle);
  * @} EV_TIMER
  */
 
-/**
- * @brief Read request
- */
-typedef struct ev_read
-{
-    ev_list_node_t          node;               /**< Intrusive node */
-    struct
-    {
-        ev_buf_t*           bufs;               /**< Buffer list */
-        size_t              nbuf;               /**< Buffer list count */
-        size_t              capacity;           /**< Total bytes of buffer */
-        size_t              size;               /**< Data size */
-        ev_buf_t            bufsml[EV_IOV_MAX]; /**< Bound buffer list */
-    }data;                                      /**< Data field */
-} ev_read_t;
-#define EV_READ_INVALID     \
-    {\
-        EV_LIST_NODE_INIT,/* .node */\
-        {/* .data */\
-            NULL,                                                   /* .data.bufs */\
-            0,                                                      /* .data.nbuf */\
-            0,                                                      /* .data.capacity */\
-            0,                                                      /* .data.size */\
-            { EV_INIT_REPEAT(EV_IOV_MAX, EV_BUF_INIT(NULL, 0)), },  /* .data.bufsml */\
-        },\
-    }
+#ifdef __cplusplus
+}
+#endif
+#endif
 
-/**
- * @brief Write request
- */
-typedef struct ev_write
-{
-    ev_list_node_t          node;               /**< Intrusive node */
-    ev_buf_t*               bufs;               /**< Buffer list */
-    size_t                  nbuf;               /**< Buffer list count */
-    size_t                  size;               /**< Write size */
-    size_t                  capacity;           /**< Total bytes need to send */
-    ev_buf_t                bufsml[EV_IOV_MAX]; /**< Bound buffer list */
-} ev_write_t;
-#define EV_WRITE_INVALID    \
-    {\
-        EV_LIST_NODE_INIT,                                          /* .node */\
-        NULL,                                                       /* .data.bufs */\
-        0,                                                          /* .data.nbuf */\
-        0,                                                          /* .data.size */\
-        0,                                                          /* .data.capacity */\
-        { EV_INIT_REPEAT(EV_IOV_MAX, EV_BUF_INIT(NULL, 0)), }       /* .data.bufsml */\
-    }
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    include/ev/tcp.h
+// SIZE:    6462
+// SHA-256: 69c5ab52fb50698ea65c5596320fe69fc493ce1070853b241feda9b427f7f7be
+////////////////////////////////////////////////////////////////////////////////
+#ifndef __EV_TCP_H__
+#define __EV_TCP_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @defgroup EV_TCP TCP
@@ -3059,6 +3252,22 @@ EV_API int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len
 /**
  * @} EV_TCP
  */
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    include/ev/udp.h
+// SIZE:    9029
+// SHA-256: 60cf0da60a3235d17edbef5a4b31c3c3982b0ca4d8975e78f26e67054a465049
+////////////////////////////////////////////////////////////////////////////////
+#ifndef __EV_UDP_H__
+#define __EV_UDP_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @defgroup EV_UDP UDP
@@ -3348,6 +3557,22 @@ EV_API int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs,
 /**
  * @} EV_UDP
  */
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    include/ev/pipe.h
+// SIZE:    10238
+// SHA-256: 43b5c13482293e343a906977b13d4e7c960fd8d76324dbb0eae8ef4be9e6eae2
+////////////////////////////////////////////////////////////////////////////////
+#ifndef __EV_PIPE_H__
+#define __EV_PIPE_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @defgroup EV_PIPE Pipe
@@ -3651,38 +3876,21 @@ EV_API void ev_pipe_close(ev_os_pipe_t fd);
  * @} EV_PIPE
  */
 
-/**
- * @defgroup EV_TIME Time
- * @{
- */
+#ifdef __cplusplus
+}
+#endif
+#endif
 
-/**
- * @brief Time spec
- */
-struct ev_timespec_s;
-
-/**
- * @brief Typedef of #ev_timespec_s.
- */
-typedef struct ev_timespec_s ev_timespec_t;
-
-/**
- * @brief High-accuracy time type.
- */
-struct ev_timespec_s
-{
-    uint64_t    tv_sec;     /**< seconds */
-    uint32_t    tv_nsec;    /**< nanoseconds */
-};
-#define EV_TIMESPEC_INVALID \
-    {\
-        0,\
-        0,\
-    }
-
-/**
- * @} EV_TIME
- */
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    include/ev/fs.h
+// SIZE:    15520
+// SHA-256: a105c198a3c3992d1c2a06094ebf90f58e81c4f572fb63da0315a9075de64a81
+////////////////////////////////////////////////////////////////////////////////
+#ifndef __EV_FILE_SYSTEM_H__
+#define __EV_FILE_SYSTEM_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @defgroup EV_FILESYSTEM File System
@@ -4217,6 +4425,22 @@ EV_API ev_buf_t* ev_fs_get_filecontent(ev_fs_req_t* req);
  * @} EV_FILESYSTEM
  */
 
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    include/ev/process.h
+// SIZE:    6793
+// SHA-256: 5a1c7cb9aa08ee7654f9ae7772f19e9ec89660d87994d95a9dde1c2f1486fc0b
+////////////////////////////////////////////////////////////////////////////////
+#ifndef __EV_PROCESS_H__
+#define __EV_PROCESS_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @defgroup EV_PROCESS Process
  * @{
@@ -4449,6 +4673,22 @@ EV_API ssize_t ev_exepath(char* buffer, size_t size);
  * @}
  */
 
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    include/ev/misc.h
+// SIZE:    3704
+// SHA-256: cc35f576b372283d4e0645bab225e0804a1413011e61097f8755dd8c0542f3e6
+////////////////////////////////////////////////////////////////////////////////
+#ifndef __EV_MISC_H__
+#define __EV_MISC_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @defgroup EV_MISC Miscellaneous utilities
  * @{
@@ -4585,8 +4825,5 @@ EV_API uint64_t ev_hrtime(void);
 #ifdef __cplusplus
 }
 #endif
-
-/* AMALGAMATE: #include "ev/lua.h" */
-
 #endif
 
