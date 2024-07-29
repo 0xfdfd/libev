@@ -24,7 +24,7 @@
 /**
  * # Changelog
  * 
- * ## v0.0.9
+ * ## v0.0.9 (2024/07/29)
  * 
  * ### BREAKING CHANGES
  * 1. `ev_map_insert()` now return conflict node address
@@ -180,7 +180,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    include/ev/version.h
 // SIZE:    1213
-// SHA-256: e9895a8e71916068cfb435096321f8a71b4f3fca715bba06bba077166cd44516
+// SHA-256: 71a72dc9d09aea2d04b91a53efed1fe582fda57a2368b84eec2ba7d3b6173763
 ////////////////////////////////////////////////////////////////////////////////
 #ifndef __EV_VERSION_H__
 #define __EV_VERSION_H__
@@ -214,7 +214,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           6
+#define EV_VERSION_PREREL           0
 
 /**
  * @brief Version calculate helper macro.
