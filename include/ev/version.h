@@ -20,17 +20,17 @@ extern "C" {
 /**
  * @brief Minor version.
  */
-#define EV_VERSION_MINOR            0
+#define EV_VERSION_MINOR            1
 
 /**
  * @brief Patch version.
  */
-#define EV_VERSION_PATCH            9
+#define EV_VERSION_PATCH            0
 
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           0
+#define EV_VERSION_PREREL           1
 
 /**
  * @brief Version calculate helper macro.

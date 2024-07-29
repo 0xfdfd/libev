@@ -2725,8 +2725,8 @@ EV_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width)
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/loop.c
-// SIZE:    8733
-// SHA-256: 176537bb9b1cfa87e8fe4103a6fbe3f89831d0be66b17420791a3a6eac4d4f69
+// SIZE:    8736
+// SHA-256: e8257dccfc32bff5164564e4d6a865cbeb71fce972e9e45104883933b2fdd9fb
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/loop.c"
 /* AMALGAMATE: #include "ev.h" */
@@ -2857,7 +2857,7 @@ static size_t _ev_calculate_write_size(const ev_write_t* req)
 
 EV_LOCAL void ev__loop_update_time(ev_loop_t* loop)
 {
-    loop->hwtime = ev_hrtime() / 1000;
+    loop->hwtime = ev_hrtime() / 1000000;
 }
 
 EV_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size)
@@ -7313,8 +7313,8 @@ EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/win/loop_win.c
-// SIZE:    5130
-// SHA-256: 6bbf9b76b05f9e1b5e625d05a3ee3acd1de1a942f7827cee4e58ad2e83147007
+// SIZE:    5239
+// SHA-256: c8b1fe47b05c61f641314f40d37a949b24046fc305ba038cc8015900b227b641
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/win/loop_win.c"
 /* AMALGAMATE: #include "ev.h" */
@@ -7354,7 +7354,9 @@ static uint64_t _ev_hrtime_win(unsigned int scale)
     double result;
     DWORD errcode;
 
+    assert(g_ev_loop_win_ctx.hrtime_frequency_ != 0);
     assert(scale != 0);
+
     if (!QueryPerformanceCounter(&counter))
     {
         errcode = GetLastError();
@@ -7402,7 +7404,9 @@ static void _ev_init_once_win(void)
 
 uint64_t ev_hrtime(void)
 {
-    return _ev_hrtime_win(1000000);
+#define EV__NANOSEC 1000000000
+    return _ev_hrtime_win(EV__NANOSEC);
+#undef EV__NANOSEC
 }
 
 EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
@@ -13862,8 +13866,8 @@ EV_LOCAL int ev__send_unix(int fd, ev_write_t* req,
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/unix/loop_unix.c
-// SIZE:    4525
-// SHA-256: 31c44d94a88f06d8e5afe12f873e92860ee6017eb317db19de3e064bd52b3ec5
+// SIZE:    4521
+// SHA-256: aefe3c1253178fdf0c2e089fa9d39f0257c2a947dd5158b8e2b7589f73742396
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/unix/loop_unix.c"
 /* AMALGAMATE: #include "ev.h" */
@@ -13972,7 +13976,7 @@ uint64_t ev_hrtime(void)
         EV_ABORT("errno:%d", errcode);
     }
 
-    return t.tv_sec * 1000 * 1000 + t.tv_nsec / 1000;
+    return t.tv_sec * (uint64_t) 1e9 + t.tv_nsec;
 }
 
 EV_LOCAL void ev__init_once_unix(void)
@@ -16837,8 +16841,8 @@ EV_LOCAL int ev__tcp_open(ev_tcp_t* tcp, int fd)
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/unix/thread_unix.c
-// SIZE:    3701
-// SHA-256: ae44c0c1638ecfe7328a446f7a7ceca46f30cb339b963289b9abc263cb142c1c
+// SIZE:    3707
+// SHA-256: abc7e02ad869f59d1ae423c109ad87f581e3431cc9e7a9eef0843aad924b4d33
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/unix/thread_unix.c"
 #define _GNU_SOURCE
@@ -16936,11 +16940,11 @@ int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
         return ev__translate_sys_error(err);
     }
 
-    const uint64_t t_start = ev_hrtime() / 1000;
+    const uint64_t t_start = ev_hrtime() / 1000000;
     const uint64_t t_end = t_start + timeout;
 
     uint64_t t_now;
-    while ((t_now = ev_hrtime() / 1000) < t_end)
+    while ((t_now = ev_hrtime() / 1000000) < t_end)
     {
         if ((ret = pthread_tryjoin_np(*thr, NULL)) == 0)
         {

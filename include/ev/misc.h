@@ -128,8 +128,8 @@ EV_API void ev_buf_make_v(ev_buf_t bufs[], size_t nbuf, va_list ap);
 EV_API void ev_library_shutdown(void);
 
 /**
- * @brief Returns the current high-resolution real time in microsecond.
- * @return Time in microsecond.
+ * @brief Returns the current high-resolution real time in nanoseconds.
+ * @return Time in nanoseconds.
  */
 EV_API uint64_t ev_hrtime(void);
 

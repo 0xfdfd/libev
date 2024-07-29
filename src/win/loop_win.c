@@ -35,7 +35,9 @@ static uint64_t _ev_hrtime_win(unsigned int scale)
     double result;
     DWORD errcode;
 
+    assert(g_ev_loop_win_ctx.hrtime_frequency_ != 0);
     assert(scale != 0);
+
     if (!QueryPerformanceCounter(&counter))
     {
         errcode = GetLastError();
@@ -83,7 +85,9 @@ static void _ev_init_once_win(void)
 
 uint64_t ev_hrtime(void)
 {
-    return _ev_hrtime_win(1000000);
+#define EV__NANOSEC 1000000000
+    return _ev_hrtime_win(EV__NANOSEC);
+#undef EV__NANOSEC
 }
 
 EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)

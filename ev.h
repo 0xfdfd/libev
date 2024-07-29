@@ -24,6 +24,12 @@
 /**
  * # Changelog
  * 
+ * ## v0.1.0
+ * 
+ * ### BREAKING CHANGES
+ * 1. `ev_hrtime()` now return time in nanoseconds.
+ * 
+ * 
  * ## v0.0.9 (2024/07/29)
  * 
  * ### BREAKING CHANGES
@@ -180,7 +186,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    include/ev/version.h
 // SIZE:    1213
-// SHA-256: 71a72dc9d09aea2d04b91a53efed1fe582fda57a2368b84eec2ba7d3b6173763
+// SHA-256: 35d8d2e5ff560df2d4aed81ddbbf3b90671c7c111824a192089fdf2fe9be22dc
 ////////////////////////////////////////////////////////////////////////////////
 #ifndef __EV_VERSION_H__
 #define __EV_VERSION_H__
@@ -204,17 +210,17 @@ extern "C" {
 /**
  * @brief Minor version.
  */
-#define EV_VERSION_MINOR            0
+#define EV_VERSION_MINOR            1
 
 /**
  * @brief Patch version.
  */
-#define EV_VERSION_PATCH            9
+#define EV_VERSION_PATCH            0
 
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           0
+#define EV_VERSION_PREREL           1
 
 /**
  * @brief Version calculate helper macro.
@@ -4681,7 +4687,7 @@ EV_API ssize_t ev_exepath(char* buffer, size_t size);
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    include/ev/misc.h
 // SIZE:    3704
-// SHA-256: cc35f576b372283d4e0645bab225e0804a1413011e61097f8755dd8c0542f3e6
+// SHA-256: a018a35422b20e0df46c079e14aa13032b99272ade7451917ab975489e66a554
 ////////////////////////////////////////////////////////////////////////////////
 #ifndef __EV_MISC_H__
 #define __EV_MISC_H__
@@ -4813,8 +4819,8 @@ EV_API void ev_buf_make_v(ev_buf_t bufs[], size_t nbuf, va_list ap);
 EV_API void ev_library_shutdown(void);
 
 /**
- * @brief Returns the current high-resolution real time in microsecond.
- * @return Time in microsecond.
+ * @brief Returns the current high-resolution real time in nanoseconds.
+ * @return Time in nanoseconds.
  */
 EV_API uint64_t ev_hrtime(void);
 

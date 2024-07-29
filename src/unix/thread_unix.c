@@ -93,11 +93,11 @@ int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
         return ev__translate_sys_error(err);
     }
 
-    const uint64_t t_start = ev_hrtime() / 1000;
+    const uint64_t t_start = ev_hrtime() / 1000000;
     const uint64_t t_end = t_start + timeout;
 
     uint64_t t_now;
-    while ((t_now = ev_hrtime() / 1000) < t_end)
+    while ((t_now = ev_hrtime() / 1000000) < t_end)
     {
         if ((ret = pthread_tryjoin_np(*thr, NULL)) == 0)
         {

@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.0
+
+### BREAKING CHANGES
+1. `ev_hrtime()` now return time in nanoseconds.
+
+
 ## v0.0.9 (2024/07/29)
 
 ### BREAKING CHANGES
