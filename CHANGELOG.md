@@ -5,6 +5,9 @@
 ### BREAKING CHANGES
 1. `ev_hrtime()` now return time in nanoseconds.
 
+### Bug Fixes
+1. only define `dllimport` when `EV_DLL_EXPORT` is defined
+
 
 ## v0.0.9 (2024/07/29)
 

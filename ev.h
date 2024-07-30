@@ -29,6 +29,9 @@
  * ### BREAKING CHANGES
  * 1. `ev_hrtime()` now return time in nanoseconds.
  * 
+ * ### Bug Fixes
+ * 1. only define `dllimport` when `EV_DLL_EXPORT` is defined
+ * 
  * 
  * ## v0.0.9 (2024/07/29)
  * 
@@ -143,40 +146,44 @@
  */
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    include/ev/expose.h
-// SIZE:    941
-// SHA-256: 897a7905ec1f412420e59f5dbad4118487aaef011db97f411c028fd430ef0b05
+// SIZE:    1144
+// SHA-256: 9ad4ab57940ffdd69fb1f422dfddf278947feec5fb3271dcf52d6cd8cfe127f5
 ////////////////////////////////////////////////////////////////////////////////
 #ifndef __EV_EXPOSE_H__
 #define __EV_EXPOSE_H__
 
 #if defined(_WIN32) || defined(__CYGWIN__)
-#	if defined(EV_EXPOSE_SYMBOLS)
-#		if defined(__GNUC__) || defined(__clang__)
-#			define EV_API	__attribute__ ((dllexport))
-#		else
-#			define EV_API	__declspec(dllexport)
-#		endif
-#	else
-#		if defined(__GNUC__) || defined(__clang__)
-#			define EV_API	__attribute__ ((dllimport))
-#		else
-#			define EV_API	__declspec(dllimport)
-#		endif
-#	endif
+#   if defined(EV_DLL_EXPORT)
+#       if defined(EV_EXPOSE_SYMBOLS)
+#           if defined(__GNUC__) || defined(__clang__)
+#               define EV_API   __attribute__ ((dllexport))
+#           else
+#               define EV_API   __declspec(dllexport)
+#           endif
+#       else
+#           if defined(__GNUC__) || defined(__clang__)
+#               define EV_API   __attribute__ ((dllimport))
+#           else
+#               define EV_API   __declspec(dllimport)
+#           endif
+#       endif
+#   else
+#       define EV_API
+#   endif
 #elif (defined(__GNUC__) && __GNUC__ >= 4) || defined(__clang__)
-#	define EV_API __attribute__((visibility ("default")))
+#   define EV_API __attribute__((visibility ("default")))
 #else
-#	define EV_API
+#   define EV_API
 #endif
 
 #if defined(EV_AMALGAMATE_BUILD)
 #   if defined(__GNUC__) || defined(__clang__)
-#       define EV_LOCAL	static __attribute__((unused))
+#       define EV_LOCAL static __attribute__((unused))
 #   else
 #       define EV_LOCAL static
 #   endif
 #elif (defined(__GNUC__) || defined(__clang__)) && !defined(_WIN32)
-#   define EV_LOCAL	__attribute__((visibility ("hidden")))
+#   define EV_LOCAL __attribute__((visibility ("hidden")))
 #else
 #   define EV_LOCAL
 #endif
@@ -186,7 +193,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    include/ev/version.h
 // SIZE:    1213
-// SHA-256: 35d8d2e5ff560df2d4aed81ddbbf3b90671c7c111824a192089fdf2fe9be22dc
+// SHA-256: 3259cea78ebbb7ecd3316c98178b4872f98b14750f274b6db1c3b55903f2e433
 ////////////////////////////////////////////////////////////////////////////////
 #ifndef __EV_VERSION_H__
 #define __EV_VERSION_H__
@@ -220,7 +227,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           1
+#define EV_VERSION_PREREL           2
 
 /**
  * @brief Version calculate helper macro.
