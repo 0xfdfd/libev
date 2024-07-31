@@ -158,6 +158,9 @@ typedef DWORD                   ev_os_tls_t;
 typedef CRITICAL_SECTION        ev_os_mutex_t;
 typedef HANDLE                  ev_os_sem_t;
 
+typedef HANDLE                  ev_os_shdlib_t;
+#define EV_OS_SHDLIB_INVALID    (NULL)
+
 /**
  * @brief Buffer
  * @internal Must share the same layout with WSABUF

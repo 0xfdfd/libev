@@ -2,6 +2,7 @@
 #include "test.h"
 #include "tools/init.h"
 #include "utils/config.h"
+#include "type/__init__.h"
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -39,6 +40,8 @@ static void _check_mmc_leak(void)
 static void _before_all_test(int argc, char* argv[])
 {
     mmc_init();
+    register_types();
+
     test_config_setup(argc, argv);
 
     if (test_config.argvt != NULL)
@@ -53,6 +56,13 @@ static void _after_all_test(void)
 {
     test_config_cleanup();
     _check_mmc_leak();
+
+    ev_library_shutdown();
+
+    /* ensure all output was done. */
+    fflush(NULL);
+
+    mmc_exit();
 }
 
 static void _on_mem_leak(memblock_t* block, void* arg)
@@ -85,7 +95,8 @@ static void _after_fixture_teardown(const char* fixture_name, int ret)
 
     if (leak_size != 0)
     {
-        cutest_porting_abort("memory leak: %zu byte%s", leak_size, leak_size > 1 ? "s" : "");
+        test_abort("[  ERROR   ] memory leak detected: %zu byte%s\n",
+            leak_size, leak_size > 1 ? "s" : "");
     }
 }
 
@@ -127,4 +138,12 @@ const char* test_strerror(int errcode)
 #else
     return strerror(errcode);
 #endif
+}
+
+void test_abort(const char* fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    cutest_porting_abort(fmt, ap);
+    va_end(ap);
 }

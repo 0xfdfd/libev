@@ -1,5 +1,5 @@
 
-add_executable(ev_test
+add_library(ev_test_lib SHARED
     "test/tools/echoserver.c"
     "test/tools/eolcheck.c"
     "test/tools/help.c"
@@ -16,7 +16,6 @@ add_executable(ev_test
     "test/utils/random.c"
     "test/utils/sockpair.c"
     "test/test.c"
-    "test/main.c"
     "test/cases/c/async.c"
     "test/cases/c/buf.c"
     "test/cases/c/fs.c"
@@ -33,6 +32,7 @@ add_executable(ev_test
     "test/cases/c/process.c"
     "test/cases/c/process.redirect_file.c"
     "test/cases/c/queue.c"
+    "test/cases/c/shdlib.c"
     "test/cases/c/shm.c"
     "test/cases/c/tcp_close_in_middle.c"
     "test/cases/c/tcp_connect_non_exist.c"
@@ -51,16 +51,40 @@ add_executable(ev_test
     "test/cases/c/version.c"
 )
 
-target_include_directories(ev_test
+target_include_directories(ev_test_lib
     PUBLIC
         $<INSTALL_INTERFACE:include>
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/test
 )
 
-ev_setup_target_wall(ev_test)
+target_compile_options(ev_test_lib
+    PRIVATE
+        -DCUTEST_BUILDING_DLL
+        -DTEST_BUILDING_DLL
+)
 
-target_link_libraries(ev_test PRIVATE ev cutest)
+target_link_libraries(ev_test_lib
+    PUBLIC
+        ev
+        cutest
+)
+
+ev_setup_target_wall(ev_test_lib)
+
+set_target_properties(ev_test_lib PROPERTIES
+    PREFIX ""
+)
+
+add_executable(ev_test
+    "test/main.c"
+)
+
+target_link_libraries(ev_test
+    PRIVATE
+        ev_test_lib
+)
+
 add_test(NAME ev_unittest COMMAND $<TARGET_FILE:ev_test>)
 add_test(NAME ev_eol_h COMMAND $<TARGET_FILE:ev_test> -- eolcheck --file=${CMAKE_CURRENT_SOURCE_DIR}/ev.h --eol=LF)
 add_test(NAME ev_eol_c COMMAND $<TARGET_FILE:ev_test> -- eolcheck --file=${CMAKE_CURRENT_SOURCE_DIR}/ev.c --eol=LF)

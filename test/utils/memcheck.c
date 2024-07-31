@@ -4,7 +4,7 @@
 #endif
 
 #include "memcheck.h"
-#include "cutest.h"
+#include "test.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,7 +35,7 @@ static void _mmc_create_new_snapshot_layer(void)
     mmc_snapshot_t* snapshot = malloc(sizeof(mmc_snapshot_t));
     if (snapshot == NULL)
     {
-        cutest_porting_abort("out of memory");
+        test_abort("out of memory");
         exit(EXIT_FAILURE);
     }
 

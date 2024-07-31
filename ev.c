@@ -7540,8 +7540,8 @@ EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt)
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    src/win/misc_win.c
-// SIZE:    8373
-// SHA-256: f9f24ba2a63b3db2ff53ac9f6125fc802356b490bd42cf3dc77bd1c23dd486f0
+// SIZE:    8435
+// SHA-256: 5b7cf134d130d2cc5bfc2e90234d6cbc363a9277efe97175c85ff795ce4557c5
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "src/win/misc_win.c"
 /* AMALGAMATE: #include "ev.h" */
@@ -7677,6 +7677,7 @@ EV_LOCAL int ev__translate_sys_error(int err)
     case ERROR_PATH_NOT_FOUND:              return EV_ENOENT;
     case WSAHOST_NOT_FOUND:                 return EV_ENOENT;
     case WSANO_DATA:                        return EV_ENOENT;
+    case ERROR_PROC_NOT_FOUND:              return EV_ENOENT;
     case ERROR_NOT_ENOUGH_MEMORY:           return EV_ENOMEM;
     case ERROR_OUTOFMEMORY:                 return EV_ENOMEM;
     case ERROR_CANNOT_MAKE:                 return EV_ENOSPC;
@@ -10013,6 +10014,85 @@ int ev_sem_try_wait(ev_sem_t* sem)
 
     DWORD errcode = GetLastError();
     EV_ABORT("ret:%lu, GetLastError:%lu", ret, errcode);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    src/win/shdlib_win.c
+// SIZE:    1804
+// SHA-256: b47ccd388122746e99752bc050cfe5b570926356c47e0149ffafc7cba918e2b7
+////////////////////////////////////////////////////////////////////////////////
+#line 1 "src/win/shdlib_win.c"
+/* AMALGAMATE: #include "ev.h" */
+/* AMALGAMATE: #include "misc_win.h" */
+
+int ev_dlopen(ev_shdlib_t* lib, const char* filename, char** errmsg)
+{
+    WCHAR* filename_w = NULL;
+    ssize_t wide_sz = ev__utf8_to_wide(&filename_w, filename);
+    if (wide_sz < 0)
+    {
+        return (int)wide_sz;
+    }
+
+    lib->handle = LoadLibraryExW(filename_w, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+    ev_free(filename_w);
+
+    if (lib->handle != EV_OS_SHDLIB_INVALID)
+    {
+        return 0;
+    }
+
+    DWORD errcode = GetLastError();
+    if (errmsg == NULL)
+    {
+        goto finish;
+    }
+
+    DWORD dwFlags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
+    DWORD dwLanguageId = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
+
+    char* tmp_errmsg = NULL;
+    DWORD res = FormatMessageA(dwFlags, NULL, errcode, dwLanguageId, (LPTSTR)&tmp_errmsg, 0, NULL);
+    if (res == 0)
+    {
+        DWORD fmt_errcode = GetLastError();
+        if (fmt_errcode == ERROR_MUI_FILE_NOT_FOUND || fmt_errcode == ERROR_RESOURCE_TYPE_NOT_FOUND)
+        {
+            res = FormatMessageA(dwFlags, NULL, errcode, 0, (LPTSTR)&tmp_errmsg, 0, NULL);
+        }
+        if (res == 0)
+        {
+            *errmsg = NULL;
+            goto finish;
+        }
+    }
+
+    *errmsg = ev__strdup(tmp_errmsg);
+    LocalFree(tmp_errmsg);
+
+finish:
+    return ev__translate_sys_error(errcode);
+}
+
+void ev_dlclose(ev_shdlib_t* lib)
+{
+    if (lib->handle != EV_OS_SHDLIB_INVALID)
+    {
+        FreeLibrary(lib->handle);
+        lib->handle = EV_OS_SHDLIB_INVALID;
+    }
+}
+
+int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr)
+{
+    *ptr = (void*)(uintptr_t)GetProcAddress(lib->handle, name);
+    if (*ptr == NULL)
+    {
+        DWORD errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -15946,6 +16026,71 @@ int ev_sem_try_wait(ev_sem_t* sem)
     }
 
     return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    src/unix/shdlib_unix.c
+// SIZE:    1020
+// SHA-256: 6a387279c3cede6d4da7fae30d36c361695bfb372ed50647801a569365c7f6e2
+////////////////////////////////////////////////////////////////////////////////
+#line 1 "src/unix/shdlib_unix.c"
+/* AMALGAMATE: #include "ev.h" */
+/* AMALGAMATE: #include "allocator.h" */
+/* AMALGAMATE: #include "misc.h" */
+#include <dlfcn.h>
+
+int ev_dlopen(ev_shdlib_t* lib, const char* filename, char** errmsg)
+{
+    /* Reset error status. */
+    dlerror();
+
+    if ((lib->handle = dlopen(filename, RTLD_LAZY)) != NULL)
+    {
+        return 0;
+    }
+
+    const char* dlerrmsg = dlerror();
+    if (dlerrmsg == NULL)
+    {
+        return 0;
+    }
+
+    if (errmsg != NULL)
+    {
+        *errmsg = ev__strdup(dlerrmsg);
+    }
+
+    return EV_EINVAL;
+}
+
+void ev_dlclose(ev_shdlib_t* lib)
+{
+    if (lib->handle != EV_OS_SHDLIB_INVALID)
+    {
+        dlclose(lib->handle);
+        lib->handle = EV_OS_SHDLIB_INVALID;
+    }
+}
+
+int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr)
+{
+    /* Reset error status. */
+    dlerror();
+
+    /* Resolve symbol. */
+    if ((*ptr = dlsym(lib->handle, name)) != NULL)
+    {
+        return 0;
+    }
+
+    /* Check for error message. */
+    const char* errmsg = dlerror();
+    if (errmsg == NULL)
+    {
+        return 0;
+    }
+
+    return EV_ENOENT;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

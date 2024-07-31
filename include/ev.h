@@ -596,6 +596,7 @@ struct ev_timespec_s
 #include "ev/sem.h"
 #include "ev/once.h"
 #include "ev/shm.h"
+#include "ev/shdlib.h"
 #include "ev/handle.h"
 #include "ev/loop.h"
 #include "ev/async.h"

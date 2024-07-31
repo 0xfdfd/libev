@@ -18,6 +18,26 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 
+#if defined(_WIN32) || defined(__CYGWIN__)
+#   if defined(TEST_BUILDING_DLL)
+#       if defined(__GNUC__) || defined(__clang__)
+#           define TEST_EXPOSE_API   __attribute__ ((dllexport))
+#       else
+#           define TEST_EXPOSE_API   __declspec(dllexport)
+#       endif
+#   else
+#       if defined(__GNUC__) || defined(__clang__)
+#           define TEST_EXPOSE_API   __attribute__ ((dllimport))
+#       else
+#           define TEST_EXPOSE_API   __declspec(dllimport)
+#       endif
+#   endif
+#elif (defined(__GNUC__) && __GNUC__ >= 4) || defined(__clang__)
+#   define TEST_EXPOSE_API   __attribute__((visibility ("default")))
+#else
+#   define TEST_EXPOSE_API
+#endif
+
 /**
  * @brief #TEST_F() with timeout
  */
@@ -64,7 +84,7 @@ typedef struct test_execute_token
 /**
  * @brief Hook for tests.
  */
-extern cutest_hook_t test_hook;
+TEST_EXPOSE_API extern cutest_hook_t test_hook;
 
 extern ev_loop_t empty_loop;
 
@@ -76,6 +96,8 @@ int test_thread_execute(test_execute_token_t* token, fn_execute callback);
 int test_thread_wait(test_execute_token_t* token);
 
 const char* test_strerror(int errcode);
+
+void test_abort(const char* fmt, ...);
 
 #ifdef __cplusplus
 }

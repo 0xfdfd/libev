@@ -29,6 +29,9 @@
  * ### BREAKING CHANGES
  * 1. `ev_hrtime()` now return time in nanoseconds.
  * 
+ * ### Features
+ * 1. support handle shared library.
+ * 
  * ### Bug Fixes
  * 1. only define `dllimport` when `EV_DLL_EXPORT` is defined
  * 
@@ -193,7 +196,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    include/ev/version.h
 // SIZE:    1213
-// SHA-256: 3259cea78ebbb7ecd3316c98178b4872f98b14750f274b6db1c3b55903f2e433
+// SHA-256: 9275181c379721ed30339679354bad0c4ca177180dca93d336f7e7f74ee7b9ca
 ////////////////////////////////////////////////////////////////////////////////
 #ifndef __EV_VERSION_H__
 #define __EV_VERSION_H__
@@ -227,7 +230,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           2
+#define EV_VERSION_PREREL           3
 
 /**
  * @brief Version calculate helper macro.
@@ -606,8 +609,8 @@ EV_API ev_map_node_t* ev_map_prev(const ev_map_node_t* node);
 #if defined(_WIN32) /* AMALGAMATE: ev.h (1/3) */
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    include/ev/win.h
-// SIZE:    15736
-// SHA-256: 4ee4e4483d83b41d8c5513f7da5262e3ebfef8cb934156dc0e120b377b1ba8a2
+// SIZE:    15824
+// SHA-256: 5b09b48df81475e53963fc20ccac0ed59b3f68cfd7f24b6f4a650b1d06789df1
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * @file
@@ -768,6 +771,9 @@ typedef HANDLE                  ev_os_thread_t;
 typedef DWORD                   ev_os_tls_t;
 typedef CRITICAL_SECTION        ev_os_mutex_t;
 typedef HANDLE                  ev_os_sem_t;
+
+typedef HANDLE                  ev_os_shdlib_t;
+#define EV_OS_SHDLIB_INVALID    (NULL)
 
 /**
  * @brief Buffer
@@ -1106,8 +1112,8 @@ typedef struct ev_pipe_win_ipc_info
 #else               /* AMALGAMATE: ev.h (2/3) */
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    include/ev/unix.h
-// SIZE:    12749
-// SHA-256: 4687e6b6ab33c5351d907b4941f68d293b381d97cb7831f2d32b426bc1f16017
+// SIZE:    12837
+// SHA-256: 6a588c5b213da9271817989d3d9e829aa25a311b6b58ebf026db804acd37cd10
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * @file
@@ -1210,6 +1216,9 @@ typedef pthread_t               ev_os_thread_t;
 typedef pthread_key_t           ev_os_tls_t;
 typedef pthread_mutex_t         ev_os_mutex_t;
 typedef sem_t                   ev_os_sem_t;
+
+typedef void*                   ev_os_shdlib_t;
+#define EV_OS_SHDLIB_INVALID    (NULL)
 
 struct ev_write;
 struct ev_read;
@@ -1563,8 +1572,8 @@ struct ev_nonblock_stream
 #endif              /* AMALGAMATE: ev.h (3/3) */
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    include/ev.h
-// SIZE:    19599
-// SHA-256: 9e9bc795b6d896d5aee8eff039f58f15e3c0d700bbef07dee756cf6f4da1a11a
+// SIZE:    19622
+// SHA-256: d2d8113a145c5629e5ecdcc5502ffa28b41f5c2bf4d75687e02bb847124d8cc5
 ////////////////////////////////////////////////////////////////////////////////
 /**
  * @mainpage libev
@@ -2164,6 +2173,7 @@ struct ev_timespec_s
 /* AMALGAMATE: #include "ev/sem.h" */
 /* AMALGAMATE: #include "ev/once.h" */
 /* AMALGAMATE: #include "ev/shm.h" */
+/* AMALGAMATE: #include "ev/shdlib.h" */
 /* AMALGAMATE: #include "ev/handle.h" */
 /* AMALGAMATE: #include "ev/loop.h" */
 /* AMALGAMATE: #include "ev/async.h" */
@@ -2447,6 +2457,70 @@ EV_API size_t ev_shm_size(ev_shm_t* shm);
 
 /**
  * @} EV_SHARED_MEMORY
+ */
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    include/ev/shdlib.h
+// SIZE:    1351
+// SHA-256: bbfed6c3850d1af246dfec8c518af2af159cd6c6187bfc0dcaa7967acbec3f78
+////////////////////////////////////////////////////////////////////////////////
+#ifndef __EV_SHARED_LIBRARY_H__
+#define __EV_SHARED_LIBRARY_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @defgroup EV_SHAREDLIBRARY Shared library
+ * @{
+ */
+
+/**
+ * @brief Shared library handle.
+ */
+typedef struct ev_shdlib
+{
+    ev_os_shdlib_t  handle; /**< OS shared library handles */
+} ev_shdlib_t;
+
+/**
+ * @brief Static initializer for #ev_shdlib_t.
+ */
+#define EV_SHDLIB_INVALID   { EV_OS_SHDLIB_INVALID }
+
+/**
+ * @brief Opens a shared library.
+ * @param[out] lib - The opened library handle.
+ * @param[in] filename - The name of the shared library. Encoding in UTF-8.
+ * @param[out] errmsg - The error message if this function failed (the return
+ *   value is non-zero). Use #ev_free() to release it.
+ * @return #ev_errno_t
+ */
+int ev_dlopen(ev_shdlib_t* lib, const char* filename, char** errmsg);
+
+/**
+ * @brief Close the shared library.
+ * @param[in] lib - The opened library handle.
+ */
+void ev_dlclose(ev_shdlib_t* lib);
+
+/**
+ * @brief Retrieves a data pointer from a dynamic library.
+ * @note It is legal for a symbol to map to `NULL`.
+ * @param[in] lib - The opened library handle.
+ * @param[in] name - The name of the symbol.
+ * @param[out] ptr - The address of the symbol.
+ * @return #ev_errno_t
+ */
+int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr);
+
+/**
+ * @} EV_SHAREDLIBRARY
  */
 
 #ifdef __cplusplus

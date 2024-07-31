@@ -131,6 +131,7 @@ EV_LOCAL int ev__translate_sys_error(int err)
     case ERROR_PATH_NOT_FOUND:              return EV_ENOENT;
     case WSAHOST_NOT_FOUND:                 return EV_ENOENT;
     case WSANO_DATA:                        return EV_ENOENT;
+    case ERROR_PROC_NOT_FOUND:              return EV_ENOENT;
     case ERROR_NOT_ENOUGH_MEMORY:           return EV_ENOMEM;
     case ERROR_OUTOFMEMORY:                 return EV_ENOMEM;
     case ERROR_CANNOT_MAKE:                 return EV_ENOSPC;

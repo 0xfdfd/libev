@@ -61,6 +61,7 @@ set(ev_src_os_win
     "src/win/pipe_win.c"
     "src/win/process_win.c"
     "src/win/sem_win.c"
+    "src/win/shdlib_win.c"
     "src/win/shmem_win.c"
     "src/win/tcp_win.c"
     "src/win/thread_win.c"
@@ -89,6 +90,7 @@ set(ev_src_os_unix
     "src/unix/pipe_unix.c"
     "src/unix/process_unix.c"
     "src/unix/sem_unix.c"
+    "src/unix/shdlib_unix.c"
     "src/unix/shmem_unix.c"
     "src/unix/stream_unix.c"
     "src/unix/tcp_unix.c"
@@ -142,6 +144,7 @@ add_custom_command(
             --source    "include/ev/sem.h"
             --source    "include/ev/once.h"
             --source    "include/ev/shm.h"
+            --source    "include/ev/shdlib.h"
             --source    "include/ev/handle.h"
             --source    "include/ev/loop.h"
             --source    "include/ev/async.h"
@@ -166,6 +169,7 @@ add_custom_command(
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/sem.h
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/once.h
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/shm.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/shdlib.h
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/handle.h
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/loop.h
             ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/async.h
@@ -210,6 +214,10 @@ target_include_directories(${PROJECT_NAME}
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
 
+set_property(TARGET ${PROJECT_NAME}
+    PROPERTY POSITION_INDEPENDENT_CODE ON
+)
+
 # add library dependencies
 find_package(Threads REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
@@ -240,6 +248,6 @@ if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     include(CTest)
 endif()
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
-    add_subdirectory(third_party/cutest)
+    include(third_party/cutest.cmake)
     include(test/CMakeLists.txt)
 endif()

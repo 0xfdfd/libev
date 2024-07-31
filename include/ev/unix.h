@@ -100,6 +100,9 @@ typedef pthread_key_t           ev_os_tls_t;
 typedef pthread_mutex_t         ev_os_mutex_t;
 typedef sem_t                   ev_os_sem_t;
 
+typedef void*                   ev_os_shdlib_t;
+#define EV_OS_SHDLIB_INVALID    (NULL)
+
 struct ev_write;
 struct ev_read;
 

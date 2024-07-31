@@ -5,6 +5,9 @@
 ### BREAKING CHANGES
 1. `ev_hrtime()` now return time in nanoseconds.
 
+### Features
+1. support handle shared library.
+
 ### Bug Fixes
 1. only define `dllimport` when `EV_DLL_EXPORT` is defined
 
