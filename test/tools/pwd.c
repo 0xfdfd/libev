@@ -1,4 +1,4 @@
-#include "pwd.h"
+#include "__init__.h"
 #include "test.h"
 
 static int tool_pwd(int argc, char* argv[])
@@ -21,7 +21,7 @@ static int tool_pwd(int argc, char* argv[])
     return EXIT_SUCCESS;
 }
 
-test_tool_t test_tool_pwd = {
-    "pwd", tool_pwd,
-    "Print the name of the current working directory."
+const test_tool_t test_tool_pwd = {
+"pwd", tool_pwd,
+"Print the name of the current working directory."
 };

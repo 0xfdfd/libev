@@ -28,7 +28,7 @@ typedef enum ev_log_level
  * @brief Log
  * @param[in] level Log level
  * @param[in] file  File name
- * @param[in] func  Functon name
+ * @param[in] func  Function name
  * @param[in] line  Line number
  * @param[in] fmt   Log format
  * @param[in] ...   Argument list

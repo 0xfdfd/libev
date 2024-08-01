@@ -337,8 +337,8 @@ const char* ev_strerror(int err)
 
     switch (err)
     {
-	/* Success */
-	case 0:                     return "Operation success";
+    /* Success */
+    case 0:                     return "Operation success";
     case EV_EOF:                return "End of file";
     /* posix */
     EV_ERRNO_POSIX_MAP(EV_EXPAND_ERRMAP);

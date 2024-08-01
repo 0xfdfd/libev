@@ -1,5 +1,7 @@
-#include "eolcheck.h"
+#include "__init__.h"
 #include "utils/memcheck.h"
+#include "utils/file.h"
+#include "utils/str.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -66,40 +68,15 @@ static int _eolcheck_get_config(eolcheck_cfg_t* cfg, int argc, char* argv[])
 
 static int _eolcheck_read_file(eolcheck_file_t* dst, const char* path)
 {
-    FILE* file;
-
-#if defined(_WIN32)
-    if (fopen_s(&file, path, "rb") != 0)
-#else
-    if ((file = fopen(path, "rb")) == NULL)
-#endif
+    char* content = NULL;
+    ssize_t ret = test_read_file(path, &content);
+    if (ret < 0)
     {
-        fprintf(stderr, "failed to open `%s`.\n", path);
-        return EXIT_FAILURE;
+        return (int)ret;
     }
 
-    fseek(file, 0, SEEK_END);
-    dst->data_sz = ftell(file);
-    rewind(file);
-
-    if ((dst->data = mmc_malloc(dst->data_sz + 1)) == NULL)
-    {
-        fprintf(stderr, "out of memory.\n");
-        fclose(file);
-        return EXIT_FAILURE;
-    }
-
-    if (fread(dst->data, dst->data_sz, 1, file) != 1)
-    {
-        fprintf(stderr, "read file `%s` failed.\n", path);
-        mmc_free(dst->data);
-        dst->data = NULL;
-        dst->data_sz = 0;
-        return EXIT_FAILURE;
-    }
-    dst->data[dst->data_sz] = '\0';
-
-    fclose(file);
+    dst->data = (uint8_t*)content;
+    dst->data_sz = ret;
 
     return 0;
 }
@@ -127,41 +104,6 @@ static void _eolcheck_release_file(eolcheck_file_t* file)
         file->data = NULL;
     }
     file->data_sz = 0;
-}
-
-static int _eolcheck_is_match(char c, const char* delim)
-{
-    for (; *delim != '\0'; delim++)
-    {
-        if (*delim == c)
-        {
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-static char* _eolcheck_strtok(char* str, const char* delim, char** saveptr)
-{
-    if (*saveptr == NULL)
-    {
-        *saveptr = str;
-    }
-
-    char* pos_start = *saveptr;
-
-    for (; **saveptr != '\0'; *saveptr = *saveptr + 1)
-    {
-        if (_eolcheck_is_match(**saveptr, delim))
-        {
-            **saveptr = '\0';
-            *saveptr = *saveptr + 1;
-            return pos_start;
-        }
-    }
-
-    return NULL;
 }
 
 static int _eolcheck_check_ending(eolcheck_file_t* file, eolcheck_cfg_t* cfg)
@@ -250,11 +192,11 @@ fin:
     return ret;
 }
 
-test_tool_t test_tool_eolcheck = {
-    "eolcheck", tool_eolcheck,
-    "Check if a file contains all line ending.\n"
-    "--file=[PATH]\n"
-    "    Path to check.\n"
-    "--eol=CR|LF|CRLF\n"
-    "    Excepet line ending. CR (Macintosh) / LF (Unix) / CRLF (Windows)"
+const test_tool_t test_tool_eolcheck = {
+"eolcheck", tool_eolcheck,
+"Check if a file contains all line ending.\n"
+"  --file=[PATH]\n"
+"    Path to check.\n"
+"  --eol=CR|LF|CRLF\n"
+"    Excepet line ending. CR (Macintosh) / LF (Unix) / CRLF (Windows)"
 };

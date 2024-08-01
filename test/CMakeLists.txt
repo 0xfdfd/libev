@@ -3,9 +3,10 @@ add_library(ev_test_lib SHARED
     "test/tools/echoserver.c"
     "test/tools/eolcheck.c"
     "test/tools/help.c"
-    "test/tools/init.c"
+    "test/tools/__init__.c"
     "test/tools/ls.c"
     "test/tools/pwd.c"
+    "test/tools/tabcheck.c"
     "test/type/__init__.c"
     "test/type/ev_loop_t.c"
     "test/type/ssize_t.c"
@@ -15,6 +16,7 @@ add_library(ev_test_lib SHARED
     "test/utils/memcheck.c"
     "test/utils/random.c"
     "test/utils/sockpair.c"
+    "test/utils/str.c"
     "test/test.c"
     "test/cases/c/async.c"
     "test/cases/c/buf.c"
@@ -92,6 +94,12 @@ if (EV_DEV)
     )
     add_test(NAME ev_eol_c
         COMMAND $<TARGET_FILE:ev_test> -- eolcheck --file=${CMAKE_CURRENT_SOURCE_DIR}/ev.c --eol=LF
+    )
+    add_test(NAME ev_tab_h
+        COMMAND $<TARGET_FILE:ev_test> -- tabcheck --file=${CMAKE_CURRENT_SOURCE_DIR}/ev.h
+    )
+    add_test(NAME ev_tab_c
+        COMMAND $<TARGET_FILE:ev_test> -- tabcheck --file=${CMAKE_CURRENT_SOURCE_DIR}/ev.c
     )
 endif()
 

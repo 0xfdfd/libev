@@ -594,10 +594,10 @@ EV_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
 {
     DWORD errcode;
     DWORD bytes = 0;
-	if (file == INVALID_HANDLE_VALUE)
-	{
-		return ev__translate_sys_error(ERROR_INVALID_HANDLE);
-	}
+    if (file == INVALID_HANDLE_VALUE)
+    {
+        return ev__translate_sys_error(ERROR_INVALID_HANDLE);
+    }
 
     size_t idx;
     for (idx = 0; idx < nbuf; idx++)
@@ -621,11 +621,11 @@ error:
         return bytes;
     }
 
-	if (errcode == ERROR_ACCESS_DENIED)
-	{
+    if (errcode == ERROR_ACCESS_DENIED)
+    {
         errcode = ERROR_INVALID_FLAGS;
-	}
-	return ev__translate_sys_error(errcode);
+    }
+    return ev__translate_sys_error(errcode);
 }
 
 EV_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
@@ -676,10 +676,10 @@ EV_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
 {
     DWORD errcode;
     DWORD bytes = 0;
-	if (file == INVALID_HANDLE_VALUE)
-	{
-		return ev__translate_sys_error(ERROR_INVALID_HANDLE);
-	}
+    if (file == INVALID_HANDLE_VALUE)
+    {
+        return ev__translate_sys_error(ERROR_INVALID_HANDLE);
+    }
 
     size_t idx;
     for (idx = 0; idx < nbuf; idx++)
@@ -699,11 +699,11 @@ EV_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
 
 error:
     errcode = GetLastError();
-	if (errcode == ERROR_ACCESS_DENIED)
-	{
+    if (errcode == ERROR_ACCESS_DENIED)
+    {
         errcode = ERROR_INVALID_FLAGS;
-	}
-	return ev__translate_sys_error(errcode);
+    }
+    return ev__translate_sys_error(errcode);
 }
 
 EV_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)

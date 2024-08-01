@@ -13,7 +13,7 @@ EV_LOCAL void ev__init_timer(ev_loop_t* loop);
 /**
  * @brief Process timer.
  * @param[in] loop  Event loop
- * @return			Active counter
+ * @return          Active counter
  */
 EV_LOCAL size_t ev__process_timer(ev_loop_t* loop);
 

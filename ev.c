@@ -1058,8 +1058,8 @@ EV_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop);
 #line 16 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/timer.h
-// SIZE:    407
-// SHA-256: 3e93e8f6efe57b36bb44126d2123583e7a91af574dfb33805d4642f223c256e7
+// SIZE:    414
+// SHA-256: 82972cef169ac541ae9bd0e070ae2e22319da4e62e50f9426356f18c540d9766
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/timer.h"
 #ifndef __EV_TIMER_INTERNAL_H__
@@ -1077,7 +1077,7 @@ EV_LOCAL void ev__init_timer(ev_loop_t* loop);
 /**
  * @brief Process timer.
  * @param[in] loop  Event loop
- * @return			Active counter
+ * @return          Active counter
  */
 EV_LOCAL size_t ev__process_timer(ev_loop_t* loop);
 
@@ -2683,8 +2683,8 @@ EV_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width)
 #line 24 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/loop.c
-// SIZE:    8616
-// SHA-256: b77c2ac51d237ce9b198ac41dab81d27a75a4da6c258c114e1fe0032a3ca10ea
+// SIZE:    8622
+// SHA-256: 26f7e0ab01855f6f18306d5445ffb70a770afacc5e5966cb765ed0b88f647447
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/loop.c"
 #include <stdio.h>
@@ -3026,8 +3026,8 @@ const char* ev_strerror(int err)
 
     switch (err)
     {
-	/* Success */
-	case 0:                     return "Operation success";
+    /* Success */
+    case 0:                     return "Operation success";
     case EV_EOF:                return "End of file";
     /* posix */
     EV_ERRNO_POSIX_MAP(EV_EXPAND_ERRMAP);
@@ -3864,8 +3864,8 @@ ev_map_node_t* ev_map_prev(const ev_map_node_t* node)
 #line 26 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/misc.c
-// SIZE:    3822
-// SHA-256: 48a63aad109b83d9549e0565604fe9378cddbd528269c08eff62b2f8ffdfce74
+// SIZE:    3840
+// SHA-256: 78fa752459467564d1bbea5b6f07e842d63c0507533fdf21906cef8cb7bf332b
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/misc.c"
 #include <assert.h>
@@ -3977,11 +3977,11 @@ int ev_ip_addr(const char* ip, int port, struct sockaddr* addr, size_t size)
 
 int ev_ip_name(const struct sockaddr* addr, int* port, char* ip, size_t len)
 {
-	if (addr->sa_family == AF_INET)
-	{
-		return ev_ipv4_name((struct sockaddr_in*)addr, port, ip, len);
-	}
-	return ev_ipv6_name((struct sockaddr_in6*)addr, port, ip, len);
+    if (addr->sa_family == AF_INET)
+    {
+        return ev_ipv4_name((struct sockaddr_in*)addr, port, ip, len);
+    }
+    return ev_ipv6_name((struct sockaddr_in6*)addr, port, ip, len);
 }
 
 ev_buf_t ev_buf_make(void* buf, size_t len)
@@ -5934,16 +5934,16 @@ EV_LOCAL void ev__winapi_init(void);
 #line 38 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/winsock.h
-// SIZE:    2061
-// SHA-256: 16c37a00efb38cf8dfdcfdced7e2af55461e2894685880ee33d34bebc9a2ddc3
+// SIZE:    2168
+// SHA-256: e720c93759b6343b5a149e2efd7c5d9e6f34c4ded58e3743d89a7105b90128bf
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/win/winsock.h"
 #ifndef __EV_WINSOCK_INTERNAL_H__
 #define __EV_WINSOCK_INTERNAL_H__
 
-#define AFD_OVERLAPPED						0x00000002
-#define AFD_RECEIVE							5
-#define AFD_RECEIVE_DATAGRAM				6
+#define AFD_OVERLAPPED                      0x00000002
+#define AFD_RECEIVE                         5
+#define AFD_RECEIVE_DATAGRAM                6
 
 #ifndef TDI_RECEIVE_NORMAL
 #   define TDI_RECEIVE_PARTIAL              0x00000010
@@ -5951,7 +5951,7 @@ EV_LOCAL void ev__winapi_init(void);
 #   define TDI_RECEIVE_PEEK                 0x00000080
 #endif
 
-#define FSCTL_AFD_BASE						FILE_DEVICE_NETWORK
+#define FSCTL_AFD_BASE                      FILE_DEVICE_NETWORK
 
 #define _AFD_CONTROL_CODE(operation, method) \
     ((FSCTL_AFD_BASE) << 12 | (operation << 2) | method)
@@ -5967,19 +5967,19 @@ extern "C" {
 #endif
 
 typedef struct _AFD_RECV_DATAGRAM_INFO {
-	LPWSABUF BufferArray;
-	ULONG BufferCount;
-	ULONG AfdFlags;
-	ULONG TdiFlags;
-	struct sockaddr* Address;
-	int* AddressLength;
+    LPWSABUF BufferArray;
+    ULONG BufferCount;
+    ULONG AfdFlags;
+    ULONG TdiFlags;
+    struct sockaddr* Address;
+    int* AddressLength;
 } AFD_RECV_DATAGRAM_INFO, * PAFD_RECV_DATAGRAM_INFO;
 
 typedef struct _AFD_RECV_INFO {
-	LPWSABUF BufferArray;
-	ULONG BufferCount;
-	ULONG AfdFlags;
-	ULONG TdiFlags;
+    LPWSABUF BufferArray;
+    ULONG BufferCount;
+    ULONG AfdFlags;
+    ULONG TdiFlags;
 } AFD_RECV_INFO, * PAFD_RECV_INFO;
 
 extern int ev_tcp_non_ifs_lsp_ipv4;
@@ -5989,16 +5989,16 @@ extern struct sockaddr_in ev_addr_ip4_any_;
 extern struct sockaddr_in6 ev_addr_ip6_any_;
 
 EV_LOCAL int WSAAPI ev__wsa_recv_workaround(SOCKET socket, WSABUF* buffers,
-	DWORD buffer_count, DWORD* bytes, DWORD* flags, WSAOVERLAPPED* overlapped,
-	LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine);
+    DWORD buffer_count, DWORD* bytes, DWORD* flags, WSAOVERLAPPED* overlapped,
+    LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine);
 
 /**
  * @brief 
  */
 EV_LOCAL int WSAAPI ev__wsa_recvfrom_workaround(SOCKET socket, WSABUF* buffers,
-	DWORD buffer_count, DWORD* bytes, DWORD* flags, struct sockaddr* addr,
-	int* addr_len, WSAOVERLAPPED* overlapped,
-	LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine);
+    DWORD buffer_count, DWORD* bytes, DWORD* flags, struct sockaddr* addr,
+    int* addr_len, WSAOVERLAPPED* overlapped,
+    LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine);
 
 /**
  * @brief Initialize winsock.
@@ -6209,15 +6209,15 @@ extern "C" {
 #line 45 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/misc_win.h
-// SIZE:    1055
-// SHA-256: 9e4aa2ae93cd803c8eafffa9dc2ace635d58fb52ca4dd08e45c29059314c442b
+// SIZE:    1350
+// SHA-256: 97320935a6327cc693cfe92211c4ebe23105ccf9000014021cdc04ecb8ebc9d1
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/win/misc_win.h"
 #ifndef __EV_MISC_WIN_INTERNAL_H__
 #define __EV_MISC_WIN_INTERNAL_H__
 
-#define EV_FATAL_SYSCALL(errcode, syscall)	\
-	ev__fatal_syscall(__FILE__, __LINE__, errcode, syscall)
+#define EV_FATAL_SYSCALL(errcode, syscall)  \
+    ev__fatal_syscall(__FILE__, __LINE__, errcode, syscall)
 
 #ifdef __cplusplus
 extern "C" {
@@ -6239,8 +6239,16 @@ EV_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src);
  */
 EV_LOCAL ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src);
 
+/**
+ * @brief Show fatal information about syscall and abort().
+ * @warning This function does not return.
+ * @param[in] file      File path.
+ * @param[in] line      The line number.
+ * @param[in] errcode   Error code from GetLastError().
+ * @param[in] syscall   The name of syscall.
+ */
 EV_LOCAL void ev__fatal_syscall(const char* file, int line,
-	DWORD errcode, const char* syscall);
+    DWORD errcode, const char* syscall);
 
 #ifdef __cplusplus
 }
@@ -6387,8 +6395,8 @@ void ev_async_wakeup(ev_async_t* handle)
 #line 50 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/fs_win.c
-// SIZE:    23975
-// SHA-256: efde564c3749563536763d2e573376491ba8ea7d236d40853169d8a14d842aa0
+// SIZE:    24029
+// SHA-256: 1afe3911f16d58f43f230b1f43921be481ce576df8cb8db596edb17dc48da7c0
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/win/fs_win.c"
 #include <assert.h>
@@ -6987,10 +6995,10 @@ EV_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
 {
     DWORD errcode;
     DWORD bytes = 0;
-	if (file == INVALID_HANDLE_VALUE)
-	{
-		return ev__translate_sys_error(ERROR_INVALID_HANDLE);
-	}
+    if (file == INVALID_HANDLE_VALUE)
+    {
+        return ev__translate_sys_error(ERROR_INVALID_HANDLE);
+    }
 
     size_t idx;
     for (idx = 0; idx < nbuf; idx++)
@@ -7014,11 +7022,11 @@ error:
         return bytes;
     }
 
-	if (errcode == ERROR_ACCESS_DENIED)
-	{
+    if (errcode == ERROR_ACCESS_DENIED)
+    {
         errcode = ERROR_INVALID_FLAGS;
-	}
-	return ev__translate_sys_error(errcode);
+    }
+    return ev__translate_sys_error(errcode);
 }
 
 EV_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
@@ -7069,10 +7077,10 @@ EV_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
 {
     DWORD errcode;
     DWORD bytes = 0;
-	if (file == INVALID_HANDLE_VALUE)
-	{
-		return ev__translate_sys_error(ERROR_INVALID_HANDLE);
-	}
+    if (file == INVALID_HANDLE_VALUE)
+    {
+        return ev__translate_sys_error(ERROR_INVALID_HANDLE);
+    }
 
     size_t idx;
     for (idx = 0; idx < nbuf; idx++)
@@ -7092,11 +7100,11 @@ EV_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
 
 error:
     errcode = GetLastError();
-	if (errcode == ERROR_ACCESS_DENIED)
-	{
+    if (errcode == ERROR_ACCESS_DENIED)
+    {
         errcode = ERROR_INVALID_FLAGS;
-	}
-	return ev__translate_sys_error(errcode);
+    }
+    return ev__translate_sys_error(errcode);
 }
 
 EV_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
@@ -9212,8 +9220,8 @@ void ev_pipe_close(ev_os_pipe_t fd)
 #line 56 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/process_win.c
-// SIZE:    16171
-// SHA-256: 4e7c662c83b2fc407ad08cbcfa52d3f86fa192d7f8593ac18bb5d1ded14d2796
+// SIZE:    16186
+// SHA-256: 1f92317d339a858c2c3a0accf3ead48c7129a985a761212ca7090d3878576901
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/win/process_win.c"
 #include <assert.h>
@@ -9611,10 +9619,10 @@ static void _ev_process_on_sigchild_win(ev_async_t* async)
         process->exit_code = ev__translate_sys_error(status);
     }
 
-	if (process->sigchild_cb != NULL)
-	{
-		process->sigchild_cb(process, process->exit_status, process->exit_code);
-	}
+    if (process->sigchild_cb != NULL)
+    {
+        process->sigchild_cb(process, process->exit_status, process->exit_code);
+    }
 }
 
 static int _ev_process_setup_start_info(ev_startup_info_t* start_info,
@@ -12113,8 +12121,8 @@ EV_LOCAL void ev__winapi_init(void)
 #line 65 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/winsock.c
-// SIZE:    8860
-// SHA-256: 5a57ba896dea38d93b6d1f9c97586ed90e2eeb9b110d1ee211734d19d4187118
+// SIZE:    9169
+// SHA-256: 98aa2d8a3b47e1d675ae820e72af6991599bc57c8f379236b1954b12d587cce9
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/win/winsock.c"
 
@@ -12182,95 +12190,95 @@ EV_LOCAL int WSAAPI ev__wsa_recv_workaround(SOCKET socket, WSABUF* buffers,
     DWORD buffer_count, DWORD* bytes, DWORD* flags, WSAOVERLAPPED* overlapped,
     LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine)
 {
-	NTSTATUS status;
-	void* apc_context;
-	IO_STATUS_BLOCK* iosb = (IO_STATUS_BLOCK*)&overlapped->Internal;
-	AFD_RECV_INFO info;
-	DWORD error;
+    NTSTATUS status;
+    void* apc_context;
+    IO_STATUS_BLOCK* iosb = (IO_STATUS_BLOCK*)&overlapped->Internal;
+    AFD_RECV_INFO info;
+    DWORD error;
 
-	if (overlapped == NULL || completion_routine != NULL) {
-		WSASetLastError(WSAEINVAL);
-		return SOCKET_ERROR;
-	}
+    if (overlapped == NULL || completion_routine != NULL) {
+        WSASetLastError(WSAEINVAL);
+        return SOCKET_ERROR;
+    }
 
-	info.BufferArray = buffers;
-	info.BufferCount = buffer_count;
-	info.AfdFlags = AFD_OVERLAPPED;
-	info.TdiFlags = TDI_RECEIVE_NORMAL;
+    info.BufferArray = buffers;
+    info.BufferCount = buffer_count;
+    info.AfdFlags = AFD_OVERLAPPED;
+    info.TdiFlags = TDI_RECEIVE_NORMAL;
 
-	if (*flags & MSG_PEEK) {
-		info.TdiFlags |= TDI_RECEIVE_PEEK;
-	}
+    if (*flags & MSG_PEEK) {
+        info.TdiFlags |= TDI_RECEIVE_PEEK;
+    }
 
-	if (*flags & MSG_PARTIAL) {
-		info.TdiFlags |= TDI_RECEIVE_PARTIAL;
-	}
+    if (*flags & MSG_PARTIAL) {
+        info.TdiFlags |= TDI_RECEIVE_PARTIAL;
+    }
 
-	if (!((intptr_t)overlapped->hEvent & 1)) {
-		apc_context = (void*)overlapped;
-	}
-	else {
-		apc_context = NULL;
-	}
+    if (!((intptr_t)overlapped->hEvent & 1)) {
+        apc_context = (void*)overlapped;
+    }
+    else {
+        apc_context = NULL;
+    }
 
-	iosb->Status = STATUS_PENDING;
-	iosb->Pointer = 0;
+    iosb->Status = STATUS_PENDING;
+    iosb->Pointer = 0;
 
-	status = ev_winapi.NtDeviceIoControlFile((HANDLE)socket,
-		overlapped->hEvent,
-		NULL,
-		apc_context,
-		iosb,
-		IOCTL_AFD_RECEIVE,
-		&info,
-		sizeof(info),
-		NULL,
-		0);
+    status = ev_winapi.NtDeviceIoControlFile((HANDLE)socket,
+        overlapped->hEvent,
+        NULL,
+        apc_context,
+        iosb,
+        IOCTL_AFD_RECEIVE,
+        &info,
+        sizeof(info),
+        NULL,
+        0);
 
-	*flags = 0;
-	*bytes = (DWORD)iosb->Information;
+    *flags = 0;
+    *bytes = (DWORD)iosb->Information;
 
-	switch (status) {
-	case STATUS_SUCCESS:
-		error = ERROR_SUCCESS;
-		break;
+    switch (status) {
+    case STATUS_SUCCESS:
+        error = ERROR_SUCCESS;
+        break;
 
-	case STATUS_PENDING:
-		error = WSA_IO_PENDING;
-		break;
+    case STATUS_PENDING:
+        error = WSA_IO_PENDING;
+        break;
 
-	case STATUS_BUFFER_OVERFLOW:
-		error = WSAEMSGSIZE;
-		break;
+    case STATUS_BUFFER_OVERFLOW:
+        error = WSAEMSGSIZE;
+        break;
 
-	case STATUS_RECEIVE_EXPEDITED:
-		error = ERROR_SUCCESS;
-		*flags = MSG_OOB;
-		break;
+    case STATUS_RECEIVE_EXPEDITED:
+        error = ERROR_SUCCESS;
+        *flags = MSG_OOB;
+        break;
 
-	case STATUS_RECEIVE_PARTIAL_EXPEDITED:
-		error = ERROR_SUCCESS;
-		*flags = MSG_PARTIAL | MSG_OOB;
-		break;
+    case STATUS_RECEIVE_PARTIAL_EXPEDITED:
+        error = ERROR_SUCCESS;
+        *flags = MSG_PARTIAL | MSG_OOB;
+        break;
 
-	case STATUS_RECEIVE_PARTIAL:
-		error = ERROR_SUCCESS;
-		*flags = MSG_PARTIAL;
-		break;
+    case STATUS_RECEIVE_PARTIAL:
+        error = ERROR_SUCCESS;
+        *flags = MSG_PARTIAL;
+        break;
 
-	default:
-		error = ev__ntstatus_to_winsock_error(status);
-		break;
-	}
+    default:
+        error = ev__ntstatus_to_winsock_error(status);
+        break;
+    }
 
-	WSASetLastError(error);
+    WSASetLastError(error);
 
-	if (error == ERROR_SUCCESS)
+    if (error == ERROR_SUCCESS)
     {
-		return 0;
-	}
+        return 0;
+    }
 
-	return SOCKET_ERROR;
+    return SOCKET_ERROR;
 }
 
 EV_LOCAL int WSAAPI ev__wsa_recvfrom_workaround(SOCKET socket, WSABUF* buffers,

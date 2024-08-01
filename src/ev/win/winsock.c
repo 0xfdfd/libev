@@ -63,95 +63,95 @@ EV_LOCAL int WSAAPI ev__wsa_recv_workaround(SOCKET socket, WSABUF* buffers,
     DWORD buffer_count, DWORD* bytes, DWORD* flags, WSAOVERLAPPED* overlapped,
     LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine)
 {
-	NTSTATUS status;
-	void* apc_context;
-	IO_STATUS_BLOCK* iosb = (IO_STATUS_BLOCK*)&overlapped->Internal;
-	AFD_RECV_INFO info;
-	DWORD error;
+    NTSTATUS status;
+    void* apc_context;
+    IO_STATUS_BLOCK* iosb = (IO_STATUS_BLOCK*)&overlapped->Internal;
+    AFD_RECV_INFO info;
+    DWORD error;
 
-	if (overlapped == NULL || completion_routine != NULL) {
-		WSASetLastError(WSAEINVAL);
-		return SOCKET_ERROR;
-	}
+    if (overlapped == NULL || completion_routine != NULL) {
+        WSASetLastError(WSAEINVAL);
+        return SOCKET_ERROR;
+    }
 
-	info.BufferArray = buffers;
-	info.BufferCount = buffer_count;
-	info.AfdFlags = AFD_OVERLAPPED;
-	info.TdiFlags = TDI_RECEIVE_NORMAL;
+    info.BufferArray = buffers;
+    info.BufferCount = buffer_count;
+    info.AfdFlags = AFD_OVERLAPPED;
+    info.TdiFlags = TDI_RECEIVE_NORMAL;
 
-	if (*flags & MSG_PEEK) {
-		info.TdiFlags |= TDI_RECEIVE_PEEK;
-	}
+    if (*flags & MSG_PEEK) {
+        info.TdiFlags |= TDI_RECEIVE_PEEK;
+    }
 
-	if (*flags & MSG_PARTIAL) {
-		info.TdiFlags |= TDI_RECEIVE_PARTIAL;
-	}
+    if (*flags & MSG_PARTIAL) {
+        info.TdiFlags |= TDI_RECEIVE_PARTIAL;
+    }
 
-	if (!((intptr_t)overlapped->hEvent & 1)) {
-		apc_context = (void*)overlapped;
-	}
-	else {
-		apc_context = NULL;
-	}
+    if (!((intptr_t)overlapped->hEvent & 1)) {
+        apc_context = (void*)overlapped;
+    }
+    else {
+        apc_context = NULL;
+    }
 
-	iosb->Status = STATUS_PENDING;
-	iosb->Pointer = 0;
+    iosb->Status = STATUS_PENDING;
+    iosb->Pointer = 0;
 
-	status = ev_winapi.NtDeviceIoControlFile((HANDLE)socket,
-		overlapped->hEvent,
-		NULL,
-		apc_context,
-		iosb,
-		IOCTL_AFD_RECEIVE,
-		&info,
-		sizeof(info),
-		NULL,
-		0);
+    status = ev_winapi.NtDeviceIoControlFile((HANDLE)socket,
+        overlapped->hEvent,
+        NULL,
+        apc_context,
+        iosb,
+        IOCTL_AFD_RECEIVE,
+        &info,
+        sizeof(info),
+        NULL,
+        0);
 
-	*flags = 0;
-	*bytes = (DWORD)iosb->Information;
+    *flags = 0;
+    *bytes = (DWORD)iosb->Information;
 
-	switch (status) {
-	case STATUS_SUCCESS:
-		error = ERROR_SUCCESS;
-		break;
+    switch (status) {
+    case STATUS_SUCCESS:
+        error = ERROR_SUCCESS;
+        break;
 
-	case STATUS_PENDING:
-		error = WSA_IO_PENDING;
-		break;
+    case STATUS_PENDING:
+        error = WSA_IO_PENDING;
+        break;
 
-	case STATUS_BUFFER_OVERFLOW:
-		error = WSAEMSGSIZE;
-		break;
+    case STATUS_BUFFER_OVERFLOW:
+        error = WSAEMSGSIZE;
+        break;
 
-	case STATUS_RECEIVE_EXPEDITED:
-		error = ERROR_SUCCESS;
-		*flags = MSG_OOB;
-		break;
+    case STATUS_RECEIVE_EXPEDITED:
+        error = ERROR_SUCCESS;
+        *flags = MSG_OOB;
+        break;
 
-	case STATUS_RECEIVE_PARTIAL_EXPEDITED:
-		error = ERROR_SUCCESS;
-		*flags = MSG_PARTIAL | MSG_OOB;
-		break;
+    case STATUS_RECEIVE_PARTIAL_EXPEDITED:
+        error = ERROR_SUCCESS;
+        *flags = MSG_PARTIAL | MSG_OOB;
+        break;
 
-	case STATUS_RECEIVE_PARTIAL:
-		error = ERROR_SUCCESS;
-		*flags = MSG_PARTIAL;
-		break;
+    case STATUS_RECEIVE_PARTIAL:
+        error = ERROR_SUCCESS;
+        *flags = MSG_PARTIAL;
+        break;
 
-	default:
-		error = ev__ntstatus_to_winsock_error(status);
-		break;
-	}
+    default:
+        error = ev__ntstatus_to_winsock_error(status);
+        break;
+    }
 
-	WSASetLastError(error);
+    WSASetLastError(error);
 
-	if (error == ERROR_SUCCESS)
+    if (error == ERROR_SUCCESS)
     {
-		return 0;
-	}
+        return 0;
+    }
 
-	return SOCKET_ERROR;
+    return SOCKET_ERROR;
 }
 
 EV_LOCAL int WSAAPI ev__wsa_recvfrom_workaround(SOCKET socket, WSABUF* buffers,

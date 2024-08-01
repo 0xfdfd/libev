@@ -39,15 +39,21 @@ static void _init_file_once(void)
     ev_once_execute(&once_token, _on_init_file);
 }
 
+#if !defined(_WIN32)
+static int fopen_s(FILE** stream, const char* path, const char* mode)
+{
+    if ((*stream = fopen(path, mode)) != NULL)
+    {
+        return 0;
+    }
+    return errno;
+}
+#endif
+
 int test_write_file(const char* path, const void* data, size_t size)
 {
-    int ret = 0;
     FILE* file;
-#if defined(_WIN32)
-    ret = fopen_s(&file, path, "wb");
-#else
-    file = fopen(path, "wb");
-#endif
+    int ret = fopen_s(&file, path, "wb");
     if (ret != 0 || file == NULL)
     {
         return EV_ENOENT;
@@ -65,6 +71,31 @@ int test_write_file(const char* path, const void* data, size_t size)
     fclose(file);
 
     return 0;
+}
+
+long test_read_file(const char* path, char** content)
+{
+    FILE* file = NULL;
+    int ret = fopen_s(&file, path, "rb");
+    if (ret != 0)
+    {
+        return EV_ENOENT;
+    }
+
+    fseek(file, 0, SEEK_END);
+    size_t file_sz = ftell(file);
+    rewind(file);
+
+    *content = mmc_malloc(file_sz + 1);
+    if (fread(*content, file_sz, 1, file) != 1)
+    {
+        fclose(file);
+        mmc_free(*content);
+        return EV_EPIPE;
+    }
+    (*content)[file_sz] = '\0';
+
+    return (long)file_sz;
 }
 
 int test_access_dir(const char* path)

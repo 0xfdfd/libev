@@ -1,4 +1,4 @@
-#include "echoserver.h"
+#include "__init__.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -73,8 +73,8 @@ static int tool_echoserver(int argc, char* argv[])
 #endif
 }
 
-test_tool_t test_tool_echoserver = {
-    "echoserver", tool_echoserver,
-    "Start a stdio echo server.\n"
-    "The echo server will get everything from stdin and print to stdout."
+const test_tool_t test_tool_echoserver = {
+"echoserver", tool_echoserver,
+"Start a stdio echo server.\n"
+"The echo server will get everything from stdin and print to stdout."
 };

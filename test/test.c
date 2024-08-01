@@ -1,6 +1,6 @@
 #define _GNU_SOURCE
 #include "test.h"
-#include "tools/init.h"
+#include "tools/__init__.h"
 #include "utils/config.h"
 #include "type/__init__.h"
 #include <string.h>

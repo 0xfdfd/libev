@@ -1,4 +1,4 @@
-#include "help.h"
+#include "__init__.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -42,7 +42,7 @@ static void _print_help(const char* help, const char* prefix)
     printf("\n");
 }
 
-static int _print_tools(test_tool_t* info, void* arg)
+static int _print_tools(const test_tool_t* info, void* arg)
 {
     (void)arg;
 
@@ -66,7 +66,7 @@ static int _tool_help(int argc, char* argv[])
     return EXIT_SUCCESS;
 }
 
-test_tool_t test_tool_help = {
-    "help", _tool_help,
-    "Show this help and exit."
+const test_tool_t test_tool_help = {
+"help", _tool_help,
+"Show this help and exit."
 };

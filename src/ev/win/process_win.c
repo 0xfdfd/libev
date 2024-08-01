@@ -393,10 +393,10 @@ static void _ev_process_on_sigchild_win(ev_async_t* async)
         process->exit_code = ev__translate_sys_error(status);
     }
 
-	if (process->sigchild_cb != NULL)
-	{
-		process->sigchild_cb(process, process->exit_status, process->exit_code);
-	}
+    if (process->sigchild_cb != NULL)
+    {
+        process->sigchild_cb(process, process->exit_status, process->exit_code);
+    }
 }
 
 static int _ev_process_setup_start_info(ev_startup_info_t* start_info,

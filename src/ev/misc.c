@@ -107,11 +107,11 @@ int ev_ip_addr(const char* ip, int port, struct sockaddr* addr, size_t size)
 
 int ev_ip_name(const struct sockaddr* addr, int* port, char* ip, size_t len)
 {
-	if (addr->sa_family == AF_INET)
-	{
-		return ev_ipv4_name((struct sockaddr_in*)addr, port, ip, len);
-	}
-	return ev_ipv6_name((struct sockaddr_in6*)addr, port, ip, len);
+    if (addr->sa_family == AF_INET)
+    {
+        return ev_ipv4_name((struct sockaddr_in*)addr, port, ip, len);
+    }
+    return ev_ipv6_name((struct sockaddr_in6*)addr, port, ip, len);
 }
 
 ev_buf_t ev_buf_make(void* buf, size_t len)

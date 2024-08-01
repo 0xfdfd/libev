@@ -1,4 +1,4 @@
-#include "ls.h"
+#include "__init__.h"
 #include "test.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -159,7 +159,7 @@ finish:
     return ret;
 }
 
-test_tool_t test_tool_ls = {
-    "ls", tool_ls,
-    "List file names in current directory."
+const test_tool_t test_tool_ls = {
+"ls", tool_ls,
+"List file names in current directory."
 };
