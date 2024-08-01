@@ -20,7 +20,9 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ * 
  */
+
 /**
  * # Changelog
  * 
@@ -146,12 +148,81 @@
  * ## v0.0.1 (2022/02/22)
  * 
  * Initial release
+ * 
  */
+
+/**
+ * @mainpage libev
+ *
+ * \section EV_OVERVIEW Overview
+ *
+ * [libev](https://github.com/qgymib/libev) is a rework of
+ * [libuv](https://github.com/libuv/libuv), with following advantages:
+ * 1. Strong types without static casts any more.
+ * 2. Enhanced IPC features.
+ * 3. Easy to use file system operations.
+ *
+ *
+ * \section EV_DOCUMENTATION Documentation
+ *
+ * Located in the docs/ subdirectory. It use [Doxygen](http://www.doxygen.nl/)
+ * to build documents, which means the source code is well documented and can
+ * be read directly without build it.
+ *
+ * To build html-based documents, in the project root, run:
+ * ```bash
+ * doxygen docs/Doxyfile
+ * ```
+ *
+ * Also documents can be browsed online [here](https://qgymib.github.io/libev/).
+ *
+ *
+ * \section EV_BUILD_INSTRUCTIONS Build Instructions
+ *
+ * [CMake](https://cmake.org/) is currently the prefer way to build:
+ *
+ * ```bash
+ * # Build:
+ * $ mkdir -p build
+ * $ (cd build && cmake .. -DBUILD_TESTING=ON) # generate project with tests
+ * $ cmake --build build                       # add `-j <n>` with cmake >= 3.12
+ * 
+ * # Run tests:
+ * $ (cd build && ctest -C Debug --output-on-failure)
+ * ```
+ *
+ * \section EV_AMALGAMATE Amalgamate
+ * 
+ * [libev](https://github.com/qgymib/libev) support amalgamate build, which
+ * allow to distribute libev's source code using only two files(`ev.h` and `ev.c`).
+ *
+ * > Note: Amalgamate requires python3.
+ *
+ * To use amalgamation, add `-DEV_AMALGAMATE_BUILD=on` when configurate cmake:
+ *
+ * ```bash
+ * $ cmake -DEV_AMALGAMATE_BUILD=on /path/to/libev
+ * $ cmake --build .
+ * ```
+ *
+ * In `${CMAKE_CURRENT_BINARY_DIR}/amalgamate` directory, you will find the
+ * generated files.
+ *
+ */
+#ifndef __EV_H__
+#define __EV_H__
+
+#include <stddef.h>
+#include <stdint.h>
+#include <inttypes.h>
+#include <stdarg.h>
+
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/expose.h
+// FILE:    ev/expose.h
 // SIZE:    1144
 // SHA-256: 9ad4ab57940ffdd69fb1f422dfddf278947feec5fb3271dcf52d6cd8cfe127f5
 ////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/expose.h"
 #ifndef __EV_EXPOSE_H__
 #define __EV_EXPOSE_H__
 
@@ -193,91 +264,17 @@
 
 #endif
 
+#line 68 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/version.h
-// SIZE:    1213
-// SHA-256: 9275181c379721ed30339679354bad0c4ca177180dca93d336f7e7f74ee7b9ca
+// FILE:    ev/list.h
+// SIZE:    4329
+// SHA-256: a71299aca04efa9160eaa9a748345df2c826bffd67181543c71f6403c12871ad
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef __EV_VERSION_H__
-#define __EV_VERSION_H__
-
-/* AMALGAMATE: #include "ev/expose.h" */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * @defgroup EV_VERSION Version
- * @{
- */
-
-/**
- * @brief Major version.
- */
-#define EV_VERSION_MAJOR            0
-
-/**
- * @brief Minor version.
- */
-#define EV_VERSION_MINOR            1
-
-/**
- * @brief Patch version.
- */
-#define EV_VERSION_PATCH            0
-
-/**
- * @brief Development version.
- */
-#define EV_VERSION_PREREL           3
-
-/**
- * @brief Version calculate helper macro.
- * @param[in] a     Major version.
- * @param[in] b     Minor version.
- * @param[in] c     Patch version.
- * @param[in] d     Development version.
- */
-#define EV_VERSION(a, b, c, d)      (((a) << 24) + ((b) << 16) + ((c) << 8) + ((d) ? (d) : 255))
-
-/**
- * @brief Current version code.
- */
-#define EV_VERSION_CODE             \
-    EV_VERSION(EV_VERSION_MAJOR, EV_VERSION_MINOR, EV_VERSION_PATCH, EV_VERSION_PREREL)
-
-/**
- * @brief Get version code as c string.
- * @return      Version code.
- */
-EV_API const char* ev_version_str(void);
-
-/**
- * @brief Get version code as number.
- * @return      Version code
- */
-EV_API unsigned ev_version_code(void);
-
-/**
- * @} EV_VERSION
- */
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/list.h
-// SIZE:    4352
-// SHA-256: 6883e7bdb27d597119097d64b0d90a25884038a0d21004c84d1b1aa01c50d7bf
-////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/list.h"
 #ifndef __EV_LIST_H__
 #define __EV_LIST_H__
 
 #include <stddef.h>
-/* AMALGAMATE: #include "ev/expose.h" */
 
 #ifdef __cplusplus
 extern "C" {
@@ -437,16 +434,17 @@ EV_API void ev_list_migrate(ev_list_t* dst, ev_list_t* src);
 #endif
 #endif
 
+#line 69 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/map.h
-// SIZE:    4439
-// SHA-256: 2f4dace6a4211f87a5d04c05b1a99fe0affe3954f29d8e1f11aeca3ee6067677
+// FILE:    ev/map.h
+// SIZE:    4416
+// SHA-256: 542ea54deebd4836d4f60f717aa45fd177de855895e66df51c0f637e5d5ed47a
 ////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/map.h"
 #ifndef __EV_MAP_H__
 #define __EV_MAP_H__
 
 #include <stddef.h>
-/* AMALGAMATE: #include "ev/expose.h" */
 
 #ifdef __cplusplus
 extern "C" {
@@ -606,12 +604,409 @@ EV_API ev_map_node_t* ev_map_prev(const ev_map_node_t* node);
 #endif
 #endif
 
-#if defined(_WIN32) /* AMALGAMATE: ev.h (1/3) */
+#line 70 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/win.h
+// FILE:    ev/version.h
+// SIZE:    1188
+// SHA-256: d2e44482e1d67a211d47cfd531e6f51c8bdf1351f0221fec2ef93a21318ff2e2
+////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/version.h"
+#ifndef __EV_VERSION_H__
+#define __EV_VERSION_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @defgroup EV_VERSION Version
+ * @{
+ */
+
+/**
+ * @brief Major version.
+ */
+#define EV_VERSION_MAJOR            0
+
+/**
+ * @brief Minor version.
+ */
+#define EV_VERSION_MINOR            1
+
+/**
+ * @brief Patch version.
+ */
+#define EV_VERSION_PATCH            0
+
+/**
+ * @brief Development version.
+ */
+#define EV_VERSION_PREREL           3
+
+/**
+ * @brief Version calculate helper macro.
+ * @param[in] a     Major version.
+ * @param[in] b     Minor version.
+ * @param[in] c     Patch version.
+ * @param[in] d     Development version.
+ */
+#define EV_VERSION(a, b, c, d)      (((a) << 24) + ((b) << 16) + ((c) << 8) + ((d) ? (d) : 255))
+
+/**
+ * @brief Current version code.
+ */
+#define EV_VERSION_CODE             \
+    EV_VERSION(EV_VERSION_MAJOR, EV_VERSION_MINOR, EV_VERSION_PATCH, EV_VERSION_PREREL)
+
+/**
+ * @brief Get version code as c string.
+ * @return      Version code.
+ */
+EV_API const char* ev_version_str(void);
+
+/**
+ * @brief Get version code as number.
+ * @return      Version code
+ */
+EV_API unsigned ev_version_code(void);
+
+/**
+ * @} EV_VERSION
+ */
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+#line 71 "ev.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @defgroup EV_DEFINE Defines
+ * @{
+ */
+
+/**
+ * @brief The maximum number of iov buffers can be support.
+ */
+#define EV_IOV_MAX              16
+
+/**
+ * @brief Expand macro.
+ * @param[in] ...   Code to expand.
+ */
+#define EV_EXPAND(...)          __VA_ARGS__
+
+/**
+ * @brief Repeat code for \p n times.
+ * @param[in] n     How many times to repeat.
+ * @param[in] ...   Code fragment to repeat.
+ */
+#define EV_INIT_REPEAT(n, ...)   EV_INIT_REPEAT2(n, __VA_ARGS__)
+/** @cond */
+#define EV_INIT_REPEAT2(n, ...)  EV_INIT_REPEAT_##n(__VA_ARGS__)
+#define EV_INIT_REPEAT_1(...)    EV_EXPAND(__VA_ARGS__)
+#define EV_INIT_REPEAT_2(...)    EV_INIT_REPEAT_1(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
+#define EV_INIT_REPEAT_3(...)    EV_INIT_REPEAT_2(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
+#define EV_INIT_REPEAT_4(...)    EV_INIT_REPEAT_3(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
+#define EV_INIT_REPEAT_5(...)    EV_INIT_REPEAT_4(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
+#define EV_INIT_REPEAT_6(...)    EV_INIT_REPEAT_5(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
+#define EV_INIT_REPEAT_7(...)    EV_INIT_REPEAT_6(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
+#define EV_INIT_REPEAT_8(...)    EV_INIT_REPEAT_7(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
+#define EV_INIT_REPEAT_9(...)    EV_INIT_REPEAT_8(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
+#define EV_INIT_REPEAT_10(...)   EV_INIT_REPEAT_9(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
+#define EV_INIT_REPEAT_11(...)   EV_INIT_REPEAT_10(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
+#define EV_INIT_REPEAT_12(...)   EV_INIT_REPEAT_11(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
+#define EV_INIT_REPEAT_13(...)   EV_INIT_REPEAT_12(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
+#define EV_INIT_REPEAT_14(...)   EV_INIT_REPEAT_13(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
+#define EV_INIT_REPEAT_15(...)   EV_INIT_REPEAT_14(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
+#define EV_INIT_REPEAT_16(...)   EV_INIT_REPEAT_15(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
+/** @endcond */
+
+/**
+ * @def EV_CONTAINER_OF
+ * @brief cast a member of a structure out to the containing structure.
+ */
+#if defined(container_of)
+#   define EV_CONTAINER_OF(ptr, type, member)   \
+        container_of(ptr, type, member)
+#elif defined(__GNUC__) || defined(__clang__)
+#   define EV_CONTAINER_OF(ptr, type, member)   \
+        ({ \
+            const typeof(((type *)0)->member)*__mptr = (ptr); \
+            (type *)((char *)__mptr - offsetof(type, member)); \
+        })
+#else
+#   define EV_CONTAINER_OF(ptr, type, member)   \
+        ((type *) ((char *) (ptr) - offsetof(type, member)))
+#endif
+
+/**
+ * @} EV_DEFINE
+ */
+
+/**
+ * @defgroup EV_OS OS
+ * @{
+ */
+
+/**
+ * @brief Infinite timeout.
+ */
+#define EV_INFINITE_TIMEOUT         ((uint32_t)-1)
+
+/**
+ * @} EV_OS
+ */
+
+/**
+ * @defgroup EV_ERRNO Error number
+ * @{
+ */
+
+/**
+ * @brief Error number
+ */
+typedef enum ev_errno
+{
+    /* POSIX compatible error code */
+    EV_EPERM            = -1,                   /**< Operation not permitted (POSIX.1-2001) */
+    EV_ENOENT           = -2,                   /**< No such file or directory (POSIX.1-2001) */
+    EV_EIO              = -5,                   /**< Host is unreachable (POSIX.1-2001) */
+    EV_E2BIG            = -7,                   /**< Argument list too long (POSIX.1-2001) */
+    EV_EBADF            = -9,                   /**< Bad file descriptor (POSIX.1-2001) */
+    EV_EAGAIN           = -11,                  /**< Resource temporarily unavailable (POSIX.1-2001) */
+    EV_ENOMEM           = -12,                  /**< Not enough space/cannot allocate memory (POSIX.1-2001) */
+    EV_EACCES           = -13,                  /**< Permission denied (POSIX.1-2001) */
+    EV_EFAULT           = -14,                  /**< Bad address (POSIX.1-2001) */
+    EV_EBUSY            = -16,                  /**< Device or resource busy (POSIX.1-2001) */
+    EV_EEXIST           = -17,                  /**< File exists (POSIX.1-2001) */
+    EV_EXDEV            = -18,                  /**< Improper link (POSIX.1-2001) */
+    EV_ENOTDIR          = -20,                  /**< Not a directory (POSIX.1-2001) */
+    EV_EISDIR           = -21,                  /**< Is a directory (POSIX.1-2001) */
+    EV_EINVAL           = -22,                  /**< Invalid argument (POSIX.1-2001) */
+    EV_EMFILE           = -24,                  /**< Too many open files (POSIX.1-2001) */
+    EV_ENOSPC           = -28,                  /**< No space left on device (POSIX.1-2001) */
+    EV_EROFS            = -30,                  /**< Read-only filesystem (POSIX.1-2001) */
+    EV_EPIPE            = -32,                  /**< Broken pipe (POSIX.1-2001) */
+    EV_ENAMETOOLONG     = -38,                  /**< Filename too long (POSIX.1-2001) */
+    EV_ENOTEMPTY        = -41,                  /**< Directory not empty (POSIX.1-2001) */
+    EV_EADDRINUSE       = -100,                 /**< Address already in use (POSIX.1-2001) */
+    EV_EADDRNOTAVAIL    = -101,                 /**< Address not available (POSIX.1-2001) */
+    EV_EAFNOSUPPORT     = -102,                 /**< Address family not supported (POSIX.1-2001) */
+    EV_EALREADY         = -103,                 /**< Connection already in progress (POSIX.1-2001) */
+    EV_ECANCELED        = -105,                 /**< Operation canceled (POSIX.1-2001) */
+    EV_ECONNABORTED     = -106,                 /**< Connection aborted (POSIX.1-2001) */
+    EV_ECONNREFUSED     = -107,                 /**< Connection refused (POSIX.1-2001) */
+    EV_ECONNRESET       = -108,                 /**< Connection reset (POSIX.1-2001) */
+    EV_EHOSTUNREACH     = -110,                 /**< Host is unreachable (POSIX.1-2001) */
+    EV_EINPROGRESS      = -112,                 /**< Operation in progress (POSIX.1-2001) */
+    EV_EISCONN          = -113,                 /**< Socket is connected (POSIX.1-2001) */
+    EV_ELOOP            = -114,                 /**< Too many levels of symbolic links (POSIX.1-2001) */
+    EV_EMSGSIZE         = -115,                 /**< Message too long (POSIX.1-2001) */
+    EV_ENETUNREACH      = -118,                 /**< Network unreachable (POSIX.1-2001) */
+    EV_ENOBUFS          = -119,                 /**< No buffer space available (POSIX.1 (XSI STREAMS option)) */
+    EV_ENOTCONN         = -126,                 /**< The socket is not connected (POSIX.1-2001) */
+    EV_ENOTSOCK         = -128,                 /**< Not a socket (POSIX.1-2001) */
+    EV_ENOTSUP          = -129,                 /**< Operation not supported (POSIX.1-2001) */
+    EV_EPROTO           = -134,                 /**< Protocol error (POSIX.1-2001) */
+    EV_EPROTONOSUPPORT  = -135,                 /**< Protocol not supported (POSIX.1-2001) */
+    EV_ETIMEDOUT        = -138,                 /**< Operation timed out (POSIX.1-2001) */
+
+    /* Extend error code */
+    EV_EOF              = -4095,
+}ev_errno_t;
+
+/**
+ * @brief Describe the error code
+ * @param[in] err   Error code
+ * @return          Describe string
+ */
+const char* ev_strerror(int err);
+
+/**
+ * @} EV_ERRNO
+ */
+
+/**
+ * @defgroup EV_ALLOCATOR Allocator
+ * @{
+ */
+
+/**
+ * @brief Replacement function for malloc.
+ * @see https://man7.org/linux/man-pages/man3/malloc.3.html
+ */
+typedef void* (*ev_malloc_fn)(size_t size);
+
+/**
+ * @brief Replacement function for calloc.
+ * @see https://man7.org/linux/man-pages/man3/calloc.3.html
+ */
+typedef void* (*ev_calloc_fn)(size_t nmemb, size_t size);
+
+/**
+ * @brief Replacement function for realloc.
+ * @see https://man7.org/linux/man-pages/man3/realloc.3.html
+ */
+typedef void* (*ev_realloc_fn)(void* ptr, size_t size);
+
+/**
+ * @brief Replacement function for free.
+ * @see https://man7.org/linux/man-pages/man3/free.3.html
+ */
+typedef void (*ev_free_fn)(void* ptr);
+
+/**
+ * @brief Override the use of the standard library's malloc(3), calloc(3),
+ *   realloc(3), free(3), memory allocation functions.
+ *
+ * This function must be called before any other function is called or after
+ * all resources have been freed and thus doesn't reference any allocated
+ * memory chunk.
+ *
+ * @warning There is no protection against changing the allocator multiple
+ *   times. If the user changes it they are responsible for making sure the
+ *   allocator is changed while no memory was allocated with the previous
+ *   allocator, or that they are compatible.
+ * @warngin Allocator must be thread-safe.
+ * 
+ * @param[in] malloc_func   Replacement function for malloc.
+ * @param[in] calloc_func   Replacement function for calloc.
+ * @param[in] realloc_func  Replacement function for realloc.
+ * @param[in] free_func     Replacement function for free.
+ * @return On success, it returns 0. if any of the function pointers is NULL it returns #EV_EINVAL.
+ */
+EV_API int ev_replace_allocator(ev_malloc_fn malloc_func, ev_calloc_fn calloc_func,
+    ev_realloc_fn realloc_func, ev_free_fn free_func);
+
+/**
+ * @brief Same as [malloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
+ */
+EV_API void* ev_malloc(size_t size);
+
+/**
+ * @brief Same as [calloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
+ */
+EV_API void* ev_calloc(size_t nmemb, size_t size);
+
+/**
+ * @brief Same as [realloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
+ */
+EV_API void* ev_realloc(void* ptr, size_t size);
+
+/**
+ * @brief Same as [free(3)](https://man7.org/linux/man-pages/man3/free.3.html)
+ */
+EV_API void ev_free(void* ptr);
+
+/**
+ * @} EV_ALLOCATOR
+ */
+
+/**
+ * @defgroup EV_UTILS_QUEUE Queue
+ * @ingroup EV_UTILS
+ * @{
+ */
+
+/**
+ * @brief Static initializer for #ev_queue_node_t.
+ * @note A static initialized queue node is not a valid node.
+ */
+
+/**
+ * @brief Queue node type.
+ */
+typedef struct ev_queue_node
+{
+    struct ev_queue_node* p_prev;
+    struct ev_queue_node* p_next;
+} ev_queue_node_t;
+#define EV_QUEUE_NODE_INVALID  \
+    {\
+        NULL,\
+        NULL,\
+    }
+
+/**
+ * @brief Initialize circular linked list
+ * @param[out] head     List handle
+ */
+EV_API void ev_queue_init(ev_queue_node_t* head);
+
+/**
+ * @brief Insert a node to the tail of the list.
+ * @warning the node must not exist in any list.
+ * @param[in,out] head  Pointer to list
+ * @param[in,out] node  Pointer to a new node
+ */
+EV_API void ev_queue_push_back(ev_queue_node_t* head, ev_queue_node_t* node);
+
+/**
+ * @brief Insert a node to the head of the list.
+ * @warning the node must not exist in any list.
+ * @param[in,out] head      Pointer to list
+ * @param[in,out] node      Pointer to a new node
+ */
+EV_API void ev_queue_push_front(ev_queue_node_t* head, ev_queue_node_t* node);
+
+/**
+ * @brief Delete a exist node
+ * @param[in,out] node      The node you want to delete
+ */
+EV_API void ev_queue_erase(ev_queue_node_t* node);
+
+/**
+ * @brief Check whether list is empty
+ * @param[in] node          Any node in list
+ * @return                  bool
+ */
+EV_API int ev_queue_empty(const ev_queue_node_t* node);
+
+/**
+ * @brief Get the first node and remove it from the list.
+ * @param[in,out] head      Pointer to list
+ * @return                  The first node
+ */
+EV_API ev_queue_node_t* ev_queue_pop_front(ev_queue_node_t* head);
+
+/**
+ * @brief Get the last node and remove it from the list.
+ * @param[in,out] head      Pointer to list
+ * @return                  The last node
+ */
+EV_API ev_queue_node_t* ev_queue_pop_back(ev_queue_node_t* head);
+
+/**
+ * @brief Get the first node.
+ * @param[in] head      Pointer to list
+ * @return              The first node
+ */
+EV_API ev_queue_node_t* ev_queue_head(ev_queue_node_t* head);
+
+/**
+* @brief Get next node.
+* @param[in] head   Queue head
+* @param[in] node   Current node
+* @return           The next node
+*/
+EV_API ev_queue_node_t* ev_queue_next(ev_queue_node_t* head, ev_queue_node_t* node);
+
+/**
+ * @} EV_UTILS_QUEUE
+ */
+
+#if defined(_WIN32)                                                     /* OS */
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win.h
 // SIZE:    15824
 // SHA-256: 5b09b48df81475e53963fc20ccac0ed59b3f68cfd7f24b6f4a650b1d06789df1
 ////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/win.h"
 /**
  * @file
  */
@@ -1109,12 +1504,14 @@ typedef struct ev_pipe_win_ipc_info
 
 #endif
 
-#else               /* AMALGAMATE: ev.h (2/3) */
+#line 394 "ev.h"
+#else                                                                   /* OS */
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/unix.h
+// FILE:    ev/unix.h
 // SIZE:    12837
 // SHA-256: 6a588c5b213da9271817989d3d9e829aa25a311b6b58ebf026db804acd37cd10
 ////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/unix.h"
 /**
  * @file
  */
@@ -1569,407 +1966,7 @@ struct ev_nonblock_stream
 
 #endif
 
-#endif              /* AMALGAMATE: ev.h (3/3) */
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev.h
-// SIZE:    19622
-// SHA-256: d2d8113a145c5629e5ecdcc5502ffa28b41f5c2bf4d75687e02bb847124d8cc5
-////////////////////////////////////////////////////////////////////////////////
-/**
- * @mainpage libev
- *
- * \section EV_OVERVIEW Overview
- *
- * [libev](https://github.com/qgymib/libev) is a rework of
- * [libuv](https://github.com/libuv/libuv), with following advantages:
- * 1. Strong types without static casts any more.
- * 2. Enhanced IPC features.
- * 3. Easy to use file system operations.
- *
- *
- * \section EV_DOCUMENTATION Documentation
- *
- * Located in the docs/ subdirectory. It use [Doxygen](http://www.doxygen.nl/)
- * to build documents, which means the source code is well documented and can
- * be read directly without build it.
- *
- * To build html-based documents, in the project root, run:
- * ```bash
- * doxygen docs/Doxyfile
- * ```
- *
- * Also documents can be browsed online [here](https://qgymib.github.io/libev/).
- *
- *
- * \section EV_BUILD_INSTRUCTIONS Build Instructions
- *
- * [CMake](https://cmake.org/) is currently the prefer way to build:
- *
- * ```bash
- * # Build:
- * $ mkdir -p build
- * $ (cd build && cmake .. -DBUILD_TESTING=ON) # generate project with tests
- * $ cmake --build build                       # add `-j <n>` with cmake >= 3.12
- * 
- * # Run tests:
- * $ (cd build && ctest -C Debug --output-on-failure)
- * ```
- *
- * \section EV_AMALGAMATE Amalgamate
- * 
- * [libev](https://github.com/qgymib/libev) support amalgamate build, which
- * allow to distribute libev's source code using only two files(`ev.h` and `ev.c`).
- *
- * > Note: Amalgamate requires python3.
- *
- * To use amalgamation, add `-DEV_AMALGAMATE_BUILD=on` when configurate cmake:
- *
- * ```bash
- * $ cmake -DEV_AMALGAMATE_BUILD=on /path/to/libev
- * $ cmake --build .
- * ```
- *
- * In `${CMAKE_CURRENT_BINARY_DIR}/amalgamate` directory, you will find the
- * generated files.
- *
- */
-#ifndef __EV_H__
-#define __EV_H__
-
-#include <stddef.h>
-#include <stdint.h>
-#include <inttypes.h>
-#include <stdarg.h>
-
-/* AMALGAMATE: #include "ev/expose.h" */
-/* AMALGAMATE: #include "ev/list.h" */
-/* AMALGAMATE: #include "ev/map.h" */
-/* AMALGAMATE: #include "ev/version.h" */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * @defgroup EV_DEFINE Defines
- * @{
- */
-
-/**
- * @brief The maximum number of iov buffers can be support.
- */
-#define EV_IOV_MAX              16
-
-/**
- * @brief Expand macro.
- * @param[in] ...   Code to expand.
- */
-#define EV_EXPAND(...)          __VA_ARGS__
-
-/**
- * @brief Repeat code for \p n times.
- * @param[in] n     How many times to repeat.
- * @param[in] ...   Code fragment to repeat.
- */
-#define EV_INIT_REPEAT(n, ...)   EV_INIT_REPEAT2(n, __VA_ARGS__)
-/** @cond */
-#define EV_INIT_REPEAT2(n, ...)  EV_INIT_REPEAT_##n(__VA_ARGS__)
-#define EV_INIT_REPEAT_1(...)    EV_EXPAND(__VA_ARGS__)
-#define EV_INIT_REPEAT_2(...)    EV_INIT_REPEAT_1(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
-#define EV_INIT_REPEAT_3(...)    EV_INIT_REPEAT_2(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
-#define EV_INIT_REPEAT_4(...)    EV_INIT_REPEAT_3(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
-#define EV_INIT_REPEAT_5(...)    EV_INIT_REPEAT_4(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
-#define EV_INIT_REPEAT_6(...)    EV_INIT_REPEAT_5(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
-#define EV_INIT_REPEAT_7(...)    EV_INIT_REPEAT_6(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
-#define EV_INIT_REPEAT_8(...)    EV_INIT_REPEAT_7(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
-#define EV_INIT_REPEAT_9(...)    EV_INIT_REPEAT_8(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
-#define EV_INIT_REPEAT_10(...)   EV_INIT_REPEAT_9(__VA_ARGS__),  EV_INIT_REPEAT_1(__VA_ARGS__)
-#define EV_INIT_REPEAT_11(...)   EV_INIT_REPEAT_10(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
-#define EV_INIT_REPEAT_12(...)   EV_INIT_REPEAT_11(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
-#define EV_INIT_REPEAT_13(...)   EV_INIT_REPEAT_12(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
-#define EV_INIT_REPEAT_14(...)   EV_INIT_REPEAT_13(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
-#define EV_INIT_REPEAT_15(...)   EV_INIT_REPEAT_14(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
-#define EV_INIT_REPEAT_16(...)   EV_INIT_REPEAT_15(__VA_ARGS__), EV_INIT_REPEAT_1(__VA_ARGS__)
-/** @endcond */
-
-/**
- * @def EV_CONTAINER_OF
- * @brief cast a member of a structure out to the containing structure.
- */
-#if defined(container_of)
-#   define EV_CONTAINER_OF(ptr, type, member)   \
-        container_of(ptr, type, member)
-#elif defined(__GNUC__) || defined(__clang__)
-#   define EV_CONTAINER_OF(ptr, type, member)   \
-        ({ \
-            const typeof(((type *)0)->member)*__mptr = (ptr); \
-            (type *)((char *)__mptr - offsetof(type, member)); \
-        })
-#else
-#   define EV_CONTAINER_OF(ptr, type, member)   \
-        ((type *) ((char *) (ptr) - offsetof(type, member)))
-#endif
-
-/**
- * @} EV_DEFINE
- */
-
-/**
- * @defgroup EV_OS OS
- * @{
- */
-
-/**
- * @brief Infinite timeout.
- */
-#define EV_INFINITE_TIMEOUT         ((uint32_t)-1)
-
-/**
- * @} EV_OS
- */
-
-/**
- * @defgroup EV_ERRNO Error number
- * @{
- */
-
-/**
- * @brief Error number
- */
-typedef enum ev_errno
-{
-    /* POSIX compatible error code */
-    EV_EPERM            = -1,                   /**< Operation not permitted (POSIX.1-2001) */
-    EV_ENOENT           = -2,                   /**< No such file or directory (POSIX.1-2001) */
-    EV_EIO              = -5,                   /**< Host is unreachable (POSIX.1-2001) */
-    EV_E2BIG            = -7,                   /**< Argument list too long (POSIX.1-2001) */
-    EV_EBADF            = -9,                   /**< Bad file descriptor (POSIX.1-2001) */
-    EV_EAGAIN           = -11,                  /**< Resource temporarily unavailable (POSIX.1-2001) */
-    EV_ENOMEM           = -12,                  /**< Not enough space/cannot allocate memory (POSIX.1-2001) */
-    EV_EACCES           = -13,                  /**< Permission denied (POSIX.1-2001) */
-    EV_EFAULT           = -14,                  /**< Bad address (POSIX.1-2001) */
-    EV_EBUSY            = -16,                  /**< Device or resource busy (POSIX.1-2001) */
-    EV_EEXIST           = -17,                  /**< File exists (POSIX.1-2001) */
-    EV_EXDEV            = -18,                  /**< Improper link (POSIX.1-2001) */
-    EV_ENOTDIR          = -20,                  /**< Not a directory (POSIX.1-2001) */
-    EV_EISDIR           = -21,                  /**< Is a directory (POSIX.1-2001) */
-    EV_EINVAL           = -22,                  /**< Invalid argument (POSIX.1-2001) */
-    EV_EMFILE           = -24,                  /**< Too many open files (POSIX.1-2001) */
-    EV_ENOSPC           = -28,                  /**< No space left on device (POSIX.1-2001) */
-    EV_EROFS            = -30,                  /**< Read-only filesystem (POSIX.1-2001) */
-    EV_EPIPE            = -32,                  /**< Broken pipe (POSIX.1-2001) */
-    EV_ENAMETOOLONG     = -38,                  /**< Filename too long (POSIX.1-2001) */
-    EV_ENOTEMPTY        = -41,                  /**< Directory not empty (POSIX.1-2001) */
-    EV_EADDRINUSE       = -100,                 /**< Address already in use (POSIX.1-2001) */
-    EV_EADDRNOTAVAIL    = -101,                 /**< Address not available (POSIX.1-2001) */
-    EV_EAFNOSUPPORT     = -102,                 /**< Address family not supported (POSIX.1-2001) */
-    EV_EALREADY         = -103,                 /**< Connection already in progress (POSIX.1-2001) */
-    EV_ECANCELED        = -105,                 /**< Operation canceled (POSIX.1-2001) */
-    EV_ECONNABORTED     = -106,                 /**< Connection aborted (POSIX.1-2001) */
-    EV_ECONNREFUSED     = -107,                 /**< Connection refused (POSIX.1-2001) */
-    EV_ECONNRESET       = -108,                 /**< Connection reset (POSIX.1-2001) */
-    EV_EHOSTUNREACH     = -110,                 /**< Host is unreachable (POSIX.1-2001) */
-    EV_EINPROGRESS      = -112,                 /**< Operation in progress (POSIX.1-2001) */
-    EV_EISCONN          = -113,                 /**< Socket is connected (POSIX.1-2001) */
-    EV_ELOOP            = -114,                 /**< Too many levels of symbolic links (POSIX.1-2001) */
-    EV_EMSGSIZE         = -115,                 /**< Message too long (POSIX.1-2001) */
-    EV_ENETUNREACH      = -118,                 /**< Network unreachable (POSIX.1-2001) */
-    EV_ENOBUFS          = -119,                 /**< No buffer space available (POSIX.1 (XSI STREAMS option)) */
-    EV_ENOTCONN         = -126,                 /**< The socket is not connected (POSIX.1-2001) */
-    EV_ENOTSOCK         = -128,                 /**< Not a socket (POSIX.1-2001) */
-    EV_ENOTSUP          = -129,                 /**< Operation not supported (POSIX.1-2001) */
-    EV_EPROTO           = -134,                 /**< Protocol error (POSIX.1-2001) */
-    EV_EPROTONOSUPPORT  = -135,                 /**< Protocol not supported (POSIX.1-2001) */
-    EV_ETIMEDOUT        = -138,                 /**< Operation timed out (POSIX.1-2001) */
-
-    /* Extend error code */
-    EV_EOF              = -4095,
-}ev_errno_t;
-
-/**
- * @brief Describe the error code
- * @param[in] err   Error code
- * @return          Describe string
- */
-const char* ev_strerror(int err);
-
-/**
- * @} EV_ERRNO
- */
-
-/**
- * @defgroup EV_ALLOCATOR Allocator
- * @{
- */
-
-/**
- * @brief Replacement function for malloc.
- * @see https://man7.org/linux/man-pages/man3/malloc.3.html
- */
-typedef void* (*ev_malloc_fn)(size_t size);
-
-/**
- * @brief Replacement function for calloc.
- * @see https://man7.org/linux/man-pages/man3/calloc.3.html
- */
-typedef void* (*ev_calloc_fn)(size_t nmemb, size_t size);
-
-/**
- * @brief Replacement function for realloc.
- * @see https://man7.org/linux/man-pages/man3/realloc.3.html
- */
-typedef void* (*ev_realloc_fn)(void* ptr, size_t size);
-
-/**
- * @brief Replacement function for free.
- * @see https://man7.org/linux/man-pages/man3/free.3.html
- */
-typedef void (*ev_free_fn)(void* ptr);
-
-/**
- * @brief Override the use of the standard library's malloc(3), calloc(3),
- *   realloc(3), free(3), memory allocation functions.
- *
- * This function must be called before any other function is called or after
- * all resources have been freed and thus doesn't reference any allocated
- * memory chunk.
- *
- * @warning There is no protection against changing the allocator multiple
- *   times. If the user changes it they are responsible for making sure the
- *   allocator is changed while no memory was allocated with the previous
- *   allocator, or that they are compatible.
- * @warngin Allocator must be thread-safe.
- * 
- * @param[in] malloc_func   Replacement function for malloc.
- * @param[in] calloc_func   Replacement function for calloc.
- * @param[in] realloc_func  Replacement function for realloc.
- * @param[in] free_func     Replacement function for free.
- * @return On success, it returns 0. if any of the function pointers is NULL it returns #EV_EINVAL.
- */
-EV_API int ev_replace_allocator(ev_malloc_fn malloc_func, ev_calloc_fn calloc_func,
-    ev_realloc_fn realloc_func, ev_free_fn free_func);
-
-/**
- * @brief Same as [malloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
- */
-EV_API void* ev_malloc(size_t size);
-
-/**
- * @brief Same as [calloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
- */
-EV_API void* ev_calloc(size_t nmemb, size_t size);
-
-/**
- * @brief Same as [realloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
- */
-EV_API void* ev_realloc(void* ptr, size_t size);
-
-/**
- * @brief Same as [free(3)](https://man7.org/linux/man-pages/man3/free.3.html)
- */
-EV_API void ev_free(void* ptr);
-
-/**
- * @} EV_ALLOCATOR
- */
-
-/**
- * @defgroup EV_UTILS_QUEUE Queue
- * @ingroup EV_UTILS
- * @{
- */
-
-/**
- * @brief Static initializer for #ev_queue_node_t.
- * @note A static initialized queue node is not a valid node.
- */
-
-/**
- * @brief Queue node type.
- */
-typedef struct ev_queue_node
-{
-    struct ev_queue_node* p_prev;
-    struct ev_queue_node* p_next;
-} ev_queue_node_t;
-#define EV_QUEUE_NODE_INVALID  \
-    {\
-        NULL,\
-        NULL,\
-    }
-
-/**
- * @brief Initialize circular linked list
- * @param[out] head     List handle
- */
-EV_API void ev_queue_init(ev_queue_node_t* head);
-
-/**
- * @brief Insert a node to the tail of the list.
- * @warning the node must not exist in any list.
- * @param[in,out] head  Pointer to list
- * @param[in,out] node  Pointer to a new node
- */
-EV_API void ev_queue_push_back(ev_queue_node_t* head, ev_queue_node_t* node);
-
-/**
- * @brief Insert a node to the head of the list.
- * @warning the node must not exist in any list.
- * @param[in,out] head      Pointer to list
- * @param[in,out] node      Pointer to a new node
- */
-EV_API void ev_queue_push_front(ev_queue_node_t* head, ev_queue_node_t* node);
-
-/**
- * @brief Delete a exist node
- * @param[in,out] node      The node you want to delete
- */
-EV_API void ev_queue_erase(ev_queue_node_t* node);
-
-/**
- * @brief Check whether list is empty
- * @param[in] node          Any node in list
- * @return                  bool
- */
-EV_API int ev_queue_empty(const ev_queue_node_t* node);
-
-/**
- * @brief Get the first node and remove it from the list.
- * @param[in,out] head      Pointer to list
- * @return                  The first node
- */
-EV_API ev_queue_node_t* ev_queue_pop_front(ev_queue_node_t* head);
-
-/**
- * @brief Get the last node and remove it from the list.
- * @param[in,out] head      Pointer to list
- * @return                  The last node
- */
-EV_API ev_queue_node_t* ev_queue_pop_back(ev_queue_node_t* head);
-
-/**
- * @brief Get the first node.
- * @param[in] head      Pointer to list
- * @return              The first node
- */
-EV_API ev_queue_node_t* ev_queue_head(ev_queue_node_t* head);
-
-/**
-* @brief Get next node.
-* @param[in] head   Queue head
-* @param[in] node   Current node
-* @return           The next node
-*/
-EV_API ev_queue_node_t* ev_queue_next(ev_queue_node_t* head, ev_queue_node_t* node);
-
-/**
- * @} EV_UTILS_QUEUE
- */
-
-#if defined(_WIN32)                                                     /* OS */
-/* AMALGAMATE: #   include "ev/win.h" */
-#else                                                                   /* OS */
-/* AMALGAMATE: #   include "ev/unix.h" */
+#line 396 "ev.h"
 #endif                                                                  /* OS */
 
 /**
@@ -2169,29 +2166,12 @@ struct ev_timespec_s
 }
 #endif
 
-/* AMALGAMATE: #include "ev/mutex.h" */
-/* AMALGAMATE: #include "ev/sem.h" */
-/* AMALGAMATE: #include "ev/once.h" */
-/* AMALGAMATE: #include "ev/shm.h" */
-/* AMALGAMATE: #include "ev/shdlib.h" */
-/* AMALGAMATE: #include "ev/handle.h" */
-/* AMALGAMATE: #include "ev/loop.h" */
-/* AMALGAMATE: #include "ev/async.h" */
-/* AMALGAMATE: #include "ev/timer.h" */
-/* AMALGAMATE: #include "ev/tcp.h" */
-/* AMALGAMATE: #include "ev/udp.h" */
-/* AMALGAMATE: #include "ev/pipe.h" */
-/* AMALGAMATE: #include "ev/fs.h" */
-/* AMALGAMATE: #include "ev/process.h" */
-/* AMALGAMATE: #include "ev/misc.h" */
-
-#endif
-
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/mutex.h
+// FILE:    ev/mutex.h
 // SIZE:    1792
 // SHA-256: 1515bf5bea434cab023869083c48b79f29217f86906e6a25b904773a4bcc41f7
 ////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/mutex.h"
 #ifndef __EV_MUTEX_H__
 #define __EV_MUTEX_H__
 #ifdef __cplusplus
@@ -2271,11 +2251,13 @@ EV_API int ev_mutex_try_enter(ev_mutex_t* handle);
 #endif
 #endif
 
+#line 596 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/sem.h
+// FILE:    ev/sem.h
 // SIZE:    1395
 // SHA-256: a0afad2d20e37aea4276faf384c07a5e5ff142befbe53fd25008be6eea37aca2
 ////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/sem.h"
 #ifndef __EV_SEMAPHORE_H__
 #define __EV_SEMAPHORE_H__
 #ifdef __cplusplus
@@ -2342,11 +2324,13 @@ EV_API int ev_sem_try_wait(ev_sem_t* sem);
 #endif
 #endif
 
+#line 597 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/once.h
+// FILE:    ev/once.h
 // SIZE:    906
 // SHA-256: ba57dd7e547b66796c6bf4dcd9e63ad01d89c6a542f9125bb9fa35b29ee4e0d6
 ////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/once.h"
 #ifndef __EV_ONCE_H__
 #define __EV_ONCE_H__
 #ifdef __cplusplus
@@ -2391,11 +2375,13 @@ EV_API void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
 #endif
 #endif
 
+#line 598 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/shm.h
+// FILE:    ev/shm.h
 // SIZE:    1487
 // SHA-256: 05ee79576229bd508f77925351f441e9258257235501bf38571784df54f22659
 ////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/shm.h"
 #ifndef __EV_SHARD_MEMORY_H__
 #define __EV_SHARD_MEMORY_H__
 #ifdef __cplusplus
@@ -2464,11 +2450,13 @@ EV_API size_t ev_shm_size(ev_shm_t* shm);
 #endif
 #endif
 
+#line 599 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/shdlib.h
+// FILE:    ev/shdlib.h
 // SIZE:    1351
 // SHA-256: bbfed6c3850d1af246dfec8c518af2af159cd6c6187bfc0dcaa7967acbec3f78
 ////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/shdlib.h"
 #ifndef __EV_SHARED_LIBRARY_H__
 #define __EV_SHARED_LIBRARY_H__
 #ifdef __cplusplus
@@ -2528,11 +2516,13 @@ int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr);
 #endif
 #endif
 
+#line 600 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/handle.h
+// FILE:    ev/handle.h
 // SIZE:    3412
 // SHA-256: 0f125dc97a9228af87f8e33bfb974e19d1ae70208f1782d5626a9270b2e28ee8
 ////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/handle.h"
 #ifndef __EV_HANDLE_H__
 #define __EV_HANDLE_H__
 #ifdef __cplusplus
@@ -2641,11 +2631,13 @@ struct ev_handle
 #endif
 #endif
 
+#line 601 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/loop.h
+// FILE:    ev/loop.h
 // SIZE:    7464
 // SHA-256: b2c4cb340ac7f5ee0520b902b8310031d5c5f48c83ea84c170317252c860abe3
 ////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/loop.h"
 #ifndef __EV_LOOP_H__
 #define __EV_LOOP_H__
 #ifdef __cplusplus
@@ -2901,11 +2893,13 @@ EV_API void ev_loop_walk(ev_loop_t* loop, ev_walk_cb cb, void* arg);
 #endif
 #endif
 
+#line 602 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/async.h
+// FILE:    ev/async.h
 // SIZE:    1757
 // SHA-256: 3b549d2b411bec8b520cd7402b3be3716b73b796bd9bc2f7147c3389165120a6
 ////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/async.h"
 #ifndef __EV_ASYNC_H__
 #define __EV_ASYNC_H__
 #ifdef __cplusplus
@@ -2988,11 +2982,13 @@ EV_API void ev_async_wakeup(ev_async_t* handle);
 #endif
 #endif
 
+#line 603 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/timer.h
+// FILE:    ev/timer.h
 // SIZE:    2594
 // SHA-256: a72db5cb895e95bcf0e00b3a711574f2987310332dfbf8f4fcd100a97813e51f
 ////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/timer.h"
 #ifndef __EV_TIMER_H__
 #define __EV_TIMER_H__
 #ifdef __cplusplus
@@ -3105,11 +3101,13 @@ EV_API void ev_timer_stop(ev_timer_t* handle);
 #endif
 #endif
 
+#line 604 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/tcp.h
+// FILE:    ev/tcp.h
 // SIZE:    6462
 // SHA-256: 69c5ab52fb50698ea65c5596320fe69fc493ce1070853b241feda9b427f7f7be
 ////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/tcp.h"
 #ifndef __EV_TCP_H__
 #define __EV_TCP_H__
 #ifdef __cplusplus
@@ -3345,11 +3343,13 @@ EV_API int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len
 #endif
 #endif
 
+#line 605 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/udp.h
+// FILE:    ev/udp.h
 // SIZE:    9029
 // SHA-256: 60cf0da60a3235d17edbef5a4b31c3c3982b0ca4d8975e78f26e67054a465049
 ////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/udp.h"
 #ifndef __EV_UDP_H__
 #define __EV_UDP_H__
 #ifdef __cplusplus
@@ -3650,11 +3650,13 @@ EV_API int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs,
 #endif
 #endif
 
+#line 606 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/pipe.h
+// FILE:    ev/pipe.h
 // SIZE:    10238
 // SHA-256: 43b5c13482293e343a906977b13d4e7c960fd8d76324dbb0eae8ef4be9e6eae2
 ////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/pipe.h"
 #ifndef __EV_PIPE_H__
 #define __EV_PIPE_H__
 #ifdef __cplusplus
@@ -3968,11 +3970,13 @@ EV_API void ev_pipe_close(ev_os_pipe_t fd);
 #endif
 #endif
 
+#line 607 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/fs.h
+// FILE:    ev/fs.h
 // SIZE:    15520
 // SHA-256: a105c198a3c3992d1c2a06094ebf90f58e81c4f572fb63da0315a9075de64a81
 ////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/fs.h"
 #ifndef __EV_FILE_SYSTEM_H__
 #define __EV_FILE_SYSTEM_H__
 #ifdef __cplusplus
@@ -4517,11 +4521,13 @@ EV_API ev_buf_t* ev_fs_get_filecontent(ev_fs_req_t* req);
 #endif
 #endif
 
+#line 608 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/process.h
+// FILE:    ev/process.h
 // SIZE:    6793
 // SHA-256: 5a1c7cb9aa08ee7654f9ae7772f19e9ec89660d87994d95a9dde1c2f1486fc0b
 ////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/process.h"
 #ifndef __EV_PROCESS_H__
 #define __EV_PROCESS_H__
 #ifdef __cplusplus
@@ -4765,11 +4771,13 @@ EV_API ssize_t ev_exepath(char* buffer, size_t size);
 #endif
 #endif
 
+#line 609 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    include/ev/misc.h
+// FILE:    ev/misc.h
 // SIZE:    3704
 // SHA-256: a018a35422b20e0df46c079e14aa13032b99272ade7451917ab975489e66a554
 ////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/misc.h"
 #ifndef __EV_MISC_H__
 #define __EV_MISC_H__
 #ifdef __cplusplus
@@ -4912,5 +4920,9 @@ EV_API uint64_t ev_hrtime(void);
 #ifdef __cplusplus
 }
 #endif
+#endif
+
+#line 610 "ev.h"
+
 #endif
 

@@ -20,21 +20,22 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
+ * 
  */
+
 #define EV_AMALGAMATE_BUILD
 #define EV_EXPOSE_SYMBOLS
 #define _GNU_SOURCE
-#include "ev.h"
+#include "ev.h" /* @AMALGAMATE: SKIP */
+
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/defs.h
-// SIZE:    7676
-// SHA-256: becf272b79138ba2777431bf91771210749e5f90384d3dafa0983821fbbe2a14
+// FILE:    ev/defs.h
+// SIZE:    7659
+// SHA-256: 84c25705041af443f9531f92055248dc57a738e5604ab317dac3e99772a17a90
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/defs.h"
+#line 1 "ev/defs.h"
 #ifndef __EV_DEFINES_INTERNAL_H__
 #define __EV_DEFINES_INTERNAL_H__
-
-/* AMALGAMATE: #include "ev.h" */
 
 #if defined(_WIN32)
 #   include <WS2tcpip.h>
@@ -189,17 +190,15 @@ extern "C" {
 #endif
 #endif
 
+#line 7 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/allocator.h
-// SIZE:    304
-// SHA-256: e5864c23afd18d290c135c19a003a8e3c947b5c33c930c1fa9d18acbb69cc4d4
+// FILE:    ev/allocator.h
+// SIZE:    283
+// SHA-256: e8c1881b71fc2749d83f4b742d387a0433ca18ad3ef04552349548a73b941524
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/allocator.h"
+#line 1 "ev/allocator.h"
 #ifndef __EV_ALLOCATOR_INTERNAL_H__
 #define __EV_ALLOCATOR_INTERNAL_H__
-
-/* AMALGAMATE: #include "defs.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -212,21 +211,17 @@ EV_LOCAL char* ev__strdup(const char* str);
 #ifdef __cplusplus
 }
 #endif
-
 #endif
 
+#line 8 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/async.h
-// SIZE:    332
-// SHA-256: 0ea010e38847372901ac813d1b348a5cdec3ee1809b99269fb08e7183db7b2bd
+// FILE:    ev/async.h
+// SIZE:    296
+// SHA-256: 58a7214765d75a002493dae11c34ed0ae30cd3be5c7c2a7af1604af4163f55b5
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/async.h"
+#line 1 "ev/async.h"
 #ifndef __EV_ASYNC_COMMON_H__
 #define __EV_ASYNC_COMMON_H__
-
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "defs.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -242,18 +237,15 @@ EV_LOCAL void ev__async_exit_force(ev_async_t* handle);
 #endif
 #endif
 
+#line 9 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/handle.h
-// SIZE:    4073
-// SHA-256: 2f60940423bf7ee8e0addbf1e723d86ff4d86900f96f155416683538d7ba64f5
+// FILE:    ev/handle.h
+// SIZE:    4036
+// SHA-256: 41b14a8f0d8cbb8cc9907aa2d0c27af34b45f0fd7c46e356be64dffcff190d78
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/handle.h"
+#line 1 "ev/handle.h"
 #ifndef __EV_HANDLE_INTERNAL_H__
 #define __EV_HANDLE_INTERNAL_H__
-
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "defs.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -362,23 +354,20 @@ EV_LOCAL size_t ev__process_endgame(ev_loop_t* loop);
 #ifdef __cplusplus
 }
 #endif
-
 #endif
 
+#line 10 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/loop.h
-// SIZE:    2679
-// SHA-256: e71d615ca204f49b4948534ddd559302e713bf1d6cb79e24de41d8d94a11f29d
+// FILE:    ev/loop.h
+// SIZE:    2644
+// SHA-256: 4168b8edcf40936745a0fa830d55726a2c43d6710208db65af588148fe7b52bc
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/loop.h"
+#line 1 "ev/loop.h"
 #ifndef __EV_LOOP_INTERNAL_H__
 #define __EV_LOOP_INTERNAL_H__
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "defs.h" */
 
 typedef enum ev_ipc_frame_flag
 {
@@ -478,18 +467,15 @@ EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout);
 #endif
 #endif
 
+#line 11 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/fs.h
-// SIZE:    3935
-// SHA-256: 8a7f852afd14764f6dd51d1f9b1c9a74d1bad06ec8fa9ce99f909bb3454d6a6b
+// FILE:    ev/fs.h
+// SIZE:    3899
+// SHA-256: b28eb9dc3333457352b4b48def9356e8b7a6c0414001c169989d8e73ac053106
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/fs.h"
+#line 1 "ev/fs.h"
 #ifndef __EV_FILE_INTERNAL_H__
 #define __EV_FILE_INTERNAL_H__
-
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "defs.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -611,18 +597,15 @@ EV_LOCAL int ev__fs_remove(const char* path, int recursive);
 #endif
 #endif
 
+#line 12 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/misc.h
-// SIZE:    413
-// SHA-256: 6965677409c8a17805fbad7b548ceaffa476d79cab55999f62448a0e86d31007
+// FILE:    ev/misc.h
+// SIZE:    376
+// SHA-256: e5b5bd60bce39493c9064d12f72d20ec85c423df14c5c2a63f7c3079cd170ba8
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/misc.h"
+#line 1 "ev/misc.h"
 #ifndef __EV_MISC_INTERNAL_H__
 #define __EV_MISC_INTERNAL_H__
-
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "defs.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -639,21 +622,17 @@ EV_LOCAL int ev__translate_posix_sys_error(int syserr);
 #ifdef __cplusplus
 }
 #endif
-
 #endif
 
+#line 13 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/pipe.h
-// SIZE:    2393
-// SHA-256: 6bf646cd46c100b401f36f00e02e6e1b7cee6bd81662c4a74e75588b471c7dee
+// FILE:    ev/pipe.h
+// SIZE:    2357
+// SHA-256: bb210205f67a37710b460e61a898f26f8eab74f9d394050e85189e2629484d2d
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/pipe.h"
+#line 1 "ev/pipe.h"
 #ifndef __EV_PIPE_COMMON_INTERNAL_H__
 #define __EV_PIPE_COMMON_INTERNAL_H__
-
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "defs.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -714,16 +693,16 @@ EV_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t* req, ev_pipe_write_cb 
 #endif
 #endif
 
+#line 14 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/ringbuffer.h
-// SIZE:    7184
-// SHA-256: 528e928e4019d523323ea9fd34d91a7fe14db74adea79bad3342a53e72eb8ec4
+// FILE:    ev/ringbuffer.h
+// SIZE:    7166
+// SHA-256: 8617563810073a2580dc1cdfaed47c9e38b94c937c9d7a23ad174aeeccca8075
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/ringbuffer.h"
+#line 1 "ev/ringbuffer.h"
 #ifndef __EV_RINGBUFFER_INTERNAL_H__
 #define __EV_RINGBUFFER_INTERNAL_H__
 
-/* AMALGAMATE: #include "loop.h" */
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -928,18 +907,15 @@ EV_LOCAL ring_buffer_token_t* ring_buffer_next(const ring_buffer_t* handler,
 #endif
 #endif
 
+#line 15 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/threadpool.h
-// SIZE:    3769
-// SHA-256: 7bb8e14db8c0a183c681eb2860f19c06ad670d3dffcae12c0750ca12aee3a96a
+// FILE:    ev/threadpool.h
+// SIZE:    3732
+// SHA-256: 0195fb89d355d0720666129cf75bccbf67e06a176f9e025042fbd2c9c3e95170
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/threadpool.h"
+#line 1 "ev/threadpool.h"
 #ifndef __EV_THREADPOOL_INTERNAL_H__
 #define __EV_THREADPOOL_INTERNAL_H__
-
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "defs.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1077,21 +1053,17 @@ EV_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop);
 #ifdef __cplusplus
 }
 #endif
-
 #endif
 
+#line 16 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/timer.h
-// SIZE:    444
-// SHA-256: 4917a20a072b11718f6a19409403e49c2c14a9b61e645181f047282c30d817fc
+// FILE:    ev/timer.h
+// SIZE:    407
+// SHA-256: 3e93e8f6efe57b36bb44126d2123583e7a91af574dfb33805d4642f223c256e7
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/timer.h"
+#line 1 "ev/timer.h"
 #ifndef __EV_TIMER_INTERNAL_H__
 #define __EV_TIMER_INTERNAL_H__
-
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "defs.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1112,20 +1084,17 @@ EV_LOCAL size_t ev__process_timer(ev_loop_t* loop);
 #ifdef __cplusplus
 }
 #endif
-
 #endif
 
+#line 17 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/log.h
-// SIZE:    1266
-// SHA-256: b1ebe98ba8baa65b2799922e18c4f1b2cfaccfaf5494a66380859b009b6e08dd
+// FILE:    ev/log.h
+// SIZE:    1246
+// SHA-256: c6a064c9e3d566915bdc4d5cef774036cf0343b2617bfcd78cab5d52719ad2b2
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/log.h"
+#line 1 "ev/log.h"
 #ifndef __EV_LOG_INTERNAL_H__
 #define __EV_LOG_INTERNAL_H__
-
-/* AMALGAMATE: #include "loop.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1175,18 +1144,15 @@ EV_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width);
 #endif
 #endif
 
+#line 18 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/udp.h
-// SIZE:    1082
-// SHA-256: 0d5fa042a894042cfb42fb2e607855d0ea88e1495b9a77558a829eaf5bafff93
+// FILE:    ev/udp.h
+// SIZE:    1046
+// SHA-256: cd9a545370a12a05704ec7f95580665fc6f91b98af77fac141c2862193dcb9e3
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/udp.h"
+#line 1 "ev/udp.h"
 #ifndef __EV_UDP_COMMON_INTERNAL_H__
 #define __EV_UDP_COMMON_INTERNAL_H__
-
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "defs.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1223,14 +1189,13 @@ EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
 #endif
 #endif
 
+#line 19 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/allocator.c
-// SIZE:    1811
-// SHA-256: 33a2c5eb60c7b7402e22d177670fe7f742604669baaa4782ae5acc9d78f90f7a
+// FILE:    ev/allocator.c
+// SIZE:    1772
+// SHA-256: d761af549ab56935c955adce561ff46b6890b29532d95e98e8f6ee92a0fb1b5c
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/allocator.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "allocator.h" */
+#line 1 "ev/allocator.c"
 #include <stdlib.h>
 #include <string.h>
 
@@ -1316,19 +1281,13 @@ EV_LOCAL char* ev__strdup(const char* s)
     return memcpy(m, s, len);
 }
 
+#line 20 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/fs.c
-// SIZE:    22960
-// SHA-256: 29a4936d52f801c19b1800a5745738391e42b0d72acb75cc7c9f0c06a2829ff4
+// FILE:    ev/fs.c
+// SIZE:    22825
+// SHA-256: 2778485e914d0ee577dc1efa994693bfcc512531f3954623f6f6713cf0873251
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/fs.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop.h" */
-/* AMALGAMATE: #include "fs.h" */
-/* AMALGAMATE: #include "threadpool.h" */
-/* AMALGAMATE: #include "allocator.h" */
-/* AMALGAMATE: #include "handle.h" */
-/* AMALGAMATE: #include "misc.h" */
+#line 1 "ev/fs.c"
 #include <sys/stat.h>
 #include <string.h>
 #include <assert.h>
@@ -2284,15 +2243,13 @@ finish:
     return _ev_fs_remove(path);
 }
 
+#line 21 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/handle.c
-// SIZE:    3696
-// SHA-256: e2caaa30483957e42a199880529246208b1c4bc691d7e167edaa2398e06cb8da
+// FILE:    ev/handle.c
+// SIZE:    3642
+// SHA-256: 37cc134812484bb50e8ae6ae2b4204095f1c3fec79b22675a03976bac920058b
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/handle.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop.h" */
-/* AMALGAMATE: #include "handle.h" */
+#line 1 "ev/handle.c"
 #include <assert.h>
 
 /**
@@ -2437,14 +2394,14 @@ EV_LOCAL size_t ev__process_endgame(ev_loop_t* loop)
     return active_count;
 }
 
+#line 22 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/list.c
-// SIZE:    3588
-// SHA-256: 9b72a8d778dfc6222ba70a2233292ec4da1ea495eab07c734cd73f3578d60676
+// FILE:    ev/list.c
+// SIZE:    3572
+// SHA-256: 5ca5df3a7fcd1e63840867dc5f2eccbbe2ec19a00174d27dc715130cdf87f5bd
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/list.c"
+#line 1 "ev/list.c"
 #include <string.h>
-/* AMALGAMATE: #include "ev.h" */
 
 static void _list_lite_set_once(ev_list_t* handler, ev_list_node_t* node)
 {
@@ -2627,13 +2584,13 @@ void ev_list_migrate(ev_list_t* dst, ev_list_t* src)
     src->size = 0;
 }
 
+#line 23 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/log.c
-// SIZE:    1958
-// SHA-256: da855a367d37f236f7e0bc6d3b8551620ec6d977e1b3eab5a9fcf60b08c2e0dd
+// FILE:    ev/log.c
+// SIZE:    1941
+// SHA-256: 43253f4df061cdd0745b3c136d51bab8120c246e48fb7c8878ecf0e1cc18bbb8
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/log.c"
-/* AMALGAMATE: #include "log.h" */
+#line 1 "ev/log.c"
 #include <stdarg.h>
 #include <stdio.h>
 
@@ -2723,18 +2680,13 @@ EV_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width)
 
 }
 
+#line 24 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/loop.c
-// SIZE:    8736
-// SHA-256: e8257dccfc32bff5164564e4d6a865cbeb71fce972e9e45104883933b2fdd9fb
+// FILE:    ev/loop.c
+// SIZE:    8616
+// SHA-256: b77c2ac51d237ce9b198ac41dab81d27a75a4da6c258c114e1fe0032a3ca10ea
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/loop.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop.h" */
-/* AMALGAMATE: #include "allocator.h" */
-/* AMALGAMATE: #include "timer.h" */
-/* AMALGAMATE: #include "handle.h" */
-/* AMALGAMATE: #include "threadpool.h" */
+#line 1 "ev/loop.c"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -3129,17 +3081,16 @@ void ev_loop_walk(ev_loop_t* loop, ev_walk_cb cb, void* arg)
     }
 }
 
+#line 25 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/map.c
-// SIZE:    23154
-// SHA-256: 2953529424638eebefbfe1fad6f757512b4a656bfcb9cd2b46706ac3cd558547
+// FILE:    ev/map.c
+// SIZE:    23122
+// SHA-256: a59516f016393afb28e7da797a13f70950fafde010d6ceb77b9968bc4899afec
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/map.c"
-/* AMALGAMATE: #include "ev.h" */
+#line 1 "ev/map.c"
 #include <stdint.h>
 #include <inttypes.h>
 #include <stddef.h>
-/* AMALGAMATE: #include "ev.h" */
 
 /*
 * red-black trees properties:  http://en.wikipedia.org/wiki/Rbtree
@@ -3910,15 +3861,13 @@ ev_map_node_t* ev_map_prev(const ev_map_node_t* node)
     return _ev_map_low_prev(node);
 }
 
+#line 26 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/misc.c
-// SIZE:    3874
-// SHA-256: 7cc3c31ca6e8b29e173c9183b67ea30c99980c05a60a1d01f9428bba2fc77ec8
+// FILE:    ev/misc.c
+// SIZE:    3822
+// SHA-256: 48a63aad109b83d9549e0565604fe9378cddbd528269c08eff62b2f8ffdfce74
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/misc.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "misc.h" */
-/* AMALGAMATE: #include "loop.h" */
+#line 1 "ev/misc.c"
 #include <assert.h>
 #include <string.h>
 
@@ -4096,15 +4045,13 @@ void ev_library_shutdown(void)
     ev_threadpool_default_cleanup();
 }
 
+#line 27 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/pipe.c
-// SIZE:    1522
-// SHA-256: 31d7622e2a885955fe68b8b2b7a283e50477dd5b67e2d725689e140a2ee214d8
+// FILE:    ev/pipe.c
+// SIZE:    1470
+// SHA-256: 68067a30161049734c3d3e7dc91085ee11adc3db71fdf9d012e0e34789f55227
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/pipe.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop.h" */
-/* AMALGAMATE: #include "pipe.h" */
+#line 1 "ev/pipe.c"
 
 int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req, ev_buf_t* bufs,
     size_t nbuf, ev_pipe_write_cb cb)
@@ -4164,13 +4111,13 @@ EV_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t* req, ev_pipe_write_cb 
     return 0;
 }
 
+#line 28 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/queue.c
-// SIZE:    1832
-// SHA-256: 8e8d00950af61a14ae4501a597bd088fc9d1b76e9175e0f109088a57b802e14b
+// FILE:    ev/queue.c
+// SIZE:    1816
+// SHA-256: 9468974292682b6b1e084aa8faf5023eb1daa8ab6fedc554f1e451c0c9124fac
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/queue.c"
-/* AMALGAMATE: #include "ev.h" */
+#line 1 "ev/queue.c"
 #include <stdlib.h>
 
 #define EV_QUEUE_NEXT(node)         ((node)->p_next)
@@ -4247,13 +4194,13 @@ int ev_queue_empty(const ev_queue_node_t* node)
     return EV_QUEUE_NEXT(node) == node;
 }
 
+#line 29 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/ringbuffer.c
-// SIZE:    17458
-// SHA-256: 8d2d5c5eeb482dc8dad56d90730294958109524c703a7e53955b90149f64230d
+// FILE:    ev/ringbuffer.c
+// SIZE:    17434
+// SHA-256: cf0084b784304bb96bffadf083efde81ecb6bfe4f7bbed5d6cdf16d909323a50
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/ringbuffer.c"
-/* AMALGAMATE: #include "ringbuffer.h" */
+#line 1 "ev/ringbuffer.c"
 
 #define EV_RB_BEG_POS(rb) \
     sizeof((rb)->basis)
@@ -4802,13 +4749,13 @@ EV_LOCAL ring_buffer_token_t* ring_buffer_next(const ring_buffer_t* handler, con
     return &(node->token);
 }
 
+#line 30 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/shmem.c
-// SIZE:    140
-// SHA-256: f21019632e27d7b9a415ab6c34892176158c1a025f54f0eaef72fa66c264ab8c
+// FILE:    ev/shmem.c
+// SIZE:    121
+// SHA-256: 9a619451978c80fa1da62cf9598d67b99e8e244bcdfdb33cefa709eaed8d1c28
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/shmem.c"
-/* AMALGAMATE: #include "shmem.h" */
+#line 1 "ev/shmem.c"
 
 void* ev_shm_addr(ev_shm_t* shm)
 {
@@ -4820,16 +4767,13 @@ size_t ev_shm_size(ev_shm_t* shm)
     return shm->size;
 }
 
+#line 31 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/threadpool.c
-// SIZE:    8918
-// SHA-256: a3b869d48e9a4396e07dc774c9c8b989167a623285b8585e99dde63ede43caab
+// FILE:    ev/threadpool.c
+// SIZE:    8840
+// SHA-256: 91e30f77c23e61c34331cc3efa5a2288b46f35a742597452b3caf444778b1129
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/threadpool.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop.h" */
-/* AMALGAMATE: #include "handle.h" */
-/* AMALGAMATE: #include "threadpool.h" */
+#line 1 "ev/threadpool.c"
 #include <assert.h>
 
 typedef struct ev_threadpool_default
@@ -5211,16 +5155,13 @@ EV_LOCAL void ev__threadpool_process(ev_loop_t* loop)
     }
 }
 
+#line 32 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/timer.c
-// SIZE:    2542
-// SHA-256: 6727d0797948f1d3b71507363798aa1884780e6ffa804eb2a85c022d6883baf7
+// FILE:    ev/timer.c
+// SIZE:    2469
+// SHA-256: 9b53340b845729aadab86e25b061fca47c360673799e02e9b74975961327c42c
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/timer.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "timer.h" */
-/* AMALGAMATE: #include "handle.h" */
-/* AMALGAMATE: #include "loop.h" */
+#line 1 "ev/timer.c"
 #include <string.h>
 
 static int _ev_cmp_timer(const ev_map_node_t* key1, const ev_map_node_t* key2, void* arg)
@@ -5329,16 +5270,13 @@ void ev_timer_stop(ev_timer_t* handle)
     ev_map_erase(&handle->base.loop->timer.heap, &handle->node);
 }
 
+#line 33 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/udp.c
-// SIZE:    2683
-// SHA-256: 29a078bc3516c529ad5978f87ccda9c506c814b2f80a3785a10382e3cfedeeb8
+// FILE:    ev/udp.c
+// SIZE:    2612
+// SHA-256: 784af8f07893904dffff93a9dcde89948d1aa30c3470083d154db53a7d0c17df
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/udp.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop.h" */
-/* AMALGAMATE: #include "handle.h" */
-/* AMALGAMATE: #include "udp.h" */
+#line 1 "ev/udp.c"
 #include <string.h>
 
 EV_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
@@ -5449,14 +5387,13 @@ err:
     return ret;
 }
 
+#line 34 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/version.c
-// SIZE:    529
-// SHA-256: 7453aef077f6fe3989eada00bafe903c50c8f9822f8356f2d0e08eed8da65736
+// FILE:    ev/version.c
+// SIZE:    495
+// SHA-256: 3258dc49496ca405a4eadbcabadcba2e271fc8fe0f63739468029258b7e879da
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/version.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop.h" */
+#line 1 "ev/version.c"
 
 #define _TOSTR(x)       #x
 #define TOSTR(x)        _TOSTR(x)
@@ -5479,20 +5416,21 @@ unsigned ev_version_code(void)
     return EV_VERSION_CODE;
 }
 
-#if defined(_WIN32) /* AMALGAMATE: ev.c (1/3) */
+#line 35 "ev.c"
+
+#if defined(_WIN32)
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/winapi.h
-// SIZE:    14848
-// SHA-256: b57ce6975f19ff95a64e3899816a58fd5afc20a4103bfc049718f02a3411ec7b
+// FILE:    ev/win/winapi.h
+// SIZE:    14830
+// SHA-256: 20fbc56305ae60bd2d38585915aa872c4e8870ec46d4093d680f7aa3d768cfaa
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/winapi.h"
+#line 1 "ev/win/winapi.h"
 #ifndef __EV_WINAPI_INTERNAL_H__
 #define __EV_WINAPI_INTERNAL_H__
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* AMALGAMATE: #include "loop.h" */
 #include <windows.h>
 
 #ifndef _NTDEF_
@@ -5993,16 +5931,15 @@ EV_LOCAL void ev__winapi_init(void);
 #endif
 #endif
 
+#line 38 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/winsock.h
-// SIZE:    2082
-// SHA-256: aaf35c46a76f83b1fba31b67018bd5eaeb121b68a1acb84915ddd6a537a73095
+// FILE:    ev/win/winsock.h
+// SIZE:    2061
+// SHA-256: 16c37a00efb38cf8dfdcfdced7e2af55461e2894685880ee33d34bebc9a2ddc3
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/winsock.h"
+#line 1 "ev/win/winsock.h"
 #ifndef __EV_WINSOCK_INTERNAL_H__
 #define __EV_WINSOCK_INTERNAL_H__
-
-/* AMALGAMATE: #include "winapi.h" */
 
 #define AFD_OVERLAPPED						0x00000002
 #define AFD_RECEIVE							5
@@ -6080,30 +6017,33 @@ EV_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status);
 #endif
 #endif
 
+#line 39 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/async_win.h
-// SIZE:    100
-// SHA-256: dddbd9e2fe657c2604da0d0e362df38028da7e9e4c375e64a83faa740914b87b
+// FILE:    ev/win/async_win.h
+// SIZE:    147
+// SHA-256: 3d23b3abb07d0ea794094e1cc94a3ba69a8f3c56ae8c4667b1f85f44b35a0637
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/async_win.h"
+#line 1 "ev/win/async_win.h"
 #ifndef __EV_ASYNC_WIN_INTERNAL_H__
 #define __EV_ASYNC_WIN_INTERNAL_H__
-
-/* AMALGAMATE: #include "async.h" */
-
+#ifdef __cplusplus
+extern "C" {
 #endif
 
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+#line 40 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/fs_win.h
-// SIZE:    933
-// SHA-256: 9a83b170ff2fc41ea478c959c5ce8061338f7fee5564c1a71d7dfe424469473c
+// FILE:    ev/win/fs_win.h
+// SIZE:    914
+// SHA-256: 9a0f9e48a320872421edeb883011aa336b319c9d79c9a95177918eb228c0e5c1
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/fs_win.h"
+#line 1 "ev/win/fs_win.h"
 #ifndef __EV_FS_WIN_INTERNAL_H__
 #define __EV_FS_WIN_INTERNAL_H__
-
-/* AMALGAMATE: #include "fs.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -6134,36 +6074,38 @@ EV_LOCAL int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg);
 #ifdef __cplusplus
 }
 #endif
-
 #endif
 
+#line 41 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/udp_win.h
-// SIZE:    94
-// SHA-256: 1ec23a09701be32ce880fd382b80806cc7a013c2e0e7599ece8f8b2e5a4bbed0
+// FILE:    ev/win/udp_win.h
+// SIZE:    143
+// SHA-256: fc4f27c8fb979b9dd836a968e4458273a351f73dbdd6908561d91d8fb60778d6
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/udp_win.h"
+#line 1 "ev/win/udp_win.h"
 #ifndef __EV_UDP_WIN_INTERNAL_H__
 #define __EV_UDP_WIN_INTERNAL_H__
-
-/* AMALGAMATE: #include "udp.h" */
-
+#ifdef __cplusplus
+extern "C" {
 #endif
 
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+#line 42 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/loop_win.h
-// SIZE:    1754
-// SHA-256: 098f2ef5d09d12304bd6afad86dd4ded5c04f839e59420ca3ff5318fde1a9c50
+// FILE:    ev/win/loop_win.h
+// SIZE:    1719
+// SHA-256: 0ddee8038095bf5f96c065c115ca946daa8611cba0cda7ad3ef21eefbabc196e
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/loop_win.h"
+#line 1 "ev/win/loop_win.h"
 #ifndef __EV_LOOP_WIN_INTERNAL_H__
 #define __EV_LOOP_WIN_INTERNAL_H__
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* AMALGAMATE: #include "loop.h" */
-/* AMALGAMATE: #include "ev.h" */
 
 #define EV_INVALID_PID_WIN  0
 
@@ -6228,42 +6170,51 @@ EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt);
 #endif
 #endif
 
+#line 43 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/process_win.h
-// SIZE:    101
-// SHA-256: 4c1e9ae1b19d0efeed41b6fb397e5a4e1ed0599ae3c22ea6dd91ec1eaa20e43c
+// FILE:    ev/win/process_win.h
+// SIZE:    151
+// SHA-256: 778fcff8b8c0e17cd74ccf016e6e2fdab1baf00b0fada41fd7e9431c8f51b5e7
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/process_win.h"
+#line 1 "ev/win/process_win.h"
 #ifndef __EV_PROCESS_WIN_INTERNAL_H__
 #define __EV_PROCESS_WIN_INTERNAL_H__
-
-/* AMALGAMATE: #include "ev.h" */
-
+#ifdef __cplusplus
+extern "C" {
 #endif
 
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+#line 44 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/pipe_win.h
-// SIZE:    97
-// SHA-256: eaab2aee22b705b0bdfee7714cb11547cd4fb16bac4bd0abc94ab123c6187b5c
+// FILE:    ev/win/pipe_win.h
+// SIZE:    145
+// SHA-256: 11f24f7fd1297af0cdccd6ef1b33564be9f6906ccd53168e19a9b5d9953429a1
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/pipe_win.h"
+#line 1 "ev/win/pipe_win.h"
 #ifndef __EV_PIPE_WIN_INTERNAL_H__
 #define __EV_PIPE_WIN_INTERNAL_H__
-
-/* AMALGAMATE: #include "pipe.h" */
-
+#ifdef __cplusplus
+extern "C" {
 #endif
 
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+#line 45 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/misc_win.h
-// SIZE:    1074
-// SHA-256: c2d8e70b7f35cf18070a9607ecf38b3af75af2ca03ac69c09e617cab58182c57
+// FILE:    ev/win/misc_win.h
+// SIZE:    1055
+// SHA-256: 9e4aa2ae93cd803c8eafffa9dc2ace635d58fb52ca4dd08e45c29059314c442b
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/misc_win.h"
+#line 1 "ev/win/misc_win.h"
 #ifndef __EV_MISC_WIN_INTERNAL_H__
 #define __EV_MISC_WIN_INTERNAL_H__
-
-/* AMALGAMATE: #include "misc.h" */
 
 #define EV_FATAL_SYSCALL(errcode, syscall)	\
 	ev__fatal_syscall(__FILE__, __LINE__, errcode, syscall)
@@ -6297,18 +6248,15 @@ EV_LOCAL void ev__fatal_syscall(const char* file, int line,
 
 #endif
 
+#line 46 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/thread_win.h
-// SIZE:    272
-// SHA-256: d5e785ede42763190ee968e6e53213f01c0012e979c2088c0c793b9899c09138
+// FILE:    ev/win/thread_win.h
+// SIZE:    236
+// SHA-256: 3ad3572993454f2f3ba31566a0ef4564730397ef862fb84b3cb82a82c24de8d8
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/thread_win.h"
+#line 1 "ev/win/thread_win.h"
 #ifndef __EV_THREAD_WIN_INTERNAL_H__
 #define __EV_THREAD_WIN_INTERNAL_H__
-
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "defs.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -6323,17 +6271,15 @@ EV_LOCAL void ev__thread_init_win(void);
 #endif
 #endif
 
+#line 47 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/threadpool_win.h
-// SIZE:    297
-// SHA-256: 469934ed4bfe09f4e2ee55633bf0a6fc9efdafa219d5e97d1228f94343e5b7e8
+// FILE:    ev/win/threadpool_win.h
+// SIZE:    270
+// SHA-256: 150fac7481e8e3372c59b11704333a9b1fbe20e3a1d1691c370a60a19751c60d
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/threadpool_win.h"
+#line 1 "ev/win/threadpool_win.h"
 #ifndef __EV_THREADPOOL_WIN_INTERNAL_H__
 #define __EV_THREADPOOL_WIN_INTERNAL_H__
-
-/* AMALGAMATE: #include "threadpool.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -6344,21 +6290,17 @@ EV_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop);
 #ifdef __cplusplus
 }
 #endif
-
 #endif
 
+#line 48 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/tcp_win.h
-// SIZE:    365
-// SHA-256: 6af058c45e467e86ecef795ac8a38171e9f2d36f2fe2b8442981703fdaac9b40
+// FILE:    ev/win/tcp_win.h
+// SIZE:    329
+// SHA-256: cda092956d2684333f448a521576014fb3dc4aba48333468a986a00cbde43993
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/tcp_win.h"
+#line 1 "ev/win/tcp_win.h"
 #ifndef __EV_TCP_WIN_INTERNAL_H__
 #define __EV_TCP_WIN_INTERNAL_H__
-
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "defs.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -6376,16 +6318,13 @@ EV_LOCAL int ev__tcp_open_win(ev_tcp_t* tcp, SOCKET fd);
 #endif
 #endif
 
+#line 49 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/async_win.c
-// SIZE:    1531
-// SHA-256: 7bb33e2fa2cd1eafefcfdd393987d2a50bf0c21a3fd6646a09956a35381a754e
+// FILE:    ev/win/async_win.c
+// SIZE:    1450
+// SHA-256: c99c37323c0acd4ba1968842c75745453d0b44d924819e199a8e84effff06020
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/async_win.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "async_win.h" */
-/* AMALGAMATE: #include "handle.h" */
-/* AMALGAMATE: #include "loop_win.h" */
+#line 1 "ev/win/async_win.c"
 #include <assert.h>
 
 static void _async_on_iocp_win(ev_iocp_t* iocp, size_t transferred, void* arg)
@@ -6445,19 +6384,13 @@ void ev_async_wakeup(ev_async_t* handle)
     }
 }
 
+#line 50 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/fs_win.c
-// SIZE:    24116
-// SHA-256: f3b326a2442bb21d254f2388b73753b78a50b4197bd994b079533c6e24fefe2f
+// FILE:    ev/win/fs_win.c
+// SIZE:    23975
+// SHA-256: efde564c3749563536763d2e573376491ba8ea7d236d40853169d8a14d842aa0
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/fs_win.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop.h" */
-/* AMALGAMATE: #include "allocator.h" */
-/* AMALGAMATE: #include "loop_win.h" */
-/* AMALGAMATE: #include "winapi.h" */
-/* AMALGAMATE: #include "misc_win.h" */
-/* AMALGAMATE: #include "fs_win.h" */
+#line 1 "ev/win/fs_win.c"
 #include <assert.h>
 #include <stdio.h>
 
@@ -7311,19 +7244,13 @@ EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
     return (int)ret;
 }
 
+#line 51 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/loop_win.c
-// SIZE:    5239
-// SHA-256: c8b1fe47b05c61f641314f40d37a949b24046fc305ba038cc8015900b227b641
+// FILE:    ev/win/loop_win.c
+// SIZE:    5087
+// SHA-256: 5019fd0fb7dee874b87acbb0c26e45e7a6423a13775555210194db93efdb8196
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/loop_win.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "misc.h" */
-/* AMALGAMATE: #include "allocator.h" */
-/* AMALGAMATE: #include "loop_win.h" */
-/* AMALGAMATE: #include "thread_win.h" */
-/* AMALGAMATE: #include "threadpool_win.h" */
-/* AMALGAMATE: #include "winsock.h" */
+#line 1 "ev/win/loop_win.c"
 #include <assert.h>
 
 ev_loop_win_ctx_t g_ev_loop_win_ctx;
@@ -7538,16 +7465,13 @@ EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt)
     return 0;
 }
 
+#line 52 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/misc_win.c
-// SIZE:    8435
-// SHA-256: 5b7cf134d130d2cc5bfc2e90234d6cbc363a9277efe97175c85ff795ce4557c5
+// FILE:    ev/win/misc_win.c
+// SIZE:    8354
+// SHA-256: 94a753161e8e188c3b99ed7d2ca26323b16dd6051783c015dbeddfb5899d5283
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/misc_win.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "allocator.h" */
-/* AMALGAMATE: #include "winapi.h" */
-/* AMALGAMATE: #include "misc_win.h" */
+#line 1 "ev/win/misc_win.c"
 #include <assert.h>
 
 EV_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src)
@@ -7739,14 +7663,13 @@ EV_LOCAL void ev__fatal_syscall(const char* file, int line,
     abort();
 }
 
+#line 53 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/mutex_win.c
-// SIZE:    561
-// SHA-256: 3eb77a4ade7b58f6ed5b521607f8ea59c62cdfc9c2ad4ed8ae3b8189ad7db03b
+// FILE:    ev/win/mutex_win.c
+// SIZE:    527
+// SHA-256: bba803aefe10be28a952f9af290bf88ff97957b4db0e03f44950306dadd16aa6
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/mutex_win.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop.h" */
+#line 1 "ev/win/mutex_win.c"
 
 void ev_mutex_init(ev_mutex_t* handle, int recursive)
 {
@@ -7779,14 +7702,13 @@ int ev_mutex_try_enter(ev_mutex_t* handle)
     return EV_EBUSY;
 }
 
+#line 54 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/once_win.c
-// SIZE:    483
-// SHA-256: a483ff84109472d45ecc209c338a5958f4a2d10fe6ed35ababb371f550881e44
+// FILE:    ev/win/once_win.c
+// SIZE:    445
+// SHA-256: 803aeeffc5aa8681dc3a1f4a799bfb0b2bf191504a40fe73c73f8468177a5b78
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/once_win.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop_win.h" */
+#line 1 "ev/win/once_win.c"
 
 static BOOL WINAPI _ev_once_proxy(PINIT_ONCE InitOnce, PVOID Parameter, PVOID *Context)
 {
@@ -7806,19 +7728,13 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
     }
 }
 
+#line 55 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/pipe_win.c
-// SIZE:    40520
-// SHA-256: 2a18c8e4b3cb4c1b21982ae484a8f0e8d3b7a0db29b169322dc03b3e0b774bc1
+// FILE:    ev/win/pipe_win.c
+// SIZE:    40376
+// SHA-256: b8ec21068af759353cf02a0bad6c203a3972d0e6977ab939a1983ff77be67fa3
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/pipe_win.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "handle.h" */
-/* AMALGAMATE: #include "loop_win.h" */
-/* AMALGAMATE: #include "winsock.h" */
-/* AMALGAMATE: #include "tcp_win.h" */
-/* AMALGAMATE: #include "misc_win.h" */
-/* AMALGAMATE: #include "pipe_win.h" */
+#line 1 "ev/win/pipe_win.c"
 #include <stdio.h>
 #include <assert.h>
 
@@ -9293,20 +9209,13 @@ void ev_pipe_close(ev_os_pipe_t fd)
     CloseHandle(fd);
 }
 
+#line 56 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/process_win.c
-// SIZE:    16334
-// SHA-256: 34b0d882b127853f842563e1893ee5582016836eecf09e2ef0b258ba1aa71477
+// FILE:    ev/win/process_win.c
+// SIZE:    16171
+// SHA-256: 4e7c662c83b2fc407ad08cbcfa52d3f86fa192d7f8593ac18bb5d1ded14d2796
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/process_win.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "async.h" */
-/* AMALGAMATE: #include "loop.h" */
-/* AMALGAMATE: #include "allocator.h" */
-/* AMALGAMATE: #include "defs.h" */
-/* AMALGAMATE: #include "pipe_win.h" */
-/* AMALGAMATE: #include "misc_win.h" */
-/* AMALGAMATE: #include "process_win.h" */
+#line 1 "ev/win/process_win.c"
 #include <assert.h>
 
 typedef struct ev_startup_info
@@ -9948,14 +9857,13 @@ error:
     return ev__translate_sys_error(err);
 }
 
+#line 57 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/sem_win.c
-// SIZE:    1189
-// SHA-256: b3b4ffa305386693507e50dfbf91d6ec9a06ed2895017f6aa4b3c98db2dd975a
+// FILE:    ev/win/sem_win.c
+// SIZE:    1155
+// SHA-256: a113b4c52567893a1df6c51747489d3185ef36a96c8ca2723489b865a1bafbaa
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/sem_win.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop.h" */
+#line 1 "ev/win/sem_win.c"
 
 void ev_sem_init(ev_sem_t* sem, unsigned value)
 {
@@ -10016,14 +9924,13 @@ int ev_sem_try_wait(ev_sem_t* sem)
     EV_ABORT("ret:%lu, GetLastError:%lu", ret, errcode);
 }
 
+#line 58 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/shdlib_win.c
-// SIZE:    1804
-// SHA-256: b47ccd388122746e99752bc050cfe5b570926356c47e0149ffafc7cba918e2b7
+// FILE:    ev/win/shdlib_win.c
+// SIZE:    1766
+// SHA-256: 7cfba90f7727c8c8d4066c2b0b52987f0448e206cd0b2e8ed64b2ee92a2d8964
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/shdlib_win.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "misc_win.h" */
+#line 1 "ev/win/shdlib_win.c"
 
 int ev_dlopen(ev_shdlib_t* lib, const char* filename, char** errmsg)
 {
@@ -10095,16 +10002,13 @@ int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr)
     return 0;
 }
 
+#line 59 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/shmem_win.c
-// SIZE:    1927
-// SHA-256: bb80c83336f34b3af7429f236f7b9951cbce334c05255ecf09b360154725d817
+// FILE:    ev/win/shmem_win.c
+// SIZE:    1852
+// SHA-256: 7c89294e51736fa5dc18ab37605c43571411a99e5b242beb8569689529d59c6e
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/shmem_win.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "misc_win.h" */
-/* AMALGAMATE: #include "loop.h" */
-/* AMALGAMATE: #include "shmem.h" */
+#line 1 "ev/win/shmem_win.c"
 
 int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
 {
@@ -10184,18 +10088,13 @@ void ev_shm_exit(ev_shm_t* shm)
     }
 }
 
+#line 60 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/tcp_win.c
-// SIZE:    21629
-// SHA-256: 0c8e5c9b96d855ba9327540ebdf923b1cb6446dc63cff7b05663bea9c397d20b
+// FILE:    ev/win/tcp_win.c
+// SIZE:    21507
+// SHA-256: b1c6a24740b8aa1ce578a271362f1e9c86a8f93135dcec9d6e6a49602c865ac0
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/tcp_win.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "handle.h" */
-/* AMALGAMATE: #include "loop_win.h" */
-/* AMALGAMATE: #include "winsock.h" */
-/* AMALGAMATE: #include "misc_win.h" */
-/* AMALGAMATE: #include "tcp_win.h" */
+#line 1 "ev/win/tcp_win.c"
 #include <WinSock2.h>
 #include <assert.h>
 
@@ -11007,16 +10906,13 @@ EV_LOCAL int ev__tcp_open_win(ev_tcp_t* tcp, SOCKET fd)
     return 0;
 }
 
+#line 61 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/thread_win.c
-// SIZE:    4201
-// SHA-256: 0a6e3a7e5eb55af1169d25bdacc190dabc83b1bfdd25a2e6e524430939a0aa73
+// FILE:    ev/win/thread_win.c
+// SIZE:    4117
+// SHA-256: b80229a5263c71a3b5ef797a46850d7ad92d07c033b569ce1ce3c017acecba3b
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/thread_win.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop_win.h" */
-/* AMALGAMATE: #include "misc_win.h" */
-/* AMALGAMATE: #include "thread_win.h" */
+#line 1 "ev/win/thread_win.c"
 #include <process.h>
 
 typedef struct ev_thread_helper_win
@@ -11199,14 +11095,13 @@ void* ev_tls_get(ev_tls_t* tls)
     return val;
 }
 
+#line 62 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/threadpool_win.c
-// SIZE:    595
-// SHA-256: 98952866dc731f0b4efbd5166f5a3c43c89634bcd439ab4c06bb8c831e8f36fc
+// FILE:    ev/win/threadpool_win.c
+// SIZE:    545
+// SHA-256: e9729a6a63f16fa056602b60ebf49481d8c4cd0a0b9f69ee3390a53e985266ce
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/threadpool_win.c"
-/* AMALGAMATE: #include "threadpool_win.h" */
-/* AMALGAMATE: #include "loop_win.h" */
+#line 1 "ev/win/threadpool_win.c"
 
 static void _on_work_win(ev_iocp_t* iocp, size_t transferred, void* arg)
 {
@@ -11232,19 +11127,13 @@ EV_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop)
     (void)loop;
 }
 
+#line 63 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/udp_win.c
-// SIZE:    24339
-// SHA-256: 445cf9c099247e582f82f192c63e8406fb38fad650120ac6b8b2d93def9b521f
+// FILE:    ev/win/udp_win.c
+// SIZE:    24199
+// SHA-256: 100d590655ea5e23dada582588a7a279c545ad78ffa1de6e3d764802244f4315
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/udp_win.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "misc.h" */
-/* AMALGAMATE: #include "loop_win.h" */
-/* AMALGAMATE: #include "winsock.h" */
-/* AMALGAMATE: #include "misc_win.h" */
-/* AMALGAMATE: #include "udp_win.h" */
-/* AMALGAMATE: #include "handle.h" */
+#line 1 "ev/win/udp_win.c"
 #include <assert.h>
 
 static int _ev_udp_setup_socket_attribute_win(ev_loop_t* loop, ev_udp_t* udp, int family)
@@ -12187,14 +12076,13 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
     return 0;
 }
 
+#line 64 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/winapi.c
-// SIZE:    629
-// SHA-256: a2ad742b0cf2833dacb421186f6c06a1b68e59fcd6529b1c87e82f61a3639c78
+// FILE:    ev/win/winapi.c
+// SIZE:    593
+// SHA-256: fddb5147b050c5818f0683bd83c8cf5a697e421d7b71a8cdbbcce7adf9941ff2
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/winapi.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "winapi.h" */
+#line 1 "ev/win/winapi.c"
 #include <assert.h>
 
 ev_winapi_t ev_winapi = {
@@ -12222,14 +12110,13 @@ EV_LOCAL void ev__winapi_init(void)
 #undef GET_NTDLL_FUNC
 }
 
+#line 65 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/win/winsock.c
-// SIZE:    8903
-// SHA-256: 45de4b33322f2c9a60bdda7ea895e96460f654d21960d5b455a02d1e416a16e4
+// FILE:    ev/win/winsock.c
+// SIZE:    8860
+// SHA-256: 5a57ba896dea38d93b6d1f9c97586ed90e2eeb9b110d1ee211734d19d4187118
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/win/winsock.c"
-/* AMALGAMATE: #include "winsock.h" */
-/* AMALGAMATE: #include "misc_win.h" */
+#line 1 "ev/win/winsock.c"
 
 int ev_tcp_non_ifs_lsp_ipv4;
 int ev_tcp_non_ifs_lsp_ipv6;
@@ -12609,18 +12496,16 @@ EV_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status)
     }
 }
 
-#else               /* AMALGAMATE: ev.c (2/3) */
+#line 66 "ev.c"
+#else
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/async_unix.h
-// SIZE:    513
-// SHA-256: 500ccbfdf5b25edfb97b2c8a6cf88cfea1022c2fd84b3a318861dcb050d62d6b
+// FILE:    ev/unix/async_unix.h
+// SIZE:    491
+// SHA-256: 35d22b0410bc633120906291e828465b21b8e188a572bfe49619d63006cbb572
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/async_unix.h"
+#line 1 "ev/unix/async_unix.h"
 #ifndef __EV_ASYNC_UNIX_INTERNAL_H__
 #define __EV_ASYNC_UNIX_INTERNAL_H__
-
-/* AMALGAMATE: #include "async.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -12646,20 +12531,18 @@ EV_LOCAL void ev__async_pend(int rfd);
 #ifdef __cplusplus
 }
 #endif
-
 #endif
 
+#line 68 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/io_unix.h
-// SIZE:    2896
-// SHA-256: 04a6d1a67e3bac3240f812edd0a1de2d854484328ace2f95602a1bc4204e0b15
+// FILE:    ev/unix/io_unix.h
+// SIZE:    2857
+// SHA-256: cdff01bf63730f8c3a8494580da79bd59b744441b8d88a2309823f4f5145d826
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/io_unix.h"
+#line 1 "ev/unix/io_unix.h"
 #ifndef __EV_IO_UNIX_H__
 #define __EV_IO_UNIX_H__
 
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop_unix.h" */
 #include <sys/epoll.h>
 #define EV_IO_IN            EPOLLIN     /**< The associated file is available for read(2) operations. */
 #define EV_IO_OUT           EPOLLOUT    /**< The associated file is available for write(2) operations. */
@@ -12765,18 +12648,15 @@ EV_LOCAL int ev__send_unix(int fd, ev_write_t* req,
 #endif
 #endif
 
+#line 69 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/process_unix.h
-// SIZE:    453
-// SHA-256: 401bd2921d5728e9c459c141d5b471cdbc87569033829eb3fe414d698cfd6a58
+// FILE:    ev/unix/process_unix.h
+// SIZE:    417
+// SHA-256: da95020dc882f252d9e3053f674a5d6b80dbb9fe2c6eeca7c82d5a729ced50a9
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/process_unix.h"
+#line 1 "ev/unix/process_unix.h"
 #ifndef __EV_PROCESS_UNIX_H__
 #define __EV_PROCESS_UNIX_H__
-
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "defs.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -12797,18 +12677,15 @@ EV_LOCAL void ev__init_process_unix(void);
 #endif
 #endif
 
+#line 70 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/tcp_unix.h
-// SIZE:    342
-// SHA-256: cb0fe0c875f9e70982167fbfd219f963bb11e5f34d09dfb212e88332fe53ad25
+// FILE:    ev/unix/tcp_unix.h
+// SIZE:    306
+// SHA-256: edc3dae939e8f69acbd65494c0cc33fb9ae6862033d36c29cf6c5598a24fd0db
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/tcp_unix.h"
+#line 1 "ev/unix/tcp_unix.h"
 #ifndef __EV_TCP_UNIX_H__
 #define __EV_TCP_UNIX_H__
-
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "defs.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -12826,18 +12703,15 @@ EV_LOCAL int ev__tcp_open(ev_tcp_t* tcp, int fd);
 #endif
 #endif
 
+#line 71 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/loop_unix.h
-// SIZE:    614
-// SHA-256: 88720dacf2bb1a0427743a38b3c183b2ffb751c2804f48130aab2a9928f90506
+// FILE:    ev/unix/loop_unix.h
+// SIZE:    568
+// SHA-256: 3d8ece467c0c09f516a565097adcd81230ae09136633f83058415949b932fc45
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/loop_unix.h"
+#line 1 "ev/unix/loop_unix.h"
 #ifndef __EV_LOOP_UNIX_H__
 #define __EV_LOOP_UNIX_H__
-
-/* AMALGAMATE: #include "loop.h" */
-/* AMALGAMATE: #include "process_unix.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -12864,30 +12738,33 @@ EV_LOCAL void ev__init_once_unix(void);
 #endif
 #endif
 
+#line 72 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/misc_unix.h
-// SIZE:    99
-// SHA-256: 53411ccbce61c21f9cbcdc9d391a5b2cca94f815d43af180b69585ee7cef1895
+// FILE:    ev/unix/misc_unix.h
+// SIZE:    147
+// SHA-256: 36acb2fc1ad9ac41812d045475e298bb12324893d4a430df6eb14c5647674822
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/misc_unix.h"
+#line 1 "ev/unix/misc_unix.h"
 #ifndef __EV_MISC_UNIX_INTERNAL_H__
 #define __EV_MISC_UNIX_INTERNAL_H__
-
-/* AMALGAMATE: #include "misc.h" */
-
+#ifdef __cplusplus
+extern "C" {
 #endif
 
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+#line 73 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/stream_unix.h
-// SIZE:    1819
-// SHA-256: 739cf26d55723f99d927d798ba4ad54543f262653fb37f1e2c996646794276c9
+// FILE:    ev/unix/stream_unix.h
+// SIZE:    1796
+// SHA-256: 9b706c88ae8e57a461ee12ee041bf7c37ffec9dfe4d567408a62f9908c7ba6fe
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/stream_unix.h"
+#line 1 "ev/unix/stream_unix.h"
 #ifndef __EV_STREAM_UNIX_H__
 #define __EV_STREAM_UNIX_H__
-
-/* AMALGAMATE: #include "io_unix.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -12952,17 +12829,15 @@ EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned
 #endif
 #endif
 
+#line 74 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/work.h
-// SIZE:    252
-// SHA-256: 18ca98794b030f9b0389311797036e725c0e64814140980269b1f9e76e60c0a5
+// FILE:    ev/unix/work.h
+// SIZE:    231
+// SHA-256: 55f148e626b082262c2d61bdecb715d4ec5cd25b6caaa3ad21c676a4e6bf53b4
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/work.h"
+#line 1 "ev/unix/work.h"
 #ifndef __EV_WORK_INTERNAL_H__
 #define __EV_WORK_INTERNAL_H__
-
-/* AMALGAMATE: #include "defs.h" */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -12974,21 +12849,15 @@ EV_LOCAL void ev__exit_work(ev_loop_t* loop);
 #ifdef __cplusplus
 }
 #endif
-
 #endif
 
+#line 75 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/async_unix.c
-// SIZE:    3429
-// SHA-256: 2b3cd7bedadfea909b1fa93ecfe5b2708fa954a3d27c2e76cb1ac0e55b29241e
+// FILE:    ev/unix/async_unix.c
+// SIZE:    3307
+// SHA-256: 42c2fd42273c7ee061b8c83ec481548f12fbe6bd0871d5f37caac394c2dd7874
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/async_unix.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "io_unix.h" */
-/* AMALGAMATE: #include "loop.h" */
-/* AMALGAMATE: #include "handle.h" */
-/* AMALGAMATE: #include "misc_unix.h" */
-/* AMALGAMATE: #include "async_unix.h" */
+#line 1 "ev/unix/async_unix.c"
 #include <unistd.h>
 #include <assert.h>
 #include <sys/eventfd.h>
@@ -13147,19 +13016,14 @@ void ev_async_wakeup(ev_async_t* handle)
     ev__async_post(handle->backend.pipfd[1]);
 }
 
+#line 76 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/fs_unix.c
-// SIZE:    9942
-// SHA-256: b9fe405a6d91c750050d18ffca8f7ff652f009229cd0377a2c8cb7a3b1e5ce24
+// FILE:    ev/unix/fs_unix.c
+// SIZE:    9825
+// SHA-256: 49d1a344d8ab166224167175997a490e40448c0ae46461487fd57000e04ec375
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/fs_unix.c"
+#line 1 "ev/unix/fs_unix.c"
 #define _GNU_SOURCE
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop.h" */
-/* AMALGAMATE: #include "fs.h" */
-/* AMALGAMATE: #include "allocator.h" */
-/* AMALGAMATE: #include "misc_unix.h" */
-/* AMALGAMATE: #include "io_unix.h" */
 #include <assert.h>
 #include <string.h>
 #include <unistd.h>
@@ -13507,15 +13371,13 @@ EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
     return ret;
 }
 
+#line 77 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/io_unix.c
-// SIZE:    8814
-// SHA-256: e8431a22ec40c248fa9944405884d3d4fccbcfce2926ef03b3d99dcadc9cf75d
+// FILE:    ev/unix/io_unix.c
+// SIZE:    8754
+// SHA-256: 8878dae3342ae9e1c25e2efe760a4b14377439d35a6a14b854f769b0bae6d211
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/io_unix.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "misc_unix.h" */
-/* AMALGAMATE: #include "io_unix.h" */
+#line 1 "ev/unix/io_unix.c"
 #include <assert.h>
 #include <string.h>
 #include <unistd.h>
@@ -13944,16 +13806,13 @@ EV_LOCAL int ev__send_unix(int fd, ev_write_t* req,
     return _ev_io_finalize_send_req_unix(req, (size_t)write_size);
 }
 
+#line 78 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/loop_unix.c
-// SIZE:    4521
-// SHA-256: aefe3c1253178fdf0c2e089fa9d39f0257c2a947dd5158b8e2b7589f73742396
+// FILE:    ev/unix/loop_unix.c
+// SIZE:    4443
+// SHA-256: 3f8394aa8eb40882f5b8f51d02b892260bb570f8696e03b02732e3494f7cc64d
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/loop_unix.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop_unix.h" */
-/* AMALGAMATE: #include "io_unix.h" */
-/* AMALGAMATE: #include "work.h" */
+#line 1 "ev/unix/loop_unix.c"
 #include <assert.h>
 #include <unistd.h>
 #include <errno.h>
@@ -14141,14 +14000,13 @@ EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
     }
 }
 
+#line 79 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/misc_unix.c
-// SIZE:    162
-// SHA-256: 2febf05f1a390c7150f00f5981835177791acb782194abaac6acd1f6d12f81f9
+// FILE:    ev/unix/misc_unix.c
+// SIZE:    123
+// SHA-256: 12b41cb4279e242060510ea2aac797460fe3f291b9c2f39928fe382060301998
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/misc_unix.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "misc_unix.h" */
+#line 1 "ev/unix/misc_unix.c"
 #include <errno.h>
 
 EV_LOCAL int ev__translate_sys_error(int syserr)
@@ -14156,14 +14014,13 @@ EV_LOCAL int ev__translate_sys_error(int syserr)
     return ev__translate_posix_sys_error(syserr);
 }
 
+#line 80 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/mutex_unix.c
-// SIZE:    1836
-// SHA-256: bf5be05bd879343e8324092bc6dd10271ec800c11a480a2c7b895942f2c3a579
+// FILE:    ev/unix/mutex_unix.c
+// SIZE:    1802
+// SHA-256: a1f1459e5d2dff7318a6580f205592a6f447715f34a44192f8de57c53331d9f9
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/mutex_unix.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop.h" */
+#line 1 "ev/unix/mutex_unix.c"
 
 static void _ev_mutex_init_unix(ev_os_mutex_t* handle)
 {
@@ -14274,14 +14131,13 @@ int ev_mutex_try_enter(ev_mutex_t* handle)
     return EV_EBUSY;
 }
 
+#line 81 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/once_unix.c
-// SIZE:    191
-// SHA-256: 604401d86736db83dbb55a4f48b77d6e5b43e363dcfc7a358c99578efec23bd6
+// FILE:    ev/unix/once_unix.c
+// SIZE:    157
+// SHA-256: 6b15ddc16ee6acfdb4dc4722eb30eea83501c89d86d36de69d7fbadd25315e24
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/once_unix.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop.h" */
+#line 1 "ev/unix/once_unix.c"
 #include <stdlib.h>
 
 void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
@@ -14292,21 +14148,14 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
     }
 }
 
+#line 82 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/pipe_unix.c
-// SIZE:    25767
-// SHA-256: 7e47d5db4f0f393b641095100dff6f2da6f005ac62a6fd3dad44e27efc86d90e
+// FILE:    ev/unix/pipe_unix.c
+// SIZE:    25603
+// SHA-256: e05090a88a94083813983e05a98eabae016a128a3500a15af6ec470fb652b682
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/pipe_unix.c"
+#line 1 "ev/unix/pipe_unix.c"
 #define _GNU_SOURCE
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop_unix.h" */
-/* AMALGAMATE: #include "tcp_unix.h" */
-/* AMALGAMATE: #include "stream_unix.h" */
-/* AMALGAMATE: #include "misc_unix.h" */
-/* AMALGAMATE: #include "pipe.h" */
-/* AMALGAMATE: #include "handle.h" */
-/* AMALGAMATE: #include "log.h" */
 #include <assert.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -15252,20 +15101,14 @@ void ev_pipe_close(ev_os_pipe_t fd)
     }
 }
 
+#line 83 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/process_unix.c
-// SIZE:    15970
-// SHA-256: 9ce617b9ef7cfa6b90bceed953cbf3a1270152e5442928db62d54ecc67d339f8
+// FILE:    ev/unix/process_unix.c
+// SIZE:    15820
+// SHA-256: 3f66532a4a0b9bad795c9b828745dcc1595a0c61a50ec5a6081eed5f02089068
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/process_unix.c"
+#line 1 "ev/unix/process_unix.c"
 #define _GNU_SOURCE
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "allocator.h" */
-/* AMALGAMATE: #include "loop_unix.h" */
-/* AMALGAMATE: #include "io_unix.h" */
-/* AMALGAMATE: #include "pipe.h" */
-/* AMALGAMATE: #include "misc_unix.h" */
-/* AMALGAMATE: #include "process_unix.h" */
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -15960,14 +15803,13 @@ error:
     return errcode;
 }
 
+#line 84 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/sem_unix.c
-// SIZE:    816
-// SHA-256: 630c80497242bdffd55d9b521a08ed76b853bd1cdf5ff0183d71f541366b55f4
+// FILE:    ev/unix/sem_unix.c
+// SIZE:    782
+// SHA-256: 73e0c3a42e346fb929e6d6733e67c7f5840337f9830d521ef1e573c505e72cdf
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/sem_unix.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop.h" */
+#line 1 "ev/unix/sem_unix.c"
 
 void ev_sem_init(ev_sem_t* sem, unsigned value)
 {
@@ -16028,15 +15870,13 @@ int ev_sem_try_wait(ev_sem_t* sem)
     return 0;
 }
 
+#line 85 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/shdlib_unix.c
-// SIZE:    1020
-// SHA-256: 6a387279c3cede6d4da7fae30d36c361695bfb372ed50647801a569365c7f6e2
+// FILE:    ev/unix/shdlib_unix.c
+// SIZE:    963
+// SHA-256: 0be8dd1686ad775ecaf7fb6e02234c8eba0787b3ff3a9f2d2187a9c0294b4361
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/shdlib_unix.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "allocator.h" */
-/* AMALGAMATE: #include "misc.h" */
+#line 1 "ev/unix/shdlib_unix.c"
 #include <dlfcn.h>
 
 int ev_dlopen(ev_shdlib_t* lib, const char* filename, char** errmsg)
@@ -16093,16 +15933,13 @@ int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr)
     return EV_ENOENT;
 }
 
+#line 86 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/shmem_unix.c
-// SIZE:    2410
-// SHA-256: d176d7af57524fca6ba32c52198ab540cb0a5c06083533feca69f631c5a02d74
+// FILE:    ev/unix/shmem_unix.c
+// SIZE:    2334
+// SHA-256: 560380ad3b2ea591fe64178ae8936a7a49a38a947852229cd1d616f6ec7e72e1
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/shmem_unix.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "shmem.h" */
-/* AMALGAMATE: #include "loop.h" */
-/* AMALGAMATE: #include "misc_unix.h" */
+#line 1 "ev/unix/shmem_unix.c"
 #include <assert.h>
 #include <sys/mman.h>
 #include <sys/stat.h>        /* For mode constants */
@@ -16205,14 +16042,13 @@ void ev_shm_exit(ev_shm_t* shm)
     close(shm->backend.map_file);
 }
 
+#line 87 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/stream_unix.c
-// SIZE:    6201
-// SHA-256: b626478db253fd21546438a39a46c2b13ae4969b6d41e477fc4221dbaf62016e
+// FILE:    ev/unix/stream_unix.c
+// SIZE:    6160
+// SHA-256: f671a1c513eede33d980a7b1547d8d85eafa337fdd58de40e494003593a35c1d
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/stream_unix.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "stream_unix.h" */
+#line 1 "ev/unix/stream_unix.c"
 
 static ssize_t _ev_stream_do_write_writev_unix(int fd, struct iovec* iov, int iovcnt, void* arg)
 {
@@ -16454,18 +16290,13 @@ EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned
     }
 }
 
+#line 88 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/tcp_unix.c
-// SIZE:    13188
-// SHA-256: 3c5cf4b02cfccf9f45bc4aa112d1f99ff30dfe8abbdb08c957c1ac1eee8a5591
+// FILE:    ev/unix/tcp_unix.c
+// SIZE:    13059
+// SHA-256: 013066c775692ca8503e6efe0a16754ac9f7212f2d3fd80210c3b00a6ad6b0e1
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/tcp_unix.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "loop_unix.h" */
-/* AMALGAMATE: #include "stream_unix.h" */
-/* AMALGAMATE: #include "misc_unix.h" */
-/* AMALGAMATE: #include "tcp_unix.h" */
-/* AMALGAMATE: #include "handle.h" */
+#line 1 "ev/unix/tcp_unix.c"
 #include <sys/uio.h>
 #include <assert.h>
 #include <unistd.h>
@@ -16984,16 +16815,14 @@ EV_LOCAL int ev__tcp_open(ev_tcp_t* tcp, int fd)
     return 0;
 }
 
+#line 89 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/thread_unix.c
-// SIZE:    3707
-// SHA-256: abc7e02ad869f59d1ae423c109ad87f581e3431cc9e7a9eef0843aad924b4d33
+// FILE:    ev/unix/thread_unix.c
+// SIZE:    3650
+// SHA-256: c9657f65b8d8414261c6026f3c68d1b38f5e7b9ab17da1a67bd0ee46da5df176
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/thread_unix.c"
+#line 1 "ev/unix/thread_unix.c"
 #define _GNU_SOURCE
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "misc_unix.h" */
-/* AMALGAMATE: #include "loop.h" */
 #include <semaphore.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -17176,16 +17005,13 @@ void* ev_tls_get(ev_tls_t* tls)
     return pthread_getspecific(tls->tls);
 }
 
+#line 90 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/threadpool_unix.c
-// SIZE:    1034
-// SHA-256: 5dc36cc8c4f3848fa125a1c27021dcdc9519a81f9b8742c87029192442cd764c
+// FILE:    ev/unix/threadpool_unix.c
+// SIZE:    942
+// SHA-256: 10487ad39897977af6e2f63e4ac09366f191adc87e314b98c5ef22b3b7567044
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/threadpool_unix.c"
-/* AMALGAMATE: #include "threadpool.h" */
-/* AMALGAMATE: #include "loop_unix.h" */
-/* AMALGAMATE: #include "async_unix.h" */
-/* AMALGAMATE: #include "io_unix.h" */
+#line 1 "ev/unix/threadpool_unix.c"
 
 static void _on_work_unix(ev_nonblock_io_t* io, unsigned evts, void* arg)
 {
@@ -17219,17 +17045,13 @@ EV_LOCAL void ev__exit_work(ev_loop_t* loop)
     loop->backend.threadpool.evtfd[1] = -1;
 }
 
+#line 91 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    src/unix/udp_unix.c
-// SIZE:    23274
-// SHA-256: 282a44b705ede996c58065b00ccfeeb7bb7e3c6f6d98df66a3292a96c20d597c
+// FILE:    ev/unix/udp_unix.c
+// SIZE:    23177
+// SHA-256: 44f757b5e103ec263b6459f301e8f22c5aff19aef05226d5e672aa3fdd553a5a
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "src/unix/udp_unix.c"
-/* AMALGAMATE: #include "ev.h" */
-/* AMALGAMATE: #include "io_unix.h" */
-/* AMALGAMATE: #include "misc_unix.h" */
-/* AMALGAMATE: #include "udp.h" */
-/* AMALGAMATE: #include "handle.h" */
+#line 1 "ev/unix/udp_unix.c"
 #include <unistd.h>
 #include <string.h>
 
@@ -18189,4 +18011,6 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
     return _ev_udp_set_ttl_unix(udp, ttl, IP_TTL, IPV6_UNICAST_HOPS);
 }
 
-#endif              /* AMALGAMATE: ev.c (3/3) */
+#line 92 "ev.c"
+#endif
+

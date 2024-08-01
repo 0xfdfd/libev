@@ -86,8 +86,14 @@ target_link_libraries(ev_test
 )
 
 add_test(NAME ev_unittest COMMAND $<TARGET_FILE:ev_test>)
-add_test(NAME ev_eol_h COMMAND $<TARGET_FILE:ev_test> -- eolcheck --file=${CMAKE_CURRENT_SOURCE_DIR}/ev.h --eol=LF)
-add_test(NAME ev_eol_c COMMAND $<TARGET_FILE:ev_test> -- eolcheck --file=${CMAKE_CURRENT_SOURCE_DIR}/ev.c --eol=LF)
+if (EV_DEV)
+    add_test(NAME ev_eol_h
+        COMMAND $<TARGET_FILE:ev_test> -- eolcheck --file=${CMAKE_CURRENT_SOURCE_DIR}/ev.h --eol=LF
+    )
+    add_test(NAME ev_eol_c
+        COMMAND $<TARGET_FILE:ev_test> -- eolcheck --file=${CMAKE_CURRENT_SOURCE_DIR}/ev.c --eol=LF
+    )
+endif()
 
 if(EV_HAVE_COVERAGE)
     setup_target_for_coverage_lcov(

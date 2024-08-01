@@ -2,7 +2,6 @@
 #define __EV_MAP_H__
 
 #include <stddef.h>
-#include "ev/expose.h"
 
 #ifdef __cplusplus
 extern "C" {

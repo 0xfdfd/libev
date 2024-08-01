@@ -6,98 +6,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/third_party/cmake-modules")
 
 # Build options
 option(EV_ENABLE_COVERAGE "Enable code coverage. GCC/Clang only" OFF)
-
-set(ev_src
-    "src/defs.h"
-    "src/allocator.h"
-    "src/async.h"
-    "src/handle.h"
-    "src/loop.h"
-    "src/fs.h"
-    "src/misc.h"
-    "src/pipe.h"
-    "src/ringbuffer.h"
-    "src/threadpool.h"
-    "src/timer.h"
-    "src/log.h"
-    "src/udp.h"
-    "src/allocator.c"
-    "src/fs.c"
-    "src/handle.c"
-    "src/list.c"
-    "src/log.c"
-    "src/loop.c"
-    "src/map.c"
-    "src/misc.c"
-    "src/pipe.c"
-    "src/queue.c"
-    "src/ringbuffer.c"
-    "src/shmem.c"
-    "src/threadpool.c"
-    "src/timer.c"
-    "src/udp.c"
-    "src/version.c"
-)
-
-set(ev_src_os_win
-    "src/win/winapi.h"
-    "src/win/winsock.h"
-    "src/win/async_win.h"
-    "src/win/fs_win.h"
-    "src/win/udp_win.h"
-    "src/win/loop_win.h"
-    "src/win/process_win.h"
-    "src/win/pipe_win.h"
-    "src/win/misc_win.h"
-    "src/win/thread_win.h"
-    "src/win/threadpool_win.h"
-    "src/win/tcp_win.h"
-    "src/win/async_win.c"
-    "src/win/fs_win.c"
-    "src/win/loop_win.c"
-    "src/win/misc_win.c"
-    "src/win/mutex_win.c"
-    "src/win/once_win.c"
-    "src/win/pipe_win.c"
-    "src/win/process_win.c"
-    "src/win/sem_win.c"
-    "src/win/shdlib_win.c"
-    "src/win/shmem_win.c"
-    "src/win/tcp_win.c"
-    "src/win/thread_win.c"
-    "src/win/threadpool_win.c"
-    "src/win/udp_win.c"
-    "src/win/winapi.c"
-    "src/win/winsock.c"
-)
-
-set(ev_src_os_unix
-    "src/unix/async_unix.h"
-    "src/unix/io_unix.h"
-    "src/unix/process_unix.h"
-    "src/unix/tcp_unix.h"
-    "src/unix/loop_unix.h"
-    "src/unix/misc_unix.h"
-    "src/unix/stream_unix.h"
-    "src/unix/work.h"
-    "src/unix/async_unix.c"
-    "src/unix/fs_unix.c"
-    "src/unix/io_unix.c"
-    "src/unix/loop_unix.c"
-    "src/unix/misc_unix.c"
-    "src/unix/mutex_unix.c"
-    "src/unix/once_unix.c"
-    "src/unix/pipe_unix.c"
-    "src/unix/process_unix.c"
-    "src/unix/sem_unix.c"
-    "src/unix/shdlib_unix.c"
-    "src/unix/shmem_unix.c"
-    "src/unix/stream_unix.c"
-    "src/unix/tcp_unix.c"
-    "src/unix/thread_unix.c"
-    "src/unix/threadpool_unix.c"
-    "src/unix/udp_unix.c"
-)
+option(EV_DEV "Enable develop mode." OFF)
 
 ###############################################################################
 # Support functions
@@ -111,101 +20,53 @@ function(ev_setup_target_wall name)
 endfunction()
 
 ###############################################################################
-# Dependency
+# Dev Mode
 ###############################################################################
-include(third_party/lua54.cmake)
-include(tool/CMakeLists.txt)
+
+if (EV_DEV)
+    add_library(${PROJECT_NAME}_raw
+        "src/ev.c"
+    )
+    target_include_directories(${PROJECT_NAME}_raw
+        PUBLIC
+            $<INSTALL_INTERFACE:include>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+    ev_setup_target_wall(${PROJECT_NAME}_raw)
+
+    add_subdirectory(tool/amalgamate)
+    add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/ev.h
+        COMMAND $<TARGET_FILE:amalgamate>
+                --in=${CMAKE_CURRENT_SOURCE_DIR}/include/ev.h
+                --out=${CMAKE_CURRENT_SOURCE_DIR}/ev.h
+                --commit=${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+                --commit=${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+                ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md
+                ${PROJECT_NAME}_raw
+        VERBATIM
+    )
+    add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/ev.c
+        COMMAND $<TARGET_FILE:amalgamate>
+                --in=${CMAKE_CURRENT_SOURCE_DIR}/src/ev.c
+                --out=${CMAKE_CURRENT_SOURCE_DIR}/ev.c
+                --commit=${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+                ${CMAKE_CURRENT_SOURCE_DIR}/ev.h
+                ${PROJECT_NAME}_raw
+        VERBATIM
+    )
+endif()
 
 ###############################################################################
 # Build libev
 ###############################################################################
-string(REPLACE ";" "," escaped_ev_src                   "${ev_src}")
-string(REPLACE ";" "," escaped_ev_src_os_win            "${ev_src_os_win}")
-string(REPLACE ";" "," escaped_ev_src_os_unix           "${ev_src_os_unix}")
-
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/ev.h
-    COMMAND $<TARGET_FILE:amalgamate>
-            --no_line
-            --out       ${CMAKE_CURRENT_SOURCE_DIR}/ev.h
-            --commit    ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
-            --commit    ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md
-            --source    "include/ev/expose.h"
-            --source    "include/ev/version.h"
-            --source    "include/ev/list.h"
-            --source    "include/ev/map.h"
-            --string    "#if defined(_WIN32) /* AMALGAMATE: ev.h (1/3) */"
-            --source    "include/ev/win.h"
-            --string    "#else               /* AMALGAMATE: ev.h (2/3) */"
-            --source    "include/ev/unix.h"
-            --string    "#endif              /* AMALGAMATE: ev.h (3/3) */"
-            --source    "include/ev.h"
-            --source    "include/ev/mutex.h"
-            --source    "include/ev/sem.h"
-            --source    "include/ev/once.h"
-            --source    "include/ev/shm.h"
-            --source    "include/ev/shdlib.h"
-            --source    "include/ev/handle.h"
-            --source    "include/ev/loop.h"
-            --source    "include/ev/async.h"
-            --source    "include/ev/timer.h"
-            --source    "include/ev/tcp.h"
-            --source    "include/ev/udp.h"
-            --source    "include/ev/pipe.h"
-            --source    "include/ev/fs.h"
-            --source    "include/ev/process.h"
-            --source    "include/ev/misc.h"
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
-            ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/expose.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/version.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/list.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/map.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/win.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/unix.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/mutex.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/sem.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/once.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/shm.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/shdlib.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/handle.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/loop.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/async.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/timer.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/tcp.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/udp.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/pipe.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/fs.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/process.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/include/ev/misc.h
-    VERBATIM
-)
-
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/ev.c
-    COMMAND $<TARGET_FILE:amalgamate>
-            --out               ${CMAKE_CURRENT_SOURCE_DIR}/ev.c
-            --commit            ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
-            --string            "#define EV_AMALGAMATE_BUILD"
-            --string            "#define EV_EXPOSE_SYMBOLS"
-            --string            "#define _GNU_SOURCE"
-            --string            "#include \"ev.h\""
-            --source            ${escaped_ev_src}
-            --string            "#if defined(_WIN32) /* AMALGAMATE: ev.c (1/3) */"
-            --source            ${escaped_ev_src_os_win}
-            --string            "#else               /* AMALGAMATE: ev.c (2/3) */"
-            --source            ${escaped_ev_src_os_unix}
-            --string            "#endif              /* AMALGAMATE: ev.c (3/3) */"
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
-            ${CMAKE_CURRENT_SOURCE_DIR}/ev.h
-            ${ev_src}
-            ${ev_src_os_win}
-            ${ev_src_os_unix}
-    VERBATIM
-)
 
 add_library(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/ev.c)
 target_include_directories(${PROJECT_NAME}

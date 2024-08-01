@@ -1,8 +1,5 @@
 #ifndef __EV_VERSION_H__
 #define __EV_VERSION_H__
-
-#include "ev/expose.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
