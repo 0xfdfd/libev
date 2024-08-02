@@ -101,7 +101,7 @@ static void _test_tcp_close_in_middle_on_accept(ev_tcp_t* lisn, ev_tcp_t* conn, 
 static void _test_tcp_close_in_middle_on_send(ev_tcp_write_req_t* req, ssize_t size)
 {
     test_send_data_pack_t* send_data = EV_CONTAINER_OF(req, test_send_data_pack_t, req);
-    mmc_free(send_data);
+    ev_free(send_data);
 
     ASSERT_LT_SSIZE(size, 0);
 }
@@ -109,7 +109,7 @@ static void _test_tcp_close_in_middle_on_send(ev_tcp_write_req_t* req, ssize_t s
 static void _test_tcp_close_in_middle_on_recv(ev_tcp_read_req_t* req, ssize_t size)
 {
     test_recv_data_pack_t* recv_data = EV_CONTAINER_OF(req, test_recv_data_pack_t, req);
-    mmc_free(recv_data);
+    ev_free(recv_data);
 
     ASSERT_LT_SSIZE(size, 0);
 }
@@ -145,7 +145,7 @@ TEST_F(tcp, close_in_middle)
     ASSERT_EQ_INT(ev_loop_run(&g_test_tcp_close_in_middle.loop, EV_LOOP_MODE_DEFAULT), 0);
 
     /* Send data. */
-    test_send_data_pack_t* send_data = mmc_malloc(sizeof(test_send_data_pack_t));
+    test_send_data_pack_t* send_data = ev_malloc(sizeof(test_send_data_pack_t));
     ev_buf_t send_buf = ev_buf_make(send_data->data, sizeof(send_data->data));
     test_random(send_data->data, sizeof(send_data->data));
     ASSERT_EQ_INT(
@@ -158,7 +158,7 @@ TEST_F(tcp, close_in_middle)
         0);
 
     /* Recv data. */
-    test_recv_data_pack_t* recv_data = mmc_malloc(sizeof(test_recv_data_pack_t));
+    test_recv_data_pack_t* recv_data = ev_malloc(sizeof(test_recv_data_pack_t));
     ev_buf_t recv_buf = ev_buf_make(recv_data->buff, sizeof(recv_data->buff));
     ASSERT_EQ_INT(
         ev_tcp_read(

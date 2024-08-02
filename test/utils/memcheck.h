@@ -63,26 +63,6 @@ void mmc_exit(void);
 void mmc_dump(mmc_info_t* info);
 
 /**
- * @brief same as malloc.
- */
-void* mmc_malloc(size_t size);
-
-/**
- * @brief Same as calloc.
- */
-void* mmc_calloc(size_t nmemb, size_t size);
-
-/**
- * @brief Same as free.
- */
-void mmc_free(void* ptr);
-
-/**
- * @brief Same as realloc.
- */
-void* mmc_realloc(void* ptr, size_t size);
-
-/**
  * @brief Same as [strdup(3)](https://man7.org/linux/man-pages/man3/strdup.3.html).
  * Use #mmc_free() to free duplicated string.
  */

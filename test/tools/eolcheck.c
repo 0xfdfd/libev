@@ -84,7 +84,7 @@ static int _eolcheck_read_file(eolcheck_file_t* dst, const char* path)
 static int _eolcheck_copy_file(eolcheck_file_t* dst, eolcheck_file_t* src)
 {
     dst->data_sz = src->data_sz;
-    if ((dst->data = mmc_malloc(dst->data_sz + 1)) == NULL)
+    if ((dst->data = ev_malloc(dst->data_sz + 1)) == NULL)
     {
         fprintf(stderr, "out of memory.\n");
         return EXIT_FAILURE;
@@ -100,7 +100,7 @@ static void _eolcheck_release_file(eolcheck_file_t* file)
 {
     if (file->data != NULL)
     {
-        mmc_free(file->data);
+        ev_free(file->data);
         file->data = NULL;
     }
     file->data_sz = 0;

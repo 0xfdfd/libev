@@ -19,7 +19,7 @@ int test_write_file(const char* path, const void* data, size_t size);
 /**
  * @brief Read file content.
  * @param[in] path		File path.
- * @param[out] content	File content. Use #mmc_free() to release it.
+ * @param[out] content	File content. Use #ev_free() to release it.
  * @return	The length of the file, not including NULL terminator.
  */
 long test_read_file(const char* path, char** content);

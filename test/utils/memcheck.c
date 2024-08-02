@@ -117,7 +117,10 @@ static void _mmc_do_compare(mmc_snapshot_t* snap1, mmc_snapshot_t* snap2,
     _mmc_do_cb(snap2, cb, arg);
 }
 
-void* mmc_malloc(size_t size)
+/**
+ * @brief same as malloc.
+ */
+static void* mmc_malloc(size_t size)
 {
     size_t malloc_size = sizeof(memblock_t) + size;
     memblock_t* memblock = malloc(malloc_size);
@@ -138,7 +141,10 @@ void* mmc_malloc(size_t size)
     return memblock->payload;
 }
 
-void* mmc_calloc(size_t nmemb, size_t size)
+/**
+ * @brief Same as calloc.
+ */
+static void* mmc_calloc(size_t nmemb, size_t size)
 {
     size_t calloc_size = nmemb * size;
 
@@ -151,7 +157,10 @@ void* mmc_calloc(size_t nmemb, size_t size)
     return ptr;
 }
 
-void mmc_free(void* ptr)
+/**
+ * @brief Same as free.
+ */
+static void mmc_free(void* ptr)
 {
     if (ptr == NULL)
     {
@@ -169,7 +178,10 @@ void mmc_free(void* ptr)
     free(memblock);
 }
 
-void* mmc_realloc(void* ptr, size_t size)
+/**
+ * @brief Same as realloc.
+ */
+static void* mmc_realloc(void* ptr, size_t size)
 {
     if (ptr == NULL)
     {

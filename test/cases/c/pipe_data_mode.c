@@ -58,7 +58,7 @@ static void _on_read_callback_221d(ev_pipe_read_req_t* req, ssize_t size)
 TEST_FIXTURE_SETUP(pipe)
 {
     size_t i;
-    g_test_pipe_data = mmc_calloc(1, sizeof(*g_test_pipe_data));
+    g_test_pipe_data = ev_calloc(1, sizeof(*g_test_pipe_data));
 
     for (i = 0; i < TEST_PACK_NUM_221D; i++)
     {
@@ -84,7 +84,7 @@ TEST_FIXTURE_TEARDOWN(pipe)
     ASSERT_EQ_EVLOOP(&g_test_pipe_data->loop, &empty_loop);
     ev_loop_exit(&g_test_pipe_data->loop);
 
-    mmc_free(g_test_pipe_data);
+    ev_free(g_test_pipe_data);
     g_test_pipe_data = NULL;
 }
 

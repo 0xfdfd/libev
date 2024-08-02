@@ -75,7 +75,7 @@ static int tool_tabcheck(int argc, char* argv[])
     }
 
     ret = _tabcheck_check(cfg.path, content);
-    mmc_free(content);
+    ev_free(content);
 
     return ret;
 }

@@ -1,5 +1,8 @@
 #ifndef __TEST_TOOL_INIT_H__
 #define __TEST_TOOL_INIT_H__
+
+#include "test.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

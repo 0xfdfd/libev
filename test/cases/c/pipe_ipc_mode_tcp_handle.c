@@ -38,7 +38,7 @@ struct test_19f1*           g_test_19f1 = NULL;
 
 TEST_FIXTURE_SETUP(pipe)
 {
-    g_test_19f1 = mmc_calloc(1, sizeof(*g_test_19f1));
+    g_test_19f1 = ev_calloc(1, sizeof(*g_test_19f1));
 
     test_random(g_test_19f1->data1, sizeof(g_test_19f1->data1));
     ASSERT_EQ_INT(ev_loop_init(&g_test_19f1->loop), 0);
@@ -70,7 +70,7 @@ TEST_FIXTURE_TEARDOWN(pipe)
     ASSERT_EQ_EVLOOP(&g_test_19f1->loop, &empty_loop);
     ASSERT_EQ_INT(ev_loop_exit(&g_test_19f1->loop), 0);
 
-    mmc_free(g_test_19f1);
+    ev_free(g_test_19f1);
     g_test_19f1 = NULL;
 }
 

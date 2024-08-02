@@ -113,7 +113,7 @@ static void _on_connect_6d69(ev_tcp_t* sock, int stat)
 
 TEST_FIXTURE_SETUP(tcp)
 {
-    g_test_6d69 = mmc_calloc(1, sizeof(*g_test_6d69));
+    g_test_6d69 = ev_calloc(1, sizeof(*g_test_6d69));
     g_test_6d69->s_listen_port = -1;
 
     ASSERT_EQ_INT(ev_loop_init(&g_test_6d69->s_loop), 0);
@@ -133,7 +133,7 @@ TEST_FIXTURE_TEARDOWN(tcp)
     ASSERT_EQ_EVLOOP(&g_test_6d69->s_loop, &empty_loop);
     ev_loop_exit(&g_test_6d69->s_loop);
 
-    mmc_free(g_test_6d69);
+    ev_free(g_test_6d69);
     g_test_6d69 = NULL;
 }
 

@@ -29,7 +29,7 @@ test_pipe_make_t*           g_test_pipe_make = NULL;
 
 TEST_FIXTURE_SETUP(pipe)
 {
-    g_test_pipe_make = mmc_calloc(1, sizeof(*g_test_pipe_make));
+    g_test_pipe_make = ev_calloc(1, sizeof(*g_test_pipe_make));
 
     size_t i;
     for (i = 0; i < ARRAY_SIZE(g_test_pipe_make->fds); i++)
@@ -58,7 +58,7 @@ TEST_FIXTURE_TEARDOWN(pipe)
     ASSERT_EQ_EVLOOP(&g_test_pipe_make->loop, &empty_loop);
     ASSERT_EQ_INT(ev_loop_exit(&g_test_pipe_make->loop), 0);
 
-    mmc_free(g_test_pipe_make);
+    ev_free(g_test_pipe_make);
     g_test_pipe_make = NULL;
 }
 

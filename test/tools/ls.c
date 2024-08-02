@@ -72,7 +72,7 @@ static void _ls_cleanup(void)
     {
         file_info_t* info = EV_CONTAINER_OF(it, file_info_t, node);
         ev_map_erase(&g_ls_ctx.node_table, &info->node);
-        mmc_free(info);
+        ev_free(info);
     }
 
     ev_loop_exit(&g_ls_ctx.loop);
@@ -85,7 +85,7 @@ static void _ls_on_readdir(ev_fs_req_t* req)
     {
         size_t name_len = strlen(it->name) + 1;
         size_t malloc_size = sizeof(file_info_t) + name_len;
-        file_info_t* info = mmc_malloc(malloc_size);
+        file_info_t* info = ev_malloc(malloc_size);
         memcpy(info->name, it->name, name_len);
         ev_map_insert(&g_ls_ctx.node_table, &info->node);
     }

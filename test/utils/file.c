@@ -86,11 +86,11 @@ long test_read_file(const char* path, char** content)
     size_t file_sz = ftell(file);
     rewind(file);
 
-    *content = mmc_malloc(file_sz + 1);
+    *content = ev_malloc(file_sz + 1);
     if (fread(*content, file_sz, 1, file) != 1)
     {
         fclose(file);
-        mmc_free(*content);
+        ev_free(*content);
         return EV_EPIPE;
     }
     (*content)[file_sz] = '\0';
@@ -182,7 +182,7 @@ char* file_parrent_dir(const char* path)
     }
 
     size_t str_size = last_slash - path;
-    char* buffer = mmc_malloc(str_size + 1);
+    char* buffer = ev_malloc(str_size + 1);
     ASSERT_NE_PTR(buffer, NULL);
 
     memcpy(buffer, path, str_size);

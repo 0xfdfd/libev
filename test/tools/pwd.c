@@ -6,7 +6,7 @@ static int tool_pwd(int argc, char* argv[])
     (void)argc; (void)argv;
 
     ssize_t path_size = ev_getcwd(NULL, 0) + 1;
-    char* buffer = mmc_malloc(path_size);
+    char* buffer = ev_malloc(path_size);
     if (buffer == NULL)
     {
         fprintf(stderr, "Out of memory.\n");
@@ -16,7 +16,7 @@ static int tool_pwd(int argc, char* argv[])
     ev_getcwd(buffer, path_size);
     fprintf(stdout, "%s\n", buffer);
 
-    mmc_free(buffer);
+    ev_free(buffer);
 
     return EXIT_SUCCESS;
 }
