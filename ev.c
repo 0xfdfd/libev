@@ -1089,8 +1089,8 @@ EV_LOCAL size_t ev__process_timer(ev_loop_t* loop);
 #line 17 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/log.h
-// SIZE:    1246
-// SHA-256: c6a064c9e3d566915bdc4d5cef774036cf0343b2617bfcd78cab5d52719ad2b2
+// SIZE:    1247
+// SHA-256: e1b3f555d93220db00349730ee06b210a60a535b5f21a30e1b33e566523f9c29
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/log.h"
 #ifndef __EV_LOG_INTERNAL_H__
@@ -1123,7 +1123,7 @@ typedef enum ev_log_level
  * @brief Log
  * @param[in] level Log level
  * @param[in] file  File name
- * @param[in] func  Functon name
+ * @param[in] func  Function name
  * @param[in] line  Line number
  * @param[in] fmt   Log format
  * @param[in] ...   Argument list
