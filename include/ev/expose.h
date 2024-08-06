@@ -2,8 +2,8 @@
 #define __EV_EXPOSE_H__
 
 #if defined(_WIN32) || defined(__CYGWIN__)
-#   if defined(EV_DLL_EXPORT)
-#       if defined(EV_EXPOSE_SYMBOLS)
+#   if defined(EV_USE_DLL)
+#       if defined(EV_BUILDING_DLL)
 #           if defined(__GNUC__) || defined(__clang__)
 #               define EV_API   __attribute__ ((dllexport))
 #           else

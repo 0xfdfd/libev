@@ -35,7 +35,7 @@
  * 1. support handle shared library.
  * 
  * ### Bug Fixes
- * 1. only define `dllimport` when `EV_DLL_EXPORT` is defined
+ * 1. only define `dllimport` when `EV_USE_DLL` is defined
  * 
  * 
  * ## v0.0.9 (2024/07/29)
@@ -219,16 +219,16 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/expose.h
-// SIZE:    1144
-// SHA-256: 9ad4ab57940ffdd69fb1f422dfddf278947feec5fb3271dcf52d6cd8cfe127f5
+// SIZE:    1139
+// SHA-256: 6e701e3887d5dc60145e4a44032f7ee7fa37b77cd28cffa7612d4008efd80342
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/expose.h"
 #ifndef __EV_EXPOSE_H__
 #define __EV_EXPOSE_H__
 
 #if defined(_WIN32) || defined(__CYGWIN__)
-#   if defined(EV_DLL_EXPORT)
-#       if defined(EV_EXPOSE_SYMBOLS)
+#   if defined(EV_USE_DLL)
+#       if defined(EV_BUILDING_DLL)
 #           if defined(__GNUC__) || defined(__clang__)
 #               define EV_API   __attribute__ ((dllexport))
 #           else
@@ -608,7 +608,7 @@ EV_API ev_map_node_t* ev_map_prev(const ev_map_node_t* node);
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.h
 // SIZE:    1188
-// SHA-256: d2e44482e1d67a211d47cfd531e6f51c8bdf1351f0221fec2ef93a21318ff2e2
+// SHA-256: de44c71240b8e73ec94c64ce635e8ee2df8434d931b477b6f64deb7c9e6b8a95
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/version.h"
 #ifndef __EV_VERSION_H__
@@ -640,7 +640,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           3
+#define EV_VERSION_PREREL           4
 
 /**
  * @brief Version calculate helper macro.

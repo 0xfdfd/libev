@@ -1,5 +1,5 @@
 #define EV_AMALGAMATE_BUILD
-#define EV_EXPOSE_SYMBOLS
+#define EV_BUILDING_DLL
 #define _GNU_SOURCE
 #include "ev.h" /* @AMALGAMATE: SKIP */
 

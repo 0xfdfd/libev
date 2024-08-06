@@ -9,7 +9,7 @@
 1. support handle shared library.
 
 ### Bug Fixes
-1. only define `dllimport` when `EV_DLL_EXPORT` is defined
+1. only define `dllimport` when `EV_USE_DLL` is defined
 
 
 ## v0.0.9 (2024/07/29)
