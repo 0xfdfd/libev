@@ -26,7 +26,7 @@
 /**
  * # Changelog
  * 
- * ## v0.1.0
+ * ## v0.1.0 (2024/08/06)
  * 
  * ### BREAKING CHANGES
  * 1. `ev_hrtime()` now return time in nanoseconds.
@@ -608,7 +608,7 @@ EV_API ev_map_node_t* ev_map_prev(const ev_map_node_t* node);
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.h
 // SIZE:    1188
-// SHA-256: de44c71240b8e73ec94c64ce635e8ee2df8434d931b477b6f64deb7c9e6b8a95
+// SHA-256: 0a780df701d1f8570df9ae69806b4cb0aabd327d06395e72d1ba51261f41198b
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/version.h"
 #ifndef __EV_VERSION_H__
@@ -640,7 +640,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           4
+#define EV_VERSION_PREREL           0
 
 /**
  * @brief Version calculate helper macro.
