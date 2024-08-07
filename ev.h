@@ -26,6 +26,12 @@
 /**
  * # Changelog
  * 
+ * ## v0.1.1
+ * 
+ * ### Bug Fixes
+ * 1. `ev_hrtime()` no longer require initialize event loop first.
+ * 
+ * 
  * ## v0.1.0 (2024/08/06)
  * 
  * ### BREAKING CHANGES
@@ -608,7 +614,7 @@ EV_API ev_map_node_t* ev_map_prev(const ev_map_node_t* node);
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.h
 // SIZE:    1188
-// SHA-256: 0a780df701d1f8570df9ae69806b4cb0aabd327d06395e72d1ba51261f41198b
+// SHA-256: 33a824ffaa7b81330b983ebd2940d59401b92bb41b733ce2bb7ed641f780942b
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/version.h"
 #ifndef __EV_VERSION_H__
@@ -635,12 +641,12 @@ extern "C" {
 /**
  * @brief Patch version.
  */
-#define EV_VERSION_PATCH            0
+#define EV_VERSION_PATCH            1
 
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           0
+#define EV_VERSION_PREREL           1
 
 /**
  * @brief Version calculate helper macro.

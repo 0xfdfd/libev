@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.1
+
+### Bug Fixes
+1. `ev_hrtime()` no longer require initialize event loop first.
+
+
 ## v0.1.0 (2024/08/06)
 
 ### BREAKING CHANGES

@@ -78,6 +78,7 @@ static void _ev_init_once_win(void)
 
 uint64_t ev_hrtime(void)
 {
+    ev__init_once_win();
 #define EV__NANOSEC 1000000000
     return _ev_hrtime_win(EV__NANOSEC);
 #undef EV__NANOSEC

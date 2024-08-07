@@ -7255,8 +7255,8 @@ EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
 #line 51 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/loop_win.c
-// SIZE:    5087
-// SHA-256: 5019fd0fb7dee874b87acbb0c26e45e7a6423a13775555210194db93efdb8196
+// SIZE:    5112
+// SHA-256: 0bef5414c5ccac631e5283e0f85f3ab22c4b3ff62eef9279cd03383e967eae4b
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/win/loop_win.c"
 #include <assert.h>
@@ -7339,6 +7339,7 @@ static void _ev_init_once_win(void)
 
 uint64_t ev_hrtime(void)
 {
+    ev__init_once_win();
 #define EV__NANOSEC 1000000000
     return _ev_hrtime_win(EV__NANOSEC);
 #undef EV__NANOSEC
