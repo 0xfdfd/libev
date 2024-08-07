@@ -2,51 +2,6 @@
 
 ev_loop_win_ctx_t g_ev_loop_win_ctx;
 
-static void _ev_time_init_win(void)
-{
-    DWORD errcode;
-    LARGE_INTEGER perf_frequency;
-
-    /* Retrieve high-resolution timer frequency
-     * and precompute its reciprocal.
-     */
-    if (QueryPerformanceFrequency(&perf_frequency))
-    {
-        g_ev_loop_win_ctx.hrtime_frequency_ = perf_frequency.QuadPart;
-    }
-    else
-    {
-        errcode = GetLastError();
-        EV_ABORT("GetLastError:%lu", errcode);
-    }
-}
-
-static uint64_t _ev_hrtime_win(unsigned int scale)
-{
-    LARGE_INTEGER counter;
-    double scaled_freq;
-    double result;
-    DWORD errcode;
-
-    assert(g_ev_loop_win_ctx.hrtime_frequency_ != 0);
-    assert(scale != 0);
-
-    if (!QueryPerformanceCounter(&counter))
-    {
-        errcode = GetLastError();
-        EV_ABORT("GetLastError:%lu", errcode);
-    }
-    assert(counter.QuadPart != 0);
-
-    /* Because we have no guarantee about the order of magnitude of the
-     * performance counter interval, integer math could cause this computation
-     * to overflow. Therefore we resort to floating point math.
-     */
-    scaled_freq = (double)g_ev_loop_win_ctx.hrtime_frequency_ / scale;
-    result = (double)counter.QuadPart / scaled_freq;
-    return (uint64_t)result;
-}
-
 static void _ev_pool_win_handle_req(OVERLAPPED_ENTRY* overlappeds, ULONG count)
 {
     ULONG i;
@@ -72,16 +27,8 @@ static void _ev_init_once_win(void)
     _ev_check_layout_win();
     ev__winsock_init();
     ev__winapi_init();
-    _ev_time_init_win();
+    ev__time_init_win();
     ev__thread_init_win();
-}
-
-uint64_t ev_hrtime(void)
-{
-    ev__init_once_win();
-#define EV__NANOSEC 1000000000
-    return _ev_hrtime_win(EV__NANOSEC);
-#undef EV__NANOSEC
 }
 
 EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)

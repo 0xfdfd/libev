@@ -8,11 +8,6 @@ extern "C" {
 
 typedef struct ev_loop_win_ctx
 {
-    /**
-     * Frequency of the high-resolution clock.
-     */
-    uint64_t                    hrtime_frequency_;
-
     struct
     {
         char                    zero_[1];                   /**< A zero length buffer */

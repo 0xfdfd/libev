@@ -89,20 +89,6 @@ static void _ev_init_once_unix(void)
     ev__init_process_unix();
 }
 
-uint64_t ev_hrtime(void)
-{
-    int errcode;
-    struct timespec t;
-
-    if (clock_gettime(g_ev_loop_unix_ctx.hwtime_clock_id, &t) != 0)
-    {
-        errcode = errno;
-        EV_ABORT("errno:%d", errcode);
-    }
-
-    return t.tv_sec * (uint64_t) 1e9 + t.tv_nsec;
-}
-
 EV_LOCAL void ev__init_once_unix(void)
 {
     static ev_once_t once = EV_ONCE_INIT;

@@ -4,7 +4,6 @@
 #include "ev.h" /* @AMALGAMATE: SKIP */
 
 #include "ev/defs.h"
-#include "ev/allocator.h"
 #include "ev/async.h"
 #include "ev/handle.h"
 #include "ev/loop.h"
@@ -16,7 +15,9 @@
 #include "ev/timer.h"
 #include "ev/log.h"
 #include "ev/udp.h"
+
 #include "ev/allocator.c"
+#include "ev/errno.c"
 #include "ev/fs.c"
 #include "ev/handle.c"
 #include "ev/list.c"
@@ -34,10 +35,12 @@
 #include "ev/version.c"
 
 #if defined(_WIN32)
+
 #   include "ev/win/winapi.h"
 #   include "ev/win/winsock.h"
 #   include "ev/win/async_win.h"
 #   include "ev/win/fs_win.h"
+#   include "ev/win/time_win.h"
 #   include "ev/win/udp_win.h"
 #   include "ev/win/loop_win.h"
 #   include "ev/win/process_win.h"
@@ -46,6 +49,7 @@
 #   include "ev/win/thread_win.h"
 #   include "ev/win/threadpool_win.h"
 #   include "ev/win/tcp_win.h"
+
 #   include "ev/win/async_win.c"
 #   include "ev/win/fs_win.c"
 #   include "ev/win/loop_win.c"
@@ -60,10 +64,13 @@
 #   include "ev/win/tcp_win.c"
 #   include "ev/win/thread_win.c"
 #   include "ev/win/threadpool_win.c"
+#   include "ev/win/time_win.c"
 #   include "ev/win/udp_win.c"
 #   include "ev/win/winapi.c"
 #   include "ev/win/winsock.c"
+
 #else
+
 #   include "ev/unix/async_unix.h"
 #   include "ev/unix/io_unix.h"
 #   include "ev/unix/process_unix.h"
@@ -72,6 +79,7 @@
 #   include "ev/unix/misc_unix.h"
 #   include "ev/unix/stream_unix.h"
 #   include "ev/unix/work.h"
+
 #   include "ev/unix/async_unix.c"
 #   include "ev/unix/fs_unix.c"
 #   include "ev/unix/io_unix.c"
@@ -88,5 +96,7 @@
 #   include "ev/unix/tcp_unix.c"
 #   include "ev/unix/thread_unix.c"
 #   include "ev/unix/threadpool_unix.c"
+#   include "ev/unix/time_unix.c"
 #   include "ev/unix/udp_unix.c"
+
 #endif

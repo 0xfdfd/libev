@@ -272,6 +272,80 @@
 
 #line 68 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/version.h
+// SIZE:    1188
+// SHA-256: 33a824ffaa7b81330b983ebd2940d59401b92bb41b733ce2bb7ed641f780942b
+////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/version.h"
+#ifndef __EV_VERSION_H__
+#define __EV_VERSION_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @defgroup EV_VERSION Version
+ * @{
+ */
+
+/**
+ * @brief Major version.
+ */
+#define EV_VERSION_MAJOR            0
+
+/**
+ * @brief Minor version.
+ */
+#define EV_VERSION_MINOR            1
+
+/**
+ * @brief Patch version.
+ */
+#define EV_VERSION_PATCH            1
+
+/**
+ * @brief Development version.
+ */
+#define EV_VERSION_PREREL           1
+
+/**
+ * @brief Version calculate helper macro.
+ * @param[in] a     Major version.
+ * @param[in] b     Minor version.
+ * @param[in] c     Patch version.
+ * @param[in] d     Development version.
+ */
+#define EV_VERSION(a, b, c, d)      (((a) << 24) + ((b) << 16) + ((c) << 8) + ((d) ? (d) : 255))
+
+/**
+ * @brief Current version code.
+ */
+#define EV_VERSION_CODE             \
+    EV_VERSION(EV_VERSION_MAJOR, EV_VERSION_MINOR, EV_VERSION_PATCH, EV_VERSION_PREREL)
+
+/**
+ * @brief Get version code as c string.
+ * @return      Version code.
+ */
+EV_API const char* ev_version_str(void);
+
+/**
+ * @brief Get version code as number.
+ * @return      Version code
+ */
+EV_API unsigned ev_version_code(void);
+
+/**
+ * @} EV_VERSION
+ */
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+#line 69 "ev.h"
+////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/list.h
 // SIZE:    4329
 // SHA-256: a71299aca04efa9160eaa9a748345df2c826bffd67181543c71f6403c12871ad
@@ -440,7 +514,7 @@ EV_API void ev_list_migrate(ev_list_t* dst, ev_list_t* src);
 #endif
 #endif
 
-#line 69 "ev.h"
+#line 70 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/map.h
 // SIZE:    4416
@@ -610,85 +684,15 @@ EV_API ev_map_node_t* ev_map_prev(const ev_map_node_t* node);
 #endif
 #endif
 
-#line 70 "ev.h"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/version.h
-// SIZE:    1188
-// SHA-256: 33a824ffaa7b81330b983ebd2940d59401b92bb41b733ce2bb7ed641f780942b
-////////////////////////////////////////////////////////////////////////////////
-#line 1 "ev/version.h"
-#ifndef __EV_VERSION_H__
-#define __EV_VERSION_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * @defgroup EV_VERSION Version
- * @{
- */
-
-/**
- * @brief Major version.
- */
-#define EV_VERSION_MAJOR            0
-
-/**
- * @brief Minor version.
- */
-#define EV_VERSION_MINOR            1
-
-/**
- * @brief Patch version.
- */
-#define EV_VERSION_PATCH            1
-
-/**
- * @brief Development version.
- */
-#define EV_VERSION_PREREL           1
-
-/**
- * @brief Version calculate helper macro.
- * @param[in] a     Major version.
- * @param[in] b     Minor version.
- * @param[in] c     Patch version.
- * @param[in] d     Development version.
- */
-#define EV_VERSION(a, b, c, d)      (((a) << 24) + ((b) << 16) + ((c) << 8) + ((d) ? (d) : 255))
-
-/**
- * @brief Current version code.
- */
-#define EV_VERSION_CODE             \
-    EV_VERSION(EV_VERSION_MAJOR, EV_VERSION_MINOR, EV_VERSION_PATCH, EV_VERSION_PREREL)
-
-/**
- * @brief Get version code as c string.
- * @return      Version code.
- */
-EV_API const char* ev_version_str(void);
-
-/**
- * @brief Get version code as number.
- * @return      Version code
- */
-EV_API unsigned ev_version_code(void);
-
-/**
- * @} EV_VERSION
- */
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
 #line 71 "ev.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/defines.h
+// SIZE:    2966
+// SHA-256: 83cd017868cb72323696bfed0f1e7bd921fe031fb8bfaed953cc860724603bc2
+////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/defines.h"
+#ifndef __EV_DEFINES_H__
+#define __EV_DEFINES_H__
 
 /**
  * @defgroup EV_DEFINE Defines
@@ -733,6 +737,16 @@ extern "C" {
 /** @endcond */
 
 /**
+ * @def EV_OFFSETOF
+ * @brief The offset of \p member in \p type.
+ */
+#if defined(offsetof)
+#   define EV_OFFSETOF(type, member)    offsetof(type, member)
+#else
+#   define EV_OFFSETOF(type, member)    ((size_t)&(((type*)0)->member))
+#endif
+
+/**
  * @def EV_CONTAINER_OF
  * @brief cast a member of a structure out to the containing structure.
  */
@@ -747,26 +761,27 @@ extern "C" {
         })
 #else
 #   define EV_CONTAINER_OF(ptr, type, member)   \
-        ((type *) ((char *) (ptr) - offsetof(type, member)))
+        ((type *) ((char *) (ptr) - EV_OFFSETOF(type, member)))
 #endif
 
 /**
  * @} EV_DEFINE
  */
 
-/**
- * @defgroup EV_OS OS
- * @{
- */
+#endif
 
-/**
- * @brief Infinite timeout.
- */
-#define EV_INFINITE_TIMEOUT         ((uint32_t)-1)
-
-/**
- * @} EV_OS
- */
+#line 72 "ev.h"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/errno.h
+// SIZE:    4404
+// SHA-256: 252b42440f9fc151662d76b0e0fd04d66db2290a3d4eda0e663db5cf3c743e50
+////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/errno.h"
+#ifndef __EV_ERRNO_H__
+#define __EV_ERRNO_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @defgroup EV_ERRNO Error number
@@ -824,18 +839,36 @@ typedef enum ev_errno
 
     /* Extend error code */
     EV_EOF              = -4095,
-}ev_errno_t;
+} ev_errno_t;
 
 /**
  * @brief Describe the error code
  * @param[in] err   Error code
  * @return          Describe string
  */
-const char* ev_strerror(int err);
+EV_API const char* ev_strerror(int err);
 
 /**
  * @} EV_ERRNO
  */
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+#line 73 "ev.h"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/allocator.h
+// SIZE:    2625
+// SHA-256: 46ca9a6aa1ad1c458eb28672baabcb209a2d11685eb5048a6931e980de2e5cac
+////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/allocator.h"
+#ifndef __EV_ALLOCATOR_H__
+#define __EV_ALLOCATOR_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @defgroup EV_ALLOCATOR Allocator
@@ -910,8 +943,31 @@ EV_API void* ev_realloc(void* ptr, size_t size);
 EV_API void ev_free(void* ptr);
 
 /**
+ * @brief Same as [strdup(3)](https://man7.org/linux/man-pages/man3/strdup.3.html)
+ */
+EV_API char* ev__strdup(const char* str);
+
+/**
  * @} EV_ALLOCATOR
  */
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+#line 74 "ev.h"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/queue.h
+// SIZE:    2422
+// SHA-256: ee1ffba7c2a219684e6824c96b2da060e3aba5a69a49338e3d91c7c39e0814da
+////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/queue.h"
+#ifndef __EV_QUEUE_H__
+#define __EV_QUEUE_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @defgroup EV_UTILS_QUEUE Queue
@@ -1006,7 +1062,14 @@ EV_API ev_queue_node_t* ev_queue_next(ev_queue_node_t* head, ev_queue_node_t* no
  * @} EV_UTILS_QUEUE
  */
 
-#if defined(_WIN32)                                                     /* OS */
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+#line 75 "ev.h"
+
+#if defined(_WIN32)
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win.h
 // SIZE:    15824
@@ -1510,8 +1573,8 @@ typedef struct ev_pipe_win_ipc_info
 
 #endif
 
-#line 394 "ev.h"
-#else                                                                   /* OS */
+#line 78 "ev.h"
+#else
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix.h
 // SIZE:    12837
@@ -1972,8 +2035,20 @@ struct ev_nonblock_stream
 
 #endif
 
-#line 396 "ev.h"
-#endif                                                                  /* OS */
+#line 80 "ev.h"
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/thread.h
+// SIZE:    2757
+// SHA-256: 828e3bd3de37bf867791ca61f7bbfececc4c99844031d7b19e27c59faca641bc
+////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/thread.h"
+#ifndef __EV_THREAD_H__
+#define __EV_THREAD_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @defgroup EV_Thread Thread
@@ -2084,6 +2159,24 @@ EV_API void* ev_tls_get(ev_tls_t* tls);
  * @} EV_Thread
  */
 
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+#line 83 "ev.h"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/request.h
+// SIZE:    2347
+// SHA-256: db89b3769d91bcbba58356b36b5a0092d51eb0666a5d78a7842de1cb3285d73f
+////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/request.h"
+#ifndef __EV_REQUEST_H__
+#define __EV_REQUEST_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct ev_loop;
 
 /**
@@ -2135,43 +2228,12 @@ typedef struct ev_write
         { EV_INIT_REPEAT(EV_IOV_MAX, EV_BUF_INIT(NULL, 0)), }       /* .data.bufsml */\
     }
 
-/**
- * @defgroup EV_TIME Time
- * @{
- */
-
-/**
- * @brief Time spec
- */
-struct ev_timespec_s;
-
-/**
- * @brief Typedef of #ev_timespec_s.
- */
-typedef struct ev_timespec_s ev_timespec_t;
-
-/**
- * @brief High-accuracy time type.
- */
-struct ev_timespec_s
-{
-    uint64_t    tv_sec;     /**< seconds */
-    uint32_t    tv_nsec;    /**< nanoseconds */
-};
-#define EV_TIMESPEC_INVALID \
-    {\
-        0,\
-        0,\
-    }
-
-/**
- * @} EV_TIME
- */
-
 #ifdef __cplusplus
 }
 #endif
+#endif
 
+#line 84 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/mutex.h
 // SIZE:    1792
@@ -2257,7 +2319,7 @@ EV_API int ev_mutex_try_enter(ev_mutex_t* handle);
 #endif
 #endif
 
-#line 596 "ev.h"
+#line 85 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/sem.h
 // SIZE:    1395
@@ -2330,7 +2392,7 @@ EV_API int ev_sem_try_wait(ev_sem_t* sem);
 #endif
 #endif
 
-#line 597 "ev.h"
+#line 86 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/once.h
 // SIZE:    906
@@ -2381,7 +2443,7 @@ EV_API void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
 #endif
 #endif
 
-#line 598 "ev.h"
+#line 87 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/shm.h
 // SIZE:    1487
@@ -2456,7 +2518,7 @@ EV_API size_t ev_shm_size(ev_shm_t* shm);
 #endif
 #endif
 
-#line 599 "ev.h"
+#line 88 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/shdlib.h
 // SIZE:    1351
@@ -2522,7 +2584,69 @@ int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr);
 #endif
 #endif
 
-#line 600 "ev.h"
+#line 89 "ev.h"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/time.h
+// SIZE:    787
+// SHA-256: 9fc3e35ec688b95caa98f8d5edf76ed0b4f7ed6309381f4cd18d18e6a361d721
+////////////////////////////////////////////////////////////////////////////////
+#line 1 "ev/time.h"
+#ifndef __EV_TIME_H__
+#define __EV_TIME_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @defgroup EV_TIME Time
+ * @{
+ */
+
+/**
+ * @brief Infinite timeout.
+ */
+#define EV_INFINITE_TIMEOUT         ((uint32_t)-1)
+
+/**
+ * @brief Time spec
+ */
+struct ev_timespec_s;
+
+/**
+ * @brief Typedef of #ev_timespec_s.
+ */
+typedef struct ev_timespec_s ev_timespec_t;
+
+/**
+ * @brief High-accuracy time type.
+ */
+struct ev_timespec_s
+{
+    uint64_t    tv_sec;     /**< seconds */
+    uint32_t    tv_nsec;    /**< nanoseconds */
+};
+#define EV_TIMESPEC_INVALID \
+    {\
+        0,\
+        0,\
+    }
+
+/**
+ * @brief Returns the current high-resolution real time in nanoseconds.
+ * @return Time in nanoseconds.
+ */
+EV_API uint64_t ev_hrtime(void);
+
+/**
+ * @} EV_TIME
+ */
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+#line 90 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/handle.h
 // SIZE:    3412
@@ -2637,7 +2761,7 @@ struct ev_handle
 #endif
 #endif
 
-#line 601 "ev.h"
+#line 91 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/loop.h
 // SIZE:    7464
@@ -2899,7 +3023,7 @@ EV_API void ev_loop_walk(ev_loop_t* loop, ev_walk_cb cb, void* arg);
 #endif
 #endif
 
-#line 602 "ev.h"
+#line 92 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/async.h
 // SIZE:    1757
@@ -2988,7 +3112,7 @@ EV_API void ev_async_wakeup(ev_async_t* handle);
 #endif
 #endif
 
-#line 603 "ev.h"
+#line 93 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/timer.h
 // SIZE:    2594
@@ -3107,7 +3231,7 @@ EV_API void ev_timer_stop(ev_timer_t* handle);
 #endif
 #endif
 
-#line 604 "ev.h"
+#line 94 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/tcp.h
 // SIZE:    6462
@@ -3349,7 +3473,7 @@ EV_API int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len
 #endif
 #endif
 
-#line 605 "ev.h"
+#line 95 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/udp.h
 // SIZE:    9029
@@ -3656,7 +3780,7 @@ EV_API int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs,
 #endif
 #endif
 
-#line 606 "ev.h"
+#line 96 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/pipe.h
 // SIZE:    10238
@@ -3976,7 +4100,7 @@ EV_API void ev_pipe_close(ev_os_pipe_t fd);
 #endif
 #endif
 
-#line 607 "ev.h"
+#line 97 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs.h
 // SIZE:    15520
@@ -4527,7 +4651,7 @@ EV_API ev_buf_t* ev_fs_get_filecontent(ev_fs_req_t* req);
 #endif
 #endif
 
-#line 608 "ev.h"
+#line 98 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/process.h
 // SIZE:    6793
@@ -4777,11 +4901,11 @@ EV_API ssize_t ev_exepath(char* buffer, size_t size);
 #endif
 #endif
 
-#line 609 "ev.h"
+#line 99 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/misc.h
-// SIZE:    3704
-// SHA-256: a018a35422b20e0df46c079e14aa13032b99272ade7451917ab975489e66a554
+// SIZE:    3558
+// SHA-256: 7c802e3b51042e89c3045b7d24540db444f5d5cf758da758d5cc224da503569b
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/misc.h"
 #ifndef __EV_MISC_H__
@@ -4914,12 +5038,6 @@ EV_API void ev_buf_make_v(ev_buf_t bufs[], size_t nbuf, va_list ap);
 EV_API void ev_library_shutdown(void);
 
 /**
- * @brief Returns the current high-resolution real time in nanoseconds.
- * @return Time in nanoseconds.
- */
-EV_API uint64_t ev_hrtime(void);
-
-/**
  * @} EV_MISC
  */
 
@@ -4928,7 +5046,7 @@ EV_API uint64_t ev_hrtime(void);
 #endif
 #endif
 
-#line 610 "ev.h"
+#line 100 "ev.h"
 
 #endif
 
