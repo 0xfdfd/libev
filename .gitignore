@@ -81,8 +81,9 @@ compile_commands.json
 .cache
 
 # Eclipse
-.cproject
-.project
+/.settings
+/.cproject
+/.project
 
 # Good Sync
 /_gsdata_
@@ -95,3 +96,4 @@ compile_commands.json
 
 # vscode
 /.vscode
+
