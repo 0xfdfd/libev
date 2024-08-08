@@ -1,5 +1,5 @@
-#ifndef __EV_PIPE_COMMON_INTERNAL_H__
-#define __EV_PIPE_COMMON_INTERNAL_H__
+#ifndef __EV_PIPE_INTERNAL_H__
+#define __EV_PIPE_INTERNAL_H__
 #ifdef __cplusplus
 extern "C" {
 #endif

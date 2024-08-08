@@ -1,5 +1,5 @@
-#ifndef __EV_FILE_INTERNAL_H__
-#define __EV_FILE_INTERNAL_H__
+#ifndef __EV_FILESYSTEM_INTERNAL_H__
+#define __EV_FILESYSTEM_INTERNAL_H__
 #ifdef __cplusplus
 extern "C" {
 #endif

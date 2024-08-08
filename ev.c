@@ -192,13 +192,13 @@ extern "C" {
 
 #line 7 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/async.h
-// SIZE:    296
-// SHA-256: 58a7214765d75a002493dae11c34ed0ae30cd3be5c7c2a7af1604af4163f55b5
+// FILE:    ev/async_internal.h
+// SIZE:    300
+// SHA-256: cd08764945ac0830a5a6ca2ef782e94b400aaca74b41513f0222906a490d4a47
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "ev/async.h"
-#ifndef __EV_ASYNC_COMMON_H__
-#define __EV_ASYNC_COMMON_H__
+#line 1 "ev/async_internal.h"
+#ifndef __EV_ASYNC_INTERNAL_H__
+#define __EV_ASYNC_INTERNAL_H__
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -216,11 +216,11 @@ EV_LOCAL void ev__async_exit_force(ev_async_t* handle);
 
 #line 8 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/handle.h
+// FILE:    ev/handle_internal.h
 // SIZE:    4036
 // SHA-256: 41b14a8f0d8cbb8cc9907aa2d0c27af34b45f0fd7c46e356be64dffcff190d78
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "ev/handle.h"
+#line 1 "ev/handle_internal.h"
 #ifndef __EV_HANDLE_INTERNAL_H__
 #define __EV_HANDLE_INTERNAL_H__
 #ifdef __cplusplus
@@ -335,11 +335,11 @@ EV_LOCAL size_t ev__process_endgame(ev_loop_t* loop);
 
 #line 9 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/loop.h
+// FILE:    ev/loop_internal.h
 // SIZE:    2644
 // SHA-256: 4168b8edcf40936745a0fa830d55726a2c43d6710208db65af588148fe7b52bc
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "ev/loop.h"
+#line 1 "ev/loop_internal.h"
 #ifndef __EV_LOOP_INTERNAL_H__
 #define __EV_LOOP_INTERNAL_H__
 #ifdef __cplusplus
@@ -446,13 +446,13 @@ EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout);
 
 #line 10 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/fs.h
-// SIZE:    3899
-// SHA-256: b28eb9dc3333457352b4b48def9356e8b7a6c0414001c169989d8e73ac053106
+// FILE:    ev/fs_internal.h
+// SIZE:    3911
+// SHA-256: 8413bdcc275f16c246b1850a875a37994618a87fb6e396578c10f3c54158cceb
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "ev/fs.h"
-#ifndef __EV_FILE_INTERNAL_H__
-#define __EV_FILE_INTERNAL_H__
+#line 1 "ev/fs_internal.h"
+#ifndef __EV_FILESYSTEM_INTERNAL_H__
+#define __EV_FILESYSTEM_INTERNAL_H__
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -576,11 +576,11 @@ EV_LOCAL int ev__fs_remove(const char* path, int recursive);
 
 #line 11 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/misc.h
+// FILE:    ev/misc_internal.h
 // SIZE:    376
 // SHA-256: e5b5bd60bce39493c9064d12f72d20ec85c423df14c5c2a63f7c3079cd170ba8
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "ev/misc.h"
+#line 1 "ev/misc_internal.h"
 #ifndef __EV_MISC_INTERNAL_H__
 #define __EV_MISC_INTERNAL_H__
 #ifdef __cplusplus
@@ -603,13 +603,13 @@ EV_LOCAL int ev__translate_posix_sys_error(int syserr);
 
 #line 12 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/pipe.h
-// SIZE:    2357
-// SHA-256: bb210205f67a37710b460e61a898f26f8eab74f9d394050e85189e2629484d2d
+// FILE:    ev/pipe_internal.h
+// SIZE:    2343
+// SHA-256: 2af7aac76918f9f6c0bb5cd2869ad2564d6a5d6cdfccbb1b90aa64a0c0368944
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "ev/pipe.h"
-#ifndef __EV_PIPE_COMMON_INTERNAL_H__
-#define __EV_PIPE_COMMON_INTERNAL_H__
+#line 1 "ev/pipe_internal.h"
+#ifndef __EV_PIPE_INTERNAL_H__
+#define __EV_PIPE_INTERNAL_H__
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1034,11 +1034,11 @@ EV_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop);
 
 #line 15 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/timer.h
+// FILE:    ev/timer_internal.h
 // SIZE:    414
 // SHA-256: 82972cef169ac541ae9bd0e070ae2e22319da4e62e50f9426356f18c540d9766
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "ev/timer.h"
+#line 1 "ev/timer_internal.h"
 #ifndef __EV_TIMER_INTERNAL_H__
 #define __EV_TIMER_INTERNAL_H__
 #ifdef __cplusplus
@@ -1123,13 +1123,13 @@ EV_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width);
 
 #line 17 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/udp.h
-// SIZE:    1046
-// SHA-256: cd9a545370a12a05704ec7f95580665fc6f91b98af77fac141c2862193dcb9e3
+// FILE:    ev/udp_internal.h
+// SIZE:    1032
+// SHA-256: cdf70f8dc10ca90a1844b4af4495df657a8b92dcb421d8ea69d0157f4b1c1fab
 ////////////////////////////////////////////////////////////////////////////////
-#line 1 "ev/udp.h"
-#ifndef __EV_UDP_COMMON_INTERNAL_H__
-#define __EV_UDP_COMMON_INTERNAL_H__
+#line 1 "ev/udp_internal.h"
+#ifndef __EV_UDP_INTERNAL_H__
+#define __EV_UDP_INTERNAL_H__
 #ifdef __cplusplus
 extern "C" {
 #endif
