@@ -28,6 +28,21 @@
  * 
  * ## v0.1.1
  * 
+ * ### BREAKING CHANGES
+ * 1. merge `ev_file_init()` with `ev_file_open()`
+ * 2. rename `ev_file_exit()` to `ev_file_close()`
+ * 3. merge `ev_file_read_sync()` with `ev_file_read()`
+ * 4. merge `ev_file_pread_sync()` with `ev_file_pread()`
+ * 5. merge `ev_file_write_sync()` with `ev_file_write()`
+ * 6. merge `ev_file_pwrite_sync()` with `ev_file_pwrite()`
+ * 7. merge `ev_file_stat_sync()` with `ev_file_stat()`
+ * 8. merge `ev_fs_mkdir_sync()` with `ev_fs_mkdir()`
+ * 9. merge `ev_fs_remove_sync()` with `ev_fs_remove()`
+ * 
+ * ### Features
+ * 1. `ev_fs_readdir()` is able to operator in synchronous mode.
+ * 2. `ev_fs_readfile()` is able to operator in synchronous mode.
+ * 
  * ### Bug Fixes
  * 1. `ev_hrtime()` no longer require initialize event loop first.
  * 
@@ -274,7 +289,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.h
 // SIZE:    1188
-// SHA-256: 33a824ffaa7b81330b983ebd2940d59401b92bb41b733ce2bb7ed641f780942b
+// SHA-256: bfd7bf1f3f9086909608762525cb9715d9f011d5fded875e487d02d1ddee11d7
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/version.h"
 #ifndef __EV_VERSION_H__
@@ -306,7 +321,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           1
+#define EV_VERSION_PREREL           2
 
 /**
  * @brief Version calculate helper macro.
@@ -4103,8 +4118,8 @@ EV_API void ev_pipe_close(ev_os_pipe_t fd);
 #line 97 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs.h
-// SIZE:    15520
-// SHA-256: a105c198a3c3992d1c2a06094ebf90f58e81c4f572fb63da0315a9075de64a81
+// SIZE:    15773
+// SHA-256: 9bce10e6744d939447b66656c2e2b178404d7e22ee101fb7f20220ec735b6781
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/fs.h"
 #ifndef __EV_FILE_SYSTEM_H__
@@ -4269,7 +4284,7 @@ struct ev_fs_req_s
             char*               path;           /**< File path */
             int                 flags;          /**< File flags */
             int                 mode;           /**< File mode */
-        }as_open;
+        } as_open;
 
         struct
         {
@@ -4281,43 +4296,43 @@ struct ev_fs_req_s
         {
             ssize_t             offset;         /**< File offset */
             ev_read_t           read_req;       /**< Read token */
-        }as_read;
+        } as_read;
 
         struct
         {
             ssize_t             offset;         /**< File offset */
             ev_write_t          write_req;      /**< Write token */
-        }as_write;
+        } as_write;
 
         struct
         {
             char*               path;           /**< Directory path */
-        }as_readdir;
+        } as_readdir;
 
         struct
         {
             char*               path;           /**< File path */
-        }as_readfile;
+        } as_readfile;
 
         struct
         {
             char*               path;           /**< Directory path */
             int                 mode;           /**< The mode for the new directory */
-        }as_mkdir;
+        } as_mkdir;
 
         struct
         {
             char*               path;           /**< Path */
             int                 recursion;      /**< Recursion delete */
         } as_remove;
-    }req;
+    } req;
 
     union
     {
-        ev_fs_stat_t            fileinfo;       /**< File information */
+        ev_fs_stat_t*           stat;           /**< File information */
         ev_list_t               dirents;        /**< Dirent list */
         ev_buf_t                filecontent;    /**< File content */
-    }rsp;
+    } rsp;
 };
 
 #define EV_FS_REQ_INVALID \
@@ -4329,23 +4344,8 @@ struct ev_fs_req_s
         NULL,\
         EV_EINPROGRESS,\
         { { NULL, 0, 0 } },\
-        { EV_FS_STAT_INVALID },\
+        { NULL },\
     }
-
-/**
- * @brief Initialize a file handle
- * @param[in] loop      Event loop
- * @param[out] file     File handle
- * @return              #ev_errno_t
- */
-EV_API int ev_file_init(ev_loop_t* loop, ev_file_t* file);
-
-/**
- * @brief Destroy a file handle
- * @param[in] file      File handle
- * @param[in] cb        Close callback
- */
-EV_API void ev_file_exit(ev_file_t* file, ev_file_close_cb cb);
 
 /**
  * @brief Equivalent to [open(2)](https://man7.org/linux/man-pages/man2/open.2.html).
@@ -4368,28 +4368,33 @@ EV_API void ev_file_exit(ev_file_t* file, ev_file_close_cb cb);
  * + #EV_FS_S_IRWXU
  * 
  * @note File always open in binary mode.
- * @param[in] file      File handle.
- * @param[in] req       File token.
+ * @param[in] loop      Event loop. Must set to NULL if \p cb is NULL.
+ * @param[out] file     File handle.
+ * @param[in] req       File token. Must set to NULL if \p cb is NULL.
  * @param[in] path      File path.
  * @param[in] flags     Open flags
  * @param[in] mode      Open mode.
- * @param[in] cb        Open result callback.
+ * @param[in] cb        Open result callback. If set to NULL, the \p file is
+ *   open in synchronous mode, so \p loop, \p req must also be NULL.
  * @return              #ev_errno_t
  */
-EV_API int ev_file_open(ev_file_t* file, ev_fs_req_t* req, const char* path,
+EV_API int ev_file_open(ev_loop_t* loop, ev_file_t* file, ev_fs_req_t* req, const char* path,
     int flags, int mode, ev_file_cb cb);
 
 /**
- * @brief Like #ev_file_open(), but work in synchronous mode.
- * @see ev_file_open()
- * @param[in] file      File handle.
- * @param[in] path      File path.
- * @param[in] flags     Open flags.
- * @param[in] mode      Open mode.
- * @return              #ev_errno_t
+ * @brief Close a file handle.
+ * 
+ * If the file is open in synchronous mode (the callback in #ev_file_open() is
+ * set to NULL), then this is a synchronous call. In this case \p cb must be NULL.
+ * 
+ * If the file is open in asynchronous mode, this call is also asynchronous,
+ * you must wait for \p cb to actually called to release the resource.
+ * 
+ * @param[in] file      File handle
+ * @param[in] cb        Close callback. Must set to NULL if \p file open in
+ *   synchronous mode.
  */
-EV_API int ev_file_open_sync(ev_file_t* file, const char* path, int flags,
-    int mode);
+EV_API void ev_file_close(ev_file_t* file, ev_file_close_cb cb);
 
 /**
  * @brief Set the file position indicator for the stream pointed to by \p file.
@@ -4397,10 +4402,12 @@ EV_API int ev_file_open_sync(ev_file_t* file, const char* path, int flags,
  * @see #EV_FS_SEEK_CUR
  * @see #EV_FS_SEEK_END
  * @param[in] file      File handle.
- * @param[in] req       File operation token.
+ * @param[in] req       File operation token. Must set to NULL if \p file open
+ *   in synchronous mode.
  * @param[in] whence    Direction.
  * @param[in] offset    Offset.
- * @param[in] cb        Result callback.
+ * @param[in] cb        Result callback. Must set to NULL if \p file open in
+ *   synchronous mode.
  * @return              #ev_errno_t
  */
 EV_API int ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence,
@@ -4409,115 +4416,81 @@ EV_API int ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence,
 /**
  * @brief Read data.
  * @param[in] file      File handle.
- * @param[in] req       File operation token.
+ * @param[in] req       File operation token. Must set to NULL if \p file open
+ *   in synchronous mode.
  * @param[in] bufs      Buffer list.
  * @param[in] nbuf      Buffer amount.
- * @param[in] cb        Read callback.
- * @return              #ev_errno_t
+ * @param[in] cb        Read callback. Must set to NULL if \p file open in
+ *   synchronous mode.
+ * @return              In asynchronous mode, return 0 if success, or #ev_errno_t
+ *   if failure. In synchronous, return the number of bytes read, or #ev_errno_t
+ *   if failure.
  */
-EV_API int ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+EV_API ssize_t ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ev_file_cb cb);
-
-/**
- * @brief Like #ev_file_read(), but work in synchronous mode.
- * @see ev_file_read()
- * @param[in] file      File handle.
- * @param[in] bufs      Buffer list.
- * @param[in] nbuf      Buffer amount.
- * @return              #ev_errno_t
- */
-EV_API ssize_t ev_file_read_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf);
 
 /**
  * @brief Read position data.
  * @param[in] file      File handle.
- * @param[in] req       File operation token.
+ * @param[in] req       File operation token. Must set to NULL if \p file open
+ *   in synchronous mode.
  * @param[in] bufs      Buffer list.
  * @param[in] nbuf      Buffer amount.
  * @param[in] offset    Offset of file.
- * @param[in] cb        Read callback.
- * @return              #ev_errno_t
+ * @param[in] cb        Read callback. Must set to NULL if \p file open in
+ *   synchronous mode.
+ * @return              In asynchronous mode, return 0 if success, or #ev_errno_t
+ *   if failure. In synchronous, return the number of bytes read, or #ev_errno_t
+ *   if failure.
  */
-EV_API int ev_file_pread(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+EV_API ssize_t ev_file_pread(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb);
-
-/**
- * @brief Like #ev_file_pread(), but work in synchronous mode.
- * @see ev_file_pread()
- * @param[in] file      File handle.
- * @param[in] bufs      Buffer list.
- * @param[in] nbuf      Buffer amount.
- * @param[in] offset    Offset of file.
- * @return              #ev_errno_t
- */
-EV_API ssize_t ev_file_pread_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
-    ssize_t offset);
 
 /**
  * @brief Write data
  * @param[in] file      File handle.
- * @param[in] req       File operation token.
+ * @param[in] req       File operation token. Must set to NULL if \p file open
+ *   in synchronous mode.
  * @param[in] bufs      Buffer list.
  * @param[in] nbuf      Buffer amount.
  * @param[in] offset    Offset of file.
- * @param[in] cb        Write callback.
- * @return              #ev_errno_t
+ * @param[in] cb        Write callback. Must set to NULL if \p file open in
+ *   synchronous mode.
+ * @return              In asynchronous mode, return 0 if success, or #ev_errno_t
+ *   if failure. In synchronous, return the number of bytes written, or #ev_errno_t
+ *   if failure.
  */
-EV_API int ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+EV_API ssize_t ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ev_file_cb cb);
-
-/**
- * @brief Like #ev_file_pwrite(), but work in synchronous mode.
- * @see ev_file_write()
- * @param[in] file      File handle.
- * @param[in] bufs      Buffer list.
- * @param[in] nbuf      Buffer amount.
- * @return              #ev_errno_t
- */
-EV_API ssize_t ev_file_write_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf);
 
 /**
  * @brief Write position data
  * @param[in] file      File handle.
- * @param[in] req       File operation token.
+ * @param[in] req       File operation token. Must set to NULL if \p file open
+ *   in synchronous mode.
  * @param[in] bufs      Buffer list.
  * @param[in] nbuf      Buffer amount.
  * @param[in] offset    Offset of file.
- * @param[in] cb        Write callback.
- * @return              #ev_errno_t
+ * @param[in] cb        Write callback. Must set to NULL if \p file open in
+ *   synchronous mode.
+ * @return              In asynchronous mode, return 0 if success, or #ev_errno_t
+ *   if failure. In synchronous, return the number of bytes written, or #ev_errno_t
+ *   if failure.
  */
-EV_API int ev_file_pwrite(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+EV_API ssize_t ev_file_pwrite(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb);
-
-/**
- * @brief Like #ev_file_pwrite(), but work in synchronous mode.
- * @see ev_file_pwrite()
- * @param[in] file      File handle.
- * @param[in] bufs      Buffer list.
- * @param[in] nbuf      Buffer amount.
- * @param[in] offset    Offset of file.
- * @return              #ev_errno_t
- */
-EV_API ssize_t ev_file_pwrite_sync(ev_file_t* file, ev_buf_t bufs[], size_t nbuf,
-    ssize_t offset);
 
 /**
  * @brief Get information about a file.
  * @param[in] file      File handle.
- * @param[in] req       File system request.
- * @param[in] cb        Result callback.
+ * @param[in] req       File system request. Must set to NULL if \p file open
+ *   in synchronous mode.
+ * @param[in] cb        Result callback. Must set to NULL if \p file open in
+ *   synchronous mode.
  * @return              #ev_errno_t
  */
-EV_API int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_file_cb cb);
-
-/**
- * @brief Like #ev_file_stat(), but work in synchronous mode.
- * @see ev_file_stat()
- * @param[in] file      File handle.
- * @param[out] stat     File status.
- * @return              #ev_errno_t
- */
-EV_API int ev_file_stat_sync(ev_file_t* file, ev_fs_stat_t* stat);
+EV_API int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_fs_stat_t* stat,
+    ev_file_cb cb);
 
 /**
  * @brief Get all entry in directory.
@@ -4531,27 +4504,38 @@ EV_API int ev_file_stat_sync(ev_file_t* file, ev_fs_stat_t* stat);
  * | >= 0  | The number of dirent nodes |
  * | < 0   | #ev_errno_t                |
  * 
- * @param[in] loop      Event loop.
- * @param[in] req       File system request
+ * @param[in] loop      Event loop. Must set to NULL if operator in synchronous
+ *   mode.
+ * @param[in] req       File system request. If operation success, use
+ *   #ev_fs_req_cleanup() to cleanup \p req. Missing this cause lead to memory
+ *   leak.
  * @param[in] path      Directory path.
- * @param[in] callback  Result callback.
- * @return              #ev_errno_t
+ * @param[in] cb        Result callback, set to NULL to operator in synchronous
+ *   mode. In synchronous mode, \p loop must also set to NULL.
+ * @return              In asynchronous mode, return 0 if success, or #ev_errno_t
+ *   if failure. In synchronous, return the number of items in the \p path, or
+ *   #ev_errno_t if failure.
  */
-EV_API int ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
-    ev_file_cb callback);
+EV_API ssize_t ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
+    ev_file_cb cb);
 
 /**
  * @brief Read file content.
  *
  * Use #ev_fs_get_filecontent() to get file content.
  *
- * @param[in] loop      Event loop.
- * @param[in] req       File system request.
+ * @param[in] loop      Event loop. Must set to NULL if \p cb is NULL.
+ * @param[in] req       File system request. If operation success, use
+ *   #ev_fs_req_cleanup() to cleanup \p req. Missing this cause lead to memory
+ *   leak.
  * @param[in] path      File path.
- * @param[in] cb        Result callback.
- * @return              #ev_errno_t
+ * @param[in] cb        Result callback. Set to NULL to operator in synchronous
+ *   mode. In synchronous mode, \p loop must also set to NULL.
+ * @return              In asynchronous mode, return 0 if success, or #ev_errno_t
+ *   if failure. In synchronous, return the number of bytes for the file, or
+ *   #ev_errno_t if failure.
  */
-EV_API int ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
+EV_API ssize_t ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
     ev_file_cb cb);
 
 /**
@@ -4563,43 +4547,28 @@ EV_API int ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
  * + #EV_FS_S_IXUSR
  * + #EV_FS_S_IRWXU
  *
- * @param[in] loop      Event loop.
- * @param[in] req       File system request.
+ * @param[in] loop      Event loop. Must set to NULL if \p cb is NULL.
+ * @param[in] req       File system request. Must set to NULL if \p cb is NULL.
  * @param[in] path      Directory path.
  * @param[in] mode      Creation mode.
- * @param[in] cb        Result callback.
+ * @param[in] cb        Result callback. Set to NULL to operator in synchronous
+ *   mode. In synchronous mode, \p loop and \p req must also set to NULL.
  * @return              #ev_errno_t
  */
 EV_API int ev_fs_mkdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
     int mode, ev_file_cb cb);
 
 /**
- * @brief Like #ev_fs_mkdir(), but work in synchronous mode.
- * @see ev_fs_mkdir()
- * @param[in] path      Directory path.
- * @param[in] mode      Creation mode.
- * @return              #ev_errno_t
- */
-EV_API int ev_fs_mkdir_sync(const char* path, int mode);
-
-/**
  * @brief Delete a name for the file system.
  * @param[in] loop      Event loop.
  * @param[in] req       File system request.
  * @param[in] path      File path.
- * @param[in] cb        Result callback.
+ * @param[in] cb        Result callback. Set to NULL to operator in synchronous
+ *   mode. In synchronous mode, \p loop and \p req must also set to NULL.
  * @return              #ev_errno_t
  */
 EV_API int ev_fs_remove(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
     int recursion, ev_file_cb cb);
-
-/**
- * @brief Like #ev_fs_remove(), but work in synchronous mode.
- * @param[in] path      File path.
- * @param[in] recursion Recursion delete if path is a directory.
- * @return              #ev_errno_t
- */
-EV_API int ev_fs_remove_sync(const char* path, int recursion);
 
 /**
  * @brief Cleanup file system request

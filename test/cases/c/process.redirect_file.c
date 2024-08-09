@@ -16,14 +16,13 @@ static test_process_t g_test_process;
 
 TEST_FIXTURE_SETUP(process)
 {
-    ev_fs_remove_sync(TEST_PROCESS_TMPFILE_PATH, 1);
+    ev_fs_remove(NULL, NULL, TEST_PROCESS_TMPFILE_PATH, 1, NULL);
     memset(&g_test_process, 0, sizeof(g_test_process));
 
     g_test_process.loop = ev_calloc(1, sizeof(ev_loop_t));
     ASSERT_EQ_INT(ev_loop_init(g_test_process.loop), 0);
 
     g_test_process.file = ev_calloc(1, sizeof(ev_file_t));
-    ASSERT_EQ_INT(ev_file_init(g_test_process.loop, g_test_process.file), 0);
 
     g_test_process.self_exe_path = mmc_strdup(test_get_self_exe());
     g_test_process.process = ev_calloc(1, sizeof(ev_process_t));
@@ -33,7 +32,7 @@ TEST_FIXTURE_TEARDOWN(process)
 {
     if (g_test_process.file != NULL)
     {
-        ev_file_exit(g_test_process.file, NULL);
+        ev_file_close(g_test_process.file, NULL);
         ev_loop_run(g_test_process.loop, EV_LOOP_MODE_NOWAIT);
 
         ev_free(g_test_process.file);
@@ -50,7 +49,7 @@ TEST_FIXTURE_TEARDOWN(process)
     ev_free(g_test_process.self_exe_path);
     g_test_process.self_exe_path = NULL;
 
-    ev_fs_remove_sync(TEST_PROCESS_TMPFILE_PATH, 1);
+    ev_fs_remove(NULL, NULL, TEST_PROCESS_TMPFILE_PATH, 1, NULL);
 }
 
 static void _test_process_redirect_file_on_open(ev_fs_req_t* req)
@@ -73,7 +72,8 @@ TEST_F(process, redirect_file)
 {
     int ret;
     
-    ret = ev_file_open(g_test_process.file,
+    ret = ev_file_open(g_test_process.loop,
+        g_test_process.file,
         &g_test_process.token,
         TEST_PROCESS_TMPFILE_PATH,
         EV_FS_O_CREAT | EV_FS_O_WRONLY,

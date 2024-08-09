@@ -136,7 +136,7 @@ static int tool_ls(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    ret = ev_fs_readdir(&g_ls_ctx.loop, &g_ls_ctx.fs_req, g_ls_ctx.ls_path, _ls_on_readdir);
+    ret = (int)ev_fs_readdir(&g_ls_ctx.loop, &g_ls_ctx.fs_req, g_ls_ctx.ls_path, _ls_on_readdir);
     if (ret != 0)
     {
         fprintf(stderr, "%s\n", ev_strerror(ret));
