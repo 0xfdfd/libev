@@ -139,7 +139,7 @@ static int _ev_fs_init_req_as_open(ev_fs_req_t* token, ev_file_t* file,
 }
 
 static int _ev_fs_init_req_as_seek(ev_fs_req_t* token, ev_file_t* file,
-    int whence, ssize_t offset, ev_file_cb cb)
+    int whence, int64_t offset, ev_file_cb cb)
 {
     _ev_fs_init_req(token, file, cb, EV_FS_REQ_SEEK);
 
@@ -686,7 +686,8 @@ int ev_file_open(ev_loop_t* loop, ev_file_t* file, ev_fs_req_t* token, const cha
     return 0;
 }
 
-int ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence, ssize_t offset, ev_file_cb cb)
+int ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence, int64_t offset,
+    ev_file_cb cb)
 {
     int ret;
     ev_loop_t* loop = file->base.loop;

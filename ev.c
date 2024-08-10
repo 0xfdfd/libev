@@ -569,7 +569,7 @@ EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout);
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs_internal.h
 // SIZE:    3911
-// SHA-256: 8413bdcc275f16c246b1850a875a37994618a87fb6e396578c10f3c54158cceb
+// SHA-256: 0c819b48b26da1184470ac6620be860d12c1109067c9a6c2af4885a5f3c94283
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/fs_internal.h"
 #ifndef __EV_FILESYSTEM_INTERNAL_H__
@@ -610,7 +610,7 @@ EV_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags,
  * @param[in] offset    Offset.
  * @return              #ev_errno_t
  */
-EV_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset);
+EV_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, int64_t offset);
 
 /**
  * @brief Same as [readv(2)](https://linux.die.net/man/2/readv)
@@ -1433,8 +1433,8 @@ const char* ev_strerror(int err)
 #line 23 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs.c
-// SIZE:    24359
-// SHA-256: 89a2e1ffc8ab0ae74c5ca61859b6490977c48a61861cda3dad3d5f6bf2949a12
+// SIZE:    24363
+// SHA-256: 0396ee672fe62ab42a58149486185e1ac88560f44650f1517a0b8357ad989e76
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/fs.c"
 #include <sys/stat.h>
@@ -1578,7 +1578,7 @@ static int _ev_fs_init_req_as_open(ev_fs_req_t* token, ev_file_t* file,
 }
 
 static int _ev_fs_init_req_as_seek(ev_fs_req_t* token, ev_file_t* file,
-    int whence, ssize_t offset, ev_file_cb cb)
+    int whence, int64_t offset, ev_file_cb cb)
 {
     _ev_fs_init_req(token, file, cb, EV_FS_REQ_SEEK);
 
@@ -2125,7 +2125,8 @@ int ev_file_open(ev_loop_t* loop, ev_file_t* file, ev_fs_req_t* token, const cha
     return 0;
 }
 
-int ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence, ssize_t offset, ev_file_cb cb)
+int ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence, int64_t offset,
+    ev_file_cb cb)
 {
     int ret;
     ev_loop_t* loop = file->base.loop;
@@ -6600,7 +6601,7 @@ void ev_async_wakeup(ev_async_t* handle)
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/fs_win.c
 // SIZE:    23105
-// SHA-256: eabe22bf19d49cb48f1c3ecc7cd46c53f29f5d93b002e7d6fe349378d94b78eb
+// SHA-256: 367e15cabab1576c3e2002b0dbd2276dce02559a741347c8a0285cf685a46bb3
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/win/fs_win.c"
 #include <assert.h>
@@ -7129,7 +7130,7 @@ EV_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mo
     return 0;
 }
 
-EV_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset)
+EV_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, int64_t offset)
 {
     DWORD errcode;
     LONG DistanceToMove = offset & 0XFFFFFFFF;
@@ -13197,7 +13198,7 @@ void ev_async_wakeup(ev_async_t* handle)
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/fs_unix.c
 // SIZE:    9825
-// SHA-256: 49d1a344d8ab166224167175997a490e40448c0ae46461487fd57000e04ec375
+// SHA-256: 2a9ecb3965e8742fb03ed088bb9c6b4d2ff2f52cdc6bd64e860d0021f1595175
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/unix/fs_unix.c"
 #define _GNU_SOURCE
@@ -13440,7 +13441,7 @@ EV_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mo
     return 0;
 }
 
-EV_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset)
+EV_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, int64_t offset)
 {
     int errcode;
     if (lseek(file, offset, whence) == (off_t)-1)

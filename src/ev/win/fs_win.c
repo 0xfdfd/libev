@@ -524,7 +524,7 @@ EV_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mo
     return 0;
 }
 
-EV_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset)
+EV_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, int64_t offset)
 {
     DWORD errcode;
     LONG DistanceToMove = offset & 0XFFFFFFFF;

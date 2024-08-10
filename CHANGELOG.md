@@ -3,15 +3,16 @@
 ## v0.1.1
 
 ### BREAKING CHANGES
-1. merge `ev_file_init()` with `ev_file_open()`
-2. rename `ev_file_exit()` to `ev_file_close()`
-3. merge `ev_file_read_sync()` with `ev_file_read()`
-4. merge `ev_file_pread_sync()` with `ev_file_pread()`
-5. merge `ev_file_write_sync()` with `ev_file_write()`
-6. merge `ev_file_pwrite_sync()` with `ev_file_pwrite()`
-7. merge `ev_file_stat_sync()` with `ev_file_stat()`
-8. merge `ev_fs_mkdir_sync()` with `ev_fs_mkdir()`
-9. merge `ev_fs_remove_sync()` with `ev_fs_remove()`
+1. merge `ev_file_init()` with `ev_file_open()`.
+2. rename `ev_file_exit()` to `ev_file_close()`.
+3. merge `ev_file_read_sync()` with `ev_file_read()`.
+4. merge `ev_file_pread_sync()` with `ev_file_pread()`.
+5. merge `ev_file_write_sync()` with `ev_file_write()`.
+6. merge `ev_file_pwrite_sync()` with `ev_file_pwrite()`.
+7. merge `ev_file_stat_sync()` with `ev_file_stat()`.
+8. merge `ev_fs_mkdir_sync()` with `ev_fs_mkdir()`.
+9. merge `ev_fs_remove_sync()` with `ev_fs_remove()`.
+10. prototype of `ev_file_seek()` is changed.
 
 ### Features
 1. `ev_fs_readdir()` is able to operator in synchronous mode.

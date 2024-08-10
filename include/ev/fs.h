@@ -27,7 +27,7 @@ typedef enum ev_dirent_type_e
 /**
  * @brief File system request type.
  */
-enum ev_fs_req_type_e
+typedef enum ev_fs_req_type_e
 {
     EV_FS_REQ_UNKNOWN,
     EV_FS_REQ_OPEN,
@@ -39,12 +39,7 @@ enum ev_fs_req_type_e
     EV_FS_REQ_READFILE,
     EV_FS_REQ_MKDIR,
     EV_FS_REQ_REMOVE,
-};
-
-/**
- * @brief Typedef of #ev_fs_req_type_e.
- */
-typedef enum ev_fs_req_type_e ev_fs_req_type_t;
+} ev_fs_req_type_t;
 
 struct ev_file_s;
 
@@ -165,7 +160,7 @@ struct ev_fs_req_s
         struct
         {
             int                 whence;         /**< Directive */
-            ssize_t             offset;         /**< Offset */
+            int64_t             offset;         /**< Offset */
         } as_seek;
 
         struct
@@ -287,7 +282,7 @@ EV_API void ev_file_close(ev_file_t* file, ev_file_close_cb cb);
  * @return              #ev_errno_t
  */
 EV_API int ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence,
-    ssize_t offset, ev_file_cb cb);
+    int64_t offset, ev_file_cb cb);
 
 /**
  * @brief Read data.

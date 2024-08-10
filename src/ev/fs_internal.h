@@ -36,7 +36,7 @@ EV_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags,
  * @param[in] offset    Offset.
  * @return              #ev_errno_t
  */
-EV_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, ssize_t offset);
+EV_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, int64_t offset);
 
 /**
  * @brief Same as [readv(2)](https://linux.die.net/man/2/readv)

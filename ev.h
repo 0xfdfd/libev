@@ -29,15 +29,16 @@
  * ## v0.1.1
  * 
  * ### BREAKING CHANGES
- * 1. merge `ev_file_init()` with `ev_file_open()`
- * 2. rename `ev_file_exit()` to `ev_file_close()`
- * 3. merge `ev_file_read_sync()` with `ev_file_read()`
- * 4. merge `ev_file_pread_sync()` with `ev_file_pread()`
- * 5. merge `ev_file_write_sync()` with `ev_file_write()`
- * 6. merge `ev_file_pwrite_sync()` with `ev_file_pwrite()`
- * 7. merge `ev_file_stat_sync()` with `ev_file_stat()`
- * 8. merge `ev_fs_mkdir_sync()` with `ev_fs_mkdir()`
- * 9. merge `ev_fs_remove_sync()` with `ev_fs_remove()`
+ * 1. merge `ev_file_init()` with `ev_file_open()`.
+ * 2. rename `ev_file_exit()` to `ev_file_close()`.
+ * 3. merge `ev_file_read_sync()` with `ev_file_read()`.
+ * 4. merge `ev_file_pread_sync()` with `ev_file_pread()`.
+ * 5. merge `ev_file_write_sync()` with `ev_file_write()`.
+ * 6. merge `ev_file_pwrite_sync()` with `ev_file_pwrite()`.
+ * 7. merge `ev_file_stat_sync()` with `ev_file_stat()`.
+ * 8. merge `ev_fs_mkdir_sync()` with `ev_fs_mkdir()`.
+ * 9. merge `ev_fs_remove_sync()` with `ev_fs_remove()`.
+ * 10. prototype of `ev_file_seek()` is changed.
  * 
  * ### Features
  * 1. `ev_fs_readdir()` is able to operator in synchronous mode.
@@ -289,7 +290,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.h
 // SIZE:    1188
-// SHA-256: bfd7bf1f3f9086909608762525cb9715d9f011d5fded875e487d02d1ddee11d7
+// SHA-256: b11fe3a88e99545063b23047f7cd33fa60beb505a12b0d9e1b5b72c60405fd07
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/version.h"
 #ifndef __EV_VERSION_H__
@@ -321,7 +322,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           2
+#define EV_VERSION_PREREL           3
 
 /**
  * @brief Version calculate helper macro.
@@ -4118,8 +4119,8 @@ EV_API void ev_pipe_close(ev_os_pipe_t fd);
 #line 97 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs.h
-// SIZE:    15773
-// SHA-256: 9bce10e6744d939447b66656c2e2b178404d7e22ee101fb7f20220ec735b6781
+// SIZE:    15701
+// SHA-256: 84781db7e04be5330baef0f739423fb136975f3c975c473640f4265582a6b749
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/fs.h"
 #ifndef __EV_FILE_SYSTEM_H__
@@ -4151,7 +4152,7 @@ typedef enum ev_dirent_type_e
 /**
  * @brief File system request type.
  */
-enum ev_fs_req_type_e
+typedef enum ev_fs_req_type_e
 {
     EV_FS_REQ_UNKNOWN,
     EV_FS_REQ_OPEN,
@@ -4163,12 +4164,7 @@ enum ev_fs_req_type_e
     EV_FS_REQ_READFILE,
     EV_FS_REQ_MKDIR,
     EV_FS_REQ_REMOVE,
-};
-
-/**
- * @brief Typedef of #ev_fs_req_type_e.
- */
-typedef enum ev_fs_req_type_e ev_fs_req_type_t;
+} ev_fs_req_type_t;
 
 struct ev_file_s;
 
@@ -4289,7 +4285,7 @@ struct ev_fs_req_s
         struct
         {
             int                 whence;         /**< Directive */
-            ssize_t             offset;         /**< Offset */
+            int64_t             offset;         /**< Offset */
         } as_seek;
 
         struct
@@ -4411,7 +4407,7 @@ EV_API void ev_file_close(ev_file_t* file, ev_file_close_cb cb);
  * @return              #ev_errno_t
  */
 EV_API int ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence,
-    ssize_t offset, ev_file_cb cb);
+    int64_t offset, ev_file_cb cb);
 
 /**
  * @brief Read data.
