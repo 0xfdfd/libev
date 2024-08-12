@@ -7,6 +7,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/third_party/cmake-modules")
 # Build options
 option(EV_ENABLE_COVERAGE "Enable code coverage. GCC/Clang only" OFF)
 option(EV_DEV "Enable develop mode." OFF)
+option(EV_NO_LINE "Disable line control when generate code" OFF)
 
 ###############################################################################
 # Support functions
@@ -44,6 +45,7 @@ if (EV_DEV)
                 --out=${CMAKE_CURRENT_SOURCE_DIR}/ev.h
                 --commit=${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
                 --commit=${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md
+                --noline=${EV_NO_LINE}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
                 ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md
@@ -56,6 +58,7 @@ if (EV_DEV)
                 --in=${CMAKE_CURRENT_SOURCE_DIR}/src/ev.c
                 --out=${CMAKE_CURRENT_SOURCE_DIR}/ev.c
                 --commit=${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+                --noline=${EV_NO_LINE}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
                 ${CMAKE_CURRENT_SOURCE_DIR}/ev.h

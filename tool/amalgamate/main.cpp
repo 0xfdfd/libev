@@ -8,6 +8,11 @@
 
 typedef struct amalgamate_ctx
 {
+    amalgamate_ctx()
+    {
+        noline = false;
+    }
+
     /**
      * @brief Path to input file.
      */
@@ -22,6 +27,11 @@ typedef struct amalgamate_ctx
      * @brief Commits that apply to the begin of the output file.
      */
     am::StringVec commits;
+
+    /**
+     * @brief Disable line control.
+     */
+    bool    noline;
 } amalgamate_ctx_t;
 
 static amalgamate_ctx_t _G;
@@ -37,6 +47,9 @@ static const char* s_help =
 "\n"
 "  --commit=[PATH]\n"
 "    Commit file that apply to the output file.\n"
+"\n"
+"  --noline\n"
+"    Disable line control.\n"
 ;
 
 static void _setup_ctx(int argc, char* argv[])
@@ -72,6 +85,28 @@ static void _setup_ctx(int argc, char* argv[])
         {
             std::string commit = argv[i] + opt_sz;
             _G.commits.push_back(commit);
+            continue;
+        }
+
+        opt = "-noline";
+        if (strcmp(argv[i], opt) == 0)
+        {
+        	_G.noline = true;
+        	continue;
+        }
+
+        opt = "--noline="; opt_sz = strlen(opt);
+        if (strncmp(argv[i], opt, opt_sz) == 0)
+        {
+            const char* v = argv[i] + opt_sz;
+            if (v[0] == '\0')
+            {
+                fprintf(stderr, "missing argument to `--noline`.\n");
+                exit(EXIT_FAILURE);
+            }
+            _G.noline = !(strcasecmp(v, "false") == 0 ||
+                strcasecmp(v, "0") == 0 ||
+                strcasecmp(v, "off") == 0);
             continue;
         }
     }
@@ -172,9 +207,15 @@ static std::string _process_file(const std::string& name, const am::StringVec& l
         out += "// SIZE:    " + am::to_string(content.size()) + "\n";
         out += "// SHA-256: " + am::sha256(content) + "\n";
         out += "////////////////////////////////////////////////////////////////////////////////\n";
-        out += "#line 1 \"" + include_path + "\"\n";
+        if (!_G.noline)
+        {
+        	out += "#line 1 \"" + include_path + "\"\n";
+        }
         out += content + "\n";
-        out += "#line " + am::to_string(line_cnt + 1) + " \"" + name + "\"\n";
+        if (!_G.noline)
+        {
+        	out += "#line " + am::to_string(line_cnt + 1) + " \"" + name + "\"\n";
+        }
     }
     return out;
 }
