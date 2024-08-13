@@ -12,7 +12,7 @@
 7. merge `ev_file_stat_sync()` with `ev_file_stat()`.
 8. merge `ev_fs_mkdir_sync()` with `ev_fs_mkdir()`.
 9. merge `ev_fs_remove_sync()` with `ev_fs_remove()`.
-10. prototype of `ev_file_seek()` is changed.
+10. `ev_file_seek()` now return the resulting offset location as measured in bytes from the beginning of the file.
 
 ### Features
 1. `ev_fs_readdir()` is able to operator in synchronous mode.

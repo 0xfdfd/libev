@@ -686,12 +686,17 @@ int ev_file_open(ev_loop_t* loop, ev_file_t* file, ev_fs_req_t* token, const cha
     return 0;
 }
 
-int ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence, int64_t offset,
+int64_t ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence, int64_t offset,
     ev_file_cb cb)
 {
     int ret;
     ev_loop_t* loop = file->base.loop;
     _ev_fs_init_req_as_seek(req, file, whence, offset, cb);
+    if (loop == NULL)
+    {
+        EV_ASSERT(cb == NULL, "operation in synchronous mode.");
+        return ev__fs_seek(file->file, whence, offset);
+    }
 
     ev__handle_active(&file->base);
 

@@ -266,7 +266,7 @@ TEST_F(fs, read_write)
     ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
     ASSERT_EQ_INT(ret, 0);
 
-    ret = ev_file_seek(g_test_file.file, &g_test_file.token, EV_FS_SEEK_BEG, 0,
+    ret = (int)ev_file_seek(g_test_file.file, &g_test_file.token, EV_FS_SEEK_BEG, 0,
         _test_file_read_write_on_seek_done);
     ASSERT_EQ_INT(ret, 0);
 

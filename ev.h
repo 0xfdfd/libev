@@ -38,7 +38,7 @@
  * 7. merge `ev_file_stat_sync()` with `ev_file_stat()`.
  * 8. merge `ev_fs_mkdir_sync()` with `ev_fs_mkdir()`.
  * 9. merge `ev_fs_remove_sync()` with `ev_fs_remove()`.
- * 10. prototype of `ev_file_seek()` is changed.
+ * 10. `ev_file_seek()` now return the resulting offset location as measured in bytes from the beginning of the file.
  * 
  * ### Features
  * 1. `ev_fs_readdir()` is able to operator in synchronous mode.
@@ -290,7 +290,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.h
 // SIZE:    1188
-// SHA-256: b11fe3a88e99545063b23047f7cd33fa60beb505a12b0d9e1b5b72c60405fd07
+// SHA-256: 1878060fafb63ba5a69c240119d38ad8f598a7e779819b851eb0759f33da21b7
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/version.h"
 #ifndef __EV_VERSION_H__
@@ -322,7 +322,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           3
+#define EV_VERSION_PREREL           4
 
 /**
  * @brief Version calculate helper macro.
@@ -4119,8 +4119,8 @@ EV_API void ev_pipe_close(ev_os_pipe_t fd);
 #line 97 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs.h
-// SIZE:    15701
-// SHA-256: 84781db7e04be5330baef0f739423fb136975f3c975c473640f4265582a6b749
+// SIZE:    15906
+// SHA-256: 76b967e2d287f081bd618283abce83b2a45f7b0eb37f67bb11c17ef679e8ff98
 ////////////////////////////////////////////////////////////////////////////////
 #line 1 "ev/fs.h"
 #ifndef __EV_FILE_SYSTEM_H__
@@ -4404,9 +4404,11 @@ EV_API void ev_file_close(ev_file_t* file, ev_file_close_cb cb);
  * @param[in] offset    Offset.
  * @param[in] cb        Result callback. Must set to NULL if \p file open in
  *   synchronous mode.
- * @return              #ev_errno_t
+ * @return              In asynchronous mode, return 0 if success, or #ev_errno_t
+ *   if failure. In synchronous, return the resulting offset location as measured
+ *   in bytes from the beginning of the file, or #ev_errno_t if failure.
  */
-EV_API int ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence,
+EV_API int64_t ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence,
     int64_t offset, ev_file_cb cb);
 
 /**

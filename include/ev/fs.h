@@ -279,9 +279,11 @@ EV_API void ev_file_close(ev_file_t* file, ev_file_close_cb cb);
  * @param[in] offset    Offset.
  * @param[in] cb        Result callback. Must set to NULL if \p file open in
  *   synchronous mode.
- * @return              #ev_errno_t
+ * @return              In asynchronous mode, return 0 if success, or #ev_errno_t
+ *   if failure. In synchronous, return the resulting offset location as measured
+ *   in bytes from the beginning of the file, or #ev_errno_t if failure.
  */
-EV_API int ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence,
+EV_API int64_t ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence,
     int64_t offset, ev_file_cb cb);
 
 /**

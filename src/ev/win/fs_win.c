@@ -524,19 +524,19 @@ EV_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mo
     return 0;
 }
 
-EV_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, int64_t offset)
+EV_LOCAL int64_t ev__fs_seek(ev_os_file_t file, int whence, int64_t offset)
 {
-    DWORD errcode;
-    LONG DistanceToMove = offset & 0XFFFFFFFF;
-    LONG DistanceToMoveHigh = offset >> 32;
+    LARGE_INTEGER liDistanceToMove;
+    liDistanceToMove.QuadPart = offset;
 
-    if (SetFilePointer(file, DistanceToMove, &DistanceToMoveHigh, whence) == INVALID_SET_FILE_POINTER)
+    LARGE_INTEGER liNewFilePointer;
+    if (!SetFilePointerEx(file, liDistanceToMove, &liNewFilePointer, whence) == INVALID_SET_FILE_POINTER)
     {
-        errcode = GetLastError();
+        DWORD errcode = GetLastError();
         return ev__translate_sys_error(errcode);
     }
 
-    return 0;
+    return liNewFilePointer.QuadPart;
 }
 
 EV_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)

@@ -238,15 +238,15 @@ EV_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mo
     return 0;
 }
 
-EV_LOCAL int ev__fs_seek(ev_os_file_t file, int whence, int64_t offset)
+EV_LOCAL int64_t ev__fs_seek(ev_os_file_t file, int whence, int64_t offset)
 {
-    int errcode;
-    if (lseek(file, offset, whence) == (off_t)-1)
+    off_t ret = lseek(file, offset, whence);
+    if (ret == (off_t)-1)
     {
-        errcode = errno;
+        int errcode = errno;
         return ev__translate_sys_error(errcode);
     }
-    return 0;
+    return ret;
 }
 
 EV_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
