@@ -165,7 +165,7 @@ struct ev_fs_req_s
 
         struct
         {
-            ssize_t             offset;         /**< File offset */
+            int64_t             offset;         /**< File offset */
             ev_read_t           read_req;       /**< Read token */
         } as_read;
 
@@ -300,7 +300,7 @@ EV_API int64_t ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence,
  *   if failure. In synchronous, return the number of bytes read, or #ev_errno_t
  *   if failure.
  */
-EV_API ssize_t ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+EV_API ssize_t ev_file_readv(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ev_file_cb cb);
 
 /**
@@ -310,15 +310,16 @@ EV_API ssize_t ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
  *   in synchronous mode.
  * @param[in] bufs      Buffer list.
  * @param[in] nbuf      Buffer amount.
- * @param[in] offset    Offset of file.
+ * @param[in] offset    Offset of file (from the start of the file). The file
+ *   offset is not changed.
  * @param[in] cb        Read callback. Must set to NULL if \p file open in
  *   synchronous mode.
  * @return              In asynchronous mode, return 0 if success, or #ev_errno_t
  *   if failure. In synchronous, return the number of bytes read, or #ev_errno_t
  *   if failure.
  */
-EV_API ssize_t ev_file_pread(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
-    size_t nbuf, ssize_t offset, ev_file_cb cb);
+EV_API ssize_t ev_file_preadv(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+    size_t nbuf, int64_t offset, ev_file_cb cb);
 
 /**
  * @brief Write data
@@ -327,14 +328,15 @@ EV_API ssize_t ev_file_pread(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
  *   in synchronous mode.
  * @param[in] bufs      Buffer list.
  * @param[in] nbuf      Buffer amount.
- * @param[in] offset    Offset of file.
+ * @param[in] offset    Offset of file (from the start of the file). The file
+ *   offset is not changed.
  * @param[in] cb        Write callback. Must set to NULL if \p file open in
  *   synchronous mode.
  * @return              In asynchronous mode, return 0 if success, or #ev_errno_t
  *   if failure. In synchronous, return the number of bytes written, or #ev_errno_t
  *   if failure.
  */
-EV_API ssize_t ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+EV_API ssize_t ev_file_writev(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ev_file_cb cb);
 
 /**
@@ -351,7 +353,7 @@ EV_API ssize_t ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
  *   if failure. In synchronous, return the number of bytes written, or #ev_errno_t
  *   if failure.
  */
-EV_API ssize_t ev_file_pwrite(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+EV_API ssize_t ev_file_pwritev(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb);
 
 /**

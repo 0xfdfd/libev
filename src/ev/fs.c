@@ -150,7 +150,7 @@ static int _ev_fs_init_req_as_seek(ev_fs_req_t* token, ev_file_t* file,
 }
 
 static int _ev_fs_init_req_as_read(ev_fs_req_t* req, ev_file_t* file,
-    ev_buf_t bufs[], size_t nbuf, ssize_t offset, ev_file_cb cb)
+    ev_buf_t bufs[], size_t nbuf, int64_t offset, ev_file_cb cb)
 {
     _ev_fs_init_req(req, file, cb, EV_FS_REQ_READ);
 
@@ -491,7 +491,7 @@ static void _ev_fs_on_remove(ev_work_t* work)
 }
 
 static int _ev_file_read_template(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
-    size_t nbuf, ssize_t offset, ev_file_cb cb, ev_work_cb work_cb)
+    size_t nbuf, int64_t offset, ev_file_cb cb, ev_work_cb work_cb)
 {
     ev_loop_t* loop = file->base.loop;
 
@@ -711,7 +711,7 @@ int64_t ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence, int64_t offs
     return 0;
 }
 
-ssize_t ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+ssize_t ev_file_readv(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ev_file_cb cb)
 {
     if (file->base.loop == NULL)
@@ -723,8 +723,8 @@ ssize_t ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     return _ev_file_read_template(file, req, bufs, nbuf, 0, cb, _ev_file_on_read);
 }
 
-ssize_t ev_file_pread(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
-    size_t nbuf, ssize_t offset, ev_file_cb cb)
+ssize_t ev_file_preadv(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+    size_t nbuf, int64_t offset, ev_file_cb cb)
 {
     if (file->base.loop == NULL)
     {
@@ -735,7 +735,7 @@ ssize_t ev_file_pread(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     return _ev_file_read_template(file, req, bufs, nbuf, offset, cb, _ev_file_on_pread);
 }
 
-ssize_t ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+ssize_t ev_file_writev(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ev_file_cb cb)
 {
     if (file->base.loop == NULL)
@@ -747,7 +747,7 @@ ssize_t ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     return _ev_file_pwrite_template(file, req, bufs, nbuf, 0, cb, _ev_file_on_write);
 }
 
-ssize_t ev_file_pwrite(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+ssize_t ev_file_pwritev(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb)
 {
     if (file->base.loop == NULL)

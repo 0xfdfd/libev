@@ -39,6 +39,10 @@
  * 8. merge `ev_fs_mkdir_sync()` with `ev_fs_mkdir()`.
  * 9. merge `ev_fs_remove_sync()` with `ev_fs_remove()`.
  * 10. `ev_file_seek()` now return the resulting offset location as measured in bytes from the beginning of the file.
+ * 11. rename `ev_file_pread()` to `ev_file_preadv()`.
+ * 12. rename `ev_file_read()` to `ev_file_readv()`.
+ * 13. rename `ev_file_pwrite()` to `ev_file_pwritev()`.
+ * 14. rename `ev_file_write()` to `ev_file_writev()`.
  * 
  * ### Features
  * 1. `ev_fs_readdir()` is able to operator in synchronous mode.
@@ -291,7 +295,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.h
 // SIZE:    1188
-// SHA-256: ea6042bd602310b4a30b2103c253122ff106456562b75aa48881b38512661f1e
+// SHA-256: 036298e67871cb5467325cd69f5297d37db2c9c6c9100ea4ff423f1bac858705
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/version.h"
 #ifndef __EV_VERSION_H__
@@ -323,7 +327,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           5
+#define EV_VERSION_PREREL           6
 
 /**
  * @brief Version calculate helper macro.
@@ -4120,8 +4124,8 @@ EV_API void ev_pipe_close(ev_os_pipe_t fd);
 // #line 97 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs.h
-// SIZE:    16184
-// SHA-256: 4fb15e40bc599b795cce4f2e5192da544a9bd4981ea213cb97cfc332dfa8bfcc
+// SIZE:    16320
+// SHA-256: bcca54050c3da5c19cdd9a2e93db4d2b3912a1d4ce35045931a823296a92ea08
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/fs.h"
 #ifndef __EV_FILE_SYSTEM_H__
@@ -4291,7 +4295,7 @@ struct ev_fs_req_s
 
         struct
         {
-            ssize_t             offset;         /**< File offset */
+            int64_t             offset;         /**< File offset */
             ev_read_t           read_req;       /**< Read token */
         } as_read;
 
@@ -4426,7 +4430,7 @@ EV_API int64_t ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence,
  *   if failure. In synchronous, return the number of bytes read, or #ev_errno_t
  *   if failure.
  */
-EV_API ssize_t ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+EV_API ssize_t ev_file_readv(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ev_file_cb cb);
 
 /**
@@ -4436,15 +4440,16 @@ EV_API ssize_t ev_file_read(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
  *   in synchronous mode.
  * @param[in] bufs      Buffer list.
  * @param[in] nbuf      Buffer amount.
- * @param[in] offset    Offset of file.
+ * @param[in] offset    Offset of file (from the start of the file). The file
+ *   offset is not changed.
  * @param[in] cb        Read callback. Must set to NULL if \p file open in
  *   synchronous mode.
  * @return              In asynchronous mode, return 0 if success, or #ev_errno_t
  *   if failure. In synchronous, return the number of bytes read, or #ev_errno_t
  *   if failure.
  */
-EV_API ssize_t ev_file_pread(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
-    size_t nbuf, ssize_t offset, ev_file_cb cb);
+EV_API ssize_t ev_file_preadv(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+    size_t nbuf, int64_t offset, ev_file_cb cb);
 
 /**
  * @brief Write data
@@ -4453,14 +4458,15 @@ EV_API ssize_t ev_file_pread(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
  *   in synchronous mode.
  * @param[in] bufs      Buffer list.
  * @param[in] nbuf      Buffer amount.
- * @param[in] offset    Offset of file.
+ * @param[in] offset    Offset of file (from the start of the file). The file
+ *   offset is not changed.
  * @param[in] cb        Write callback. Must set to NULL if \p file open in
  *   synchronous mode.
  * @return              In asynchronous mode, return 0 if success, or #ev_errno_t
  *   if failure. In synchronous, return the number of bytes written, or #ev_errno_t
  *   if failure.
  */
-EV_API ssize_t ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+EV_API ssize_t ev_file_writev(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ev_file_cb cb);
 
 /**
@@ -4477,7 +4483,7 @@ EV_API ssize_t ev_file_write(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
  *   if failure. In synchronous, return the number of bytes written, or #ev_errno_t
  *   if failure.
  */
-EV_API ssize_t ev_file_pwrite(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
+EV_API ssize_t ev_file_pwritev(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ssize_t offset, ev_file_cb cb);
 
 /**

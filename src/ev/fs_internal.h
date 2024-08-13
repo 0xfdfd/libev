@@ -58,7 +58,7 @@ EV_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf);
  * @return              #ev_errno_t
  */
 EV_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
-    ssize_t offset);
+    int64_t offset);
 
 /**
  * @brief Same as [writev(2)](https://linux.die.net/man/2/writev)

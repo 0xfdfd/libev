@@ -261,7 +261,7 @@ EV_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
     return ev__translate_sys_error(errcode);
 }
 
-EV_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
+EV_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, int64_t offset)
 {
     ssize_t read_size = preadv(file, (struct iovec*)bufs, nbuf, offset);
     if (read_size >= 0)

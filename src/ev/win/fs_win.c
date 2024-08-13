@@ -577,7 +577,7 @@ error:
     return ev__translate_sys_error(errcode);
 }
 
-EV_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
+EV_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, int64_t offset)
 {
     if (file == INVALID_HANDLE_VALUE)
     {

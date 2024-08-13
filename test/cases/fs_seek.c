@@ -23,7 +23,7 @@ TEST_F(fs, seek_offset)
         test_random(buffer, sizeof(buffer));
 
         ev_buf_t buf = ev_buf_make((void*)buffer, sizeof(buffer));
-        ASSERT_EQ_SSIZE(ev_file_write(file, NULL, &buf, 1, NULL), sizeof(buffer));
+        ASSERT_EQ_SSIZE(ev_file_writev(file, NULL, &buf, 1, NULL), sizeof(buffer));
 
         ev_file_close(file, NULL);
         ev_free(file);
@@ -35,7 +35,7 @@ TEST_F(fs, seek_offset)
 
         char buffer[128];
         ev_buf_t buf = ev_buf_make((void*)buffer, sizeof(buffer));
-        ASSERT_EQ_SSIZE(ev_file_read(file, NULL, &buf, 1, NULL), sizeof(buffer));
+        ASSERT_EQ_SSIZE(ev_file_readv(file, NULL, &buf, 1, NULL), sizeof(buffer));
 
         ASSERT_EQ_SSIZE(ev_file_seek(file, NULL, EV_FS_SEEK_CUR, 0, NULL), sizeof(buffer));
 

@@ -13,6 +13,10 @@
 8. merge `ev_fs_mkdir_sync()` with `ev_fs_mkdir()`.
 9. merge `ev_fs_remove_sync()` with `ev_fs_remove()`.
 10. `ev_file_seek()` now return the resulting offset location as measured in bytes from the beginning of the file.
+11. rename `ev_file_pread()` to `ev_file_preadv()`.
+12. rename `ev_file_read()` to `ev_file_readv()`.
+13. rename `ev_file_pwrite()` to `ev_file_pwritev()`.
+14. rename `ev_file_write()` to `ev_file_writev()`.
 
 ### Features
 1. `ev_fs_readdir()` is able to operator in synchronous mode.
