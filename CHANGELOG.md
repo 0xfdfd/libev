@@ -17,6 +17,7 @@
 ### Features
 1. `ev_fs_readdir()` is able to operator in synchronous mode.
 2. `ev_fs_readfile()` is able to operator in synchronous mode.
+3. `ev_file_seek()` is able to operator in synchronous mode.
 
 ### Bug Fixes
 1. `ev_hrtime()` no longer require initialize event loop first.

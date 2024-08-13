@@ -691,13 +691,13 @@ int64_t ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence, int64_t offs
 {
     int ret;
     ev_loop_t* loop = file->base.loop;
-    _ev_fs_init_req_as_seek(req, file, whence, offset, cb);
     if (loop == NULL)
     {
         EV_ASSERT(cb == NULL, "operation in synchronous mode.");
         return ev__fs_seek(file->file, whence, offset);
     }
 
+    _ev_fs_init_req_as_seek(req, file, whence, offset, cb);
     ev__handle_active(&file->base);
 
     ret = ev__loop_submit_threadpool(loop, &req->work_token,

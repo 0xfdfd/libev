@@ -21,6 +21,7 @@ add_library(ev_test_lib SHARED
     "test/cases/c/async.c"
     "test/cases/c/buf.c"
     "test/cases/c/fs.c"
+    "test/cases/c/fs_seek.c"
     "test/cases/c/ipv4_addr.c"
     "test/cases/c/list.c"
     "test/cases/c/loop_empty.c"

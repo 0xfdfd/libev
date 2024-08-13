@@ -1434,7 +1434,7 @@ const char* ev_strerror(int err)
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs.c
 // SIZE:    24522
-// SHA-256: ea1d9eb0ba910a505ca48268e04c76917b4d5bff89ead6f44126d513a0519715
+// SHA-256: b358ec778dab057d94cc23fd500dea70febdc62f7da334f04617072a6bb3897c
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/fs.c"
 #include <sys/stat.h>
@@ -2130,13 +2130,13 @@ int64_t ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence, int64_t offs
 {
     int ret;
     ev_loop_t* loop = file->base.loop;
-    _ev_fs_init_req_as_seek(req, file, whence, offset, cb);
     if (loop == NULL)
     {
         EV_ASSERT(cb == NULL, "operation in synchronous mode.");
         return ev__fs_seek(file->file, whence, offset);
     }
 
+    _ev_fs_init_req_as_seek(req, file, whence, offset, cb);
     ev__handle_active(&file->base);
 
     ret = ev__loop_submit_threadpool(loop, &req->work_token,

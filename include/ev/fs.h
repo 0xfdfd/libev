@@ -243,8 +243,9 @@ struct ev_fs_req_s
  * @param[out] file     File handle.
  * @param[in] req       File token. Must set to NULL if \p cb is NULL.
  * @param[in] path      File path.
- * @param[in] flags     Open flags
- * @param[in] mode      Open mode.
+ * @param[in] flags     Open flags.
+ * @param[in] mode      Open mode. Only applies to future accesses of the newly
+ *   created file. Ignored when \p flags does not contains #EV_FS_O_CREAT.
  * @param[in] cb        Open result callback. If set to NULL, the \p file is
  *   open in synchronous mode, so \p loop, \p req must also be NULL.
  * @return              #ev_errno_t
@@ -433,9 +434,10 @@ EV_API int ev_fs_mkdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
 
 /**
  * @brief Delete a name for the file system.
- * @param[in] loop      Event loop.
- * @param[in] req       File system request.
+ * @param[in] loop      Event loop. Must set to NULL if \p cb is NULL.
+ * @param[in] req       File system request. Must set to NULL if \p cb is NULL.
  * @param[in] path      File path.
+ * @param[in] recursion If \p path is a directory, recursively delete all child items.
  * @param[in] cb        Result callback. Set to NULL to operator in synchronous
  *   mode. In synchronous mode, \p loop and \p req must also set to NULL.
  * @return              #ev_errno_t

@@ -43,6 +43,7 @@
  * ### Features
  * 1. `ev_fs_readdir()` is able to operator in synchronous mode.
  * 2. `ev_fs_readfile()` is able to operator in synchronous mode.
+ * 3. `ev_file_seek()` is able to operator in synchronous mode.
  * 
  * ### Bug Fixes
  * 1. `ev_hrtime()` no longer require initialize event loop first.
@@ -290,7 +291,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.h
 // SIZE:    1188
-// SHA-256: 1878060fafb63ba5a69c240119d38ad8f598a7e779819b851eb0759f33da21b7
+// SHA-256: ea6042bd602310b4a30b2103c253122ff106456562b75aa48881b38512661f1e
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/version.h"
 #ifndef __EV_VERSION_H__
@@ -322,7 +323,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           4
+#define EV_VERSION_PREREL           5
 
 /**
  * @brief Version calculate helper macro.
@@ -4119,8 +4120,8 @@ EV_API void ev_pipe_close(ev_os_pipe_t fd);
 // #line 97 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs.h
-// SIZE:    15906
-// SHA-256: 76b967e2d287f081bd618283abce83b2a45f7b0eb37f67bb11c17ef679e8ff98
+// SIZE:    16184
+// SHA-256: 4fb15e40bc599b795cce4f2e5192da544a9bd4981ea213cb97cfc332dfa8bfcc
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/fs.h"
 #ifndef __EV_FILE_SYSTEM_H__
@@ -4368,8 +4369,9 @@ struct ev_fs_req_s
  * @param[out] file     File handle.
  * @param[in] req       File token. Must set to NULL if \p cb is NULL.
  * @param[in] path      File path.
- * @param[in] flags     Open flags
- * @param[in] mode      Open mode.
+ * @param[in] flags     Open flags.
+ * @param[in] mode      Open mode. Only applies to future accesses of the newly
+ *   created file. Ignored when \p flags does not contains #EV_FS_O_CREAT.
  * @param[in] cb        Open result callback. If set to NULL, the \p file is
  *   open in synchronous mode, so \p loop, \p req must also be NULL.
  * @return              #ev_errno_t
@@ -4558,9 +4560,10 @@ EV_API int ev_fs_mkdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
 
 /**
  * @brief Delete a name for the file system.
- * @param[in] loop      Event loop.
- * @param[in] req       File system request.
+ * @param[in] loop      Event loop. Must set to NULL if \p cb is NULL.
+ * @param[in] req       File system request. Must set to NULL if \p cb is NULL.
  * @param[in] path      File path.
+ * @param[in] recursion If \p path is a directory, recursively delete all child items.
  * @param[in] cb        Result callback. Set to NULL to operator in synchronous
  *   mode. In synchronous mode, \p loop and \p req must also set to NULL.
  * @return              #ev_errno_t
