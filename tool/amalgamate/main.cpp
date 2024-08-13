@@ -6,11 +6,17 @@
 #include "utils/sha256.hpp"
 #include "utils/string.hpp"
 
+#ifdef _MSC_VER 
+//not #if defined(_WIN32) || defined(_WIN64) because we have strncasecmp in mingw
+#define strncasecmp _strnicmp
+#define strcasecmp _stricmp
+#endif
+
 typedef struct amalgamate_ctx
 {
     amalgamate_ctx()
     {
-        noline = false;
+        lineno = false;
     }
 
     /**
@@ -31,7 +37,7 @@ typedef struct amalgamate_ctx
     /**
      * @brief Disable line control.
      */
-    bool    noline;
+    bool    lineno;
 } amalgamate_ctx_t;
 
 static amalgamate_ctx_t _G;
@@ -48,8 +54,8 @@ static const char* s_help =
 "  --commit=[PATH]\n"
 "    Commit file that apply to the output file.\n"
 "\n"
-"  --noline\n"
-"    Disable line control.\n"
+"  --lineno\n"
+"    Enable line control.\n"
 ;
 
 static void _setup_ctx(int argc, char* argv[])
@@ -88,23 +94,23 @@ static void _setup_ctx(int argc, char* argv[])
             continue;
         }
 
-        opt = "-noline";
+        opt = "--lineno";
         if (strcmp(argv[i], opt) == 0)
         {
-        	_G.noline = true;
+        	_G.lineno = true;
         	continue;
         }
 
-        opt = "--noline="; opt_sz = strlen(opt);
+        opt = "--lineno="; opt_sz = strlen(opt);
         if (strncmp(argv[i], opt, opt_sz) == 0)
         {
             const char* v = argv[i] + opt_sz;
             if (v[0] == '\0')
             {
-                fprintf(stderr, "missing argument to `--noline`.\n");
+                fprintf(stderr, "missing argument to `--lineno`.\n");
                 exit(EXIT_FAILURE);
             }
-            _G.noline = !(strcasecmp(v, "false") == 0 ||
+            _G.lineno = !(strcasecmp(v, "false") == 0 ||
                 strcasecmp(v, "0") == 0 ||
                 strcasecmp(v, "off") == 0);
             continue;
@@ -207,15 +213,19 @@ static std::string _process_file(const std::string& name, const am::StringVec& l
         out += "// SIZE:    " + am::to_string(content.size()) + "\n";
         out += "// SHA-256: " + am::sha256(content) + "\n";
         out += "////////////////////////////////////////////////////////////////////////////////\n";
-        if (!_G.noline)
+        if (!_G.lineno)
         {
-        	out += "#line 1 \"" + include_path + "\"\n";
+            out += "// ";
         }
+        out += "#line 1 \"" + include_path + "\"\n";
+
         out += content + "\n";
-        if (!_G.noline)
+
+        if (!_G.lineno)
         {
-        	out += "#line " + am::to_string(line_cnt + 1) + " \"" + name + "\"\n";
+            out += "// ";
         }
+        out += "#line " + am::to_string(line_cnt + 1) + " \"" + name + "\"\n";
     }
     return out;
 }
