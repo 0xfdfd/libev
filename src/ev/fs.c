@@ -711,6 +711,13 @@ int64_t ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence, int64_t offs
     return 0;
 }
 
+ssize_t ev_file_read(ev_file_t* file, ev_fs_req_t* req, void* buff,
+    size_t size, ev_file_cb cb)
+{
+    ev_buf_t buf = ev_buf_make(buff, size);
+    return ev_file_readv(file, req, &buf, 1, cb);
+}
+
 ssize_t ev_file_readv(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, ev_file_cb cb)
 {
@@ -733,6 +740,13 @@ ssize_t ev_file_preadv(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     }
 
     return _ev_file_read_template(file, req, bufs, nbuf, offset, cb, _ev_file_on_pread);
+}
+
+ssize_t ev_file_write(ev_file_t* file, ev_fs_req_t* req, const void* data,
+    size_t size, ev_file_cb cb)
+{
+    ev_buf_t buf = ev_buf_make((void*)data, size);
+    return ev_file_writev(file, req, &buf, 1, cb);
 }
 
 ssize_t ev_file_writev(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],

@@ -48,6 +48,7 @@
  * 1. `ev_fs_readdir()` is able to operator in synchronous mode.
  * 2. `ev_fs_readfile()` is able to operator in synchronous mode.
  * 3. `ev_file_seek()` is able to operator in synchronous mode.
+ * 4. support normal `ev_file_read()` and `ev_file_write()`.
  * 
  * ### Bug Fixes
  * 1. `ev_hrtime()` no longer require initialize event loop first.
@@ -4124,8 +4125,8 @@ EV_API void ev_pipe_close(ev_os_pipe_t fd);
 // #line 97 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs.h
-// SIZE:    16320
-// SHA-256: bcca54050c3da5c19cdd9a2e93db4d2b3912a1d4ce35045931a823296a92ea08
+// SIZE:    17606
+// SHA-256: e33e894e4a5f18018f0ebca2326ea75077cb6fe03dbc569b9cd1a2bc6f5868a9
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/fs.h"
 #ifndef __EV_FILE_SYSTEM_H__
@@ -4422,6 +4423,22 @@ EV_API int64_t ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence,
  * @param[in] file      File handle.
  * @param[in] req       File operation token. Must set to NULL if \p file open
  *   in synchronous mode.
+ * @param[out] buff     Buffer to store data.
+ * @param[in] size      Buffer size.
+ * @param[in] cb        Result callback. Must set to NULL if \p file open in
+ *   synchronous mode.
+ * @return              In asynchronous mode, return 0 if success, or #ev_errno_t
+ *   if failure. In synchronous, return the number of bytes read, or #ev_errno_t
+ *   if failure.
+ */
+EV_API ssize_t ev_file_read(ev_file_t* file, ev_fs_req_t* req, void* buff,
+    size_t size, ev_file_cb cb);
+
+/**
+ * @brief Read data.
+ * @param[in] file      File handle.
+ * @param[in] req       File operation token. Must set to NULL if \p file open
+ *   in synchronous mode.
  * @param[in] bufs      Buffer list.
  * @param[in] nbuf      Buffer amount.
  * @param[in] cb        Read callback. Must set to NULL if \p file open in
@@ -4450,6 +4467,22 @@ EV_API ssize_t ev_file_readv(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
  */
 EV_API ssize_t ev_file_preadv(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, int64_t offset, ev_file_cb cb);
+
+/**
+ * @brief Write data
+ * @param[in] file      File handle.
+ * @param[in] req       File operation token. Must set to NULL if \p file open
+ *   in synchronous mode.
+ * @param[in] data      Data to write.
+ * @param[in] size      Data size.
+ * @param[in] cb        Write callback. Must set to NULL if \p file open in
+ *   synchronous mode.
+ * @return              In asynchronous mode, return 0 if success, or #ev_errno_t
+ *   if failure. In synchronous, return the number of bytes written, or #ev_errno_t
+ *   if failure.
+ */
+EV_API ssize_t ev_file_write(ev_file_t* file, ev_fs_req_t* req, const void* data,
+    size_t size, ev_file_cb cb);
 
 /**
  * @brief Write data
