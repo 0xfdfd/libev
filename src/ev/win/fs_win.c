@@ -507,8 +507,17 @@ EV_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mo
         return ret;
     }
 
-    HANDLE filehandle = CreateFile(path, info.access, info.share, NULL,
+    WCHAR* path_w = NULL;
+    ssize_t path_sz = ev__utf8_to_wide(&path_w, path);
+    if (path_sz < 0)
+    {
+        return (int)path_sz;
+    }
+
+    HANDLE filehandle = CreateFileW(path_w, info.access, info.share, NULL,
         info.disposition, info.attributes, NULL);
+    ev_free(path_w);
+
     if (filehandle == INVALID_HANDLE_VALUE)
     {
         errcode = GetLastError();

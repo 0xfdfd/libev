@@ -26,6 +26,7 @@
 
 ### Bug Fixes
 1. `ev_hrtime()` no longer require initialize event loop first.
+2. can not open file in windows if path contains CJK characters.
 
 
 ## v0.1.0 (2024/08/06)

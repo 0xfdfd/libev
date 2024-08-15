@@ -52,6 +52,7 @@
  * 
  * ### Bug Fixes
  * 1. `ev_hrtime()` no longer require initialize event loop first.
+ * 2. can not open file in windows if path contains CJK characters.
  * 
  * 
  * ## v0.1.0 (2024/08/06)
@@ -296,7 +297,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.h
 // SIZE:    1188
-// SHA-256: 036298e67871cb5467325cd69f5297d37db2c9c6c9100ea4ff423f1bac858705
+// SHA-256: eedc1aa521cd1bd7d1ef4f580605749f13ad7642364eaeec0f180ee74be219a3
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/version.h"
 #ifndef __EV_VERSION_H__
@@ -328,7 +329,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           6
+#define EV_VERSION_PREREL           7
 
 /**
  * @brief Version calculate helper macro.

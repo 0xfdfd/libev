@@ -6619,8 +6619,8 @@ void ev_async_wakeup(ev_async_t* handle)
 // #line 56 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/fs_win.c
-// SIZE:    23144
-// SHA-256: 123440d29973ec1e68eaf8e57ff6e56e92ed2577994a367a97287fecee21ff3d
+// SIZE:    23313
+// SHA-256: 2ba2beab340020e0e1a7b120addaaf80cd706266060ea7b7821a8d67bf9f8a75
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/fs_win.c"
 #include <assert.h>
@@ -7132,8 +7132,17 @@ EV_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mo
         return ret;
     }
 
-    HANDLE filehandle = CreateFile(path, info.access, info.share, NULL,
+    WCHAR* path_w = NULL;
+    ssize_t path_sz = ev__utf8_to_wide(&path_w, path);
+    if (path_sz < 0)
+    {
+        return (int)path_sz;
+    }
+
+    HANDLE filehandle = CreateFileW(path_w, info.access, info.share, NULL,
         info.disposition, info.attributes, NULL);
+    ev_free(path_w);
+
     if (filehandle == INVALID_HANDLE_VALUE)
     {
         errcode = GetLastError();
