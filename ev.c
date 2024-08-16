@@ -569,7 +569,7 @@ EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout);
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs_internal.h
 // SIZE:    3915
-// SHA-256: baec76c02bbda87cb6a77ff0c07bc9b9c900f64b401a9c86fe8c5de92319c80f
+// SHA-256: 80ed2860face86c8fbc31856c0d06d938427607abdd98c3da42be92d98b41d5e
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/fs_internal.h"
 #ifndef __EV_FILESYSTEM_INTERNAL_H__
@@ -654,7 +654,7 @@ EV_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf);
  * @return              #ev_errno_t
  */
 EV_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
-    ssize_t offset);
+    int64_t offset);
 
 /**
  * @brief Same as [fstat(2)](https://linux.die.net/man/2/fstat)
@@ -1433,8 +1433,8 @@ const char* ev_strerror(int err)
 // #line 23 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs.c
-// SIZE:    24939
-// SHA-256: cff6e6766192e053eee20e1293181dfe8b14ab6cc0f9ff69681ec249743f1e1a
+// SIZE:    25404
+// SHA-256: b1606b0bfa2e010dda56cf64f8aae486a9f47dfb7fcd8d140d5e19ecdef95b71
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/fs.c"
 #include <sys/stat.h>
@@ -1604,7 +1604,7 @@ static int _ev_fs_init_req_as_read(ev_fs_req_t* req, ev_file_t* file,
 }
 
 static int _ev_fs_init_req_as_write(ev_fs_req_t* token, ev_file_t* file,
-    ev_buf_t bufs[], size_t nbuf, ssize_t offset, ev_file_cb cb)
+    ev_buf_t bufs[], size_t nbuf, int64_t offset, ev_file_cb cb)
 {
     _ev_fs_init_req(token, file, cb, EV_FS_REQ_WRITE);
 
@@ -1955,7 +1955,7 @@ static int _ev_file_read_template(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bu
 }
 
 static int _ev_file_pwrite_template(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
-    size_t nbuf, ssize_t offset, ev_file_cb cb, ev_work_cb work_cb)
+    size_t nbuf, int64_t offset, ev_file_cb cb, ev_work_cb work_cb)
 {
     int ret;
     ev_loop_t* loop = file->base.loop;
@@ -2169,6 +2169,13 @@ ssize_t ev_file_readv(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     return _ev_file_read_template(file, req, bufs, nbuf, 0, cb, _ev_file_on_read);
 }
 
+ssize_t ev_file_pread(ev_file_t* file, ev_fs_req_t* req, void* buff,
+    size_t size, int64_t offset, ev_file_cb cb)
+{
+    ev_buf_t buf = ev_buf_make(buff, size);
+    return ev_file_preadv(file, req, &buf, 1, offset, cb);
+}
+
 ssize_t ev_file_preadv(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, int64_t offset, ev_file_cb cb)
 {
@@ -2200,8 +2207,15 @@ ssize_t ev_file_writev(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     return _ev_file_pwrite_template(file, req, bufs, nbuf, 0, cb, _ev_file_on_write);
 }
 
+ssize_t ev_file_pwrite(ev_file_t* file, ev_fs_req_t* req, const void* data,
+    size_t size, int64_t offset, ev_file_cb cb)
+{
+    ev_buf_t buf = ev_buf_make((void*)data, size);
+    return ev_file_pwritev(file, req, &buf, 1, offset, cb);
+}
+
 ssize_t ev_file_pwritev(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
-    size_t nbuf, ssize_t offset, ev_file_cb cb)
+    size_t nbuf, int64_t offset, ev_file_cb cb)
 {
     if (file->base.loop == NULL)
     {
@@ -6619,8 +6633,8 @@ void ev_async_wakeup(ev_async_t* handle)
 // #line 56 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/fs_win.c
-// SIZE:    23313
-// SHA-256: 2ba2beab340020e0e1a7b120addaaf80cd706266060ea7b7821a8d67bf9f8a75
+// SIZE:    23317
+// SHA-256: 9c9eebe02218568c2b928b45a7025f0a6a1ca147e6b7c36845fc684dce441119
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/fs_win.c"
 #include <assert.h>
@@ -7289,7 +7303,8 @@ error:
     return ev__translate_sys_error(errcode);
 }
 
-EV_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
+EV_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
+    int64_t offset)
 {
     if (file == INVALID_HANDLE_VALUE)
     {
@@ -13225,8 +13240,8 @@ void ev_async_wakeup(ev_async_t* handle)
 // #line 86 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/fs_unix.c
-// SIZE:    9839
-// SHA-256: 3d58d564df3fa343934216dab3276e1ee01b8db6a513d11a2d7357d7662f72a4
+// SIZE:    9843
+// SHA-256: cef811b73a54c137884ba61bbe170bd9248bc071f39fcf53ecfc0e0cc70bdaa9
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/unix/fs_unix.c"
 #define _GNU_SOURCE
@@ -13516,7 +13531,8 @@ EV_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
     return ev__translate_sys_error(errcode);
 }
 
-EV_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, ssize_t offset)
+EV_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
+    int64_t offset)
 {
     ssize_t write_size = pwritev(file, (struct iovec*)bufs, nbuf, offset);
     if (write_size >= 0)
