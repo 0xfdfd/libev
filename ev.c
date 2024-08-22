@@ -6633,8 +6633,8 @@ void ev_async_wakeup(ev_async_t* handle)
 // #line 56 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/fs_win.c
-// SIZE:    25361
-// SHA-256: 155bc78ea838a43dc37820d47b02616620673d6e08f85cc985ac2ea3dc44ec57
+// SIZE:    25618
+// SHA-256: 09ccbb955078ce7dc36361df1aa4ce13d475941639a08b584012ae6a29c5adb3
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/fs_win.c"
 #include <assert.h>
@@ -7486,6 +7486,17 @@ EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
 int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t size, int flags)
 {
     DWORD errcode;
+
+    if (size == 0)
+    {
+        LARGE_INTEGER file_sz;
+        if (!GetFileSizeEx(file->file, &file_sz))
+        {
+            errcode = GetLastError();
+            return ev__translate_sys_error(errcode);
+        }
+        size = file_sz.QuadPart;
+    }
 
     const DWORD dwMaximumSizeHigh = size >> 32;
     const DWORD dwMaximumSizeLow = (DWORD)size;

@@ -28,6 +28,7 @@ TEST_F(fs, mmap_size_0_rd)
 
     const char* content = view->addr;
     ASSERT_EQ_STR(content, s_file_content);
+    ASSERT_EQ_SIZE(view->size, strlen(s_file_content) + 1);
 
     ev_file_munmap(view);
     ev_free(view);

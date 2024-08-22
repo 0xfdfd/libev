@@ -848,6 +848,17 @@ int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t size, int flags)
 {
     DWORD errcode;
 
+    if (size == 0)
+    {
+        LARGE_INTEGER file_sz;
+        if (!GetFileSizeEx(file->file, &file_sz))
+        {
+            errcode = GetLastError();
+            return ev__translate_sys_error(errcode);
+        }
+        size = file_sz.QuadPart;
+    }
+
     const DWORD dwMaximumSizeHigh = size >> 32;
     const DWORD dwMaximumSizeLow = (DWORD)size;
     const DWORD flProtect = _ev_file_mmap_to_native_protect_win32(flags);
