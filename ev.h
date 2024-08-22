@@ -51,6 +51,7 @@
  * 4. support normal `ev_file_read()` and `ev_file_write()`.
  * 5. support `ev_file_pread()` and `ev_file_pwrite()`.
  * 6. support file mapping.
+ * 7. support get system page size.
  * 
  * ### Bug Fixes
  * 1. `ev_hrtime()` no longer require initialize event loop first.
@@ -298,8 +299,8 @@
 // #line 68 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.h
-// SIZE:    1188
-// SHA-256: 85892e46e72b2a91b14a6339ca037e90cfd9b3643afc12cc57eb24d7f3aa0234
+// SIZE:    1189
+// SHA-256: e7cd5e8f37838aceebe0a81ad77931bf1302b2a07fc8e4f796a61fdc5cadd4ac
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/version.h"
 #ifndef __EV_VERSION_H__
@@ -331,7 +332,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           9
+#define EV_VERSION_PREREL           10
 
 /**
  * @brief Version calculate helper macro.
@@ -5007,8 +5008,8 @@ EV_API ssize_t ev_exepath(char* buffer, size_t size);
 // #line 99 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/misc.h
-// SIZE:    3558
-// SHA-256: 7c802e3b51042e89c3045b7d24540db444f5d5cf758da758d5cc224da503569b
+// SIZE:    3677
+// SHA-256: addf568943d162a75af910eea251e30a42601b3f87668ed0a16256235a12e3ac
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/misc.h"
 #ifndef __EV_MISC_H__
@@ -5139,6 +5140,12 @@ EV_API void ev_buf_make_v(ev_buf_t bufs[], size_t nbuf, va_list ap);
  * @warning Don’t call libev functions after calling #ev_library_shutdown().
  */
 EV_API void ev_library_shutdown(void);
+
+/**
+ * @brief Get system page size.
+ * @return The page size of this system.
+ */
+EV_API size_t ev_os_page_size(void);
 
 /**
  * @} EV_MISC

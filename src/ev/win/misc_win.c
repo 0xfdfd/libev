@@ -188,3 +188,10 @@ EV_LOCAL void ev__fatal_syscall(const char* file, int line,
     __debugbreak();
     abort();
 }
+
+size_t ev_os_page_size(void)
+{
+    SYSTEM_INFO sys_info;
+    GetSystemInfo(&sys_info);
+    return sys_info.dwPageSize;
+}

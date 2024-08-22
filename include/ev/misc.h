@@ -128,6 +128,12 @@ EV_API void ev_buf_make_v(ev_buf_t bufs[], size_t nbuf, va_list ap);
 EV_API void ev_library_shutdown(void);
 
 /**
+ * @brief Get system page size.
+ * @return The page size of this system.
+ */
+EV_API size_t ev_os_page_size(void);
+
+/**
  * @} EV_MISC
  */
 

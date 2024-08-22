@@ -7711,8 +7711,8 @@ EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt)
 // #line 58 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/misc_win.c
-// SIZE:    8354
-// SHA-256: 94a753161e8e188c3b99ed7d2ca26323b16dd6051783c015dbeddfb5899d5283
+// SIZE:    8476
+// SHA-256: 76c9ae35bd7d8d498f7b49e4f447142a2890f0c6ef676b0f50dcb1787e1384ac
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/misc_win.c"
 #include <assert.h>
@@ -7904,6 +7904,13 @@ EV_LOCAL void ev__fatal_syscall(const char* file, int line,
 
     __debugbreak();
     abort();
+}
+
+size_t ev_os_page_size(void)
+{
+    SYSTEM_INFO sys_info;
+    GetSystemInfo(&sys_info);
+    return sys_info.dwPageSize;
 }
 
 // #line 59 "ev.c"
@@ -13050,24 +13057,6 @@ EV_LOCAL void ev__init_once_unix(void);
 
 // #line 81 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/misc_unix.h
-// SIZE:    147
-// SHA-256: 36acb2fc1ad9ac41812d045475e298bb12324893d4a430df6eb14c5647674822
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/misc_unix.h"
-#ifndef __EV_MISC_UNIX_INTERNAL_H__
-#define __EV_MISC_UNIX_INTERNAL_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 82 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/stream_unix.h
 // SIZE:    1796
 // SHA-256: 9b706c88ae8e57a461ee12ee041bf7c37ffec9dfe4d567408a62f9908c7ba6fe
@@ -13139,7 +13128,7 @@ EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned
 #endif
 #endif
 
-// #line 83 "ev.c"
+// #line 82 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/work.h
 // SIZE:    231
@@ -13161,7 +13150,7 @@ EV_LOCAL void ev__exit_work(ev_loop_t* loop);
 #endif
 #endif
 
-// #line 84 "ev.c"
+// #line 83 "ev.c"
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/async_unix.c
@@ -13327,7 +13316,7 @@ void ev_async_wakeup(ev_async_t* handle)
     ev__async_post(handle->backend.pipfd[1]);
 }
 
-// #line 86 "ev.c"
+// #line 85 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/fs_unix.c
 // SIZE:    10916
@@ -13738,7 +13727,7 @@ void ev_file_munmap(ev_file_map_t* view)
     view->size = 0;
 }
 
-// #line 87 "ev.c"
+// #line 86 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/io_unix.c
 // SIZE:    8754
@@ -14173,7 +14162,7 @@ EV_LOCAL int ev__send_unix(int fd, ev_write_t* req,
     return _ev_io_finalize_send_req_unix(req, (size_t)write_size);
 }
 
-// #line 88 "ev.c"
+// #line 87 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/loop_unix.c
 // SIZE:    4177
@@ -14353,21 +14342,27 @@ EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
     }
 }
 
-// #line 89 "ev.c"
+// #line 88 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/misc_unix.c
-// SIZE:    123
-// SHA-256: 12b41cb4279e242060510ea2aac797460fe3f291b9c2f39928fe382060301998
+// SIZE:    212
+// SHA-256: 90af43ebc9cc72905c18f356f4a92faa3b2f70093b6deebd5b3af78966a437c7
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/unix/misc_unix.c"
 #include <errno.h>
+#include <unistd.h>
 
 EV_LOCAL int ev__translate_sys_error(int syserr)
 {
     return ev__translate_posix_sys_error(syserr);
 }
 
-// #line 90 "ev.c"
+size_t ev_os_page_size(void)
+{
+    return sysconf(_SC_PAGE_SIZE);
+}
+
+// #line 89 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/mutex_unix.c
 // SIZE:    1802
@@ -14484,7 +14479,7 @@ int ev_mutex_try_enter(ev_mutex_t* handle)
     return EV_EBUSY;
 }
 
-// #line 91 "ev.c"
+// #line 90 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/once_unix.c
 // SIZE:    157
@@ -14501,7 +14496,7 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
     }
 }
 
-// #line 92 "ev.c"
+// #line 91 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/pipe_unix.c
 // SIZE:    25603
@@ -15454,7 +15449,7 @@ void ev_pipe_close(ev_os_pipe_t fd)
     }
 }
 
-// #line 93 "ev.c"
+// #line 92 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/process_unix.c
 // SIZE:    15820
@@ -16156,7 +16151,7 @@ error:
     return errcode;
 }
 
-// #line 94 "ev.c"
+// #line 93 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/sem_unix.c
 // SIZE:    782
@@ -16223,7 +16218,7 @@ int ev_sem_try_wait(ev_sem_t* sem)
     return 0;
 }
 
-// #line 95 "ev.c"
+// #line 94 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/shdlib_unix.c
 // SIZE:    963
@@ -16286,7 +16281,7 @@ int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr)
     return EV_ENOENT;
 }
 
-// #line 96 "ev.c"
+// #line 95 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/shmem_unix.c
 // SIZE:    2334
@@ -16395,7 +16390,7 @@ void ev_shm_exit(ev_shm_t* shm)
     close(shm->backend.map_file);
 }
 
-// #line 97 "ev.c"
+// #line 96 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/stream_unix.c
 // SIZE:    6160
@@ -16643,7 +16638,7 @@ EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned
     }
 }
 
-// #line 98 "ev.c"
+// #line 97 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/tcp_unix.c
 // SIZE:    13059
@@ -17168,7 +17163,7 @@ EV_LOCAL int ev__tcp_open(ev_tcp_t* tcp, int fd)
     return 0;
 }
 
-// #line 99 "ev.c"
+// #line 98 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/thread_unix.c
 // SIZE:    3650
@@ -17358,7 +17353,7 @@ void* ev_tls_get(ev_tls_t* tls)
     return pthread_getspecific(tls->tls);
 }
 
-// #line 100 "ev.c"
+// #line 99 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/threadpool_unix.c
 // SIZE:    942
@@ -17398,7 +17393,7 @@ EV_LOCAL void ev__exit_work(ev_loop_t* loop)
     loop->backend.threadpool.evtfd[1] = -1;
 }
 
-// #line 101 "ev.c"
+// #line 100 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/time_unix.c
 // SIZE:    284
@@ -17421,7 +17416,7 @@ uint64_t ev_hrtime(void)
     return t.tv_sec * (uint64_t) 1e9 + t.tv_nsec;
 }
 
-// #line 102 "ev.c"
+// #line 101 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/udp_unix.c
 // SIZE:    23177
@@ -18387,7 +18382,7 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
     return _ev_udp_set_ttl_unix(udp, ttl, IP_TTL, IPV6_UNICAST_HOPS);
 }
 
-// #line 103 "ev.c"
+// #line 102 "ev.c"
 
 #endif
 

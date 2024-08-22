@@ -78,7 +78,6 @@
 #   include "ev/unix/process_unix.h"
 #   include "ev/unix/tcp_unix.h"
 #   include "ev/unix/loop_unix.h"
-#   include "ev/unix/misc_unix.h"
 #   include "ev/unix/stream_unix.h"
 #   include "ev/unix/work.h"
 
