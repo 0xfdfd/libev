@@ -6633,8 +6633,8 @@ void ev_async_wakeup(ev_async_t* handle)
 // #line 56 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/fs_win.c
-// SIZE:    23317
-// SHA-256: 9c9eebe02218568c2b928b45a7025f0a6a1ca147e6b7c36845fc684dce441119
+// SIZE:    25361
+// SHA-256: 155bc78ea838a43dc37820d47b02616620673d6e08f85cc985ac2ea3dc44ec57
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/fs_win.c"
 #include <assert.h>
@@ -7134,6 +7134,40 @@ static int _ev_fs_readdir_w_on_dirent(ev_dirent_w_t* info, void* arg)
     return (int)ret;
 }
 
+static DWORD _ev_file_mmap_to_native_protect_win32(int flags)
+{
+    if (flags & EV_FS_S_IXUSR)
+    {
+        return (flags & EV_FS_S_IWUSR) ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ;
+    }
+    return (flags & EV_FS_S_IWUSR) ? PAGE_READWRITE : PAGE_READONLY;
+}
+
+static DWORD _ev_file_mmap_to_native_access(int flags)
+{
+    DWORD dwDesiredAccess = 0;
+    if (flags & EV_FS_S_IXUSR)
+    {
+        dwDesiredAccess |= FILE_MAP_EXECUTE;
+    }
+    if (flags & EV_FS_S_IRUSR)
+    {
+        if (flags & EV_FS_S_IWUSR)
+        {
+            dwDesiredAccess |= FILE_MAP_ALL_ACCESS;
+        }
+        else
+        {
+            dwDesiredAccess |= FILE_MAP_READ;
+        }
+    }
+    else
+    {
+        dwDesiredAccess |= FILE_MAP_WRITE;
+    }
+    return dwDesiredAccess;
+}
+
 EV_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mode)
 {
     int ret;
@@ -7447,6 +7481,51 @@ EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
     ev_free(copy_wpath);
 
     return (int)ret;
+}
+
+int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t size, int flags)
+{
+    DWORD errcode;
+
+    const DWORD dwMaximumSizeHigh = size >> 32;
+    const DWORD dwMaximumSizeLow = (DWORD)size;
+    const DWORD flProtect = _ev_file_mmap_to_native_protect_win32(flags);
+    view->backend.file_map_obj = CreateFileMappingW(file->file, NULL, flProtect,
+        dwMaximumSizeHigh, dwMaximumSizeLow, NULL);
+    if (view->backend.file_map_obj == NULL)
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    const DWORD dwDesiredAccess = _ev_file_mmap_to_native_access(flags);
+    view->addr = MapViewOfFile(view->backend.file_map_obj, dwDesiredAccess, 0, 0, 0);
+    if (view->addr == NULL)
+    {
+        CloseHandle(view->backend.file_map_obj);
+        view->backend.file_map_obj = NULL;
+
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+    view->size = size;
+
+    return 0;
+}
+
+void ev_file_munmap(ev_file_map_t* view)
+{
+    if (view->addr != NULL)
+    {
+        UnmapViewOfFile(view->addr);
+        view->addr = NULL;
+    }
+    if (view->backend.file_map_obj != NULL)
+    {
+        CloseHandle(view->backend.file_map_obj);
+        view->backend.file_map_obj = NULL;
+    }
+    view->size = 0;
 }
 
 // #line 57 "ev.c"
@@ -13240,8 +13319,8 @@ void ev_async_wakeup(ev_async_t* handle)
 // #line 86 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/fs_unix.c
-// SIZE:    9843
-// SHA-256: cef811b73a54c137884ba61bbe170bd9248bc071f39fcf53ecfc0e0cc70bdaa9
+// SIZE:    10916
+// SHA-256: de509585567d26895bc6a3d136916d9099502dfc2b876c7a84b322725e52a85e
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/unix/fs_unix.c"
 #define _GNU_SOURCE
@@ -13254,6 +13333,7 @@ void ev_async_wakeup(ev_async_t* handle)
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
+#include <sys/mman.h>
 
 static ev_dirent_type_t _ev_fs_get_dirent_type(struct dirent* dent)
 {
@@ -13321,6 +13401,24 @@ static int _ev_fs_mkpath(char* file_path, int mode)
     }
 
     return 0;
+}
+
+static int _ev_file_mmap_to_native_prot_unix(int flags)
+{
+    int prot = 0;
+    if (flags & EV_FS_S_IRUSR)
+    {
+        prot |= PROT_READ;
+    }
+    if (flags & EV_FS_S_IWUSR)
+    {
+        prot |= PROT_WRITE;
+    }
+    if (flags & EV_FS_S_IXUSR)
+    {
+        prot |= PROT_EXEC;
+    }
+    return prot;
 }
 
 EV_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
@@ -13591,6 +13689,42 @@ EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
     ev_free(dup_path);
 
     return ret;
+}
+
+int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t size, int flags)
+{
+    int ret;
+    const int prot = _ev_file_mmap_to_native_prot_unix(flags);
+
+    if (size == 0)
+    {
+        ev_fs_stat_t stat;
+        if ((ret = ev__fs_fstat(file->file, &stat)) != 0)
+        {
+            return ret;
+        }
+        size = stat.st_size;
+    }
+
+    view->addr = mmap(NULL, size, prot, MAP_SHARED, file->file, 0);
+    if (view->addr == NULL)
+    {
+        ret = errno;
+        return ev__translate_posix_sys_error(ret);
+    }
+    view->size = size;
+
+    return 0;
+}
+
+void ev_file_munmap(ev_file_map_t* view)
+{
+    if (view->addr != NULL)
+    {
+        munmap(view->addr, view->size);
+        view->addr = NULL;
+    }
+    view->size = 0;
 }
 
 // #line 87 "ev.c"

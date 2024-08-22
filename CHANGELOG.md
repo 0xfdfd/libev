@@ -24,6 +24,7 @@
 3. `ev_file_seek()` is able to operator in synchronous mode.
 4. support normal `ev_file_read()` and `ev_file_write()`.
 5. support `ev_file_pread()` and `ev_file_pwrite()`.
+6. support file mapping.
 
 ### Bug Fixes
 1. `ev_hrtime()` no longer require initialize event loop first.

@@ -93,6 +93,26 @@ struct ev_file_s
     ev_file_close_cb            close_cb;       /**< Close callback */
     ev_list_t                   work_queue;     /**< Work queue */
 };
+#define EV_FILE_INVALID \
+    {\
+        EV_HANDLE_INVALID,\
+        EV_OS_FILE_INVALID,\
+        NULL,\
+        EV_LIST_INIT,\
+    }
+
+typedef struct ev_file_map
+{
+    void*                       addr;       /**< The mapped address. */
+    uint64_t                    size;       /**< The size of mapped address. */
+    ev_file_map_backend_t       backend;    /**< Backend */
+} ev_file_map_t;
+#define EV_FILE_MAP_INVALID \
+    {\
+        NULL,\
+        0,\
+        EV_FILE_MAP_BACKEND_INVALID,\
+    }
 
 /**
  * @brief File status information.
@@ -434,6 +454,30 @@ EV_API ssize_t ev_file_pwritev(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[
  */
 EV_API int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_fs_stat_t* stat,
     ev_file_cb cb);
+
+/**
+ * @brief Maps a view of a file mapping into the address space of a calling process.
+ * @param[out] view     The mapped object.
+ * @param[in] file      The file to map. The file is safe to close after this call.
+ * @param[in] size      The maximum size of the file mapping object. Set to 0 to
+ *   use current size of the \p file.
+ * @param[in] flags     Map flags. Can be one or more of the following attributes:
+ *   + #EV_FS_S_IRUSR: Pages may be read.
+ *   + #EV_FS_S_IWUSR: Pages may be written.
+ *   + #EV_FS_S_IXUSR: Pages may be executed.
+ *   + #EV_FS_S_IRWXU: Combine of read, write and execute.
+ *   Please note that this is a best effort attempt, which means you may get extra
+ *   permissions than declaration. For example, in win32 if you declare #EV_FS_S_IXUSR
+ *   only, you will also get read access.
+ * @return              #ev_errno_t
+ */
+EV_API int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t size, int flags);
+
+/**
+ * @brief Unmap the file.
+ * @param[in] view      The mapped object.
+ */
+EV_API void ev_file_munmap(ev_file_map_t* view);
 
 /**
  * @brief Get all entry in directory.

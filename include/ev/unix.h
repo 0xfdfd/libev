@@ -446,6 +446,12 @@ struct ev_nonblock_stream
         } flags;\
     }
 
+typedef struct ev_file_map_backend
+{
+    int                                     _useless;       /**< Ignored. */
+} ev_file_map_backend_t;
+#define EV_FILE_MAP_BACKEND_INVALID     { 0 }
+
 #ifdef __cplusplus
 }
 #endif

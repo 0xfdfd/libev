@@ -489,6 +489,12 @@ typedef struct ev_pipe_win_ipc_info
         HANDLE                              wait_handle;\
     }
 
+typedef struct ev_file_map_backend
+{
+    HANDLE  file_map_obj;
+} ev_file_map_backend_t;
+#define EV_FILE_MAP_BACKEND_INVALID     { NULL }
+
 #ifdef __cplusplus
 }
 #endif

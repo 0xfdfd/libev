@@ -495,6 +495,40 @@ static int _ev_fs_readdir_w_on_dirent(ev_dirent_w_t* info, void* arg)
     return (int)ret;
 }
 
+static DWORD _ev_file_mmap_to_native_protect_win32(int flags)
+{
+    if (flags & EV_FS_S_IXUSR)
+    {
+        return (flags & EV_FS_S_IWUSR) ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ;
+    }
+    return (flags & EV_FS_S_IWUSR) ? PAGE_READWRITE : PAGE_READONLY;
+}
+
+static DWORD _ev_file_mmap_to_native_access(int flags)
+{
+    DWORD dwDesiredAccess = 0;
+    if (flags & EV_FS_S_IXUSR)
+    {
+        dwDesiredAccess |= FILE_MAP_EXECUTE;
+    }
+    if (flags & EV_FS_S_IRUSR)
+    {
+        if (flags & EV_FS_S_IWUSR)
+        {
+            dwDesiredAccess |= FILE_MAP_ALL_ACCESS;
+        }
+        else
+        {
+            dwDesiredAccess |= FILE_MAP_READ;
+        }
+    }
+    else
+    {
+        dwDesiredAccess |= FILE_MAP_WRITE;
+    }
+    return dwDesiredAccess;
+}
+
 EV_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mode)
 {
     int ret;
@@ -808,4 +842,49 @@ EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
     ev_free(copy_wpath);
 
     return (int)ret;
+}
+
+int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t size, int flags)
+{
+    DWORD errcode;
+
+    const DWORD dwMaximumSizeHigh = size >> 32;
+    const DWORD dwMaximumSizeLow = (DWORD)size;
+    const DWORD flProtect = _ev_file_mmap_to_native_protect_win32(flags);
+    view->backend.file_map_obj = CreateFileMappingW(file->file, NULL, flProtect,
+        dwMaximumSizeHigh, dwMaximumSizeLow, NULL);
+    if (view->backend.file_map_obj == NULL)
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    const DWORD dwDesiredAccess = _ev_file_mmap_to_native_access(flags);
+    view->addr = MapViewOfFile(view->backend.file_map_obj, dwDesiredAccess, 0, 0, 0);
+    if (view->addr == NULL)
+    {
+        CloseHandle(view->backend.file_map_obj);
+        view->backend.file_map_obj = NULL;
+
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+    view->size = size;
+
+    return 0;
+}
+
+void ev_file_munmap(ev_file_map_t* view)
+{
+    if (view->addr != NULL)
+    {
+        UnmapViewOfFile(view->addr);
+        view->addr = NULL;
+    }
+    if (view->backend.file_map_obj != NULL)
+    {
+        CloseHandle(view->backend.file_map_obj);
+        view->backend.file_map_obj = NULL;
+    }
+    view->size = 0;
 }

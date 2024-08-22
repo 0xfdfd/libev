@@ -50,6 +50,7 @@
  * 3. `ev_file_seek()` is able to operator in synchronous mode.
  * 4. support normal `ev_file_read()` and `ev_file_write()`.
  * 5. support `ev_file_pread()` and `ev_file_pwrite()`.
+ * 6. support file mapping.
  * 
  * ### Bug Fixes
  * 1. `ev_hrtime()` no longer require initialize event loop first.
@@ -298,7 +299,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.h
 // SIZE:    1188
-// SHA-256: f3efcc012de35bb4e13758f52149dd33b74d2af1e64ac6f43a19db1474ecaaff
+// SHA-256: 85892e46e72b2a91b14a6339ca037e90cfd9b3643afc12cc57eb24d7f3aa0234
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/version.h"
 #ifndef __EV_VERSION_H__
@@ -330,7 +331,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           8
+#define EV_VERSION_PREREL           9
 
 /**
  * @brief Version calculate helper macro.
@@ -1096,8 +1097,8 @@ EV_API ev_queue_node_t* ev_queue_next(ev_queue_node_t* head, ev_queue_node_t* no
 #if defined(_WIN32)
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win.h
-// SIZE:    15824
-// SHA-256: 5b09b48df81475e53963fc20ccac0ed59b3f68cfd7f24b6f4a650b1d06789df1
+// SIZE:    15962
+// SHA-256: 6a4d28aa70d26fde676900ab52dc0b0ec1fa430dc23f30c7bc95fac97054e74b
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win.h"
 /**
@@ -1591,6 +1592,12 @@ typedef struct ev_pipe_win_ipc_info
         HANDLE                              wait_handle;\
     }
 
+typedef struct ev_file_map_backend
+{
+    HANDLE  file_map_obj;
+} ev_file_map_backend_t;
+#define EV_FILE_MAP_BACKEND_INVALID     { NULL }
+
 #ifdef __cplusplus
 }
 #endif
@@ -1601,8 +1608,8 @@ typedef struct ev_pipe_win_ipc_info
 #else
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix.h
-// SIZE:    12837
-// SHA-256: 6a588c5b213da9271817989d3d9e829aa25a311b6b58ebf026db804acd37cd10
+// SIZE:    13023
+// SHA-256: 90800c9c98204638b7a237b1ae3165306714d0c79c97ce25e97a5357d8062f37
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/unix.h"
 /**
@@ -2052,6 +2059,12 @@ struct ev_nonblock_stream
             int                             waitpid : 1;     /**< Already call waitpid() */\
         } flags;\
     }
+
+typedef struct ev_file_map_backend
+{
+    int                                     _useless;       /**< Ignored. */
+} ev_file_map_backend_t;
+#define EV_FILE_MAP_BACKEND_INVALID     { 0 }
 
 #ifdef __cplusplus
 }
@@ -4127,8 +4140,8 @@ EV_API void ev_pipe_close(ev_os_pipe_t fd);
 // #line 97 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs.h
-// SIZE:    19099
-// SHA-256: fbfd42ed67d6e05f808bb776f4bae99baeb849bbc0b62b20462553bcf8913396
+// SIZE:    20679
+// SHA-256: 6e9aa38874af630f7c65b78b0f9934ae68829fe660334b0ce3c6cedaf4c570a3
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/fs.h"
 #ifndef __EV_FILE_SYSTEM_H__
@@ -4226,6 +4239,26 @@ struct ev_file_s
     ev_file_close_cb            close_cb;       /**< Close callback */
     ev_list_t                   work_queue;     /**< Work queue */
 };
+#define EV_FILE_INVALID \
+    {\
+        EV_HANDLE_INVALID,\
+        EV_OS_FILE_INVALID,\
+        NULL,\
+        EV_LIST_INIT,\
+    }
+
+typedef struct ev_file_map
+{
+    void*                       addr;       /**< The mapped address. */
+    uint64_t                    size;       /**< The size of mapped address. */
+    ev_file_map_backend_t       backend;    /**< Backend */
+} ev_file_map_t;
+#define EV_FILE_MAP_INVALID \
+    {\
+        NULL,\
+        0,\
+        EV_FILE_MAP_BACKEND_INVALID,\
+    }
 
 /**
  * @brief File status information.
@@ -4567,6 +4600,30 @@ EV_API ssize_t ev_file_pwritev(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[
  */
 EV_API int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_fs_stat_t* stat,
     ev_file_cb cb);
+
+/**
+ * @brief Maps a view of a file mapping into the address space of a calling process.
+ * @param[out] view     The mapped object.
+ * @param[in] file      The file to map. The file is safe to close after this call.
+ * @param[in] size      The maximum size of the file mapping object. Set to 0 to
+ *   use current size of the \p file.
+ * @param[in] flags     Map flags. Can be one or more of the following attributes:
+ *   + #EV_FS_S_IRUSR: Pages may be read.
+ *   + #EV_FS_S_IWUSR: Pages may be written.
+ *   + #EV_FS_S_IXUSR: Pages may be executed.
+ *   + #EV_FS_S_IRWXU: Combine of read, write and execute.
+ *   Please note that this is a best effort attempt, which means you may get extra
+ *   permissions than declaration. For example, in win32 if you declare #EV_FS_S_IXUSR
+ *   only, you will also get read access.
+ * @return              #ev_errno_t
+ */
+EV_API int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t size, int flags);
+
+/**
+ * @brief Unmap the file.
+ * @param[in] view      The mapped object.
+ */
+EV_API void ev_file_munmap(ev_file_map_t* view);
 
 /**
  * @brief Get all entry in directory.

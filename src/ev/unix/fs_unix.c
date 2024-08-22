@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
+#include <sys/mman.h>
 
 static ev_dirent_type_t _ev_fs_get_dirent_type(struct dirent* dent)
 {
@@ -75,6 +76,24 @@ static int _ev_fs_mkpath(char* file_path, int mode)
     }
 
     return 0;
+}
+
+static int _ev_file_mmap_to_native_prot_unix(int flags)
+{
+    int prot = 0;
+    if (flags & EV_FS_S_IRUSR)
+    {
+        prot |= PROT_READ;
+    }
+    if (flags & EV_FS_S_IWUSR)
+    {
+        prot |= PROT_WRITE;
+    }
+    if (flags & EV_FS_S_IXUSR)
+    {
+        prot |= PROT_EXEC;
+    }
+    return prot;
 }
 
 EV_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
@@ -345,4 +364,40 @@ EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
     ev_free(dup_path);
 
     return ret;
+}
+
+int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t size, int flags)
+{
+    int ret;
+    const int prot = _ev_file_mmap_to_native_prot_unix(flags);
+
+    if (size == 0)
+    {
+        ev_fs_stat_t stat;
+        if ((ret = ev__fs_fstat(file->file, &stat)) != 0)
+        {
+            return ret;
+        }
+        size = stat.st_size;
+    }
+
+    view->addr = mmap(NULL, size, prot, MAP_SHARED, file->file, 0);
+    if (view->addr == NULL)
+    {
+        ret = errno;
+        return ev__translate_posix_sys_error(ret);
+    }
+    view->size = size;
+
+    return 0;
+}
+
+void ev_file_munmap(ev_file_map_t* view)
+{
+    if (view->addr != NULL)
+    {
+        munmap(view->addr, view->size);
+        view->addr = NULL;
+    }
+    view->size = 0;
 }
