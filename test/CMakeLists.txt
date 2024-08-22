@@ -4,6 +4,7 @@ add_library(ev_test_lib SHARED
     "test/cases/buf.c"
     "test/cases/fs.c"
     "test/cases/fs_mmap.c"
+    "test/cases/fs_mmap_offset.c"
     "test/cases/fs_seek.c"
     "test/cases/ipv4_addr.c"
     "test/cases/list.c"

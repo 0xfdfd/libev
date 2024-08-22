@@ -844,23 +844,30 @@ EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
     return (int)ret;
 }
 
-int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t size, int flags)
+int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t offset,
+    size_t size, int flags)
 {
     DWORD errcode;
 
-    if (size == 0)
+    LARGE_INTEGER file_sz;
+    if (!GetFileSizeEx(file->file, &file_sz))
     {
-        LARGE_INTEGER file_sz;
-        if (!GetFileSizeEx(file->file, &file_sz))
-        {
-            errcode = GetLastError();
-            return ev__translate_sys_error(errcode);
-        }
-        size = file_sz.QuadPart;
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
     }
 
-    const DWORD dwMaximumSizeHigh = size >> 32;
-    const DWORD dwMaximumSizeLow = (DWORD)size;
+    if (offset >= (uint64_t)file_sz.QuadPart)
+    {
+        EV_ASSERT(size > 0);
+    }
+    else if (size == 0)
+    {
+        size = file_sz.QuadPart - offset;
+    }
+    const uint64_t map_sz = offset + size;
+
+    const DWORD dwMaximumSizeHigh = map_sz >> 32;
+    const DWORD dwMaximumSizeLow = (DWORD)map_sz;
     const DWORD flProtect = _ev_file_mmap_to_native_protect_win32(flags);
     view->backend.file_map_obj = CreateFileMappingW(file->file, NULL, flProtect,
         dwMaximumSizeHigh, dwMaximumSizeLow, NULL);
@@ -871,7 +878,10 @@ int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t size, int flags)
     }
 
     const DWORD dwDesiredAccess = _ev_file_mmap_to_native_access(flags);
-    view->addr = MapViewOfFile(view->backend.file_map_obj, dwDesiredAccess, 0, 0, 0);
+    const DWORD dwFileOffsetHigh = offset >> 32;
+    const DWORD dwFileOffsetLow = (DWORD)offset;
+    view->addr = MapViewOfFile(view->backend.file_map_obj, dwDesiredAccess,
+        dwFileOffsetHigh, dwFileOffsetLow, size);
     if (view->addr == NULL)
     {
         CloseHandle(view->backend.file_map_obj);

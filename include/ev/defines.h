@@ -71,6 +71,14 @@
         ((type *) ((char *) (ptr) - EV_OFFSETOF(type, member)))
 #endif
 
+ /**
+  * @brief Align \p size to \p align, who's value is larger or equal to \p size
+  *   and can be divided with no remainder by \p align.
+  * @note \p align must equal to 2^n
+  */
+#define EV_ALIGN_SIZE(size, align) \
+    (((uintptr_t)(size) + ((uintptr_t)(align) - 1)) & ~((uintptr_t)(align) - 1))
+
 /**
  * @} EV_DEFINE
  */

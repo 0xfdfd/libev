@@ -445,12 +445,12 @@ static int _ring_buffer_commit_for_consume(ring_buffer_t* rb,
 EV_LOCAL size_t ring_buffer_heap_cost(void)
 {
     /* need to align with machine size */
-    return ALIGN_SIZE(sizeof(struct ring_buffer), sizeof(void*));
+    return EV_ALIGN_SIZE(sizeof(struct ring_buffer), sizeof(void*));
 }
 
 EV_LOCAL size_t ring_buffer_node_cost(size_t size)
 {
-    return ALIGN_SIZE(sizeof(ring_buffer_node_t) + size, sizeof(void*));
+    return EV_ALIGN_SIZE(sizeof(ring_buffer_node_t) + size, sizeof(void*));
 }
 
 EV_LOCAL ring_buffer_t* ring_buffer_init(void* buffer, size_t size)

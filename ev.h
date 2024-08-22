@@ -713,8 +713,8 @@ EV_API ev_map_node_t* ev_map_prev(const ev_map_node_t* node);
 // #line 71 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/defines.h
-// SIZE:    2966
-// SHA-256: 83cd017868cb72323696bfed0f1e7bd921fe031fb8bfaed953cc860724603bc2
+// SIZE:    3268
+// SHA-256: def87553c746184a16b6fbcaabae80b298f4a50e485e6098525402a19524ce60
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/defines.h"
 #ifndef __EV_DEFINES_H__
@@ -789,6 +789,14 @@ EV_API ev_map_node_t* ev_map_prev(const ev_map_node_t* node);
 #   define EV_CONTAINER_OF(ptr, type, member)   \
         ((type *) ((char *) (ptr) - EV_OFFSETOF(type, member)))
 #endif
+
+ /**
+  * @brief Align \p size to \p align, who's value is larger or equal to \p size
+  *   and can be divided with no remainder by \p align.
+  * @note \p align must equal to 2^n
+  */
+#define EV_ALIGN_SIZE(size, align) \
+    (((uintptr_t)(size) + ((uintptr_t)(align) - 1)) & ~((uintptr_t)(align) - 1))
 
 /**
  * @} EV_DEFINE
@@ -4141,8 +4149,8 @@ EV_API void ev_pipe_close(ev_os_pipe_t fd);
 // #line 97 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs.h
-// SIZE:    20679
-// SHA-256: 6e9aa38874af630f7c65b78b0f9934ae68829fe660334b0ce3c6cedaf4c570a3
+// SIZE:    21150
+// SHA-256: 66980df2ff6f8e600260f3725a4f9e771c58572c0d0ea3d4751e474e1f2ab369
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/fs.h"
 #ifndef __EV_FILE_SYSTEM_H__
@@ -4603,11 +4611,19 @@ EV_API int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_fs_stat_t* stat,
     ev_file_cb cb);
 
 /**
- * @brief Maps a view of a file mapping into the address space of a calling process.
+ * @brief Maps a view of a file mapping into the address space of a calling
+ *   process.
  * @param[out] view     The mapped object.
- * @param[in] file      The file to map. The file is safe to close after this call.
- * @param[in] size      The maximum size of the file mapping object. Set to 0 to
- *   use current size of the \p file.
+ * @param[in] file      The file to map. The file is safe to close after this
+ *   call.
+ * @param[in] offset    The offset where the view is to begin. It must be a
+ *   multiple of the value of #ev_os_mmap_offset_granularity(). You can use
+ *   #EV_ALIGN_SIZE() to align the offset to requirements. The \p offset can
+ *   larger than the file size, in this case the gapping data is undefined.
+ * @param[in] size      The maximum size of the file mapping object.
+ *   + If \p offset is in range of \p file, set to 0 to use the range from
+ *     \p offset to the end of the file.
+ *   + If \p offset is not less than file size, it must larger than 0.
  * @param[in] flags     Map flags. Can be one or more of the following attributes:
  *   + #EV_FS_S_IRUSR: Pages may be read.
  *   + #EV_FS_S_IWUSR: Pages may be written.
@@ -4618,7 +4634,8 @@ EV_API int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_fs_stat_t* stat,
  *   only, you will also get read access.
  * @return              #ev_errno_t
  */
-EV_API int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t size, int flags);
+EV_API int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t offset,
+    size_t size, int flags);
 
 /**
  * @brief Unmap the file.
@@ -5008,8 +5025,8 @@ EV_API ssize_t ev_exepath(char* buffer, size_t size);
 // #line 99 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/misc.h
-// SIZE:    3677
-// SHA-256: addf568943d162a75af910eea251e30a42601b3f87668ed0a16256235a12e3ac
+// SIZE:    3893
+// SHA-256: 56501cd5d5377f20c0f1df0e8de5a806809f3426f5b3a2dccb7866e5475f2f35
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/misc.h"
 #ifndef __EV_MISC_H__
@@ -5146,6 +5163,13 @@ EV_API void ev_library_shutdown(void);
  * @return The page size of this system.
  */
 EV_API size_t ev_os_page_size(void);
+
+/**
+ * @brief Offset granularity for #ev_file_mmap().
+ * @note The Offset granularity does not always equal to system page size.
+ * @return Offset granularity.
+ */
+EV_API size_t ev_os_mmap_offset_granularity(void);
 
 /**
  * @} EV_MISC

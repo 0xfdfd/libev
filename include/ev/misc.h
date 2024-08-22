@@ -134,6 +134,13 @@ EV_API void ev_library_shutdown(void);
 EV_API size_t ev_os_page_size(void);
 
 /**
+ * @brief Offset granularity for #ev_file_mmap().
+ * @note The Offset granularity does not always equal to system page size.
+ * @return Offset granularity.
+ */
+EV_API size_t ev_os_mmap_offset_granularity(void);
+
+/**
  * @} EV_MISC
  */
 

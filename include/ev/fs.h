@@ -456,11 +456,19 @@ EV_API int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_fs_stat_t* stat,
     ev_file_cb cb);
 
 /**
- * @brief Maps a view of a file mapping into the address space of a calling process.
+ * @brief Maps a view of a file mapping into the address space of a calling
+ *   process.
  * @param[out] view     The mapped object.
- * @param[in] file      The file to map. The file is safe to close after this call.
- * @param[in] size      The maximum size of the file mapping object. Set to 0 to
- *   use current size of the \p file.
+ * @param[in] file      The file to map. The file is safe to close after this
+ *   call.
+ * @param[in] offset    The offset where the view is to begin. It must be a
+ *   multiple of the value of #ev_os_mmap_offset_granularity(). You can use
+ *   #EV_ALIGN_SIZE() to align the offset to requirements. The \p offset can
+ *   larger than the file size, in this case the gapping data is undefined.
+ * @param[in] size      The maximum size of the file mapping object.
+ *   + If \p offset is in range of \p file, set to 0 to use the range from
+ *     \p offset to the end of the file.
+ *   + If \p offset is not less than file size, it must larger than 0.
  * @param[in] flags     Map flags. Can be one or more of the following attributes:
  *   + #EV_FS_S_IRUSR: Pages may be read.
  *   + #EV_FS_S_IWUSR: Pages may be written.
@@ -471,7 +479,8 @@ EV_API int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_fs_stat_t* stat,
  *   only, you will also get read access.
  * @return              #ev_errno_t
  */
-EV_API int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t size, int flags);
+EV_API int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t offset,
+    size_t size, int flags);
 
 /**
  * @brief Unmap the file.

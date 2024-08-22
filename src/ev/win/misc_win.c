@@ -195,3 +195,10 @@ size_t ev_os_page_size(void)
     GetSystemInfo(&sys_info);
     return sys_info.dwPageSize;
 }
+
+size_t ev_os_mmap_offset_granularity(void)
+{
+    SYSTEM_INFO sys_info;
+    GetSystemInfo(&sys_info);
+    return sys_info.dwAllocationGranularity;
+}

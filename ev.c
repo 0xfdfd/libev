@@ -98,8 +98,8 @@ EV_LOCAL void ev__assertion_failure(const char* exp, const char* file, int line,
 // #line 7 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/defs.h
-// SIZE:    9624
-// SHA-256: 397cbb95b00be264a95f39db5e607b9583ecd696c2588903bfbba79dbb4d4d68
+// SIZE:    9330
+// SHA-256: 542c3bb6deeb790c5433ac0545f29b7172a449fd30e6c5162a831539cd3109a6
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/defs.h"
 #ifndef __EV_DEFINES_INTERNAL_H__
@@ -131,14 +131,6 @@ extern "C" {
 
 #define EV_JOIN(a, b)   EV_JOIN_2(a, b)
 #define EV_JOIN_2(a, b) a##b
-
-/**
- * @brief Align \p size to \p align, who's value is larger or equal to \p size
- *   and can be divided with no remainder by \p align.
- * @note \p align must equal to 2^n
- */
-#define ALIGN_SIZE(size, align) \
-    (((uintptr_t)(size) + ((uintptr_t)(align) - 1)) & ~((uintptr_t)(align) - 1))
 
 #define ACCESS_ONCE(TYPE, var)  (*(volatile TYPE*) &(var))
 
@@ -4415,8 +4407,8 @@ int ev_queue_empty(const ev_queue_node_t* node)
 // #line 32 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/ringbuffer.c
-// SIZE:    17434
-// SHA-256: cf0084b784304bb96bffadf083efde81ecb6bfe4f7bbed5d6cdf16d909323a50
+// SIZE:    17440
+// SHA-256: 8ffd298ee30c5fb60ba540fcbf3262ae6197fd992dc226f964fba3bd44ec5cb9
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/ringbuffer.c"
 
@@ -4866,12 +4858,12 @@ static int _ring_buffer_commit_for_consume(ring_buffer_t* rb,
 EV_LOCAL size_t ring_buffer_heap_cost(void)
 {
     /* need to align with machine size */
-    return ALIGN_SIZE(sizeof(struct ring_buffer), sizeof(void*));
+    return EV_ALIGN_SIZE(sizeof(struct ring_buffer), sizeof(void*));
 }
 
 EV_LOCAL size_t ring_buffer_node_cost(size_t size)
 {
-    return ALIGN_SIZE(sizeof(ring_buffer_node_t) + size, sizeof(void*));
+    return EV_ALIGN_SIZE(sizeof(ring_buffer_node_t) + size, sizeof(void*));
 }
 
 EV_LOCAL ring_buffer_t* ring_buffer_init(void* buffer, size_t size)
@@ -6633,8 +6625,8 @@ void ev_async_wakeup(ev_async_t* handle)
 // #line 56 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/fs_win.c
-// SIZE:    25618
-// SHA-256: 09ccbb955078ce7dc36361df1aa4ce13d475941639a08b584012ae6a29c5adb3
+// SIZE:    25900
+// SHA-256: e90b06bf000f60cd8805af8146676e5d0197cce4b21721991d0db6b5ac6e1550
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/fs_win.c"
 #include <assert.h>
@@ -7483,23 +7475,30 @@ EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
     return (int)ret;
 }
 
-int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t size, int flags)
+int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t offset,
+    size_t size, int flags)
 {
     DWORD errcode;
 
-    if (size == 0)
+    LARGE_INTEGER file_sz;
+    if (!GetFileSizeEx(file->file, &file_sz))
     {
-        LARGE_INTEGER file_sz;
-        if (!GetFileSizeEx(file->file, &file_sz))
-        {
-            errcode = GetLastError();
-            return ev__translate_sys_error(errcode);
-        }
-        size = file_sz.QuadPart;
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
     }
 
-    const DWORD dwMaximumSizeHigh = size >> 32;
-    const DWORD dwMaximumSizeLow = (DWORD)size;
+    if (offset >= (uint64_t)file_sz.QuadPart)
+    {
+        EV_ASSERT(size > 0);
+    }
+    else if (size == 0)
+    {
+        size = file_sz.QuadPart - offset;
+    }
+    const uint64_t map_sz = offset + size;
+
+    const DWORD dwMaximumSizeHigh = map_sz >> 32;
+    const DWORD dwMaximumSizeLow = (DWORD)map_sz;
     const DWORD flProtect = _ev_file_mmap_to_native_protect_win32(flags);
     view->backend.file_map_obj = CreateFileMappingW(file->file, NULL, flProtect,
         dwMaximumSizeHigh, dwMaximumSizeLow, NULL);
@@ -7510,7 +7509,10 @@ int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t size, int flags)
     }
 
     const DWORD dwDesiredAccess = _ev_file_mmap_to_native_access(flags);
-    view->addr = MapViewOfFile(view->backend.file_map_obj, dwDesiredAccess, 0, 0, 0);
+    const DWORD dwFileOffsetHigh = offset >> 32;
+    const DWORD dwFileOffsetLow = (DWORD)offset;
+    view->addr = MapViewOfFile(view->backend.file_map_obj, dwDesiredAccess,
+        dwFileOffsetHigh, dwFileOffsetLow, size);
     if (view->addr == NULL)
     {
         CloseHandle(view->backend.file_map_obj);
@@ -7711,8 +7713,8 @@ EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt)
 // #line 58 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/misc_win.c
-// SIZE:    8476
-// SHA-256: 76c9ae35bd7d8d498f7b49e4f447142a2890f0c6ef676b0f50dcb1787e1384ac
+// SIZE:    8625
+// SHA-256: 0e43dab773bd2448c59947523c91b3f7df3a491c49b9fe290499ce01e960d318
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/misc_win.c"
 #include <assert.h>
@@ -7911,6 +7913,13 @@ size_t ev_os_page_size(void)
     SYSTEM_INFO sys_info;
     GetSystemInfo(&sys_info);
     return sys_info.dwPageSize;
+}
+
+size_t ev_os_mmap_offset_granularity(void)
+{
+    SYSTEM_INFO sys_info;
+    GetSystemInfo(&sys_info);
+    return sys_info.dwAllocationGranularity;
 }
 
 // #line 59 "ev.c"
@@ -13319,8 +13328,8 @@ void ev_async_wakeup(ev_async_t* handle)
 // #line 85 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/fs_unix.c
-// SIZE:    10916
-// SHA-256: de509585567d26895bc6a3d136916d9099502dfc2b876c7a84b322725e52a85e
+// SIZE:    11011
+// SHA-256: d55950af00cfc687270ff530af495a8c0332e9d0c5eea57f9c6233d0388bd2b2
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/unix/fs_unix.c"
 #define _GNU_SOURCE
@@ -13691,22 +13700,28 @@ EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
     return ret;
 }
 
-int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t size, int flags)
+int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t offset,
+    size_t size, int flags)
 {
     int ret;
     const int prot = _ev_file_mmap_to_native_prot_unix(flags);
 
-    if (size == 0)
+	ev_fs_stat_t stat = EV_FS_STAT_INVALID;
+	if ((ret = ev__fs_fstat(file->file, &stat)) != 0)
+	{
+		return ret;
+	}
+
+    if (offset >= stat.st_size)
     {
-        ev_fs_stat_t stat;
-        if ((ret = ev__fs_fstat(file->file, &stat)) != 0)
-        {
-            return ret;
-        }
-        size = stat.st_size;
+        EV_ASSERT(size > 0);
+    }
+    else if (size == 0)
+    {
+        size = stat.st_size - offset;
     }
 
-    view->addr = mmap(NULL, size, prot, MAP_SHARED, file->file, 0);
+    view->addr = mmap(NULL, size, prot, MAP_SHARED, file->file, offset);
     if (view->addr == NULL)
     {
         ret = errno;
@@ -14345,8 +14360,8 @@ EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
 // #line 88 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/misc_unix.c
-// SIZE:    212
-// SHA-256: 90af43ebc9cc72905c18f356f4a92faa3b2f70093b6deebd5b3af78966a437c7
+// SIZE:    290
+// SHA-256: ef5ea84a17556676433ac6add4ad05896431bdb8111b1da636198ac411014bee
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/unix/misc_unix.c"
 #include <errno.h>
@@ -14360,6 +14375,11 @@ EV_LOCAL int ev__translate_sys_error(int syserr)
 size_t ev_os_page_size(void)
 {
     return sysconf(_SC_PAGE_SIZE);
+}
+
+size_t ev_os_mmap_offset_granularity(void)
+{
+    return ev_os_page_size();
 }
 
 // #line 89 "ev.c"

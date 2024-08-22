@@ -10,3 +10,8 @@ size_t ev_os_page_size(void)
 {
     return sysconf(_SC_PAGE_SIZE);
 }
+
+size_t ev_os_mmap_offset_granularity(void)
+{
+    return ev_os_page_size();
+}

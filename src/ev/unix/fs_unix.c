@@ -366,22 +366,28 @@ EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
     return ret;
 }
 
-int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t size, int flags)
+int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t offset,
+    size_t size, int flags)
 {
     int ret;
     const int prot = _ev_file_mmap_to_native_prot_unix(flags);
 
-    if (size == 0)
+	ev_fs_stat_t stat = EV_FS_STAT_INVALID;
+	if ((ret = ev__fs_fstat(file->file, &stat)) != 0)
+	{
+		return ret;
+	}
+
+    if (offset >= stat.st_size)
     {
-        ev_fs_stat_t stat;
-        if ((ret = ev__fs_fstat(file->file, &stat)) != 0)
-        {
-            return ret;
-        }
-        size = stat.st_size;
+        EV_ASSERT(size > 0);
+    }
+    else if (size == 0)
+    {
+        size = stat.st_size - offset;
     }
 
-    view->addr = mmap(NULL, size, prot, MAP_SHARED, file->file, 0);
+    view->addr = mmap(NULL, size, prot, MAP_SHARED, file->file, offset);
     if (view->addr == NULL)
     {
         ret = errno;

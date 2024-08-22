@@ -24,7 +24,7 @@ TEST_F(fs, mmap_size_0_rd)
     ASSERT_EQ_INT(ev_file_open(NULL, file, NULL, s_file_name, EV_FS_O_RDONLY, 0, NULL), 0);
 
     ev_file_map_t* view = ev_malloc(sizeof(ev_file_map_t));
-    ASSERT_EQ_INT(ev_file_mmap(view, file, 0, EV_FS_S_IRUSR), 0);
+    ASSERT_EQ_INT(ev_file_mmap(view, file, 0, 0, EV_FS_S_IRUSR), 0);
 
     const char* content = view->addr;
     ASSERT_EQ_STR(content, s_file_content);
@@ -48,7 +48,7 @@ TEST_F(fs, mmap_size_0_rdwr)
         ASSERT_EQ_INT(ev_file_open(NULL, file, NULL, s_file_name, EV_FS_O_RDWR, 0, NULL), 0);
 
         ev_file_map_t* view = ev_malloc(sizeof(ev_file_map_t));
-        ASSERT_EQ_INT(ev_file_mmap(view, file, 0, EV_FS_S_IRUSR | EV_FS_S_IWUSR), 0);
+        ASSERT_EQ_INT(ev_file_mmap(view, file, 0, 0, EV_FS_S_IRUSR | EV_FS_S_IWUSR), 0);
 
         char* content = view->addr;
         ASSERT_EQ_STR(content, s_file_content);
