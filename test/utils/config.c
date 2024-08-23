@@ -27,9 +27,16 @@ void test_config_setup(int argc, char* argv[])
                 exit(EXIT_FAILURE);
             }
 
-            test_config.argct = argc - i - 1;
-            test_config.argvt = argv + i + 1;
+            test_config.tool.argct = argc - i - 1;
+            test_config.tool.argvt = argv + i + 1;
             return;
+        }
+
+        opt = "--pure-malloc";
+        if (strcmp(argv[i], opt) == 0)
+        {
+            test_config.config.pure_malloc = 1;
+            continue;
         }
     }
 }

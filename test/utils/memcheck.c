@@ -269,14 +269,17 @@ void mmc_dump(mmc_info_t* info)
     ev_mutex_leave(&s_mmc_rt.mutex);
 }
 
-void mmc_init(void)
+void mmc_init(int replace_allocator)
 {
     _memcheck_init();
 
-    ASSERT_EQ_INT(
-        ev_replace_allocator(mmc_malloc, mmc_calloc, mmc_realloc, mmc_free),
-        0
-    );
+    if (replace_allocator)
+    {
+        ASSERT_EQ_INT(
+            ev_replace_allocator(mmc_malloc, mmc_calloc, mmc_realloc, mmc_free),
+            0
+        );
+    }
 }
 
 void mmc_exit(void)

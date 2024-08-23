@@ -39,14 +39,15 @@ static void _check_mmc_leak(void)
 
 static void _before_all_test(int argc, char* argv[])
 {
-    mmc_init();
-    register_types();
-
     test_config_setup(argc, argv);
 
-    if (test_config.argvt != NULL)
+    mmc_init(!test_config.config.pure_malloc);
+
+    register_types();
+
+    if (test_config.tool.argvt != NULL)
     {
-        int ret = tool_exec(test_config.argct, test_config.argvt);
+        int ret = tool_exec(test_config.tool.argct, test_config.tool.argvt);
         _check_mmc_leak();
         exit(ret);
     }

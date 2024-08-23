@@ -16,9 +16,17 @@ typedef struct test_config_s
      */
     char**  argv;
 
-    int     argct;
+    struct {
+        /**
+         * @brief Use pure malloc.
+         */
+        int pure_malloc;
+    } config;
 
-    char**  argvt;
+    struct {
+       int     argct;
+       char**  argvt;
+    } tool;
 } test_config_t;
 
 extern test_config_t test_config;

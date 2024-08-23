@@ -49,8 +49,9 @@ typedef void (*mmc_cmp_cb)(memblock_t*, void*);
 
 /**
  * @brief Setup memory leak check.
+ * @param[in] replace_allocator Replace allocator for libev.
  */
-void mmc_init(void);
+void mmc_init(int replace_allocator);
 
 /**
  * @brief Cleanup mmc runtime.
