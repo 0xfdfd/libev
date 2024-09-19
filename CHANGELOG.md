@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.1.1
+## v0.1.1 (2024/09/19)
 
 ### BREAKING CHANGES
 1. merge `ev_file_init()` with `ev_file_open()`.

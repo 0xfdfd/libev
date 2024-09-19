@@ -26,7 +26,7 @@
 /**
  * # Changelog
  * 
- * ## v0.1.1
+ * ## v0.1.1 (2024/09/19)
  * 
  * ### BREAKING CHANGES
  * 1. merge `ev_file_init()` with `ev_file_open()`.
@@ -300,8 +300,8 @@
 // #line 68 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.h
-// SIZE:    1189
-// SHA-256: 592c7385ac3aafdc043513c16ec737c11f6dab3b05435f0770c1e8ae18c57396
+// SIZE:    1188
+// SHA-256: 8afb944a6fb8cddac12a6c1a9d64adabdaef359e0936150ec70f48e228703aab
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/version.h"
 #ifndef __EV_VERSION_H__
@@ -333,7 +333,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           12
+#define EV_VERSION_PREREL           0
 
 /**
  * @brief Version calculate helper macro.
