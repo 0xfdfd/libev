@@ -263,6 +263,8 @@ static int _ev_file_wrap_fstat_win(HANDLE handle, ev_fs_stat_t* statbuf, int do_
     NTSTATUS nt_status;
     IO_STATUS_BLOCK io_status;
 
+    ev__init_once_win();
+
     nt_status = ev_winapi.NtQueryInformationFile(handle,
         &io_status,
         &file_info,
@@ -404,18 +406,6 @@ static int _ev_file_wrap_fstat_win(HANDLE handle, ev_fs_stat_t* statbuf, int do_
     statbuf->st_uid = 0;
     statbuf->st_rdev = 0;
     statbuf->st_gen = 0;
-
-    return 0;
-}
-
-static int _ev_file_fstat_win(HANDLE handle, ev_fs_stat_t* statbuf, int do_lstat)
-{
-    int errcode;
-    if (_ev_file_wrap_fstat_win(handle, statbuf, do_lstat) != 0)
-    {
-        errcode = GetLastError();
-        return ev__translate_sys_error(errcode);
-    }
 
     return 0;
 }
@@ -740,7 +730,14 @@ EV_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
 
 EV_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
 {
-    return _ev_file_fstat_win(file, statbuf, 0);
+    int errcode;
+    if (_ev_file_wrap_fstat_win(file, statbuf, 0) != 0)
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    return 0;
 }
 
 EV_LOCAL int ev__fs_close(ev_os_file_t file)

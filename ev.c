@@ -6625,8 +6625,8 @@ void ev_async_wakeup(ev_async_t* handle)
 // #line 56 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/fs_win.c
-// SIZE:    25900
-// SHA-256: e90b06bf000f60cd8805af8146676e5d0197cce4b21721991d0db6b5ac6e1550
+// SIZE:    25781
+// SHA-256: 5114d4e062384418210a3ea1f78967a5fc0e7a99257048f8bad3277bb4a74739
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/fs_win.c"
 #include <assert.h>
@@ -6894,6 +6894,8 @@ static int _ev_file_wrap_fstat_win(HANDLE handle, ev_fs_stat_t* statbuf, int do_
     NTSTATUS nt_status;
     IO_STATUS_BLOCK io_status;
 
+    ev__init_once_win();
+
     nt_status = ev_winapi.NtQueryInformationFile(handle,
         &io_status,
         &file_info,
@@ -7035,18 +7037,6 @@ static int _ev_file_wrap_fstat_win(HANDLE handle, ev_fs_stat_t* statbuf, int do_
     statbuf->st_uid = 0;
     statbuf->st_rdev = 0;
     statbuf->st_gen = 0;
-
-    return 0;
-}
-
-static int _ev_file_fstat_win(HANDLE handle, ev_fs_stat_t* statbuf, int do_lstat)
-{
-    int errcode;
-    if (_ev_file_wrap_fstat_win(handle, statbuf, do_lstat) != 0)
-    {
-        errcode = GetLastError();
-        return ev__translate_sys_error(errcode);
-    }
 
     return 0;
 }
@@ -7371,7 +7361,14 @@ EV_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
 
 EV_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
 {
-    return _ev_file_fstat_win(file, statbuf, 0);
+    int errcode;
+    if (_ev_file_wrap_fstat_win(file, statbuf, 0) != 0)
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    return 0;
 }
 
 EV_LOCAL int ev__fs_close(ev_os_file_t file)
