@@ -6625,8 +6625,8 @@ void ev_async_wakeup(ev_async_t* handle)
 // #line 56 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/fs_win.c
-// SIZE:    25781
-// SHA-256: 5114d4e062384418210a3ea1f78967a5fc0e7a99257048f8bad3277bb4a74739
+// SIZE:    25853
+// SHA-256: df1dc1efac16e77cbdc2035b9e49b6b09a985e82372d909ba5fe178daa5895e3
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/fs_win.c"
 #include <assert.h>
@@ -7089,6 +7089,11 @@ static int _ev_fs_wmkdir(WCHAR* path, int mode)
     }
 
     errcode = GetLastError();
+    if (errcode == ERROR_ALREADY_EXISTS)
+    {
+        return 0;
+    }
+
     if (errcode == ERROR_INVALID_NAME || errcode == ERROR_DIRECTORY)
     {
         return EV_EINVAL;

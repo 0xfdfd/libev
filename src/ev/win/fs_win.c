@@ -458,6 +458,11 @@ static int _ev_fs_wmkdir(WCHAR* path, int mode)
     }
 
     errcode = GetLastError();
+    if (errcode == ERROR_ALREADY_EXISTS)
+    {
+        return 0;
+    }
+
     if (errcode == ERROR_INVALID_NAME || errcode == ERROR_DIRECTORY)
     {
         return EV_EINVAL;

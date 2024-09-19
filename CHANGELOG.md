@@ -31,7 +31,7 @@
 1. `ev_hrtime()` no longer require initialize event loop first.
 2. can not open file in windows if path contains CJK characters.
 3. Use `ev_fs_readfile()` in synchronous mode may crash in windows.
-
+4. `ev_fs_mkdir()` should not fail if already exist in windows.
 
 ## v0.1.0 (2024/08/06)
 
