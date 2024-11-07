@@ -166,11 +166,13 @@ extern "C" {
     xx(EV_ENOTDIR,          ENOTDIR,            "Not a directory")                          \
     xx(EV_EISDIR,           EISDIR,             "Is a directory")                           \
     xx(EV_EINVAL,           EINVAL,             "Invalid argument")                         \
+    xx(EV_ENFILE,           ENFILE,             "Too many open files in system")            \
     xx(EV_EMFILE,           EMFILE,             "Too many open files")                      \
     xx(EV_ENOSPC,           ENOSPC,             "No space left on device")                  \
     xx(EV_EROFS,            EROFS,              "Read-only filesystem")                     \
     xx(EV_EPIPE,            EPIPE,              "Broken pipe")                              \
     xx(EV_ENAMETOOLONG,     ENAMETOOLONG,       "Filename too long")                        \
+    xx(EV_ENOSYS,           ENOSYS,             "Function not implemented")                 \
     xx(EV_ENOTEMPTY,        ENOTEMPTY,          "Directory not empty")                      \
     xx(EV_EADDRINUSE,       EADDRINUSE,         "Address already in use")                   \
     xx(EV_EADDRNOTAVAIL,    EADDRNOTAVAIL,      "Address not available")                    \

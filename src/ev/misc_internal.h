@@ -11,7 +11,20 @@ extern "C" {
  */
 EV_LOCAL int ev__translate_sys_error(int syserr);
 
+/**
+ * @brief Translate posix error into #ev_errno_t
+ * @param[in] syserr    Posix error.
+ * @return              #ev_errno_t
+ */
 EV_LOCAL int ev__translate_posix_sys_error(int syserr);
+
+/**
+ * @brief Fill \p buf with random data.
+ * @param[out] buf  The buffer to fill.
+ * @param[in] len   The number of bytes to fill.
+ * @return          #ev_errno_t
+ */
+EV_LOCAL int ev__random(void* buf, size_t len);
 
 #ifdef __cplusplus
 }

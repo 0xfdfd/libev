@@ -34,6 +34,19 @@ static void _ev_set_scope_id(struct sockaddr_in6* addr, const char* ip)
 #endif
 }
 
+static void _ev_random_on_work(ev_work_t* work)
+{
+    ev_random_req_t* req = EV_CONTAINER_OF(work, ev_random_req_t, work);
+    req->ret = ev__random(req->buf, req->len);
+}
+
+static void _ev_random_on_done(ev_work_t* work, int status)
+{
+    ev_random_req_t* req = EV_CONTAINER_OF(work, ev_random_req_t, work);
+    status = status != 0 ? status : req->ret;
+    req->cb(req, status, req->buf, req->len);
+}
+
 int ev_ipv4_addr(const char* ip, int port, struct sockaddr_in* addr)
 {
     memset(addr, 0, sizeof(*addr));
@@ -173,4 +186,20 @@ EV_LOCAL int ev__translate_posix_sys_error(int syserr)
 void ev_library_shutdown(void)
 {
     ev_threadpool_default_cleanup();
+}
+
+EV_API int ev_random(ev_loop_t* loop, ev_random_req_t* req, void* buf,
+    size_t len, int flags, ev_random_cb cb)
+{
+    if (loop == NULL)
+    {
+        return ev__random(buf, len);
+    }
+
+    req->buf = buf;
+    req->len = len;
+    req->flags = flags;
+    req->cb = cb;
+    req->ret = 0;
+    return ev_loop_queue_work(loop, &req->work, _ev_random_on_work, _ev_random_on_done);
 }

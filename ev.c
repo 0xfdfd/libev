@@ -98,8 +98,8 @@ EV_LOCAL void ev__assertion_failure(const char* exp, const char* file, int line,
 // #line 7 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/defs.h
-// SIZE:    9330
-// SHA-256: 542c3bb6deeb790c5433ac0545f29b7172a449fd30e6c5162a831539cd3109a6
+// SIZE:    9518
+// SHA-256: 5fcf4b2560acaebc5baa12693e2f96c50efb663304241d9b263658ce8938e70c
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/defs.h"
 #ifndef __EV_DEFINES_INTERNAL_H__
@@ -270,11 +270,13 @@ extern "C" {
     xx(EV_ENOTDIR,          ENOTDIR,            "Not a directory")                          \
     xx(EV_EISDIR,           EISDIR,             "Is a directory")                           \
     xx(EV_EINVAL,           EINVAL,             "Invalid argument")                         \
+    xx(EV_ENFILE,           ENFILE,             "Too many open files in system")            \
     xx(EV_EMFILE,           EMFILE,             "Too many open files")                      \
     xx(EV_ENOSPC,           ENOSPC,             "No space left on device")                  \
     xx(EV_EROFS,            EROFS,              "Read-only filesystem")                     \
     xx(EV_EPIPE,            EPIPE,              "Broken pipe")                              \
     xx(EV_ENAMETOOLONG,     ENAMETOOLONG,       "Filename too long")                        \
+    xx(EV_ENOSYS,           ENOSYS,             "Function not implemented")                 \
     xx(EV_ENOTEMPTY,        ENOTEMPTY,          "Directory not empty")                      \
     xx(EV_EADDRINUSE,       EADDRINUSE,         "Address already in use")                   \
     xx(EV_EADDRNOTAVAIL,    EADDRNOTAVAIL,      "Address not available")                    \
@@ -690,8 +692,8 @@ EV_LOCAL int ev__fs_remove(const char* path, int recursive);
 // #line 12 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/misc_internal.h
-// SIZE:    376
-// SHA-256: e5b5bd60bce39493c9064d12f72d20ec85c423df14c5c2a63f7c3079cd170ba8
+// SIZE:    724
+// SHA-256: a81194a7b3f7a4ce2b6251095a548c0b082a28e8e1de7916d822f7c5335bfb9d
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/misc_internal.h"
 #ifndef __EV_MISC_INTERNAL_H__
@@ -707,7 +709,20 @@ extern "C" {
  */
 EV_LOCAL int ev__translate_sys_error(int syserr);
 
+/**
+ * @brief Translate posix error into #ev_errno_t
+ * @param[in] syserr    Posix error.
+ * @return              #ev_errno_t
+ */
 EV_LOCAL int ev__translate_posix_sys_error(int syserr);
+
+/**
+ * @brief Fill \p buf with random data.
+ * @param[out] buf  The buffer to fill.
+ * @param[in] len   The number of bytes to fill.
+ * @return          #ev_errno_t
+ */
+EV_LOCAL int ev__random(void* buf, size_t len);
 
 #ifdef __cplusplus
 }
@@ -4074,8 +4089,8 @@ ev_map_node_t* ev_map_prev(const ev_map_node_t* node)
 // #line 29 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/misc.c
-// SIZE:    3840
-// SHA-256: 78fa752459467564d1bbea5b6f07e842d63c0507533fdf21906cef8cb7bf332b
+// SIZE:    4624
+// SHA-256: b0e9271013c7d1fbffbcfbef8cfcf50323e8e3d3870a4b2142baee7e759ffefd
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/misc.c"
 #include <assert.h>
@@ -4112,6 +4127,19 @@ static void _ev_set_scope_id(struct sockaddr_in6* addr, const char* ip)
 #else
     addr->sin6_scope_id = if_nametoindex(zone_index);
 #endif
+}
+
+static void _ev_random_on_work(ev_work_t* work)
+{
+    ev_random_req_t* req = EV_CONTAINER_OF(work, ev_random_req_t, work);
+    req->ret = ev__random(req->buf, req->len);
+}
+
+static void _ev_random_on_done(ev_work_t* work, int status)
+{
+    ev_random_req_t* req = EV_CONTAINER_OF(work, ev_random_req_t, work);
+    status = status != 0 ? status : req->ret;
+    req->cb(req, status, req->buf, req->len);
 }
 
 int ev_ipv4_addr(const char* ip, int port, struct sockaddr_in* addr)
@@ -4253,6 +4281,22 @@ EV_LOCAL int ev__translate_posix_sys_error(int syserr)
 void ev_library_shutdown(void)
 {
     ev_threadpool_default_cleanup();
+}
+
+EV_API int ev_random(ev_loop_t* loop, ev_random_req_t* req, void* buf,
+    size_t len, int flags, ev_random_cb cb)
+{
+    if (loop == NULL)
+    {
+        return ev__random(buf, len);
+    }
+
+    req->buf = buf;
+    req->len = len;
+    req->flags = flags;
+    req->cb = cb;
+    req->ret = 0;
+    return ev_loop_queue_work(loop, &req->work, _ev_random_on_work, _ev_random_on_done);
 }
 
 // #line 30 "ev.c"
@@ -7715,11 +7759,14 @@ EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt)
 // #line 58 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/misc_win.c
-// SIZE:    8625
-// SHA-256: 0e43dab773bd2448c59947523c91b3f7df3a491c49b9fe290499ce01e960d318
+// SIZE:    8898
+// SHA-256: 1b4f99a5074186ab04cbb91dd5ba21f5c1dd046ba64f01ea76903f9a7001bb0b
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/misc_win.c"
 #include <assert.h>
+
+/* A RtlGenRandom() by any other name... */
+extern BOOLEAN NTAPI SystemFunction036(PVOID Buffer, ULONG BufferLength);
 
 EV_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src)
 {
@@ -7908,6 +7955,15 @@ EV_LOCAL void ev__fatal_syscall(const char* file, int line,
 
     __debugbreak();
     abort();
+}
+
+EV_LOCAL int ev__random(void* buf, size_t len)
+{
+    if (SystemFunction036(buf, (ULONG)len) == FALSE)
+    {
+        return EV_EIO;
+    }
+    return 0;
 }
 
 size_t ev_os_page_size(void)
@@ -14386,6 +14442,368 @@ size_t ev_os_mmap_offset_granularity(void)
 
 // #line 89 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/misc_random_unix.c
+// SIZE:    7547
+// SHA-256: 72ea67ec0e77792f56debfc9260c01a6e6563e2a4bb5c7044dc4bfa04d27628b
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/misc_random_unix.c"
+#include <dlfcn.h>
+
+#if defined(__NetBSD__)
+
+static int _ev_random_sysctl_netbsd(void* buf, size_t len)
+{
+    static int name[] = { CTL_KERN, KERN_ARND };
+    size_t count, req;
+    unsigned char* p;
+
+    p = buf;
+    while (len)
+    {
+        req = len < 32 ? len : 32;
+        count = req;
+
+        if (sysctl(name, ARRAY_SIZE(name), p, &count, NULL, 0) == -1)
+        {
+            return ev__translate_posix_sys_error(errno);
+        }
+
+        if (count != req)
+        {
+            return EV_EIO;  /* Can't happen. */
+        }
+
+        p += count;
+        len -= count;
+    }
+
+    return 0;
+}
+
+EV_LOCAL int ev__random(void* buf, size_t len)
+{
+    return _ev_random_sysctl_netbsd(buf, len);
+}
+
+#elif defined(__FreeBSD__) || defined(__linux__)
+
+typedef struct ev__sysctl_args
+{
+  int* name;
+  int nlen;
+  void* oldval;
+  size_t* oldlenp;
+  void* newval;
+  size_t newlen;
+  unsigned long unused[4];
+} ev__sysctl_args_t;
+
+/**
+ * @brief getrandom() protocol type.
+ */
+typedef ssize_t (*ev__getrandom_fn)(void *, size_t, unsigned);
+
+static ev__getrandom_fn ev__getrandom = NULL;
+
+static void _ev_random_getrandom_init(void)
+{
+    ev__getrandom = (ev__getrandom_fn)dlsym(RTLD_DEFAULT, "getrandom");
+}
+
+static int _ev_random_getrandom(void* buf, size_t len)
+{
+    static ev_once_t token = EV_ONCE_INIT;
+    ev_once_execute(&token, _ev_random_getrandom_init);
+
+    if (ev__getrandom == NULL)
+    {
+        return EV_ENOSYS;
+    }
+
+    size_t pos; ssize_t n;
+    for (pos = 0; pos < len; pos += n)
+    {
+        n = len - pos;
+        if (n > 256)
+        {
+            n = 256;
+        }
+
+        do
+        {
+            n = ev__getrandom((char*)buf + pos, n, 0);
+        } while (n == -1 && errno == EINTR);
+        
+        if (n < 0)
+        {
+            return ev__translate_posix_sys_error(errno);
+        }
+        else if (n == 0)
+        {
+            return EV_EIO;
+        }
+    }
+
+    return 0;
+}
+
+static int _ev_random_sysctl_linux(void* buf, size_t len)
+{
+    static int name[] = {1 /*CTL_KERN*/, 40 /*KERN_RANDOM*/, 6 /*RANDOM_UUID*/};
+    ev__sysctl_args_t args;
+    char uuid[16];
+    char* p;
+    char* pe;
+    size_t n;
+
+    p = buf;
+    pe = p + len;
+
+    while (p < pe)
+    {
+        memset(&args, 0, sizeof(args));
+
+        args.name = name;
+        args.nlen = ARRAY_SIZE(name);
+        args.oldval = uuid;
+        args.oldlenp = &n;
+        n = sizeof(uuid);
+
+        /* Emits a deprecation warning with some kernels but that seems like
+        * an okay trade-off for the fallback of the fallback: this function is
+        * only called when neither getrandom(2) nor /dev/urandom are available.
+        * Fails with ENOSYS on kernels configured without CONFIG_SYSCTL_SYSCALL.
+        * At least arm64 never had a _sysctl system call and therefore doesn't
+        * have a SYS__sysctl define either.
+        */
+    #ifdef SYS__sysctl
+        if (syscall(SYS__sysctl, &args) == -1)
+        {
+            return UV__ERR(errno);
+        }
+    #else
+        {
+            (void) &args;
+            return EV_ENOSYS;
+        }
+    #endif
+
+        if (n != sizeof(uuid))
+        {
+            return EV_EIO;  /* Can't happen. */
+        }
+
+        /* uuid[] is now a type 4 UUID. Bytes 6 and 8 (counting from zero) contain
+        * 4 and 5 bits of entropy, respectively. For ease of use, we skip those
+        * and only use 14 of the 16 bytes.
+        */
+        uuid[6] = uuid[14];
+        uuid[8] = uuid[15];
+
+        n = pe - p;
+        if (n > 14)
+        {
+            n = 14;
+        }
+
+        memcpy(p, uuid, n);
+        p += n;
+    }
+
+    return 0;
+}
+
+EV_LOCAL int ev__random(void* buf, size_t len)
+{
+    int rc = _ev_random_getrandom(buf, len);
+#if defined(__linux__)
+    switch (rc)
+    {
+    case EV_EACCES:
+    case EV_EIO:
+    case EV_ELOOP:
+    case EV_EMFILE:
+    case EV_ENFILE:
+    case EV_ENOENT:
+    case EV_EPERM:
+        rc = _ev_random_sysctl_linux(buf, len);
+        break;
+    }
+#endif
+    return rc;
+}
+
+#else
+
+static int _ev_open_cloexec(const char* path, int flags)
+{
+#if defined(O_CLOEXEC)
+    int fd = open(path, flags | O_CLOEXEC);
+    if (fd < 0)
+    {
+        int errcode = errno;
+        return ev__translate_posix_sys_error(errcode);
+    }
+    return fd;
+#else
+    int fd = open(path, flags);
+    if (fd < 0)
+    {
+        int errcode = errno;
+        return ev__translate_posix_sys_error(errcode);
+    }
+    int err = ev__cloexec(fd, 1);
+    if (err != 0)
+    {
+        close(fd);
+        return err;
+    }
+    return fd;
+#endif
+}
+
+static int _ev_random_readpath(const char* path, void* buf, size_t len)
+{
+    int fd = _ev_open_cloexec(path, O_RDONLY);
+    if (fd < 0)
+    {
+        return fd;
+    }
+
+    size_t pos;
+    ssize_t read_sz;
+    for (pos = 0; pos < len; pos += read_sz)
+    {
+        do
+        {
+            read_sz = read(fd, (char*)buf + pos, len - pos);
+        } while (read_sz == -1 && errno == EINTR);
+
+        if (read_sz < 0)
+        {
+            int errcode = errno;
+            close(fd);
+            return ev__translate_posix_sys_error(errcode);
+        }
+
+        if (read_sz == 0)
+        {
+            close(fd);
+            return EV_EIO;
+        }
+    }
+
+    close(fd);
+    return 0;
+}
+
+#if defined(__PASE__)
+
+EV_LOCAL int ev__random(void* buf, size_t len)
+{
+    return _ev_random_readpath("/dev/urandom", buf, len);
+}
+
+#elif defined(_AIX) || defined(__QNX__)
+
+EV_LOCAL int ev__random(void* buf, size_t len)
+{
+    return _ev_random_readpath("/dev/random", buf, len);
+}
+
+#else
+
+static int _ev_random_dev_urandom_status = 0;
+
+static void _ev_random_dev_urandom_init(void)
+{
+    char c;
+
+    /*
+     * Linux's random(4) man page suggests applications should read at least
+     * once from /dev/random before switching to /dev/urandom in order to seed
+     * the system RNG. Reads from /dev/random can of course block indefinitely
+     * until entropy is available but that's the point.
+     */
+    _ev_random_dev_urandom_status = _ev_random_readpath("/dev/random", &c, 1);
+}
+
+static int _ev_random_dev_urandom(void* buf, size_t len)
+{
+    static ev_once_t token = EV_ONCE_INIT;
+    ev_once_execute(&token, _ev_random_dev_urandom_init);
+
+    if (_ev_random_dev_urandom_status != 0)
+    {
+        return _ev_random_dev_urandom_status;
+    }
+
+    return _ev_random_readpath("/dev/urandom", buf, len);
+}
+
+#if defined(__APPLE__) || defined(__OpenBSD__) || \
+     (defined(__ANDROID_API__) && __ANDROID_API__ >= 28)
+
+typedef int (*ev__getentropy_fn)(void*, size_t);
+
+static ev__getentropy_fn ev__getentropy = NULL;
+
+static void _ev_random_getentropy_init(void)
+{
+    ev__getentropy = (ev__getentropy_fn) dlsym(RTLD_DEFAULT, "getentropy");
+}
+
+static int _ev_random_getentropy(void* buf, size_t len)
+{
+    static ev_once_t token = EV_ONCE_INIT;
+    ev_once_execute(&token, _ev_random_getentropy_init);
+
+    if (ev__getentropy == NULL)
+    {
+        return EV_ENOSYS;
+    }
+
+    size_t pos, stride;
+    for (pos = 0, stride = 256; pos + stride < len; pos += stride)
+    {
+        if (ev__getentropy((char*)buf + pos, len - pos))
+        {
+            return ev__translate_posix_sys_error(errno);
+        }
+    }
+    if (ev__getentropy((char*)buf + pos, len - pos))
+    {
+        return ev__translate_posix_sys_error(errno);
+    }
+
+    return 0;
+}
+
+EV_LOCAL int ev__random(void* buf, size_t len)
+{
+    int rc = _ev_random_getentropy(buf, len);
+    if (rc == EV_ENOSYS)
+    {
+        rc = _ev_random_dev_urandom(buf, len);
+    }
+    return rc;
+}
+
+#else
+
+EV_LOCAL int ev__random(void* buf, size_t len)
+{
+    return _ev_random_dev_urandom(buf, len);
+}
+
+#endif
+
+#endif
+
+#endif
+
+// #line 90 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/mutex_unix.c
 // SIZE:    1802
 // SHA-256: a1f1459e5d2dff7318a6580f205592a6f447715f34a44192f8de57c53331d9f9
@@ -14501,7 +14919,7 @@ int ev_mutex_try_enter(ev_mutex_t* handle)
     return EV_EBUSY;
 }
 
-// #line 90 "ev.c"
+// #line 91 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/once_unix.c
 // SIZE:    157
@@ -14518,7 +14936,7 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
     }
 }
 
-// #line 91 "ev.c"
+// #line 92 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/pipe_unix.c
 // SIZE:    25603
@@ -15471,7 +15889,7 @@ void ev_pipe_close(ev_os_pipe_t fd)
     }
 }
 
-// #line 92 "ev.c"
+// #line 93 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/process_unix.c
 // SIZE:    15820
@@ -16173,7 +16591,7 @@ error:
     return errcode;
 }
 
-// #line 93 "ev.c"
+// #line 94 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/sem_unix.c
 // SIZE:    782
@@ -16240,7 +16658,7 @@ int ev_sem_try_wait(ev_sem_t* sem)
     return 0;
 }
 
-// #line 94 "ev.c"
+// #line 95 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/shdlib_unix.c
 // SIZE:    963
@@ -16303,7 +16721,7 @@ int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr)
     return EV_ENOENT;
 }
 
-// #line 95 "ev.c"
+// #line 96 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/shmem_unix.c
 // SIZE:    2334
@@ -16412,7 +16830,7 @@ void ev_shm_exit(ev_shm_t* shm)
     close(shm->backend.map_file);
 }
 
-// #line 96 "ev.c"
+// #line 97 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/stream_unix.c
 // SIZE:    6160
@@ -16660,7 +17078,7 @@ EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned
     }
 }
 
-// #line 97 "ev.c"
+// #line 98 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/tcp_unix.c
 // SIZE:    13059
@@ -17185,7 +17603,7 @@ EV_LOCAL int ev__tcp_open(ev_tcp_t* tcp, int fd)
     return 0;
 }
 
-// #line 98 "ev.c"
+// #line 99 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/thread_unix.c
 // SIZE:    3650
@@ -17375,7 +17793,7 @@ void* ev_tls_get(ev_tls_t* tls)
     return pthread_getspecific(tls->tls);
 }
 
-// #line 99 "ev.c"
+// #line 100 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/threadpool_unix.c
 // SIZE:    942
@@ -17415,7 +17833,7 @@ EV_LOCAL void ev__exit_work(ev_loop_t* loop)
     loop->backend.threadpool.evtfd[1] = -1;
 }
 
-// #line 100 "ev.c"
+// #line 101 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/time_unix.c
 // SIZE:    284
@@ -17438,7 +17856,7 @@ uint64_t ev_hrtime(void)
     return t.tv_sec * (uint64_t) 1e9 + t.tv_nsec;
 }
 
-// #line 101 "ev.c"
+// #line 102 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/udp_unix.c
 // SIZE:    23177
@@ -18404,7 +18822,7 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
     return _ev_udp_set_ttl_unix(udp, ttl, IP_TTL, IPV6_UNICAST_HOPS);
 }
 
-// #line 102 "ev.c"
+// #line 103 "ev.c"
 
 #endif
 

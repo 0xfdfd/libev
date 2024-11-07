@@ -10,6 +10,7 @@ add_library(ev_test_lib SHARED
     "test/cases/list.c"
     "test/cases/loop_empty.c"
     "test/cases/misc_page_size.c"
+    "test/cases/misc_random.c"
     "test/cases/mutex.c"
     "test/cases/once.c"
     "test/cases/pipe_close.c"

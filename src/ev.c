@@ -86,6 +86,7 @@
 #   include "ev/unix/io_unix.c"
 #   include "ev/unix/loop_unix.c"
 #   include "ev/unix/misc_unix.c"
+#   include "ev/unix/misc_random_unix.c"
 #   include "ev/unix/mutex_unix.c"
 #   include "ev/unix/once_unix.c"
 #   include "ev/unix/pipe_unix.c"

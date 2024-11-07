@@ -1,5 +1,8 @@
 #include <assert.h>
 
+/* A RtlGenRandom() by any other name... */
+extern BOOLEAN NTAPI SystemFunction036(PVOID Buffer, ULONG BufferLength);
+
 EV_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src)
 {
     int errcode;
@@ -187,6 +190,15 @@ EV_LOCAL void ev__fatal_syscall(const char* file, int line,
 
     __debugbreak();
     abort();
+}
+
+EV_LOCAL int ev__random(void* buf, size_t len)
+{
+    if (SystemFunction036(buf, (ULONG)len) == FALSE)
+    {
+        return EV_EIO;
+    }
+    return 0;
 }
 
 size_t ev_os_page_size(void)

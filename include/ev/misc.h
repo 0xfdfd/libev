@@ -141,6 +141,57 @@ EV_API size_t ev_os_page_size(void);
 EV_API size_t ev_os_mmap_offset_granularity(void);
 
 /**
+ * @defgroup EV_MISC_RANDOM Random
+ * @{
+ */
+
+/**
+ * @brief Typedef of random token.
+ */
+typedef struct ev_random_req ev_random_req_t;
+
+/**
+ * @brief Random callback.
+ * @param[in] req       The request passed to #ev_random().
+ * @param[in] status    Operation result. See #ev_errno_t.
+ * @param[in] buf       The buf passed to #ev_random().
+ * @param[in] len       The len passed to #ev_random().
+ */
+typedef void (*ev_random_cb)(ev_random_req_t* req, int status, void* buf, size_t len);
+
+/**
+ * @brief Asynchronous random request token.
+ */
+struct ev_random_req
+{
+    ev_work_t       work;
+    void*           buf;
+    size_t          len;
+    int             flags;
+    ev_random_cb    cb;
+    int             ret;
+};
+
+/**
+ * @brief Fill \p buf with exactly \p len cryptographically strong randoms
+ *   bytes acquired from the system CSPRNG.
+ * @param[in] loop  Event loop. If set to NULL, this function operation in
+ *   synchronous mode.
+ * @param[in] req   Random request. In synchronous mode, it must set to NULL.
+ * @param[in] buf   The buffer to fill.
+ * @param[in] len   The number of bytes to fill.
+ * @param[in] flags Reserved for future extension and must currently be 0.
+ * @param[in] cb    Result callback. In synchronous mode, it must set to NULL.
+ * @return          #ev_errno_t. When success, short reads are not possible.
+ */
+EV_API int ev_random(ev_loop_t* loop, ev_random_req_t* req, void* buf,
+    size_t len, int flags, ev_random_cb cb);
+
+/**
+ * @} EV_MISC_RANDOM
+ */
+
+/**
  * @} EV_MISC
  */
 

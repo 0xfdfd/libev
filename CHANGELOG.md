@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.0
+
+### Features
+1. Support `ev_random()`.
+
+
 ## v0.1.1 (2024/09/19)
 
 ### BREAKING CHANGES
