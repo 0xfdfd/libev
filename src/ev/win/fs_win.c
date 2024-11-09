@@ -864,7 +864,7 @@ int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t offset,
     }
     else if (size == 0)
     {
-        size = file_sz.QuadPart - offset;
+        size = (size_t)(file_sz.QuadPart - offset);
     }
     const uint64_t map_sz = offset + size;
 

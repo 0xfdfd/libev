@@ -14,7 +14,7 @@ int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
     }
 #endif
 
-    shm->backend.map_file = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, d_high, d_low, key);
+    shm->backend.map_file = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, d_high, d_low, key);
     if (shm->backend.map_file == NULL)
     {
         err = GetLastError();
@@ -36,7 +36,7 @@ int ev_shm_open(ev_shm_t* shm, const char* key)
 {
     int err;
 
-    shm->backend.map_file = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, key);
+    shm->backend.map_file = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, key);
     if (shm->backend.map_file == NULL)
     {
         err = GetLastError();

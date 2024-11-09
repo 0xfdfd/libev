@@ -166,7 +166,7 @@ struct ev_fs_req_s
     ev_work_t                   work_token;     /**< Thread pool token */
     ev_file_t*                  file;           /**< File handle */
     ev_file_cb                  cb;             /**< File operation callback */
-    ssize_t                     result;         /**< Result */
+    int64_t                     result;         /**< Result */
 
     union
     {
@@ -531,7 +531,7 @@ EV_API ssize_t ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path
  *   if failure. In synchronous, return the number of bytes for the file, or
  *   #ev_errno_t if failure.
  */
-EV_API ssize_t ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
+EV_API int64_t ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
     ev_file_cb cb);
 
 /**

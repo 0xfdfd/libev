@@ -5,6 +5,9 @@
 ### Features
 1. Support `ev_random()`.
 
+### Bug Fixes
+1. Fix build error when integrate into visual studio unicode build tree.
+
 
 ## v0.1.1 (2024/09/19)
 

@@ -34,7 +34,7 @@ static int _ev_pipe_make_c(HANDLE* pipe_handle, const char* name, int flags)
     sa.bInheritHandle = 0;
 
     DWORD dwFlagsAndAttributes = (flags & EV_PIPE_NONBLOCK) ? FILE_FLAG_OVERLAPPED : 0;
-    HANDLE pip_w = CreateFile(name, w_open_mode, 0, &sa, OPEN_EXISTING, dwFlagsAndAttributes, NULL);
+    HANDLE pip_w = CreateFileA(name, w_open_mode, 0, &sa, OPEN_EXISTING, dwFlagsAndAttributes, NULL);
 
     if (pip_w != INVALID_HANDLE_VALUE)
     {

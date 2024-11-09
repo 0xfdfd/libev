@@ -26,13 +26,13 @@ int ev_dlopen(ev_shdlib_t* lib, const char* filename, char** errmsg)
     DWORD dwLanguageId = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
 
     char* tmp_errmsg = NULL;
-    DWORD res = FormatMessageA(dwFlags, NULL, errcode, dwLanguageId, (LPTSTR)&tmp_errmsg, 0, NULL);
+    DWORD res = FormatMessageA(dwFlags, NULL, errcode, dwLanguageId, (LPSTR)&tmp_errmsg, 0, NULL);
     if (res == 0)
     {
         DWORD fmt_errcode = GetLastError();
         if (fmt_errcode == ERROR_MUI_FILE_NOT_FOUND || fmt_errcode == ERROR_RESOURCE_TYPE_NOT_FOUND)
         {
-            res = FormatMessageA(dwFlags, NULL, errcode, 0, (LPTSTR)&tmp_errmsg, 0, NULL);
+            res = FormatMessageA(dwFlags, NULL, errcode, 0, (LPSTR)&tmp_errmsg, 0, NULL);
         }
         if (res == 0)
         {

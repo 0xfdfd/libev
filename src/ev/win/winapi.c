@@ -14,7 +14,7 @@ EV_LOCAL void ev__winapi_init(void)
         assert(ev_winapi.name != NULL);\
     } while (0)
 
-    HMODULE ntdll_modeule = GetModuleHandle("ntdll.dll");
+    HMODULE ntdll_modeule = GetModuleHandleA("ntdll.dll");
     assert(ntdll_modeule != NULL);
 
     GET_NTDLL_FUNC(NtQueryInformationFile);

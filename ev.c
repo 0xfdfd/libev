@@ -1440,8 +1440,8 @@ const char* ev_strerror(int err)
 // #line 23 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs.c
-// SIZE:    25404
-// SHA-256: b1606b0bfa2e010dda56cf64f8aae486a9f47dfb7fcd8d140d5e19ecdef95b71
+// SIZE:    25615
+// SHA-256: f341c85028b2c0dd95da2cf2f9c5459f6b749c065759db19424283589128f128
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/fs.c"
 #include <sys/stat.h>
@@ -1899,14 +1899,24 @@ static void _ev_fs_readfile_sync(ev_fs_req_t* req)
         goto close_file;
     }
 
-    void* data = ev_malloc(statbuf.st_size);
+#if UINT64_MAX > SIZE_MAX
+    if (statbuf.st_size > SIZE_MAX)
+    {
+        req->result = EV_E2BIG;
+        goto close_file;
+    }
+#endif
+    /* Now it is a safe cast. */
+    size_t file_sz = (size_t)statbuf.st_size;
+
+    void* data = ev_malloc(file_sz);
     if (data == NULL)
     {
         req->result = EV_ENOMEM;
         goto close_file;
     }
 
-    req->rsp.filecontent = ev_buf_make(data, statbuf.st_size);
+    req->rsp.filecontent = ev_buf_make(data, file_sz);
     req->result = ev__fs_preadv(file, &req->rsp.filecontent, 1, 0);
 
 close_file:
@@ -2275,7 +2285,7 @@ ssize_t ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
         {
             ev_fs_req_cleanup(req);
         }
-        return req->result;
+        return (ssize_t)req->result;
     }
 
     ret = ev__loop_submit_threadpool(loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
@@ -2289,7 +2299,7 @@ ssize_t ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
     return 0;
 }
 
-ssize_t ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
+int64_t ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
     ev_file_cb cb)
 {
     int ret;
@@ -6669,8 +6679,8 @@ void ev_async_wakeup(ev_async_t* handle)
 // #line 56 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/fs_win.c
-// SIZE:    25853
-// SHA-256: df1dc1efac16e77cbdc2035b9e49b6b09a985e82372d909ba5fe178daa5895e3
+// SIZE:    25863
+// SHA-256: 3627f9c751813937357e4d770f451414c5078bdf6612933e361d20bfff971b4b
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/fs_win.c"
 #include <assert.h>
@@ -7539,7 +7549,7 @@ int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t offset,
     }
     else if (size == 0)
     {
-        size = file_sz.QuadPart - offset;
+        size = (size_t)(file_sz.QuadPart - offset);
     }
     const uint64_t map_sz = offset + size;
 
@@ -8048,8 +8058,8 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
 // #line 61 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/pipe_win.c
-// SIZE:    40376
-// SHA-256: b8ec21068af759353cf02a0bad6c203a3972d0e6977ab939a1983ff77be67fa3
+// SIZE:    40377
+// SHA-256: d3de802ce7db89dc0bb13318d4f5c430cb44eb278229b63501abf62bd97c5288
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/pipe_win.c"
 #include <stdio.h>
@@ -8088,7 +8098,7 @@ static int _ev_pipe_make_c(HANDLE* pipe_handle, const char* name, int flags)
     sa.bInheritHandle = 0;
 
     DWORD dwFlagsAndAttributes = (flags & EV_PIPE_NONBLOCK) ? FILE_FLAG_OVERLAPPED : 0;
-    HANDLE pip_w = CreateFile(name, w_open_mode, 0, &sa, OPEN_EXISTING, dwFlagsAndAttributes, NULL);
+    HANDLE pip_w = CreateFileA(name, w_open_mode, 0, &sa, OPEN_EXISTING, dwFlagsAndAttributes, NULL);
 
     if (pip_w != INVALID_HANDLE_VALUE)
     {
@@ -9529,18 +9539,17 @@ void ev_pipe_close(ev_os_pipe_t fd)
 // #line 62 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/process_win.c
-// SIZE:    16186
-// SHA-256: 1f92317d339a858c2c3a0accf3ead48c7129a985a761212ca7090d3878576901
+// SIZE:    16197
+// SHA-256: ac71545b93c58efcc6119b36cdd6785d9317f97f04125f38b971608caf8baadf
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/process_win.c"
 #include <assert.h>
 
 typedef struct ev_startup_info
 {
-    STARTUPINFO start_info;
-
-    char*       cmdline;
-    char*       envline;
+    STARTUPINFOA    start_info;
+    char*           cmdline;
+    char*           envline;
 }ev_startup_info_t;
 
 typedef struct stdio_pair_s
@@ -10244,8 +10253,8 @@ int ev_sem_try_wait(ev_sem_t* sem)
 // #line 64 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/shdlib_win.c
-// SIZE:    1766
-// SHA-256: 7cfba90f7727c8c8d4066c2b0b52987f0448e206cd0b2e8ed64b2ee92a2d8964
+// SIZE:    1764
+// SHA-256: b95fb93faad22c63bae5065c13aa1c084b91de60d0aa979b7c4ea2ce86a63366
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/shdlib_win.c"
 
@@ -10276,13 +10285,13 @@ int ev_dlopen(ev_shdlib_t* lib, const char* filename, char** errmsg)
     DWORD dwLanguageId = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
 
     char* tmp_errmsg = NULL;
-    DWORD res = FormatMessageA(dwFlags, NULL, errcode, dwLanguageId, (LPTSTR)&tmp_errmsg, 0, NULL);
+    DWORD res = FormatMessageA(dwFlags, NULL, errcode, dwLanguageId, (LPSTR)&tmp_errmsg, 0, NULL);
     if (res == 0)
     {
         DWORD fmt_errcode = GetLastError();
         if (fmt_errcode == ERROR_MUI_FILE_NOT_FOUND || fmt_errcode == ERROR_RESOURCE_TYPE_NOT_FOUND)
         {
-            res = FormatMessageA(dwFlags, NULL, errcode, 0, (LPTSTR)&tmp_errmsg, 0, NULL);
+            res = FormatMessageA(dwFlags, NULL, errcode, 0, (LPSTR)&tmp_errmsg, 0, NULL);
         }
         if (res == 0)
         {
@@ -10322,8 +10331,8 @@ int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr)
 // #line 65 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/shmem_win.c
-// SIZE:    1852
-// SHA-256: 7c89294e51736fa5dc18ab37605c43571411a99e5b242beb8569689529d59c6e
+// SIZE:    1854
+// SHA-256: 5664c4b4e6dfb9e3298c3f9acd07585c961d8a4c017d26dd3f13a2c30908d811
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/shmem_win.c"
 
@@ -10342,7 +10351,7 @@ int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
     }
 #endif
 
-    shm->backend.map_file = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, d_high, d_low, key);
+    shm->backend.map_file = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, d_high, d_low, key);
     if (shm->backend.map_file == NULL)
     {
         err = GetLastError();
@@ -10364,7 +10373,7 @@ int ev_shm_open(ev_shm_t* shm, const char* key)
 {
     int err;
 
-    shm->backend.map_file = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, key);
+    shm->backend.map_file = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, key);
     if (shm->backend.map_file == NULL)
     {
         err = GetLastError();
@@ -12461,8 +12470,8 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
 // #line 71 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/winapi.c
-// SIZE:    593
-// SHA-256: fddb5147b050c5818f0683bd83c8cf5a697e421d7b71a8cdbbcce7adf9941ff2
+// SIZE:    594
+// SHA-256: 60242db16813d1f3a443e560447e5151fdf17dea28c0f25538897831e2abd8b0
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/winapi.c"
 #include <assert.h>
@@ -12481,7 +12490,7 @@ EV_LOCAL void ev__winapi_init(void)
         assert(ev_winapi.name != NULL);\
     } while (0)
 
-    HMODULE ntdll_modeule = GetModuleHandle("ntdll.dll");
+    HMODULE ntdll_modeule = GetModuleHandleA("ntdll.dll");
     assert(ntdll_modeule != NULL);
 
     GET_NTDLL_FUNC(NtQueryInformationFile);

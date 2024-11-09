@@ -2,10 +2,9 @@
 
 typedef struct ev_startup_info
 {
-    STARTUPINFO start_info;
-
-    char*       cmdline;
-    char*       envline;
+    STARTUPINFOA    start_info;
+    char*           cmdline;
+    char*           envline;
 }ev_startup_info_t;
 
 typedef struct stdio_pair_s

@@ -453,14 +453,24 @@ static void _ev_fs_readfile_sync(ev_fs_req_t* req)
         goto close_file;
     }
 
-    void* data = ev_malloc(statbuf.st_size);
+#if UINT64_MAX > SIZE_MAX
+    if (statbuf.st_size > SIZE_MAX)
+    {
+        req->result = EV_E2BIG;
+        goto close_file;
+    }
+#endif
+    /* Now it is a safe cast. */
+    size_t file_sz = (size_t)statbuf.st_size;
+
+    void* data = ev_malloc(file_sz);
     if (data == NULL)
     {
         req->result = EV_ENOMEM;
         goto close_file;
     }
 
-    req->rsp.filecontent = ev_buf_make(data, statbuf.st_size);
+    req->rsp.filecontent = ev_buf_make(data, file_sz);
     req->result = ev__fs_preadv(file, &req->rsp.filecontent, 1, 0);
 
 close_file:
@@ -829,7 +839,7 @@ ssize_t ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
         {
             ev_fs_req_cleanup(req);
         }
-        return req->result;
+        return (ssize_t)req->result;
     }
 
     ret = ev__loop_submit_threadpool(loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
@@ -843,7 +853,7 @@ ssize_t ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
     return 0;
 }
 
-ssize_t ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
+int64_t ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
     ev_file_cb cb)
 {
     int ret;

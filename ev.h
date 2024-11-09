@@ -31,6 +31,9 @@
  * ### Features
  * 1. Support `ev_random()`.
  * 
+ * ### Bug Fixes
+ * 1. Fix build error when integrate into visual studio unicode build tree.
+ * 
  * 
  * ## v0.1.1 (2024/09/19)
  * 
@@ -307,7 +310,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.h
 // SIZE:    1188
-// SHA-256: c5412f3221a314d0fcef01684860da1ec9edcf3a5c6d10e2452e48fa6cd9fe92
+// SHA-256: ae5da5c5d851d88fd64f177be6fd934028d025a9d1cad04c738347eb1ef34716
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/version.h"
 #ifndef __EV_VERSION_H__
@@ -339,7 +342,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           1
+#define EV_VERSION_PREREL           2
 
 /**
  * @brief Version calculate helper macro.
@@ -4433,7 +4436,7 @@ EV_API void ev_pipe_close(ev_os_pipe_t fd);
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs.h
 // SIZE:    21150
-// SHA-256: 66980df2ff6f8e600260f3725a4f9e771c58572c0d0ea3d4751e474e1f2ab369
+// SHA-256: dbd2203f29e2726b0bfabaf788869a036edcf2f57b1192ff6ae0e63f1a281706
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/fs.h"
 #ifndef __EV_FILE_SYSTEM_H__
@@ -4604,7 +4607,7 @@ struct ev_fs_req_s
     ev_work_t                   work_token;     /**< Thread pool token */
     ev_file_t*                  file;           /**< File handle */
     ev_file_cb                  cb;             /**< File operation callback */
-    ssize_t                     result;         /**< Result */
+    int64_t                     result;         /**< Result */
 
     union
     {
@@ -4969,7 +4972,7 @@ EV_API ssize_t ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path
  *   if failure. In synchronous, return the number of bytes for the file, or
  *   #ev_errno_t if failure.
  */
-EV_API ssize_t ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
+EV_API int64_t ev_fs_readfile(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
     ev_file_cb cb);
 
 /**
