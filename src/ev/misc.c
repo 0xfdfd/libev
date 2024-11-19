@@ -186,6 +186,7 @@ EV_LOCAL int ev__translate_posix_sys_error(int syserr)
 void ev_library_shutdown(void)
 {
     ev_threadpool_default_cleanup();
+    ev__atomic_exit();
 }
 
 EV_API int ev_random(ev_loop_t* loop, ev_random_req_t* req, void* buf,

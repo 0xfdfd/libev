@@ -79,6 +79,7 @@
 #   include "ev/unix.h"
 #endif
 
+#include "ev/atomic.h"
 #include "ev/thread.h"
 #include "ev/request.h"
 #include "ev/mutex.h"

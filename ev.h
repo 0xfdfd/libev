@@ -31,6 +31,7 @@
  * ### Features
  * 1. Support `ev_random()`.
  * 2. Add timeout parameter for `ev_loop_run()`.
+ * 2. Add subset of atomic support.
  * 
  * ### Bug Fixes
  * 1. Fix build error when integrate into visual studio unicode build tree.
@@ -2372,6 +2373,458 @@ typedef struct ev_file_map_backend
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/atomic.h
+// SIZE:    11780
+// SHA-256: fe46c5ee3b14d2e88af2e8a46548890db6bcd86001b6da8022689a7acefd5074
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/atomic.h"
+#ifndef __EV_ATOMIC_H__
+#define __EV_ATOMIC_H__
+
+#if __STDC_VERSION__ >= 201112L && !defined(__STDC_NO_ATOMICS__)
+/*
+ * For compiler that support C11 and atomic, just use the standard header.
+ */
+#include <stdatomic.h>
+
+typedef atomic_int_fast32_t ev_atomic32_t;
+typedef atomic_int_fast64_t ev_atomic64_t;
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_init
+ * @{
+ */
+#define ev_atomic32_init(obj, desired)  atomic_init(obj, desired)
+#define ev_atomic64_init(obj, desired)  atomic_init(obj, desired)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_store
+ * @{
+ */
+#define ev_atomic32_store(obj, desired) atomic_store(obj, desired)
+#define ev_atomic64_store(obj, desired) atomic_store(obj, desired)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_load
+ * @{
+ */
+#define ev_atomic32_load(obj) atomic_load(obj)
+#define ev_atomic64_load(obj) atomic_load(obj)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_exchange
+ * @{
+ */
+#define ev_atomic32_exchange(obj, desired) atomic_exchange(obj, desired)
+#define ev_atomic64_exchange(obj, desired) atomic_exchange(obj, desired)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_compare_exchange
+ * @{
+ */
+#define ev_atomic32_compare_exchange_strong(obj, expected, desired) atomic_compare_exchange_strong(obj, expected, desired)  
+#define ev_atomic64_compare_exchange_strong(obj, expected, desired) atomic_compare_exchange_strong(obj, expected, desired)
+#define ev_atomic32_compare_exchange_weak(obj, expected, desired) atomic_compare_exchange_weak(obj, expected, desired)
+#define ev_atomic64_compare_exchange_weak(obj, expected, desired) atomic_compare_exchange_weak(obj, expected, desired)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_add
+ * @{
+ */
+#define ev_atomic32_fetch_add(obj, arg) atomic_fetch_add(obj, arg)
+#define ev_atomic64_fetch_add(obj, arg) atomic_fetch_add(obj, arg)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_sub
+ * @{
+ */
+#define ev_atomic32_fetch_sub(obj, arg) atomic_fetch_sub(obj, arg)
+#define ev_atomic64_fetch_sub(obj, arg) atomic_fetch_sub(obj, arg)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_or
+ * @{
+ */
+#define ev_atomic32_fetch_or(obj, arg)  atomic_fetch_or(obj, arg)
+#define ev_atomic64_fetch_or(obj, arg)  atomic_fetch_or(obj, arg)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_xor
+ * @{
+ */
+#define ev_atomic32_fetch_xor(obj, arg) atomic_fetch_xor(obj, arg)
+#define ev_atomic64_fetch_xor(obj, arg) atomic_fetch_xor(obj, arg)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_and
+ * @{
+ */
+#define ev_atomic32_fetch_and(obj, arg) atomic_fetch_and(obj, arg)
+#define ev_atomic64_fetch_and(obj, arg) atomic_fetch_and(obj, arg)
+/**
+ * @}
+ */
+
+#elif defined(_WIN32)
+
+#define EV_ATOMIC_WIN32 1
+
+#include <Windows.h>
+
+typedef LONG ev_atomic32_t;
+typedef LONG64 ev_atomic64_t;
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_init
+ * @{
+ */
+#define ev_atomic32_init(obj, desired)  (*(obj) = (desired))
+#define ev_atomic64_init(obj, desired)  (*(obj) = (desired))
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_store
+ * @{
+ */
+#define ev_atomic32_store(obj, desired) ((void)InterlockedExchange(obj, desired))
+#define ev_atomic64_store(obj, desired) ((void)InterlockedExchange64(obj, desired))
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_load
+ * @{
+ */
+#define ev_atomic32_load(obj) InerlockedOr(obj, 0)
+#define ev_atomic64_load(obj) InerlockedOr64(obj, 0)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_exchange
+ * @{
+ */
+#define ev_atomic32_exchange(obj, desired) InterlockedExchange(obj, desired)
+#define ev_atomic64_exchange(obj, desired) InterlockedExchange64(obj, desired)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_compare_exchange
+ * @{
+ */
+EV_API int ev_atomic32_compare_exchange_strong(volatile ev_atomic32_t* obj, int32_t* expected, int32_t desired);
+EV_API int ev_atomic64_compare_exchange_strong(volatile ev_atomic64_t* obj, int64_t* expected, int64_t desired);
+#define ev_atomic32_compare_exchange_weak(obj, expected, desired) ev_atomic32_compare_exchange_strong(obj, expected, desired)
+#define ev_atomic64_compare_exchange_weak(obj, expected, desired) ev_atomic64_compare_exchange_strong(obj, expected, desired)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_add
+ * @{
+ */
+#define ev_atomic32_fetch_add(obj, arg) (InterlockedAdd((obj), (arg)) - (arg))
+#define ev_atomic64_fetch_add(obj, arg) (InterlockedAdd64((obj), (arg)) - (arg))
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_sub
+ * @{
+ */
+#define ev_atomic32_fetch_sub(obj, arg) (InterlockedAdd(obj, -(arg)) + (arg))
+#define ev_atomic64_fetch_sub(obj, arg) (InterlockedAdd64(obj, -(arg)) + (arg))
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_or
+ * @{
+ */
+#define ev_atomic32_fetch_or(obj, arg)  InterlockedOr(obj, arg)
+#define ev_atomic64_fetch_or(obj, arg)  InterlockedOr64(obj, arg)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_xor
+ * @{
+ */
+#define ev_atomic32_fetch_xor(obj, arg) InterlockedXor(obj, arg)
+#define ev_atomic64_fetch_xor(obj, arg) InterlockedXor64(obj, arg)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_and
+ * @{
+ */
+#define ev_atomic32_fetch_and(obj, arg) InterlockedAnd(obj, arg)
+#define ev_atomic64_fetch_and(obj, arg) InterlockedAnd64(obj, arg)
+/**
+ * @}
+ */
+
+#elif defined(__GNUC__) || defined(__clang__)
+
+typedef int32_t ev_atomic32_t;
+typedef int64_t ev_atomic64_t;
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_init
+ * @{
+ */
+#define ev_atomic32_init(obj, desired)  ev_atomic32_store(obj, desired)
+#define ev_atomic64_init(obj, desired)  ev_atomic64_store(obj, desired)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_store
+ * @{
+ */
+#define ev_atomic32_store(obj, desired) __atomic_store_n(obj, desired, __ATOMIC_SEQ_CST)
+#define ev_atomic64_store(obj, desired) __atomic_store_n(obj, desired, __ATOMIC_SEQ_CST)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_load
+ * @{
+ */
+#define ev_atomic32_load(obj) __atomic_load_n(obj, __ATOMIC_SEQ_CST)
+#define ev_atomic64_load(obj) __atomic_load_n(obj, __ATOMIC_SEQ_CST)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_exchange
+ * @{
+ */
+#define ev_atomic32_exchange(obj, desired) __atomic_exchange_n(obj, desired, __ATOMIC_SEQ_CST)
+#define ev_atomic64_exchange(obj, desired) __atomic_exchange_n(obj, desired, __ATOMIC_SEQ_CST)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_compare_exchange
+ * @{
+ */
+#define ev_atomic32_compare_exchange_strong(obj, expected, desired) __atomic_compare_exchange_n(obj, expected, desired, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
+#define ev_atomic64_compare_exchange_strong(obj, expected, desired) __atomic_compare_exchange_n(obj, expected, desired, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
+#define ev_atomic32_compare_exchange_weak(obj, expected, desired)   __atomic_compare_exchange_n(obj, expected, desired, 1, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
+#define ev_atomic64_compare_exchange_weak(obj, expected, desired)   __atomic_compare_exchange_n(obj, expected, desired, 1, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_add
+ * @{
+ */
+#define ev_atomic32_fetch_add(obj, arg) __atomic_fetch_add(obj, arg, __ATOMIC_SEQ_CST)
+#define ev_atomic64_fetch_add(obj, arg) __atomic_fetch_add(obj, arg, __ATOMIC_SEQ_CST)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_sub
+ * @{
+ */
+#define ev_atomic32_fetch_sub(obj, arg) __atomic_fetch_sub(obj, arg, __ATOMIC_SEQ_CST)
+#define ev_atomic64_fetch_sub(obj, arg) __atomic_fetch_sub(obj, arg, __ATOMIC_SEQ_CST)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_or
+ * @{
+ */
+#define ev_atomic32_fetch_or(obj, arg)  __atomic_fetch_or(obj, arg, __ATOMIC_SEQ_CST)
+#define ev_atomic64_fetch_or(obj, arg)  __atomic_fetch_or(obj, arg, __ATOMIC_SEQ_CST)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_xor
+ * @{
+ */
+#define ev_atomic32_fetch_xor(obj, arg) __atomic_fetch_xor(obj, arg, __ATOMIC_SEQ_CST)
+#define ev_atomic64_fetch_xor(obj, arg) __atomic_fetch_xor(obj, arg, __ATOMIC_SEQ_CST)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_and
+ * @{
+ */
+#define ev_atomic32_fetch_and(obj, arg) __atomic_fetch_and(obj, arg, __ATOMIC_SEQ_CST)
+#define ev_atomic64_fetch_and(obj, arg) __atomic_fetch_and(obj, arg, __ATOMIC_SEQ_CST)
+/**
+ * @}
+ */
+
+#else
+
+#define EV_ATOMIC_LOCK_SIMULATION   1
+
+typedef int32_t ev_atomic32_t;
+typedef int64_t ev_atomic64_t;
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_init
+ * @{
+ */
+EV_API void ev_atomic32_init(volatile ev_atomic32_t* obj, int32_t desired);
+EV_API void ev_atomic64_init(volatile ev_atomic64_t* obj, int64_t desired);
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_store
+ * @{
+ */
+EV_API void ev_atomic32_store(volatile ev_atomic32_t* obj, int32_t desired);
+EV_API void ev_atomic64_store(volatile ev_atomic64_t* obj, int64_t desired);
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_load
+ * @{
+ */
+EV_API int32_t ev_atomic32_load(volatile ev_atomic32_t* obj);
+EV_API int64_t ev_atomic64_load(volatile ev_atomic64_t* obj);
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_exchange
+ * @{
+ */
+EV_API int32_t ev_atomic32_exchange(volatile ev_atomic32_t* obj, int32_t desired);
+EV_API int64_t ev_atomic64_exchange(volatile ev_atomic64_t* obj, int64_t desired);
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_compare_exchange
+ * @{
+ */
+EV_API int ev_atomic32_compare_exchange_strong(volatile ev_atomic32_t* obj, int32_t* expected, int32_t desired);
+EV_API int ev_atomic64_compare_exchange_strong(volatile ev_atomic64_t* obj, int64_t* expected, int64_t desired);
+#define ev_atomic32_compare_exchange_weak(obj, expected, desired) ev_atomic32_compare_exchange_strong(obj, expected, desired)
+#define ev_atomic64_compare_exchange_weak(obj, expected, desired) ev_atomic64_compare_exchange_strong(obj, expected, desired)
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_add
+ * @{
+ */
+EV_API int32_t ev_atomic32_fetch_add(volatile ev_atomic32_t* obj, int32_t arg);
+EV_API int64_t ev_atomic64_fetch_add(volatile ev_atomic64_t* obj, int64_t arg);
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_sub
+ * @{
+ */
+EV_API int32_t ev_atomic32_fetch_sub(volatile ev_atomic32_t* obj, int32_t arg);
+EV_API int64_t ev_atomic64_fetch_sub(volatile ev_atomic64_t* obj, int64_t arg);
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_or
+ * @{
+ */
+EV_API int32_t ev_atomic32_fetch_or(volatile ev_atomic32_t* obj, int32_t arg);
+EV_API int64_t ev_atomic64_fetch_or(volatile ev_atomic64_t* obj, int64_t arg);
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_xor
+ * @{
+ */
+EV_API int32_t ev_atomic32_fetch_xor(volatile ev_atomic32_t* obj, int32_t arg);
+EV_API int64_t ev_atomic32_fetch_xor(volatile ev_atomic64_t* obj, int64_t arg);
+/**
+ * @}
+ */
+
+/**
+ * @see https://en.cppreference.com/w/c/atomic/atomic_fetch_and
+ * @{
+ */
+EV_API int32_t ev_atomic32_fetch_and(volatile ev_atomic32_t* obj, int32_t arg);
+EV_API int64_t ev_atomic64_fetch_and(volatile ev_atomic64_t* obj, int64_t arg);
+/**
+ * @}
+ */
+
+#endif
+
+#endif
+
+// #line 83 "ev.h"
+////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/thread.h
 // SIZE:    2757
 // SHA-256: 828e3bd3de37bf867791ca61f7bbfececc4c99844031d7b19e27c59faca641bc
@@ -2497,7 +2950,7 @@ EV_API void* ev_tls_get(ev_tls_t* tls);
 #endif
 #endif
 
-// #line 83 "ev.h"
+// #line 84 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/request.h
 // SIZE:    2347
@@ -2566,7 +3019,7 @@ typedef struct ev_write
 #endif
 #endif
 
-// #line 84 "ev.h"
+// #line 85 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/mutex.h
 // SIZE:    1792
@@ -2652,7 +3105,7 @@ EV_API int ev_mutex_try_enter(ev_mutex_t* handle);
 #endif
 #endif
 
-// #line 85 "ev.h"
+// #line 86 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/sem.h
 // SIZE:    1395
@@ -2725,7 +3178,7 @@ EV_API int ev_sem_try_wait(ev_sem_t* sem);
 #endif
 #endif
 
-// #line 86 "ev.h"
+// #line 87 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/once.h
 // SIZE:    906
@@ -2776,7 +3229,7 @@ EV_API void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
 #endif
 #endif
 
-// #line 87 "ev.h"
+// #line 88 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/shm.h
 // SIZE:    1487
@@ -2851,7 +3304,7 @@ EV_API size_t ev_shm_size(ev_shm_t* shm);
 #endif
 #endif
 
-// #line 88 "ev.h"
+// #line 89 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/shdlib.h
 // SIZE:    1351
@@ -2917,7 +3370,7 @@ int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr);
 #endif
 #endif
 
-// #line 89 "ev.h"
+// #line 90 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/time.h
 // SIZE:    787
@@ -2979,7 +3432,7 @@ EV_API uint64_t ev_hrtime(void);
 #endif
 #endif
 
-// #line 90 "ev.h"
+// #line 91 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/handle.h
 // SIZE:    3412
@@ -3094,7 +3547,7 @@ struct ev_handle
 #endif
 #endif
 
-// #line 91 "ev.h"
+// #line 92 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/loop.h
 // SIZE:    7941
@@ -3363,7 +3816,7 @@ EV_API void ev_loop_walk(ev_loop_t* loop, ev_walk_cb cb, void* arg);
 #endif
 #endif
 
-// #line 92 "ev.h"
+// #line 93 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/async.h
 // SIZE:    1757
@@ -3452,7 +3905,7 @@ EV_API void ev_async_wakeup(ev_async_t* handle);
 #endif
 #endif
 
-// #line 93 "ev.h"
+// #line 94 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/timer.h
 // SIZE:    2594
@@ -3571,7 +4024,7 @@ EV_API void ev_timer_stop(ev_timer_t* handle);
 #endif
 #endif
 
-// #line 94 "ev.h"
+// #line 95 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/tcp.h
 // SIZE:    6462
@@ -3813,7 +4266,7 @@ EV_API int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len
 #endif
 #endif
 
-// #line 95 "ev.h"
+// #line 96 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/udp.h
 // SIZE:    9029
@@ -4120,7 +4573,7 @@ EV_API int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs,
 #endif
 #endif
 
-// #line 96 "ev.h"
+// #line 97 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/pipe.h
 // SIZE:    10238
@@ -4440,7 +4893,7 @@ EV_API void ev_pipe_close(ev_os_pipe_t fd);
 #endif
 #endif
 
-// #line 97 "ev.h"
+// #line 98 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs.h
 // SIZE:    21150
@@ -5066,7 +5519,7 @@ EV_API ev_buf_t* ev_fs_get_filecontent(ev_fs_req_t* req);
 #endif
 #endif
 
-// #line 98 "ev.h"
+// #line 99 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/process.h
 // SIZE:    6793
@@ -5316,7 +5769,7 @@ EV_API ssize_t ev_exepath(char* buffer, size_t size);
 #endif
 #endif
 
-// #line 99 "ev.h"
+// #line 100 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/misc.h
 // SIZE:    5389
@@ -5525,7 +5978,7 @@ EV_API int ev_random(ev_loop_t* loop, ev_random_req_t* req, void* buf,
 #endif
 #endif
 
-// #line 100 "ev.h"
+// #line 101 "ev.h"
 
 #endif
 

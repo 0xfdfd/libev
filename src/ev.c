@@ -3,9 +3,10 @@
 #define _GNU_SOURCE
 #include "ev.h" /* @AMALGAMATE: SKIP */
 
-#include "ev/assert_internal.h"
 #include "ev/defs.h"
+#include "ev/assert_internal.h"
 #include "ev/async_internal.h"
+#include "ev/atomic_internal.h"
 #include "ev/handle_internal.h"
 #include "ev/loop_internal.h"
 #include "ev/fs_internal.h"
@@ -19,6 +20,7 @@
 
 #include "ev/assert.c"
 #include "ev/allocator.c"
+#include "ev/atomic.c"
 #include "ev/errno.c"
 #include "ev/fs.c"
 #include "ev/handle.c"
