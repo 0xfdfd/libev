@@ -23,7 +23,7 @@ TEST_FIXTURE_SETUP(threadpool)
 
 TEST_FIXTURE_TEARDOWN(threadpool)
 {
-    ASSERT_EQ_INT(ev_loop_run(&g_test_757a.loop, EV_LOOP_MODE_ONCE), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_757a.loop, EV_LOOP_MODE_ONCE, EV_INFINITE_TIMEOUT), 0);
     ASSERT_EQ_EVLOOP(&g_test_757a.loop, &empty_loop);
     ASSERT_EQ_INT(ev_loop_exit(&g_test_757a.loop), 0);
 }
@@ -57,7 +57,7 @@ TEST_F(threadpool, normal)
     }
 
     ASSERT_EQ_INT(g_test_757a.cnt_done, 0);
-    ASSERT_EQ_INT(ev_loop_run(&g_test_757a.loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_757a.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
     ASSERT_EQ_INT(g_test_757a.cnt_work, 1);
     ASSERT_EQ_INT(g_test_757a.cnt_done, 1);
 }

@@ -54,7 +54,7 @@ TEST_FIXTURE_TEARDOWN(pipe)
         }
     }
 
-    ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_make->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_make->loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
     ASSERT_EQ_EVLOOP(&g_test_pipe_make->loop, &empty_loop);
     ASSERT_EQ_INT(ev_loop_exit(&g_test_pipe_make->loop), 0);
 
@@ -141,7 +141,7 @@ TEST_F(pipe, make_block)
         _test_pipe_make_block_on_read, _test_pipe_make_block_on_read_done);
     ASSERT_EQ_INT(ret, 0);
 
-    ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_make->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_make->loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -201,7 +201,7 @@ TEST_F(pipe, make_nonblock_unix)
         ret = ev_loop_queue_work(&g_test_pipe_make->loop, &g_test_pipe_make->read_token,
                 _test_pipe_make_nonblock_on_read, _test_pipe_make_nonblock_on_read_done);
         ASSERT_EQ_INT(ret, 0);
-        ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_make->loop, EV_LOOP_MODE_DEFAULT), 0);
+        ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_make->loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
         ASSERT_EQ_SIZE(g_test_pipe_make->rsize, 0);
 #if EAGAIN == EWOULDBLOCK
         ASSERT_EQ_INT(g_test_pipe_make->rlasterror, EAGAIN);
@@ -215,7 +215,7 @@ TEST_F(pipe, make_nonblock_unix)
         ret = ev_loop_queue_work(&g_test_pipe_make->loop, &g_test_pipe_make->write_token,
                 _test_pipe_make_nonblock_on_write, _test_pipe_make_nonblock_on_write_done);
         ASSERT_EQ_INT(ret, 0);
-        ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_make->loop, EV_LOOP_MODE_DEFAULT), 0);
+        ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_make->loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
         ASSERT_GT_SIZE(g_test_pipe_make->wsize, 0);
         ASSERT_LT_SIZE(g_test_pipe_make->wsize, sizeof(g_test_pipe_make->wbuf));
     }

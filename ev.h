@@ -30,6 +30,7 @@
  * 
  * ### Features
  * 1. Support `ev_random()`.
+ * 2. Add timeout parameter for `ev_loop_run()`.
  * 
  * ### Bug Fixes
  * 1. Fix build error when integrate into visual studio unicode build tree.
@@ -310,7 +311,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.h
 // SIZE:    1188
-// SHA-256: ae5da5c5d851d88fd64f177be6fd934028d025a9d1cad04c738347eb1ef34716
+// SHA-256: 0553e406507976c0b219799f2407a0d42b7d5dc19cdb8f40a4ab532e4b7f1b40
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/version.h"
 #ifndef __EV_VERSION_H__
@@ -342,7 +343,7 @@ extern "C" {
 /**
  * @brief Development version.
  */
-#define EV_VERSION_PREREL           2
+#define EV_VERSION_PREREL           3
 
 /**
  * @brief Version calculate helper macro.
@@ -3096,8 +3097,8 @@ struct ev_handle
 // #line 91 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/loop.h
-// SIZE:    7464
-// SHA-256: b2c4cb340ac7f5ee0520b902b8310031d5c5f48c83ea84c170317252c860abe3
+// SIZE:    7941
+// SHA-256: aa7c5f8ccafaecacef419045970848c771037875bd7f071d651807c467ac5166
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/loop.h"
 #ifndef __EV_LOOP_H__
@@ -3114,7 +3115,7 @@ extern "C" {
 /**
  * @brief Running mode of event loop.
  */
-enum ev_loop_mode
+typedef enum ev_loop_mode
 {
     /**
      * @brief Runs the event loop until there are no more active and referenced
@@ -3143,7 +3144,7 @@ enum ev_loop_mode
      * sometime in the future).
      */
     EV_LOOP_MODE_NOWAIT,
-};
+} ev_loop_mode_t;
 
 typedef struct ev_work ev_work_t;
 
@@ -3191,13 +3192,6 @@ struct ev_work
         EV_QUEUE_NODE_INVALID,\
         { NULL, EV_EINPROGRESS, NULL, NULL },\
     }
-
-/**
- * @brief Typedef of #ev_loop_mode.
- */
-typedef enum ev_loop_mode ev_loop_mode_t;
-
-struct ev_loop;
 
 /**
  * @brief Typedef of #ev_loop.
@@ -3295,7 +3289,7 @@ EV_API int ev_loop_init(ev_loop_t* loop);
 EV_API int ev_loop_exit(ev_loop_t* loop);
 
 /**
- * @brief Stop the event loop, causing uv_run() to end as soon as possible.
+ * @brief Stop the event loop, causing ev_loop_run() to end as soon as possible.
  *
  * This will happen not sooner than the next loop iteration. If this function
  * was called before blocking for i/o, the loop won't block for i/o on this
@@ -3307,15 +3301,29 @@ EV_API void ev_loop_stop(ev_loop_t* loop);
 
 /**
  * @brief This function runs the event loop.
+ * 
+ * The \p mode can be one of:
  *
- * Checkout #ev_loop_mode_t for mode details.
+ * + #EV_LOOP_MODE_DEFAULT: Run the event loop until one of following conditions
+ *   is met:
+ *   1. there are no more active and referenced handles or requests. 
+ *   2. \p timeout is reached.
+ *
+ * + #EV_LOOP_MODE_ONCE: Poll for I/O once. Returns either events are tiggered
+ *   or \p timeout is reached.
+ *
+ * + #EV_LOOP_MODE_NOWAIT: Poll for i/o once but don't block if there are no
+ *   pending callbacks. Parameter \p timeout is ignored.
+ * 
  * @param[in] loop      Event loop handler
- * @param[in] mode      Running mode
+ * @param[in] mode      Running mode.
+ * @param[in] timeout   Timeout in milliseconds. Use #EV_INFINITE_TIMEOUT to wait
+ *   infinite.
  * @return              Returns zero when no active handles or requests left,
  *                      otherwise return non-zero
  * @see ev_loop_mode_t
  */
-EV_API int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode);
+EV_API int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode, uint32_t timeout);
 
 /**
  * @brief Submit task into thread pool.

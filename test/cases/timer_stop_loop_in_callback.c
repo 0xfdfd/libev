@@ -32,8 +32,8 @@ TEST_FIXTURE_TEARDOWN(timer)
 TEST_F(timer, stop_loop)
 {
     ASSERT_EQ_INT(ev_timer_start(&g_test_0b72.s_timer, _on_timer, 1, 1), 0);
-    ASSERT_NE_INT(ev_loop_run(&g_test_0b72.s_loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_NE_INT(ev_loop_run(&g_test_0b72.s_loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
 
     ev_timer_exit(&g_test_0b72.s_timer, NULL);
-    ASSERT_EQ_INT(ev_loop_run(&g_test_0b72.s_loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_0b72.s_loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
 }

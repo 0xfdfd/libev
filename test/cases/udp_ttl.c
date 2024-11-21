@@ -23,7 +23,7 @@ TEST_FIXTURE_SETUP(udp)
 TEST_FIXTURE_TEARDOWN(udp)
 {
     ev_udp_exit(&g_test_7ab9.client, NULL);
-    ASSERT_EQ_INT(ev_loop_run(&g_test_7ab9.loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_7ab9.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
     ASSERT_EQ_EVLOOP(&g_test_7ab9.loop, &empty_loop);
     ASSERT_EQ_INT(ev_loop_exit(&g_test_7ab9.loop), 0);
 }

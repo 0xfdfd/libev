@@ -33,7 +33,7 @@ TEST_FIXTURE_TEARDOWN(process)
     if (g_test_process.file != NULL)
     {
         ev_file_close(g_test_process.file, NULL);
-        ev_loop_run(g_test_process.loop, EV_LOOP_MODE_NOWAIT);
+        ev_loop_run(g_test_process.loop, EV_LOOP_MODE_NOWAIT, EV_INFINITE_TIMEOUT);
 
         ev_free(g_test_process.file);
         g_test_process.file = NULL;
@@ -65,7 +65,7 @@ static void _test_process_redirect_file_on_chld(ev_process_t* handle,
     ASSERT_EQ_INT(exit_code, 0);
 
     ev_process_exit(handle, NULL);
-    ev_loop_run(g_test_process.loop, EV_LOOP_MODE_NOWAIT);
+    ev_loop_run(g_test_process.loop, EV_LOOP_MODE_NOWAIT, EV_INFINITE_TIMEOUT);
 }
 
 TEST_F(process, redirect_file)
@@ -81,7 +81,7 @@ TEST_F(process, redirect_file)
         _test_process_redirect_file_on_open);
     ASSERT_EQ_INT(ret, 0);
 
-    ret = ev_loop_run(g_test_process.loop, EV_LOOP_MODE_DEFAULT);
+    ret = ev_loop_run(g_test_process.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT);
     ASSERT_EQ_INT(ret, 0);
 
     char* argv[] = { g_test_process.self_exe_path, "--", "help", NULL };
@@ -95,6 +95,6 @@ TEST_F(process, redirect_file)
     ret = ev_process_spawn(g_test_process.loop, g_test_process.process, &opt);
     ASSERT_EQ_INT(ret, 0);
 
-	ret = ev_loop_run(g_test_process.loop, EV_LOOP_MODE_DEFAULT);
+	ret = ev_loop_run(g_test_process.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT);
 	ASSERT_EQ_INT(ret, 0);
 }

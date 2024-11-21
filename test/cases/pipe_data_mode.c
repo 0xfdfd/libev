@@ -79,7 +79,7 @@ TEST_FIXTURE_SETUP(pipe)
 TEST_FIXTURE_TEARDOWN(pipe)
 {
     ev_pipe_exit(&g_test_pipe_data->pipe_r, NULL);
-    ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_data->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_data->loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
 
     ASSERT_EQ_EVLOOP(&g_test_pipe_data->loop, &empty_loop);
     ev_loop_exit(&g_test_pipe_data->loop);
@@ -105,7 +105,7 @@ TEST_F(pipe, data_mode)
     ASSERT_EQ_INT(ev_pipe_read(&g_test_pipe_data->pipe_r, &g_test_pipe_data->r_pack.read_req,
         &g_test_pipe_data->r_pack.buf, 1, _on_read_callback_221d), 0);
 
-    ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_data->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_pipe_data->loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
     for(i = 0; i < TEST_PACK_NUM_221D; i++)
     {
         void* buf1 = g_test_pipe_data->w_pack[i].buffer;

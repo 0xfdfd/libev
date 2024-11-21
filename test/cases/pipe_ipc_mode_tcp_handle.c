@@ -66,7 +66,7 @@ TEST_FIXTURE_TEARDOWN(pipe)
     ev_tcp_exit(&g_test_19f1->s_tcp, NULL);
     ev_tcp_exit(&g_test_19f1->c_tcp, NULL);
     ev_tcp_exit(&g_test_19f1->d_tcp, NULL);
-    ASSERT_EQ_INT(ev_loop_run(&g_test_19f1->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_19f1->loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
     ASSERT_EQ_EVLOOP(&g_test_19f1->loop, &empty_loop);
     ASSERT_EQ_INT(ev_loop_exit(&g_test_19f1->loop), 0);
 
@@ -122,7 +122,7 @@ TEST_F(pipe, ipc_mode_tcp_handle)
         &buf, 1, _on_pipe_read_done_19f1), 0);
 
     /* communicate */
-    ASSERT_EQ_INT(ev_loop_run(&g_test_19f1->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_19f1->loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
     ASSERT_EQ_UINT(g_test_19f1->cnt_wcb, 1);
     ASSERT_EQ_UINT(g_test_19f1->cnt_rcb, 1);
 
@@ -140,7 +140,7 @@ TEST_F(pipe, ipc_mode_tcp_handle)
         &buf, 1, _on_tcp_read_done_19f1), 0);
 
     /* communicate */
-    ASSERT_EQ_INT(ev_loop_run(&g_test_19f1->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_19f1->loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
     ASSERT_EQ_UINT(g_test_19f1->cnt_wcb, 2);
     ASSERT_EQ_UINT(g_test_19f1->cnt_rcb, 2);
 }

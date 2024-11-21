@@ -75,7 +75,7 @@ TEST_FIXTURE_TEARDOWN(tcp)
         ev_tcp_exit(&g_test_tcp_close_in_middle.s_sock, NULL);
     }
 
-    ASSERT_EQ_INT(ev_loop_run(&g_test_tcp_close_in_middle.loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_tcp_close_in_middle.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
     ASSERT_EQ_INT(ev_loop_exit(&g_test_tcp_close_in_middle.loop), 0);
 }
 
@@ -142,7 +142,7 @@ TEST_F(tcp, close_in_middle)
         0);
 
     /* Establish connection. */
-    ASSERT_EQ_INT(ev_loop_run(&g_test_tcp_close_in_middle.loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_tcp_close_in_middle.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
 
     /* Send data. */
     test_send_data_pack_t* send_data = ev_malloc(sizeof(test_send_data_pack_t));
@@ -175,5 +175,5 @@ TEST_F(tcp, close_in_middle)
     g_test_tcp_close_in_middle.c_sock_open = 0;
     ev_tcp_exit(&g_test_tcp_close_in_middle.c_sock, NULL);
 
-    ASSERT_EQ_INT(ev_loop_run(&g_test_tcp_close_in_middle.loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_tcp_close_in_middle.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
 }

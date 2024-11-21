@@ -41,5 +41,5 @@ void test_sockpair(ev_loop_t* loop, ev_tcp_t* s_sock, ev_tcp_t* c_sock)
     ASSERT_EQ_INT(ev_ipv4_addr("127.0.0.1", port, &addr), 0);
     ASSERT_EQ_INT(ev_tcp_connect(c_sock, (struct sockaddr*)&addr, sizeof(addr), _test_sockpair_on_connect), 0);
 
-    ASSERT_EQ_INT(ev_loop_run(loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
 }

@@ -40,6 +40,6 @@ TEST_F(timer, exit_in_callback)
 {
     ASSERT_EQ_INT(ev_timer_start(&g_test_6f93.s_timer, _on_timer, 1, 1), 0);
 
-    ASSERT_EQ_INT(ev_loop_run(&g_test_6f93.s_loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_6f93.s_loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
     ASSERT_EQ_INT(g_test_6f93.flag_timer_exit, 1);
 }

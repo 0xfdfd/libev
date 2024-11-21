@@ -53,7 +53,7 @@ TEST_F(tcp, bind)
     ASSERT_NE_INT(ev_tcp_listen(&g_test_ec8c.s_sock, 1), 0);
 
     ev_tcp_exit(&g_test_ec8c.s_sock, _on_close_socket);
-    ASSERT_EQ_INT(ev_loop_run(&g_test_ec8c.s_loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_ec8c.s_loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
 
     ASSERT_EQ_INT(g_test_ec8c.s_flag_socket_close, 1);
 }

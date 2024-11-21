@@ -194,11 +194,6 @@ void ev_loop_stop(ev_loop_t* loop)
 
 static uint32_t _ev_loop_calculate_timeout(ev_loop_t* loop, ev_loop_mode_t mode, size_t active_count)
 {
-    if (mode == EV_LOOP_MODE_NOWAIT)
-    {
-        return 0;
-    }
-
     if (mode == EV_LOOP_MODE_ONCE && active_count != 0)
     {
         return 0;
@@ -207,11 +202,18 @@ static uint32_t _ev_loop_calculate_timeout(ev_loop_t* loop, ev_loop_mode_t mode,
     return _ev_backend_timeout(loop);
 }
 
-int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
+int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode, uint32_t timeout)
 {
     int ret;
-    uint32_t timeout;
     size_t active_count = 0;
+
+    if (mode == EV_LOOP_MODE_NOWAIT)
+    {
+        timeout = 0;
+    }
+
+    ev__loop_update_time(loop);
+    const uint64_t start_time_ms = loop->hwtime;
 
     while ((ret = _ev_loop_alive(loop)) != 0 && !loop->mask.b_stop)
     {
@@ -227,8 +229,9 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
         }
 
         /* IO multiplexing */
-        timeout = _ev_loop_calculate_timeout(loop, mode, active_count);
-        ev__poll(loop, timeout);
+        uint32_t loop_timeout = _ev_loop_calculate_timeout(loop, mode, active_count);
+        loop_timeout = EV_MIN(loop_timeout, timeout);
+        ev__poll(loop, loop_timeout);
 
         /**
          * #EV_LOOP_MODE_ONCE implies forward progress: at least one callback must have
@@ -239,17 +242,18 @@ int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode)
          * #EV_LOOP_MODE_NOWAIT makes no guarantees about progress so it's omitted from
          * the check.
          */
-        if (timeout != 0)
-        {
-            ev__loop_update_time(loop);
-            active_count += ev__process_timer(loop);
-        }
+        ev__loop_update_time(loop);
+        const uint32_t diff_time_ms = (uint32_t)(loop->hwtime - start_time_ms);
 
-        /* Callback maybe added */
+        active_count += ev__process_timer(loop);
         active_count += ev__process_backlog(loop);
         active_count += ev__process_endgame(loop);
 
-        if (mode != EV_LOOP_MODE_DEFAULT)
+        if (timeout != EV_INFINITE_TIMEOUT)
+        {
+            timeout = timeout > diff_time_ms ? timeout - diff_time_ms : 0;
+        }
+        if (timeout == 0 || (mode == EV_LOOP_MODE_ONCE && active_count != 0))
         {
             break;
         }

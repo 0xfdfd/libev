@@ -12,7 +12,7 @@ extern "C" {
 /**
  * @brief Running mode of event loop.
  */
-enum ev_loop_mode
+typedef enum ev_loop_mode
 {
     /**
      * @brief Runs the event loop until there are no more active and referenced
@@ -41,7 +41,7 @@ enum ev_loop_mode
      * sometime in the future).
      */
     EV_LOOP_MODE_NOWAIT,
-};
+} ev_loop_mode_t;
 
 typedef struct ev_work ev_work_t;
 
@@ -89,13 +89,6 @@ struct ev_work
         EV_QUEUE_NODE_INVALID,\
         { NULL, EV_EINPROGRESS, NULL, NULL },\
     }
-
-/**
- * @brief Typedef of #ev_loop_mode.
- */
-typedef enum ev_loop_mode ev_loop_mode_t;
-
-struct ev_loop;
 
 /**
  * @brief Typedef of #ev_loop.
@@ -193,7 +186,7 @@ EV_API int ev_loop_init(ev_loop_t* loop);
 EV_API int ev_loop_exit(ev_loop_t* loop);
 
 /**
- * @brief Stop the event loop, causing uv_run() to end as soon as possible.
+ * @brief Stop the event loop, causing ev_loop_run() to end as soon as possible.
  *
  * This will happen not sooner than the next loop iteration. If this function
  * was called before blocking for i/o, the loop won't block for i/o on this
@@ -205,15 +198,29 @@ EV_API void ev_loop_stop(ev_loop_t* loop);
 
 /**
  * @brief This function runs the event loop.
+ * 
+ * The \p mode can be one of:
  *
- * Checkout #ev_loop_mode_t for mode details.
+ * + #EV_LOOP_MODE_DEFAULT: Run the event loop until one of following conditions
+ *   is met:
+ *   1. there are no more active and referenced handles or requests. 
+ *   2. \p timeout is reached.
+ *
+ * + #EV_LOOP_MODE_ONCE: Poll for I/O once. Returns either events are tiggered
+ *   or \p timeout is reached.
+ *
+ * + #EV_LOOP_MODE_NOWAIT: Poll for i/o once but don't block if there are no
+ *   pending callbacks. Parameter \p timeout is ignored.
+ * 
  * @param[in] loop      Event loop handler
- * @param[in] mode      Running mode
+ * @param[in] mode      Running mode.
+ * @param[in] timeout   Timeout in milliseconds. Use #EV_INFINITE_TIMEOUT to wait
+ *   infinite.
  * @return              Returns zero when no active handles or requests left,
  *                      otherwise return non-zero
  * @see ev_loop_mode_t
  */
-EV_API int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode);
+EV_API int ev_loop_run(ev_loop_t* loop, ev_loop_mode_t mode, uint32_t timeout);
 
 /**
  * @brief Submit task into thread pool.

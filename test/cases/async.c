@@ -28,7 +28,7 @@ TEST_FIXTURE_SETUP(async)
 
 TEST_FIXTURE_TEARDOWN(async)
 {
-    ASSERT_EQ_INT(ev_loop_run(&g_test_sync->s_loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_sync->s_loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
     ASSERT_EQ_EVLOOP(&g_test_sync->s_loop, &empty_loop);
     ev_loop_exit(&g_test_sync->s_loop);
 
@@ -41,7 +41,7 @@ TEST_F(async, async)
     ev_async_wakeup(&g_test_sync->s_async);
     ev_async_wakeup(&g_test_sync->s_async);
     ev_async_wakeup(&g_test_sync->s_async);
-    ASSERT_EQ_INT(ev_loop_run(&g_test_sync->s_loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_sync->s_loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
     ASSERT_EQ_INT(g_test_sync->f_called, 1);
 }
 

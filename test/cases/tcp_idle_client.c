@@ -25,7 +25,7 @@ TEST_FIXTURE_TEARDOWN(tcp)
     ev_tcp_exit(&g_test_43e2.s_sock, NULL);
     ev_tcp_exit(&g_test_43e2.c_sock, NULL);
 
-    ASSERT_EQ_INT(ev_loop_run(&g_test_43e2.s_loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_43e2.s_loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
     ASSERT_EQ_EVLOOP(&g_test_43e2.s_loop, &empty_loop);
     ASSERT_EQ_INT(ev_loop_exit(&g_test_43e2.s_loop), 0);
 }
@@ -74,6 +74,6 @@ TEST_T(tcp, idle_client, 1000)
     int port = _idle_client_setup_once_server();
     _idle_client_connect(port);
 
-    ASSERT_EQ_INT(ev_loop_run(&g_test_43e2.s_loop, EV_LOOP_MODE_DEFAULT), 0);
-    ASSERT_EQ_INT(ev_loop_run(&g_test_43e2.s_loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_43e2.s_loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_43e2.s_loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
 }

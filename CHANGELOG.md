@@ -4,6 +4,7 @@
 
 ### Features
 1. Support `ev_random()`.
+2. Add timeout parameter for `ev_loop_run()`.
 
 ### Bug Fixes
 1. Fix build error when integrate into visual studio unicode build tree.

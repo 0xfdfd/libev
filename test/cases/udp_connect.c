@@ -33,7 +33,7 @@ TEST_FIXTURE_TEARDOWN(udp)
     ev_udp_exit(&g_test_5295->client, NULL);
     ev_udp_exit(&g_test_5295->server, NULL);
 
-    ASSERT_EQ_INT(ev_loop_run(&g_test_5295->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_5295->loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
     ASSERT_EQ_EVLOOP(&g_test_5295->loop, &empty_loop);
     ASSERT_EQ_INT(ev_loop_exit(&g_test_5295->loop), 0);
 
@@ -87,5 +87,5 @@ TEST_F(udp, connect)
             _on_test_read_done_5295), 0);
     }
 
-    ASSERT_EQ_INT(ev_loop_run(&g_test_5295->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_5295->loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
 }

@@ -127,7 +127,7 @@ TEST_FIXTURE_SETUP(tcp)
 TEST_FIXTURE_TEARDOWN(tcp)
 {
     ev_tcp_exit(&g_test_6d69->s_client, _on_close_client_socket_6d69);
-    ASSERT_EQ_INT(ev_loop_run(&g_test_6d69->s_loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_6d69->s_loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
 
     ASSERT_EQ_INT(g_test_6d69->s_cnt_server_close, 1);
     ASSERT_EQ_EVLOOP(&g_test_6d69->s_loop, &empty_loop);
@@ -163,5 +163,5 @@ TEST_F(tcp, push_server)
         sizeof(addr), _on_connect_6d69), 0,
         "%s", ev_strerror(_L));
 
-    ASSERT_EQ_INT(ev_loop_run(&g_test_6d69->s_loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_6d69->s_loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
 }

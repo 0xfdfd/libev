@@ -53,7 +53,7 @@ static void _test_fs_close_file(void)
     if (g_test_file.file != NULL)
     {
         ev_file_close(g_test_file.file, NULL);
-        ASSERT_EQ_INT(ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_NOWAIT), 0);
+        ASSERT_EQ_INT(ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_NOWAIT, 0), 0);
 
         ev_free(g_test_file.file);
         g_test_file.file = NULL;
@@ -109,7 +109,7 @@ TEST_F(fs, open_nonexist)
         _test_file_on_open_nonexist_open);
     ASSERT_EQ_INT(ret, 0);
 
-    ASSERT_EQ_INT(ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -139,7 +139,7 @@ TEST_F(fs, open_create)
         _test_file_on_open_create_open);
     ASSERT_EQ_INT(ret, 0);
 
-    ASSERT_EQ_INT(ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -184,7 +184,7 @@ TEST_F(fs, pread_pwrite)
         _test_file_pread_pwrite_on_open);
     ASSERT_EQ_INT(ret, 0);
 
-    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT);
     ASSERT_EQ_INT(ret, 0);
 
     ev_buf_t buf = ev_buf_make((void*)s_sample_data, strlen(s_sample_data));
@@ -192,7 +192,7 @@ TEST_F(fs, pread_pwrite)
         _test_file_pread_pwrite_on_write_done);
     ASSERT_EQ_INT(ret, 0);
 
-    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT);
     ASSERT_EQ_INT(ret, 0);
 
     buf = ev_buf_make(buffer, sizeof(buffer));
@@ -200,7 +200,7 @@ TEST_F(fs, pread_pwrite)
         _test_file_pread_pwrite_on_read_done);
     ASSERT_EQ_INT(ret, 0);
 
-    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT);
     ASSERT_EQ_INT(ret, 0);
 
     buffer[strlen(s_sample_data)] = '\0';
@@ -255,7 +255,7 @@ TEST_F(fs, read_write)
         _test_file_read_write_on_open);
     ASSERT_EQ_INT(ret, 0);
 
-    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT);
     ASSERT_EQ_INT(ret, 0);
 
     ev_buf_t buf = ev_buf_make((void*)s_sample_data, strlen(s_sample_data));
@@ -263,14 +263,14 @@ TEST_F(fs, read_write)
         _test_file_read_write_on_write_done);
     ASSERT_EQ_INT(ret, 0);
 
-    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT);
     ASSERT_EQ_INT(ret, 0);
 
     ret = (int)ev_file_seek(g_test_file.file, &g_test_file.token, EV_FS_SEEK_BEG, 0,
         _test_file_read_write_on_seek_done);
     ASSERT_EQ_INT(ret, 0);
 
-    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT);
     ASSERT_EQ_INT(ret, 0);
 
     buf = ev_buf_make(buffer, 4);
@@ -278,7 +278,7 @@ TEST_F(fs, read_write)
         _test_file_read_write_on_read_done);
     ASSERT_EQ_INT(ret, 0);
 
-    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT);
     ASSERT_EQ_INT(ret, 0);
     ret = memcmp(buffer, "abcd", 4);
     ASSERT_EQ_INT(ret, 0);
@@ -288,7 +288,7 @@ TEST_F(fs, read_write)
         _test_file_read_write_on_read_done);
     ASSERT_EQ_INT(ret, 0);
 
-    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT);
     ASSERT_EQ_INT(ret, 0);
     ret = memcmp(buffer, "efgh", 4);
     ASSERT_EQ_INT(ret, 0);
@@ -323,13 +323,13 @@ TEST_F(fs, fstat)
         _test_file_pread_pwrite_on_open);
     ASSERT_EQ_INT(ret, 0);
 
-    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT);
     ASSERT_EQ_INT(ret, 0);
 
     ret = ev_file_stat(g_test_file.file, &g_test_file.token, &g_test_file.stat, _test_file_stat_on_stat);
     ASSERT_EQ_INT(ret, 0);
 
-    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT);
     ASSERT_EQ_INT(ret, 0);
 }
 
@@ -370,7 +370,7 @@ TEST_F(fs, readdir)
         _test_file_readdir_on_readdir);
     ASSERT_EQ_INT(ret, 0);
 
-    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT);
     ASSERT_EQ_INT(ret, 0);
 }
 
@@ -395,7 +395,7 @@ TEST_F(fs, readdir_nonexist)
         _test_file_readdir_nonexist_on_readdir);
     ASSERT_EQ_INT(ret, 0);
 
-    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT);
     ASSERT_EQ_INT(ret, 0);
 }
 
@@ -427,7 +427,7 @@ TEST_F(fs, readfile)
         _test_file_readfile_on_readfile);
     ASSERT_EQ_INT(ret, 0);
 
-    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT);
     ASSERT_EQ_INT(ret, 0);
 }
 
@@ -450,7 +450,7 @@ TEST_F(fs, mkdir)
         EV_FS_S_IRWXU, _test_fs_mkdir_on_mkdir);
     ASSERT_EQ_INT(ret, 0);
 
-    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT);
+    ret = ev_loop_run(&g_test_file.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT);
     ASSERT_EQ_INT(ret, 0);
 
     ASSERT_EQ_INT(test_access_dir(s_sample_path), 0);

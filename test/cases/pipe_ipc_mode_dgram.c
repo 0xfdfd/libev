@@ -74,7 +74,7 @@ TEST_FIXTURE_TEARDOWN(pipe)
     ev_pipe_exit(&g_test_a548->s_pipe, NULL);
     ev_pipe_exit(&g_test_a548->c_pipe, NULL);
 
-    ASSERT_EQ_INT(ev_loop_run(&g_test_a548->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_a548->loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
     ASSERT_EQ_EVLOOP(&g_test_a548->loop, &empty_loop);
     ASSERT_EQ_INT(ev_loop_exit(&g_test_a548->loop), 0);
 
@@ -121,7 +121,7 @@ TEST_F(pipe, ipc_mode_dgram)
             bufs, 2, _on_test_read_done_a548), 0);
     }
 
-    ASSERT_EQ_INT(ev_loop_run(&g_test_a548->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_a548->loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
     ASSERT_EQ_SIZE(g_test_a548->r_req_cnt, TEST_PACK_NUM_A548);
     ASSERT_EQ_SIZE(g_test_a548->w_req_cnt, TEST_PACK_NUM_A548);
 }

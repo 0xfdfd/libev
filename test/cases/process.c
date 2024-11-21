@@ -47,7 +47,7 @@ TEST_FIXTURE_TEARDOWN(process)
     ev_pipe_exit(&g_test_process->stdout_pipe, NULL);
     ev_pipe_exit(&g_test_process->stderr_pipe, NULL);
 
-    ASSERT_EQ_INT(ev_loop_run(&g_test_process->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_process->loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
     ASSERT_EQ_EVLOOP(&g_test_process->loop, &empty_loop);
     ASSERT_EQ_INT(ev_loop_exit(&g_test_process->loop), 0);
 
@@ -118,7 +118,7 @@ TEST_F(process, redirect_pipe)
             _test_process_redirect_pipe_on_write_done);
     ASSERT_EQ_INT(ret, 0);
 
-    ASSERT_EQ_INT(ev_loop_run(&g_test_process->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_process->loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -150,7 +150,7 @@ TEST_F(process, exit_callback)
     ret = ev_process_spawn(&g_test_process->loop, &g_test_process->process, &opt);
     ASSERT_EQ_INT(ret, 0);
 
-    ASSERT_EQ_INT(ev_loop_run(&g_test_process->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_process->loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
     ASSERT_EQ_INT(g_test_process->flag_exit, 1);
 }
 
@@ -238,7 +238,7 @@ TEST_F(process, cwd)
         _process_cwd_on_read);
     ASSERT_EQ_INT(ret, 0);
 
-    ASSERT_EQ_INT(ev_loop_run(&g_test_process->loop, EV_LOOP_MODE_DEFAULT), 0);
+    ASSERT_EQ_INT(ev_loop_run(&g_test_process->loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT), 0);
 
     ASSERT_EQ_STR(cwd_path.buffer, dir_path);
     ev_free(dir_path);

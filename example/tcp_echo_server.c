@@ -358,5 +358,5 @@ int main(int argc, char* argv[])
      * 2. listing socket is closed.
      * 3. async handle is closed.
      */
-    return ev_loop_run(&s_tcp_echo_server.loop, EV_LOOP_MODE_DEFAULT);
+    return ev_loop_run(&s_tcp_echo_server.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT);
 }

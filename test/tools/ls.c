@@ -144,7 +144,7 @@ static int tool_ls(int argc, char* argv[])
         goto finish;
     }
 
-    ret = ev_loop_run(&g_ls_ctx.loop, EV_LOOP_MODE_DEFAULT);
+    ret = ev_loop_run(&g_ls_ctx.loop, EV_LOOP_MODE_DEFAULT, EV_INFINITE_TIMEOUT);
     if (ret != 0)
     {
         fprintf(stderr, "%s\n", ev_strerror(ret));
