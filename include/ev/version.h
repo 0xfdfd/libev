@@ -12,12 +12,12 @@ extern "C" {
 /**
  * @brief Major version.
  */
-#define EV_VERSION_MAJOR            0
+#define EV_VERSION_MAJOR            1
 
 /**
  * @brief Minor version.
  */
-#define EV_VERSION_MINOR            2
+#define EV_VERSION_MINOR            0
 
 /**
  * @brief Patch version.
@@ -25,24 +25,18 @@ extern "C" {
 #define EV_VERSION_PATCH            0
 
 /**
- * @brief Development version.
- */
-#define EV_VERSION_PREREL           3
-
-/**
  * @brief Version calculate helper macro.
  * @param[in] a     Major version.
  * @param[in] b     Minor version.
  * @param[in] c     Patch version.
- * @param[in] d     Development version.
  */
-#define EV_VERSION(a, b, c, d)      (((a) << 24) + ((b) << 16) + ((c) << 8) + ((d) ? (d) : 255))
+#define EV_VERSION(a, b, c)      (((a) << 24) + ((b) << 16) + (c))
 
 /**
  * @brief Current version code.
  */
 #define EV_VERSION_CODE             \
-    EV_VERSION(EV_VERSION_MAJOR, EV_VERSION_MINOR, EV_VERSION_PATCH, EV_VERSION_PREREL)
+    EV_VERSION(EV_VERSION_MAJOR, EV_VERSION_MINOR, EV_VERSION_PATCH)
 
 /**
  * @brief Get version code as c string.

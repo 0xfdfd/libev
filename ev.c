@@ -1437,11 +1437,15 @@ char* ev__strdup(const char* s)
 // #line 23 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/atomic.c
-// SIZE:    5840
-// SHA-256: 636b8870cbece45618a999ebc916ed7297ed7ea3376f3132c2a28583679c4d50
+// SIZE:    5881
+// SHA-256: 345bfc0849cfc67cee457944cbc074cb8f8a47dcef54cdd27806ddf1694d0e18
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/atomic.c"
 #if defined(EV_ATOMIC_WIN32)
+
+EV_LOCAL void ev__atomic_exit(void)
+{
+}
 
 int ev_atomic32_compare_exchange_strong(volatile ev_atomic32_t* obj,
     int32_t* expected, int32_t desired)
@@ -5999,21 +6003,16 @@ err:
 // #line 39 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.c
-// SIZE:    495
-// SHA-256: 3258dc49496ca405a4eadbcabadcba2e271fc8fe0f63739468029258b7e879da
+// SIZE:    303
+// SHA-256: 1ef50cacb9dc2cda6e5da1345b3698bcc1866b821dacd1f0124b7dfb207be762
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/version.c"
 
 #define _TOSTR(x)       #x
 #define TOSTR(x)        _TOSTR(x)
 
-#if EV_VERSION_PREREL
-#   define EV_VERSION_STR   \
-        TOSTR(EV_VERSION_MAJOR) "." TOSTR(EV_VERSION_MINOR) "." TOSTR(EV_VERSION_PATCH) "-dev" TOSTR(EV_VERSION_PREREL)
-#else
-#   define EV_VERSION_STR   \
-        TOSTR(EV_VERSION_MAJOR) "." TOSTR(EV_VERSION_MINOR) "." TOSTR(EV_VERSION_PATCH)
-#endif
+#define EV_VERSION_STR   \
+    TOSTR(EV_VERSION_MAJOR) "." TOSTR(EV_VERSION_MINOR) "." TOSTR(EV_VERSION_PATCH)
 
 const char* ev_version_str(void)
 {

@@ -29,18 +29,15 @@ TEST_F(version, code)
 TEST_F(version, compare)
 {
     /* patch version compare */
-    ASSERT_GT_UINT(EV_VERSION(0, 0, 2, 0), EV_VERSION(0, 0, 1, 0));
-
-    /* prerelease version always littler that release version */
-    ASSERT_GT_UINT(EV_VERSION(0, 0, 2, 0), EV_VERSION(0, 0, 2, 1));
+    ASSERT_GT_UINT(EV_VERSION(0, 0, 2), EV_VERSION(0, 0, 1));
 
     /* major version is larger than minor version */
-    ASSERT_GT_UINT(EV_VERSION(2, 0, 0, 0), EV_VERSION(1, 2, 0, 0));
+    ASSERT_GT_UINT(EV_VERSION(2, 0, 0), EV_VERSION(1, 2, 0));
 
     /* version macro should support compare in pre-process stage */
-#if EV_VERSION(0, 0, 2, 0) > EV_VERSION(0, 0, 2, 1)
+#if EV_VERSION(0, 1, 2) > EV_VERSION(0, 1, 1)
     /* do nothing */
 #else
-    cutest_porting_abort("");
+    test_abort("");
 #endif
 }

@@ -26,7 +26,7 @@
 /**
  * # Changelog
  * 
- * ## v0.2.0
+ * ## v1.0.0 (2024/11/25)
  * 
  * ### Features
  * 1. Support `ev_random()`.
@@ -311,8 +311,8 @@
 // #line 68 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.h
-// SIZE:    1188
-// SHA-256: 0553e406507976c0b219799f2407a0d42b7d5dc19cdb8f40a4ab532e4b7f1b40
+// SIZE:    1020
+// SHA-256: 13a89b2f24a7d0b3ead2bb11c3b7c5b50267067a42a0ace8123bd789496876e3
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/version.h"
 #ifndef __EV_VERSION_H__
@@ -329,12 +329,12 @@ extern "C" {
 /**
  * @brief Major version.
  */
-#define EV_VERSION_MAJOR            0
+#define EV_VERSION_MAJOR            1
 
 /**
  * @brief Minor version.
  */
-#define EV_VERSION_MINOR            2
+#define EV_VERSION_MINOR            0
 
 /**
  * @brief Patch version.
@@ -342,24 +342,18 @@ extern "C" {
 #define EV_VERSION_PATCH            0
 
 /**
- * @brief Development version.
- */
-#define EV_VERSION_PREREL           3
-
-/**
  * @brief Version calculate helper macro.
  * @param[in] a     Major version.
  * @param[in] b     Minor version.
  * @param[in] c     Patch version.
- * @param[in] d     Development version.
  */
-#define EV_VERSION(a, b, c, d)      (((a) << 24) + ((b) << 16) + ((c) << 8) + ((d) ? (d) : 255))
+#define EV_VERSION(a, b, c)      (((a) << 24) + ((b) << 16) + (c))
 
 /**
  * @brief Current version code.
  */
 #define EV_VERSION_CODE             \
-    EV_VERSION(EV_VERSION_MAJOR, EV_VERSION_MINOR, EV_VERSION_PATCH, EV_VERSION_PREREL)
+    EV_VERSION(EV_VERSION_MAJOR, EV_VERSION_MINOR, EV_VERSION_PATCH)
 
 /**
  * @brief Get version code as c string.

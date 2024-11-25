@@ -1,5 +1,9 @@
 #if defined(EV_ATOMIC_WIN32)
 
+EV_LOCAL void ev__atomic_exit(void)
+{
+}
+
 int ev_atomic32_compare_exchange_strong(volatile ev_atomic32_t* obj,
     int32_t* expected, int32_t desired)
 {
