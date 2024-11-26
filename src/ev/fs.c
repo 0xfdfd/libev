@@ -109,12 +109,14 @@ static void _ev_fs_cleanup_req_as_remove(ev_fs_req_t* req)
     }
 }
 
-static void _ev_fs_init_req(ev_fs_req_t* req, ev_file_t* file, ev_file_cb cb, ev_fs_req_type_t type)
+static void _ev_fs_init_req(ev_fs_req_t* req, ev_file_t* file, ev_file_cb cb,
+    ev_fs_req_type_t type, ev_work_cb work_cb)
 {
     req->req_type = type;
     req->cb = cb;
     req->file = file;
     req->result = EV_EINPROGRESS;
+    req->work_token.data.work_cb = work_cb;
 
     if (file != NULL)
     {
@@ -123,9 +125,9 @@ static void _ev_fs_init_req(ev_fs_req_t* req, ev_file_t* file, ev_file_cb cb, ev
 }
 
 static int _ev_fs_init_req_as_open(ev_fs_req_t* token, ev_file_t* file,
-    const char* path, int flags, int mode, ev_file_cb cb)
+    const char *path, int flags, int mode, ev_file_cb cb, ev_work_cb work_cb)
 {
-    _ev_fs_init_req(token, file, cb, EV_FS_REQ_OPEN);
+    _ev_fs_init_req(token, file, cb, EV_FS_REQ_OPEN, work_cb);
 
     if ((token->req.as_open.path = ev__strdup(path)) == NULL)
     {
@@ -139,9 +141,9 @@ static int _ev_fs_init_req_as_open(ev_fs_req_t* token, ev_file_t* file,
 }
 
 static int _ev_fs_init_req_as_seek(ev_fs_req_t* token, ev_file_t* file,
-    int whence, int64_t offset, ev_file_cb cb)
+    int whence, int64_t offset, ev_file_cb cb, ev_work_cb work_cb)
 {
-    _ev_fs_init_req(token, file, cb, EV_FS_REQ_SEEK);
+    _ev_fs_init_req(token, file, cb, EV_FS_REQ_SEEK, work_cb);
 
     token->req.as_seek.whence = whence;
     token->req.as_seek.offset = offset;
@@ -150,9 +152,9 @@ static int _ev_fs_init_req_as_seek(ev_fs_req_t* token, ev_file_t* file,
 }
 
 static int _ev_fs_init_req_as_read(ev_fs_req_t* req, ev_file_t* file,
-    ev_buf_t bufs[], size_t nbuf, int64_t offset, ev_file_cb cb)
+    ev_buf_t bufs[], size_t nbuf, int64_t offset, ev_file_cb cb, ev_work_cb work_cb)
 {
-    _ev_fs_init_req(req, file, cb, EV_FS_REQ_READ);
+    _ev_fs_init_req(req, file, cb, EV_FS_REQ_READ, work_cb);
 
     int ret = ev__read_init(&req->req.as_read.read_req, bufs, nbuf);
     if (ret != 0)
@@ -165,9 +167,9 @@ static int _ev_fs_init_req_as_read(ev_fs_req_t* req, ev_file_t* file,
 }
 
 static int _ev_fs_init_req_as_write(ev_fs_req_t* token, ev_file_t* file,
-    ev_buf_t bufs[], size_t nbuf, int64_t offset, ev_file_cb cb)
+    ev_buf_t bufs[], size_t nbuf, int64_t offset, ev_file_cb cb, ev_work_cb work_cb)
 {
-    _ev_fs_init_req(token, file, cb, EV_FS_REQ_WRITE);
+    _ev_fs_init_req(token, file, cb, EV_FS_REQ_WRITE, work_cb);
 
     int ret = ev__write_init(&token->req.as_write.write_req, bufs, nbuf);
     if (ret != 0)
@@ -180,15 +182,16 @@ static int _ev_fs_init_req_as_write(ev_fs_req_t* token, ev_file_t* file,
 }
 
 static void _ev_fs_init_req_as_fstat(ev_fs_req_t* req, ev_file_t* file,
-    ev_fs_stat_t* stat, ev_file_cb cb)
+    ev_fs_stat_t* stat, ev_file_cb cb, ev_work_cb work_cb)
 {
-    _ev_fs_init_req(req, file, cb, EV_FS_REQ_FSTAT);
+    _ev_fs_init_req(req, file, cb, EV_FS_REQ_FSTAT, work_cb);
     req->rsp.stat = stat;
 }
 
-static int _ev_fs_init_req_as_readdir(ev_fs_req_t* req, const char* path, ev_file_cb cb)
+static int _ev_fs_init_req_as_readdir(ev_fs_req_t* req, const char* path,
+    ev_file_cb cb, ev_work_cb work_cb)
 {
-    _ev_fs_init_req(req, NULL, cb, EV_FS_REQ_READDIR);
+    _ev_fs_init_req(req, NULL, cb, EV_FS_REQ_READDIR, work_cb);
     req->req.as_readdir.path = ev__strdup(path);
     if (req->req.as_readdir.path == NULL)
     {
@@ -203,7 +206,7 @@ static int _ev_fs_init_req_as_readdir(ev_fs_req_t* req, const char* path, ev_fil
 static int _ev_fs_init_req_as_readfile(ev_fs_req_t* req, const char* path,
     ev_file_cb cb)
 {
-    _ev_fs_init_req(req, NULL, cb, EV_FS_REQ_READFILE);
+    _ev_fs_init_req(req, NULL, cb, EV_FS_REQ_READFILE, NULL);
 
     req->req.as_readfile.path = ev__strdup(path);
     if (req->req.as_readfile.path == NULL)
@@ -219,7 +222,7 @@ static int _ev_fs_init_req_as_readfile(ev_fs_req_t* req, const char* path,
 static int _ev_fs_init_req_as_mkdir(ev_fs_req_t* req, const char* path, int mode,
     ev_file_cb cb)
 {
-    _ev_fs_init_req(req, NULL, cb, EV_FS_REQ_MKDIR);
+    _ev_fs_init_req(req, NULL, cb, EV_FS_REQ_MKDIR, NULL);
 
     req->req.as_mkdir.path = ev__strdup(path);
     if (req->req.as_mkdir.path == NULL)
@@ -231,9 +234,10 @@ static int _ev_fs_init_req_as_mkdir(ev_fs_req_t* req, const char* path, int mode
     return 0;
 }
 
-static int _ev_fs_init_req_as_remove(ev_fs_req_t* req, const char* path, int recursion, ev_file_cb cb)
+static int _ev_fs_init_req_as_remove(ev_fs_req_t* req, const char* path,
+    int recursion, ev_file_cb cb)
 {
-    _ev_fs_init_req(req, NULL, cb, EV_FS_REQ_REMOVE);
+    _ev_fs_init_req(req, NULL, cb, EV_FS_REQ_REMOVE, NULL);
 
     req->req.as_remove.path = ev__strdup(path);
     if (req->req.as_remove.path == NULL)
@@ -335,6 +339,8 @@ static void _ev_fs_smart_deactive(ev_file_t* file)
     }
 }
 
+static int _ev_fs_submit_op(ev_file_t *file, int force);
+
 static void _ev_fs_on_done(ev_work_t* work, int status)
 {
     ev_fs_req_t* req = EV_CONTAINER_OF(work, ev_fs_req_t, work_token);
@@ -349,6 +355,7 @@ static void _ev_fs_on_done(ev_work_t* work, int status)
     if (file != NULL)
     {
         _ev_fs_erase_req(file, req);
+        _ev_fs_submit_op(file, 1);
         _ev_fs_smart_deactive(file);
     }
     req->cb(req);
@@ -357,6 +364,26 @@ static void _ev_fs_on_done(ev_work_t* work, int status)
      * As describe in #ev_file_exit(), we have to check close status.
      */
     _ev_file_do_close_callback_if_necessary(file);
+}
+
+static int _ev_fs_submit_op(ev_file_t *file, int force)
+{
+    ev_list_node_t *it = ev_list_begin(&file->work_queue);
+    if (it == NULL)
+    {
+        return 0;
+    }
+
+    size_t op_sz = ev_list_size(&file->work_queue);
+    if (!force && op_sz != 1)
+    {
+        return 0;
+    }
+    ev_fs_req_t *req = EV_CONTAINER_OF(it, ev_fs_req_t, node);
+
+    ev_loop_t *loop = file->base.loop;
+    return ev__loop_submit_threadpool(loop, &req->work_token,
+        EV_THREADPOOL_WORK_IO_FAST, req->work_token.data.work_cb, _ev_fs_on_done);
 }
 
 static void _ev_file_on_open(ev_work_t* work)
@@ -503,9 +530,7 @@ static void _ev_fs_on_remove(ev_work_t* work)
 static int _ev_file_read_template(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, int64_t offset, ev_file_cb cb, ev_work_cb work_cb)
 {
-    ev_loop_t* loop = file->base.loop;
-
-    int ret = _ev_fs_init_req_as_read(req, file, bufs, nbuf, offset, cb);
+    int ret = _ev_fs_init_req_as_read(req, file, bufs, nbuf, offset, cb, work_cb);
     if (ret != 0)
     {
         return ret;
@@ -513,25 +538,14 @@ static int _ev_file_read_template(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bu
 
     ev__handle_active(&file->base);
 
-    ret = ev__loop_submit_threadpool(loop, &req->work_token,
-        EV_THREADPOOL_WORK_IO_FAST, work_cb, _ev_fs_on_done);
-    if (ret != 0)
-    {
-        _ev_fs_cleanup_req_as_read(req);
-        _ev_fs_smart_deactive(file);
-        return ret;
-    }
-
-    return 0;
+    return _ev_fs_submit_op(file, 0);
 }
 
 static int _ev_file_pwrite_template(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
     size_t nbuf, int64_t offset, ev_file_cb cb, ev_work_cb work_cb)
 {
     int ret;
-    ev_loop_t* loop = file->base.loop;
-
-    ret = _ev_fs_init_req_as_write(req, file, bufs, nbuf, offset, cb);
+    ret = _ev_fs_init_req_as_write(req, file, bufs, nbuf, offset, cb, work_cb);
     if (ret != 0)
     {
         return ret;
@@ -539,16 +553,7 @@ static int _ev_file_pwrite_template(ev_file_t* file, ev_fs_req_t* req, ev_buf_t 
 
     ev__handle_active(&file->base);
 
-    ret = ev__loop_submit_threadpool(loop, &req->work_token,
-        EV_THREADPOOL_WORK_IO_FAST, work_cb, _ev_fs_on_done);
-    if (ret != 0)
-    {
-        _ev_fs_cleanup_req_as_write(req);
-        _ev_fs_smart_deactive(file);
-        return ret;
-    }
-
-    return 0;
+    return _ev_fs_submit_op(file, 0);
 }
 
 static void _ev_fs_on_seek(ev_work_t* work)
@@ -677,29 +682,19 @@ int ev_file_open(ev_loop_t* loop, ev_file_t* file, ev_fs_req_t* token, const cha
         return ret;
     }
 
-    if ((ret = _ev_fs_init_req_as_open(token, file, path, flags, mode, cb)) != 0)
+    if ((ret = _ev_fs_init_req_as_open(token, file, path, flags, mode, cb, _ev_file_on_open)) != 0)
     {
         return ret;
     }
 
     ev__handle_active(&file->base);
 
-    ret = ev__loop_submit_threadpool(loop, &token->work_token,
-        EV_THREADPOOL_WORK_IO_FAST, _ev_file_on_open, _ev_fs_on_done);
-    if (ret != 0)
-    {
-        _ev_fs_cleanup_req_as_open(token);
-        _ev_fs_smart_deactive(file);
-        return ret;
-    }
-
-    return 0;
+    return _ev_fs_submit_op(file, 0);
 }
 
 int64_t ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence, int64_t offset,
     ev_file_cb cb)
 {
-    int ret;
     ev_loop_t* loop = file->base.loop;
     if (loop == NULL)
     {
@@ -707,18 +702,10 @@ int64_t ev_file_seek(ev_file_t* file, ev_fs_req_t* req, int whence, int64_t offs
         return ev__fs_seek(file->file, whence, offset);
     }
 
-    _ev_fs_init_req_as_seek(req, file, whence, offset, cb);
+    _ev_fs_init_req_as_seek(req, file, whence, offset, cb, _ev_fs_on_seek);
     ev__handle_active(&file->base);
 
-    ret = ev__loop_submit_threadpool(loop, &req->work_token,
-        EV_THREADPOOL_WORK_IO_FAST, _ev_fs_on_seek, _ev_fs_on_done);
-    if (ret != 0)
-    {
-        _ev_fs_smart_deactive(file);
-        return ret;
-    }
-
-    return 0;
+    return _ev_fs_submit_op(file, 0);
 }
 
 ssize_t ev_file_read(ev_file_t* file, ev_fs_req_t* req, void* buff,
@@ -798,7 +785,6 @@ ssize_t ev_file_pwritev(ev_file_t* file, ev_fs_req_t* req, ev_buf_t bufs[],
 
 int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_fs_stat_t* stat, ev_file_cb cb)
 {
-    int ret;
     ev_loop_t* loop = file->base.loop;
     if (loop == NULL)
     {
@@ -806,26 +792,17 @@ int ev_file_stat(ev_file_t* file, ev_fs_req_t* req, ev_fs_stat_t* stat, ev_file_
         return ev__fs_fstat(file->file, stat);
     }
 
-    _ev_fs_init_req_as_fstat(req, file, stat, cb);
+    _ev_fs_init_req_as_fstat(req, file, stat, cb, _ev_file_on_fstat);
     ev__handle_active(&file->base);
 
-    ret = ev__loop_submit_threadpool(loop, &req->work_token, EV_THREADPOOL_WORK_IO_FAST,
-        _ev_file_on_fstat, _ev_fs_on_done);
-    if (ret != 0)
-    {
-        _ev_fs_cleanup_req_as_fstat(req);
-        _ev_fs_smart_deactive(file);
-        return ret;
-    }
-
-    return 0;
+    return _ev_fs_submit_op(file, 0);
 }
 
 ssize_t ev_fs_readdir(ev_loop_t* loop, ev_fs_req_t* req, const char* path,
     ev_file_cb cb)
 {
     int ret;
-    if ((ret = _ev_fs_init_req_as_readdir(req, path, cb)) != 0)
+    if ((ret = _ev_fs_init_req_as_readdir(req, path, cb, NULL)) != 0)
     {
         return ret;
     }
