@@ -372,11 +372,11 @@ int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t offset,
     int ret;
     const int prot = _ev_file_mmap_to_native_prot_unix(flags);
 
-	ev_fs_stat_t stat = EV_FS_STAT_INVALID;
-	if ((ret = ev__fs_fstat(file->file, &stat)) != 0)
-	{
-		return ret;
-	}
+    ev_fs_stat_t stat = EV_FS_STAT_INVALID;
+    if ((ret = ev__fs_fstat(file->file, &stat)) != 0)
+    {
+        return ret;
+    }
 
     if (offset >= stat.st_size)
     {

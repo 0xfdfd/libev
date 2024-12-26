@@ -13739,8 +13739,8 @@ void ev_async_wakeup(ev_async_t* handle)
 // #line 87 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/fs_unix.c
-// SIZE:    11011
-// SHA-256: d55950af00cfc687270ff530af495a8c0332e9d0c5eea57f9c6233d0388bd2b2
+// SIZE:    11029
+// SHA-256: 6f59d9af229fa0353c639b421c6d27c4a75e19d092cab36d079f9f535bce19fc
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/unix/fs_unix.c"
 #define _GNU_SOURCE
@@ -14117,11 +14117,11 @@ int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t offset,
     int ret;
     const int prot = _ev_file_mmap_to_native_prot_unix(flags);
 
-	ev_fs_stat_t stat = EV_FS_STAT_INVALID;
-	if ((ret = ev__fs_fstat(file->file, &stat)) != 0)
-	{
-		return ret;
-	}
+    ev_fs_stat_t stat = EV_FS_STAT_INVALID;
+    if ((ret = ev__fs_fstat(file->file, &stat)) != 0)
+    {
+        return ret;
+    }
 
     if (offset >= stat.st_size)
     {

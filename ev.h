@@ -4570,8 +4570,8 @@ EV_API int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs,
 // #line 97 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/pipe.h
-// SIZE:    10238
-// SHA-256: 43b5c13482293e343a906977b13d4e7c960fd8d76324dbb0eae8ef4be9e6eae2
+// SIZE:    10169
+// SHA-256: 7a0bfd0c03228ccb85a3bf9bc014e60399e022f7be09b691ee381cdab21e081c
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/pipe.h"
 #ifndef __EV_PIPE_H__
@@ -4585,18 +4585,13 @@ extern "C" {
  * @{
  */
 
-enum ev_pipe_flags_e
+typedef enum ev_pipe_flags_e
 {
     EV_PIPE_READABLE    = 0x01, /**< Pipe is readable */
     EV_PIPE_WRITABLE    = 0x02, /**< Pipe is writable */
     EV_PIPE_NONBLOCK    = 0x04, /**< Pipe is nonblock */
     EV_PIPE_IPC         = 0x08, /**< Enable IPC */
-};
-
-/**
- * @brief Typedef of #ev_pipe_flags_e.
- */
-typedef enum ev_pipe_flags_e ev_pipe_flags_t;
+} ev_pipe_flags_t;
 
 struct ev_pipe;
 
@@ -4680,7 +4675,7 @@ typedef struct ev_ipc_frame_hdr
     uint16_t    hdr_exsz;       /**< Extra data size */
     uint32_t    hdr_dtsz;       /**< Data size */
     uint32_t    reserved;       /**< Zeros */
-}ev_ipc_frame_hdr_t;
+} ev_ipc_frame_hdr_t;
 
 /**
  * @brief PIPE
