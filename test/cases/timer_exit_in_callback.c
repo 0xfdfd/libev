@@ -4,23 +4,25 @@
 
 struct test_6f93
 {
-    ev_loop_t *s_loop;
-    ev_timer_t s_timer;
-    int        flag_timer_exit;
+    ev_loop_t  *s_loop;
+    ev_timer_t *s_timer;
+    int         flag_timer_exit;
 };
 
 struct test_6f93 g_test_6f93;
 
-static void _on_timer_exit(ev_timer_t *timer)
+static void _on_timer_exit(ev_timer_t *timer, void *arg)
 {
-    ASSERT_EQ_PTR(timer, &g_test_6f93.s_timer);
+    (void)arg;
+    ASSERT_EQ_PTR(timer, g_test_6f93.s_timer);
     g_test_6f93.flag_timer_exit = 1;
 }
 
-static void _on_timer(ev_timer_t *timer)
+static void _on_timer(ev_timer_t *timer, void *arg)
 {
-    ASSERT_EQ_PTR(timer, &g_test_6f93.s_timer);
-    ev_timer_exit(timer, _on_timer_exit);
+    (void)arg;
+    ASSERT_EQ_PTR(timer, g_test_6f93.s_timer);
+    ev_timer_exit(timer, _on_timer_exit, NULL);
 }
 
 TEST_FIXTURE_SETUP(timer)
@@ -37,7 +39,8 @@ TEST_FIXTURE_TEARDOWN(timer)
 
 TEST_F(timer, exit_in_callback)
 {
-    ASSERT_EQ_INT(ev_timer_start(&g_test_6f93.s_timer, _on_timer, 1, 1), 0);
+    ASSERT_EQ_INT(ev_timer_start(g_test_6f93.s_timer, 1, 1, _on_timer, NULL),
+                  0);
 
     ASSERT_EQ_INT(ev_loop_run(g_test_6f93.s_loop, EV_LOOP_MODE_DEFAULT,
                               EV_INFINITE_TIMEOUT),

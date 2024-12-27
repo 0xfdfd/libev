@@ -4,15 +4,16 @@
 
 struct test_0b72
 {
-    ev_loop_t *s_loop;
-    ev_timer_t s_timer;
+    ev_loop_t  *s_loop;
+    ev_timer_t *s_timer;
 };
 
 struct test_0b72 g_test_0b72;
 
-static void _on_timer(ev_timer_t *timer)
+static void _on_timer(ev_timer_t *timer, void *arg)
 {
-    ASSERT_EQ_PTR(timer, &g_test_0b72.s_timer);
+    (void)arg;
+    ASSERT_EQ_PTR(timer, g_test_0b72.s_timer);
     ev_loop_stop(g_test_0b72.s_loop);
 }
 
@@ -30,12 +31,13 @@ TEST_FIXTURE_TEARDOWN(timer)
 
 TEST_F(timer, stop_loop)
 {
-    ASSERT_EQ_INT(ev_timer_start(&g_test_0b72.s_timer, _on_timer, 1, 1), 0);
+    ASSERT_EQ_INT(ev_timer_start(g_test_0b72.s_timer, 1, 1, _on_timer, NULL),
+                  0);
     ASSERT_NE_INT(ev_loop_run(g_test_0b72.s_loop, EV_LOOP_MODE_DEFAULT,
                               EV_INFINITE_TIMEOUT),
                   0);
 
-    ev_timer_exit(&g_test_0b72.s_timer, NULL);
+    ev_timer_exit(g_test_0b72.s_timer, NULL, NULL);
     ASSERT_EQ_INT(ev_loop_run(g_test_0b72.s_loop, EV_LOOP_MODE_DEFAULT,
                               EV_INFINITE_TIMEOUT),
                   0);

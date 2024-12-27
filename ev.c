@@ -1269,8 +1269,8 @@ EV_LOCAL void ev__threadpool_wakeup(ev_loop_t *loop);
 // #line 17 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/timer_internal.h
-// SIZE:    414
-// SHA-256: 82972cef169ac541ae9bd0e070ae2e22319da4e62e50f9426356f18c540d9766
+// SIZE:    950
+// SHA-256: e146c81688cdaced6a8d99c02ef2b6d6f1471018f57f07fee48588f6e521f1bb
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/timer_internal.h"
 #ifndef __EV_TIMER_INTERNAL_H__
@@ -1279,18 +1279,40 @@ EV_LOCAL void ev__threadpool_wakeup(ev_loop_t *loop);
 extern "C" {
 #endif
 
+struct ev_timer
+{
+    ev_handle_t   base; /**< Base object */
+    ev_map_node_t node; /**< #ev_loop_t::timer::heap */
+
+    ev_timer_cb close_cb;  /**< Close callback */
+    void       *close_arg; /**< User defined argument. */
+
+    struct
+    {
+        uint64_t active; /**< Active time */
+    } data;
+
+    struct
+    {
+        ev_timer_cb cb;      /**< User callback */
+        void       *arg;     /**< User defined argument. */
+        uint64_t    timeout; /**< Timeout */
+        uint64_t    repeat;  /**< Repeat */
+    } attr;
+};
+
 /**
  * @brief Initialize timer context.
  * @param[out] loop Event loop
  */
-EV_LOCAL void ev__init_timer(ev_loop_t* loop);
+EV_LOCAL void ev__init_timer(ev_loop_t *loop);
 
 /**
  * @brief Process timer.
  * @param[in] loop  Event loop
  * @return          Active counter
  */
-EV_LOCAL size_t ev__process_timer(ev_loop_t* loop);
+EV_LOCAL size_t ev__process_timer(ev_loop_t *loop);
 
 #ifdef __cplusplus
 }
@@ -19719,17 +19741,18 @@ EV_LOCAL void ev__threadpool_process(ev_loop_t *loop)
 // #line 104 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/timer.c
-// SIZE:    2469
-// SHA-256: 9b53340b845729aadab86e25b061fca47c360673799e02e9b74975961327c42c
+// SIZE:    2849
+// SHA-256: d065b4c1c4afe93379a9909bdde93ac0c9bd1f6b2b825182e80fb13646b5a148
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/timer.c"
 #include <string.h>
 
-static int _ev_cmp_timer(const ev_map_node_t* key1, const ev_map_node_t* key2, void* arg)
+static int _ev_cmp_timer(const ev_map_node_t *key1, const ev_map_node_t *key2,
+                         void *arg)
 {
     (void)arg;
-    ev_timer_t* t1 = EV_CONTAINER_OF(key1, ev_timer_t, node);
-    ev_timer_t* t2 = EV_CONTAINER_OF(key2, ev_timer_t, node);
+    ev_timer_t *t1 = EV_CONTAINER_OF(key1, ev_timer_t, node);
+    ev_timer_t *t2 = EV_CONTAINER_OF(key2, ev_timer_t, node);
 
     if (t1->data.active == t2->data.active)
     {
@@ -19743,28 +19766,29 @@ static int _ev_cmp_timer(const ev_map_node_t* key1, const ev_map_node_t* key2, v
     return t1->data.active < t2->data.active ? -1 : 1;
 }
 
-static void _ev_timer_on_close(ev_handle_t* handle)
+static void _ev_timer_on_close(ev_handle_t *handle)
 {
-    ev_timer_t* timer = EV_CONTAINER_OF(handle, ev_timer_t, base);
+    ev_timer_t *timer = EV_CONTAINER_OF(handle, ev_timer_t, base);
     if (timer->close_cb != NULL)
     {
-        timer->close_cb(timer);
+        timer->close_cb(timer, timer->close_arg);
     }
+    ev_free(timer);
 }
 
-EV_LOCAL void ev__init_timer(ev_loop_t* loop)
+EV_LOCAL void ev__init_timer(ev_loop_t *loop)
 {
     ev_map_init(&loop->timer.heap, _ev_cmp_timer, NULL);
 }
 
-EV_LOCAL size_t ev__process_timer(ev_loop_t* loop)
+EV_LOCAL size_t ev__process_timer(ev_loop_t *loop)
 {
-    ev_map_node_t* it;
-    size_t counter = 0;
+    ev_map_node_t *it;
+    size_t         counter = 0;
 
     while ((it = ev_map_begin(&loop->timer.heap)) != NULL)
     {
-        ev_timer_t* timer = EV_CONTAINER_OF(it, ev_timer_t, node);
+        ev_timer_t *timer = EV_CONTAINER_OF(it, ev_timer_t, node);
         if (timer->data.active > loop->hwtime)
         {
             break;
@@ -19773,40 +19797,50 @@ EV_LOCAL size_t ev__process_timer(ev_loop_t* loop)
         ev_timer_stop(timer);
         if (timer->attr.repeat != 0)
         {
-            ev_timer_start(timer, timer->attr.cb, timer->attr.repeat, timer->attr.repeat);
+            ev_timer_start(timer, timer->attr.repeat, timer->attr.repeat,
+                           timer->attr.cb, timer->attr.arg);
         }
-        timer->attr.cb(timer);
+        timer->attr.cb(timer, timer->attr.arg);
         counter++;
     }
 
     return counter;
 }
 
-int ev_timer_init(ev_loop_t* loop, ev_timer_t* handle)
+int ev_timer_init(ev_loop_t *loop, ev_timer_t **handle)
 {
-    memset(handle, 0, sizeof(*handle));
+    ev_timer_t *new_timer = ev_calloc(1, sizeof(ev_timer_t));
+    if (new_timer == NULL)
+    {
+        return EV_ENOMEM;
+    }
 
-    ev__handle_init(loop, &handle->base, EV_ROLE_EV_TIMER);
+    memset(new_timer, 0, sizeof(*new_timer));
+    ev__handle_init(loop, &new_timer->base, EV_ROLE_EV_TIMER);
+
+    *handle = new_timer;
     return 0;
 }
 
-void ev_timer_exit(ev_timer_t* handle, ev_timer_cb close_cb)
+void ev_timer_exit(ev_timer_t *handle, ev_timer_cb cb, void *arg)
 {
-    handle->close_cb = close_cb;
-
+    handle->close_cb = cb;
+    handle->close_arg = arg;
     ev_timer_stop(handle);
     ev__handle_exit(&handle->base, _ev_timer_on_close);
 }
 
-int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_t repeat)
+int ev_timer_start(ev_timer_t *handle, uint64_t timeout, uint64_t repeat,
+                   ev_timer_cb cb, void *arg)
 {
-    ev_loop_t* loop = handle->base.loop;
+    ev_loop_t *loop = handle->base.loop;
     if (ev__handle_is_active(&handle->base))
     {
         ev_timer_stop(handle);
     }
 
     handle->attr.cb = cb;
+    handle->attr.arg = arg;
     handle->attr.timeout = timeout;
     handle->attr.repeat = repeat;
     handle->data.active = loop->hwtime + timeout;
@@ -19820,7 +19854,7 @@ int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_
     return 0;
 }
 
-void ev_timer_stop(ev_timer_t* handle)
+void ev_timer_stop(ev_timer_t *handle)
 {
     if (!ev__handle_is_active(&handle->base))
     {

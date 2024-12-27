@@ -3703,8 +3703,8 @@ EV_API void ev_async_wakeup(ev_async_t *handle);
 // #line 94 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/timer.h
-// SIZE:    2594
-// SHA-256: a72db5cb895e95bcf0e00b3a711574f2987310332dfbf8f4fcd100a97813e51f
+// SIZE:    1852
+// SHA-256: 69f3279b440218b37c34face176bf082cf18e48ddf0ff2fb23e568ce7bc478be
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/timer.h"
 #ifndef __EV_TIMER_H__
@@ -3719,7 +3719,7 @@ extern "C" {
  */
 
 /**
- * @brief Typedef of #ev_timer.
+ * @brief Timer handle type.
  */
 typedef struct ev_timer ev_timer_t;
 
@@ -3727,48 +3727,7 @@ typedef struct ev_timer ev_timer_t;
  * @brief Type definition for callback passed to #ev_timer_start().
  * @param[in] timer     A pointer to #ev_timer_t structure
  */
-typedef void(*ev_timer_cb)(ev_timer_t* timer);
-
-/**
- * @brief Timer handle type.
- */
-struct ev_timer
-{
-    ev_handle_t             base;               /**< Base object */
-    ev_map_node_t           node;               /**< #ev_loop_t::timer::heap */
-
-    ev_timer_cb             close_cb;           /**< Close callback */
-
-    struct
-    {
-        uint64_t            active;             /**< Active time */
-    }data;
-
-    struct
-    {
-        ev_timer_cb         cb;                 /**< User callback */
-        uint64_t            timeout;            /**< Timeout */
-        uint64_t            repeat;             /**< Repeat */
-    }attr;
-};
-
-/**
- * @brief Initialize #ev_timer_t to an invalid value.
- */
-#define EV_TIMER_INVALID    \
-    {\
-        EV_HANDLE_INVALID,\
-        EV_MAP_NODE_INIT,\
-        NULL,\
-        {\
-            0\
-        },\
-        {\
-            NULL,\
-            0,\
-            0,\
-        }\
-    }
+typedef void (*ev_timer_cb)(ev_timer_t *timer, void* arg);
 
 /**
  * @brief Initialize the handle.
@@ -3776,15 +3735,16 @@ struct ev_timer
  * @param[out] handle   The structure to initialize
  * @return              #ev_errno_t
  */
-EV_API int ev_timer_init(ev_loop_t* loop, ev_timer_t* handle);
+EV_API int ev_timer_init(ev_loop_t *loop, ev_timer_t **handle);
 
 /**
  * @brief Destroy the timer
  * @warning The timer structure cannot be freed until close_cb is called.
  * @param[in] handle    Timer handle
- * @param[in] close_cb  Close callback
+ * @param[in] cb        Close callback.
+ * @param[in] arg       User defined argument.
  */
-EV_API void ev_timer_exit(ev_timer_t* handle, ev_timer_cb close_cb);
+EV_API void ev_timer_exit(ev_timer_t *handle, ev_timer_cb cb, void* arg);
 
 /**
  * @brief Start the timer. timeout and repeat are in milliseconds.
@@ -3794,12 +3754,14 @@ EV_API void ev_timer_exit(ev_timer_t* handle, ev_timer_cb close_cb);
  * then repeatedly after repeat milliseconds.
  *
  * @param[in] handle    Timer handle
- * @param[in] cb        Active callback
  * @param[in] timeout   The first callback timeout
  * @param[in] repeat    Repeat timeout
+ * @param[in] cb        Active callback
+ * @param[in] arg       User defined argument.
  * @return              #ev_errno_t
  */
-EV_API int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, uint64_t repeat);
+EV_API int ev_timer_start(ev_timer_t *handle, uint64_t timeout,
+                          uint64_t repeat, ev_timer_cb cb, void* arg);
 
 /**
  * @brief Stop the timer.
@@ -3808,7 +3770,7 @@ EV_API int ev_timer_start(ev_timer_t* handle, ev_timer_cb cb, uint64_t timeout, 
  *
  * @param[in] handle    Timer handle
  */
-EV_API void ev_timer_stop(ev_timer_t* handle);
+EV_API void ev_timer_stop(ev_timer_t *handle);
 
 /**
  * @} EV_TIMER
