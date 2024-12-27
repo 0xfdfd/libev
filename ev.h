@@ -1370,8 +1370,8 @@ EV_API ev_queue_node_t* ev_queue_next(ev_queue_node_t* head, ev_queue_node_t* no
 #if defined(_WIN32)
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win.h
-// SIZE:    13351
-// SHA-256: 9432e218f2e0ada0ef73bf832a173370d9a960c74a1a6a2a6465899284fdf929
+// SIZE:    13111
+// SHA-256: 536392d8d70a58542a7dcb9575611261be42b87984929de444fb19893ad09ea8
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win.h"
 /**
@@ -1526,13 +1526,6 @@ typedef SOCKET                  ev_os_socket_t;
 
 typedef DWORD                   ev_os_tid_t;
 #define EV_OS_TID_INVALID       ((DWORD)(-1))
-
-typedef HANDLE                  ev_os_thread_t;
-#define EV_OS_THREAD_INVALID    INVALID_HANDLE_VALUE
-
-typedef DWORD                   ev_os_tls_t;
-typedef CRITICAL_SECTION        ev_os_mutex_t;
-typedef HANDLE                  ev_os_sem_t;
 
 typedef HANDLE                  ev_os_shdlib_t;
 #define EV_OS_SHDLIB_INVALID    (NULL)
@@ -1829,8 +1822,8 @@ typedef struct ev_file_map_backend
 #else
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix.h
-// SIZE:    11959
-// SHA-256: f00e5c25ef8152d02346dad83adb97eaec0a9d2779eb6452bc75b56f860512f1
+// SIZE:    11722
+// SHA-256: 96ab076458d7e4fb1c296a4c13bac59ae2212fb06355d0d2ba0cef805048cea4
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/unix.h"
 /**
@@ -1927,13 +1920,6 @@ typedef pid_t                   ev_os_tid_t;
 
 typedef int                     ev_os_file_t;
 #define EV_OS_FILE_INVALID      (-1)
-
-typedef pthread_t               ev_os_thread_t;
-#define EV_OS_THREAD_INVALID    ((pthread_t)(-1))
-
-typedef pthread_key_t           ev_os_tls_t;
-typedef pthread_mutex_t         ev_os_mutex_t;
-typedef sem_t                   ev_os_sem_t;
 
 typedef void*                   ev_os_shdlib_t;
 #define EV_OS_SHDLIB_INVALID    (NULL)
@@ -2726,8 +2712,8 @@ EV_API int64_t ev_atomic64_fetch_and(volatile ev_atomic64_t* obj, int64_t arg);
 // #line 83 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/thread.h
-// SIZE:    2757
-// SHA-256: 828e3bd3de37bf867791ca61f7bbfececc4c99844031d7b19e27c59faca641bc
+// SIZE:    2457
+// SHA-256: e80b6ec45afc023c374dd1d963bef792e3a5bb54a1e26a73372e960cf51281e9
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/thread.h"
 #ifndef __EV_THREAD_H__
@@ -2745,7 +2731,7 @@ extern "C" {
  * @brief Thread callback
  * @param[in] arg       User data
  */
-typedef void (*ev_thread_cb)(void* arg);
+typedef void (*ev_thread_cb)(void *arg);
 
 /**
  * @brief Thread attribute.
@@ -2754,18 +2740,20 @@ typedef struct ev_thread_opt
 {
     struct
     {
-        unsigned    have_stack_size : 1;    /**< Enable stack size */
-    }flags;
-    size_t          stack_size;             /**< Stack size. */
+        unsigned have_stack_size : 1; /**< Enable stack size */
+    } flags;
+    size_t stack_size; /**< Stack size. */
 } ev_thread_opt_t;
+
+/**
+ * @brief Thread.
+ */
+typedef struct ev_thread ev_thread_t;
 
 /**
  * @brief Thread local storage.
  */
-typedef struct ev_tls
-{
-    ev_os_tls_t     tls;                    /**< Thread local storage */
-} ev_tls_t;
+typedef struct ev_thread_key ev_thread_key_t;
 
 /**
  * @brief Create thread
@@ -2775,38 +2763,25 @@ typedef struct ev_tls
  * @param[in] arg   User data
  * @return          #ev_errno_t
  */
-EV_API int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
-    ev_thread_cb cb, void* arg);
+EV_API int ev_thread_init(ev_thread_t **thr, const ev_thread_opt_t *opt,
+                          ev_thread_cb cb, void *arg);
 
 /**
  * @brief Exit thread
  * @warning Cannot be called in thread body.
  * @param[in] thr       Thread handle
- * @param[in] timeout   Timeout in milliseconds. #EV_INFINITE_TIMEOUT to wait infinite.
+ * @param[in] timeout   Timeout in milliseconds. #EV_INFINITE_TIMEOUT to wait
+ * infinite.
  * @return              #EV_ETIMEDOUT if timed out before thread terminated,
  *                      #EV_SUCCESS if thread terminated.
  */
-EV_API int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout);
-
-/**
- * @brief Get self handle
- * @return          Thread handle
- */
-EV_API ev_os_thread_t ev_thread_self(void);
+EV_API int ev_thread_exit(ev_thread_t *thr, unsigned long timeout);
 
 /**
  * @brief Get current thread id,
  * @return          Thread ID
  */
 EV_API ev_os_tid_t ev_thread_id(void);
-
-/**
- * @brief Check whether two thread handle points to same thread
- * @param[in] t1    1st thread
- * @param[in] t2    2st thread
- * @return          bool
- */
-EV_API int ev_thread_equal(const ev_os_thread_t* t1, const ev_os_thread_t* t2);
 
 /**
  * @brief Suspends the execution of the calling thread.
@@ -2816,30 +2791,30 @@ EV_API void ev_thread_sleep(uint32_t timeout);
 
 /**
  * @brief Initialize thread local storage.
- * @param[out] tls  A pointer to thread local storage.
+ * @param[out] key  A pointer to thread local storage.
  * @return          #ev_errno_t
  */
-EV_API int ev_tls_init(ev_tls_t* tls);
+EV_API int ev_thread_key_init(ev_thread_key_t **key);
 
 /**
  * @brief Destroy thread local storage.
- * @param[in] tls   A initialized thread local storage handler.
+ * @param[in] key   A initialized thread local storage handler.
  */
-EV_API void ev_tls_exit(ev_tls_t* tls);
+EV_API void ev_thread_key_exit(ev_thread_key_t *key);
 
 /**
  * @brief Set thread local value.
- * @param[in] tls   A initialized thread local storage handler.
+ * @param[in] key   A initialized thread local storage handler.
  * @param[in] val   A thread specific value.
  */
-EV_API void ev_tls_set(ev_tls_t* tls, void* val);
+EV_API void ev_thread_key_set(ev_thread_key_t *key, void *val);
 
 /**
  * @brief Get thread local value.
- * @param[in] tls   A initialized thread local storage handler.
+ * @param[in] key   A initialized thread local storage handler.
  * @return          A thread specific value.
  */
-EV_API void* ev_tls_get(ev_tls_t* tls);
+EV_API void *ev_thread_key_get(ev_thread_key_t *key);
 
 /**
  * @} EV_Thread

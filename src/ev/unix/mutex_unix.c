@@ -1,10 +1,10 @@
 
 struct ev_mutex
 {
-    ev_os_mutex_t r; /**< Real mutex */
+    pthread_mutex_t r; /**< Real mutex */
 };
 
-static void _ev_mutex_init_unix(ev_os_mutex_t *handle)
+static void _ev_mutex_init_unix(pthread_mutex_t *handle)
 {
 #if defined(NDEBUG) || !defined(PTHREAD_MUTEX_ERRORCHECK)
     if (pthread_mutex_init(handle, NULL) != 0)
@@ -36,7 +36,7 @@ static void _ev_mutex_init_unix(ev_os_mutex_t *handle)
 #endif
 }
 
-static void _ev_mutex_init_recursive_unix(ev_os_mutex_t *handle)
+static void _ev_mutex_init_recursive_unix(pthread_mutex_t *handle)
 {
     pthread_mutexattr_t attr;
 

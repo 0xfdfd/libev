@@ -28,7 +28,6 @@ static void _ev_init_once_win(void)
     ev__winsock_init();
     ev__winapi_init();
     ev__time_init_win();
-    ev__thread_init_win();
 }
 
 EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)

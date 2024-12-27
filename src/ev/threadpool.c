@@ -3,16 +3,13 @@
 typedef struct ev_threadpool_default
 {
     ev_threadpool_t pool;
-    ev_os_thread_t  storage[4];
 } ev_threadpool_default_t;
 
 static ev_threadpool_default_t s_default_threadpool;
 
 static void _ev_threadpool_on_init_default(void)
 {
-    int ret = ev_threadpool_init(&s_default_threadpool.pool, NULL,
-                                 s_default_threadpool.storage,
-                                 ARRAY_SIZE(s_default_threadpool.storage));
+    int ret = ev_threadpool_init(&s_default_threadpool.pool, NULL, 4);
     if (ret != 0)
     {
         EV_ABORT("%s(%d)", ev_strerror(ret), ret);
@@ -104,7 +101,7 @@ static void _ev_threadpool_cleanup(ev_threadpool_t *pool)
     }
 }
 
-static void _ev_threadpool_worker(void *arg)
+static void s_threadpool_worker(void *arg)
 {
     ev_threadpool_t *pool = arg;
 
@@ -142,25 +139,28 @@ static void _cancel_work_queue_for_loop(ev_threadpool_t *pool,
 }
 
 int ev_threadpool_init(ev_threadpool_t *pool, const ev_thread_opt_t *opt,
-                       ev_os_thread_t *storage, size_t num)
+                       size_t num)
 {
     int    ret;
-    size_t i, idx;
+    size_t i;
+
+    if ((pool->threads = ev_calloc(num, sizeof(ev_thread_t *))) == NULL)
+    {
+        return EV_ENOMEM;
+    }
+    pool->thread_sz = num;
 
     for (i = 0; i < ARRAY_SIZE(pool->work_queue); i++)
     {
         ev_queue_init(&pool->work_queue[i]);
     }
-
-    pool->threads = storage;
-    pool->thrnum = num;
     pool->looping = 1;
     ev_mutex_init(&pool->mutex, 0);
     ev_sem_init(&pool->p2w_sem, 0);
 
-    for (idx = 0; idx < num; idx++)
+    for (i = 0; i < num; i++)
     {
-        ret = ev_thread_init(&storage[idx], opt, _ev_threadpool_worker, pool);
+        ret = ev_thread_init(&pool->threads[i], opt, s_threadpool_worker, pool);
         if (ret < 0)
         {
             goto err_release_thread;
@@ -171,10 +171,11 @@ int ev_threadpool_init(ev_threadpool_t *pool, const ev_thread_opt_t *opt,
 
 err_release_thread:
     pool->looping = 0;
-    for (i = 0; i < idx; i++)
+    for (i = 0; i < num && pool->threads[i] != NULL; i++)
     {
-        ev_thread_exit(&storage[i], EV_INFINITE_TIMEOUT);
+        ev_thread_exit(pool->threads[i], EV_INFINITE_TIMEOUT);
     }
+    ev_free(pool->threads);
     ev_sem_exit(pool->p2w_sem);
     ev_mutex_exit(pool->mutex);
     return ret;
@@ -261,20 +262,22 @@ void ev_threadpool_exit(ev_threadpool_t *pool)
 
     /* stop loop */
     pool->looping = 0;
-    for (i = 0; i < pool->thrnum; i++)
+    for (i = 0; i < pool->thread_sz; i++)
     {
         ev_sem_post(pool->p2w_sem);
     }
 
     /* exit thread */
-    for (i = 0; i < pool->thrnum; i++)
+    for (i = 0; i < pool->thread_sz; i++)
     {
-        errcode = ev_thread_exit(&pool->threads[i], EV_INFINITE_TIMEOUT);
+        errcode = ev_thread_exit(pool->threads[i], EV_INFINITE_TIMEOUT);
         if (errcode != 0)
         {
             EV_ABORT("ev_thread_exit:%d", errcode);
         }
     }
+    ev_free(pool->threads);
+    pool->threads = NULL;
 
     /* now we can do some cleanup */
     _ev_threadpool_cancel_all(pool);

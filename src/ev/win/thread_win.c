@@ -1,14 +1,24 @@
 #include <process.h>
 
+struct ev_thread
+{
+    HANDLE thread;
+};
+
+struct ev_thread_key
+{
+    DWORD tls; /**< Thread local storage */
+};
+
 typedef struct ev_thread_helper_win
 {
-    ev_thread_cb    cb;         /**< User thread body */
-    void*           arg;        /**< User thread argument */
-    HANDLE          start_sem;  /**< Start semaphore */
-    HANDLE          thread_id;  /**< Thread handle */
-}ev_thread_helper_win_t;
+    ev_thread_cb cb;        /**< User thread body */
+    void        *arg;       /**< User thread argument */
+    HANDLE       start_sem; /**< Start semaphore */
+    HANDLE       thread_id; /**< Thread handle */
+} ev_thread_helper_win_t;
 
-static size_t _ev_thread_calculate_stack_size_win(const ev_thread_opt_t* opt)
+static size_t _ev_thread_calculate_stack_size_win(const ev_thread_opt_t *opt)
 {
     if (opt == NULL || !opt->flags.have_stack_size)
     {
@@ -18,13 +28,12 @@ static size_t _ev_thread_calculate_stack_size_win(const ev_thread_opt_t* opt)
     return opt->stack_size;
 }
 
-static unsigned __stdcall _ev_thread_proxy_proc_win(void* lpThreadParameter)
+static unsigned CALLBACK _ev_thread_proxy_proc_win(void *lpThreadParameter)
 {
-    DWORD errcode;
-    ev_thread_helper_win_t* p_helper = lpThreadParameter;
-    ev_thread_helper_win_t helper = *p_helper;
+    DWORD                   errcode;
+    ev_thread_helper_win_t *p_helper = lpThreadParameter;
+    ev_thread_helper_win_t  helper = *p_helper;
 
-    ev_tls_set(&g_ev_loop_win_ctx.thread.thread_key, (void*)p_helper->thread_id);
     if (!ReleaseSemaphore(p_helper->start_sem, 1, NULL))
     {
         errcode = GetLastError();
@@ -35,20 +44,10 @@ static unsigned __stdcall _ev_thread_proxy_proc_win(void* lpThreadParameter)
     return 0;
 }
 
-EV_LOCAL void ev__thread_init_win(void)
-{
-    int ret = ev_tls_init(&g_ev_loop_win_ctx.thread.thread_key);
-    if (ret != 0)
-    {
-        EV_ABORT("ret:%d", ret);
-    }
-}
-
-int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
-    ev_thread_cb cb, void* arg)
+static int s_ev_thread_init(ev_thread_t *thr, const ev_thread_opt_t *opt,
+                            ev_thread_cb cb, void *arg)
 {
     DWORD err = 0;
-    ev__init_once_win();
 
     ev_thread_helper_win_t helper;
     helper.cb = cb;
@@ -61,7 +60,8 @@ int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
 
     size_t stack_size = _ev_thread_calculate_stack_size_win(opt);
     helper.thread_id = (HANDLE)_beginthreadex(NULL, (unsigned)stack_size,
-        _ev_thread_proxy_proc_win, &helper, CREATE_SUSPENDED, NULL);
+                                              _ev_thread_proxy_proc_win,
+                                              &helper, CREATE_SUSPENDED, NULL);
     if (helper.thread_id == NULL)
     {
         err = GetLastError();
@@ -81,7 +81,7 @@ int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
         goto err_create_thread;
     }
 
-    *thr = helper.thread_id;
+    thr->thread = helper.thread_id;
 
 err_create_thread:
     CloseHandle(helper.start_sem);
@@ -89,9 +89,31 @@ err_fin:
     return ev__translate_sys_error(err);
 }
 
-int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
+int ev_thread_init(ev_thread_t **thr, const ev_thread_opt_t *opt,
+                   ev_thread_cb cb, void *arg)
 {
-    int ret = WaitForSingleObject(*thr, timeout);
+    ev__init_once_win();
+
+    ev_thread_t *new_thread = ev_malloc(sizeof(ev_thread_t));
+    if (new_thread == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    const int ret = s_ev_thread_init(new_thread, opt, cb, arg);
+    if (ret != 0)
+    {
+        ev_free(new_thread);
+        return ret;
+    }
+
+    *thr = new_thread;
+    return 0;
+}
+
+int ev_thread_exit(ev_thread_t *thr, unsigned long timeout)
+{
+    int ret = WaitForSingleObject(thr->thread, timeout);
     switch (ret)
     {
     case WAIT_TIMEOUT:
@@ -101,21 +123,18 @@ int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
         break;
     case WAIT_FAILED:
         ret = GetLastError();
-        return ret == WAIT_TIMEOUT ? EV_ETIMEDOUT : ev__translate_sys_error(ret);
+        return ret == WAIT_TIMEOUT ? EV_ETIMEDOUT
+                                   : ev__translate_sys_error(ret);
     default:
         break;
     }
 
-    CloseHandle(*thr);
-    *thr = NULL;
+    CloseHandle(thr->thread);
+    thr->thread = NULL;
+
+    ev_free(thr);
 
     return 0;
-}
-
-ev_os_thread_t ev_thread_self(void)
-{
-    ev__init_once_win();
-    return ev_tls_get(&g_ev_loop_win_ctx.thread.thread_key);
 }
 
 ev_os_tid_t ev_thread_id(void)
@@ -123,56 +142,56 @@ ev_os_tid_t ev_thread_id(void)
     return GetCurrentThreadId();
 }
 
-int ev_thread_equal(const ev_os_thread_t* t1, const ev_os_thread_t* t2)
-{
-    return *t1 == *t2;
-}
-
 void ev_thread_sleep(uint32_t timeout)
 {
     Sleep(timeout);
 }
 
-int ev_tls_init(ev_tls_t* tls)
+int ev_thread_key_init(ev_thread_key_t **key)
 {
-    int err;
-    if ((tls->tls = TlsAlloc()) == TLS_OUT_OF_INDEXES)
+    ev_thread_key_t *new_key = ev_malloc(sizeof(ev_thread_key_t));
+    if (new_key == NULL)
     {
-        err = GetLastError();
+        return EV_ENOMEM;
+    }
+
+    if ((new_key->tls = TlsAlloc()) == TLS_OUT_OF_INDEXES)
+    {
+        DWORD err = GetLastError();
+        ev_free(new_key);
         return ev__translate_sys_error(err);
     }
 
+    *key = new_key;
     return 0;
 }
 
-void ev_tls_exit(ev_tls_t* tls)
+void ev_thread_key_exit(ev_thread_key_t *key)
 {
-    DWORD errcode;
-    if (TlsFree(tls->tls) == FALSE)
+    if (TlsFree(key->tls) == FALSE)
     {
-        errcode = GetLastError();
+        DWORD errcode = GetLastError();
         EV_ABORT("GetLastError:%lu", errcode);
     }
-    tls->tls = TLS_OUT_OF_INDEXES;
+    ev_free(key);
 }
 
-void ev_tls_set(ev_tls_t* tls, void* val)
+void ev_thread_key_set(ev_thread_key_t *key, void *val)
 {
-    DWORD errcode;
-    if (TlsSetValue(tls->tls, val) == FALSE)
+    if (TlsSetValue(key->tls, val) == FALSE)
     {
-        errcode = GetLastError();
+        DWORD errcode = GetLastError();
         EV_ABORT("GetLastError:%lu", errcode);
     }
 }
 
-void* ev_tls_get(ev_tls_t* tls)
+void *ev_thread_key_get(ev_thread_key_t *key)
 {
-    DWORD errcode;
-    void* val = TlsGetValue(tls->tls);
+    void *val = TlsGetValue(key->tls);
     if (val == NULL)
     {
-        if ((errcode = GetLastError()) != ERROR_SUCCESS)
+        DWORD errcode = GetLastError();
+        if (errcode != ERROR_SUCCESS)
         {
             EV_ABORT("GetLastError:%lu", errcode);
         }

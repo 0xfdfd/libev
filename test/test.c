@@ -86,7 +86,7 @@ int test_thread_execute(test_execute_token_t *token, fn_execute callback)
 
 int test_thread_wait(test_execute_token_t *token)
 {
-    return ev_thread_exit(&token->thr, 0);
+    return ev_thread_exit(token->thr, 0);
 }
 
 const char *test_strerror(int errcode)

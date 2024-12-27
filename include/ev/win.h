@@ -151,13 +151,6 @@ typedef SOCKET                  ev_os_socket_t;
 typedef DWORD                   ev_os_tid_t;
 #define EV_OS_TID_INVALID       ((DWORD)(-1))
 
-typedef HANDLE                  ev_os_thread_t;
-#define EV_OS_THREAD_INVALID    INVALID_HANDLE_VALUE
-
-typedef DWORD                   ev_os_tls_t;
-typedef CRITICAL_SECTION        ev_os_mutex_t;
-typedef HANDLE                  ev_os_sem_t;
-
 typedef HANDLE                  ev_os_shdlib_t;
 #define EV_OS_SHDLIB_INVALID    (NULL)
 

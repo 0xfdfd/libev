@@ -1,7 +1,7 @@
 
 struct ev_mutex
 {
-    ev_os_mutex_t r; /**< Real mutex */
+    CRITICAL_SECTION r; /**< Real mutex */
 };
 
 void ev_mutex_init(ev_mutex_t **handle, int recursive)

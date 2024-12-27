@@ -32,14 +32,14 @@ typedef struct ev_threadpool ev_threadpool_t;
  */
 struct ev_threadpool
 {
-    ev_os_thread_t *threads; /**< Threads */
-    size_t          thrnum;  /**< The number of threads */
-
     ev_list_t loop_table; /**< Loop table */
 
     ev_mutex_t *mutex;   /**< Thread pool mutex */
     ev_sem_t   *p2w_sem; /**< Semaphore for pool to worker */
     int         looping; /**< Looping flag */
+
+    ev_thread_t **threads;   /**< Threads */
+    size_t        thread_sz; /**< The number of threads. */
 
     ev_queue_node_t work_queue[3]; /**< Work queue. Index is #ev_work_type_t */
 };
@@ -50,6 +50,8 @@ struct ev_threadpool
         0,                                                                     \
         EV_LIST_INIT,                                                          \
         EV_MUTEX_INVALID,                                                      \
+        NULL,                                                                  \
+        0,                                                                     \
         NULL,                                                                  \
         0,                                                                     \
         {                                                                      \
@@ -67,13 +69,11 @@ EV_LOCAL void ev_threadpool_default_cleanup(void);
  * @brief Initialize thread pool
  * @param[out] pool     Thread pool
  * @param[in] opt       Thread option
- * @param[in] storage   Storage to save thread
  * @param[in] num       Storage size
  * @return              #ev_errno_t
  */
 EV_LOCAL int ev_threadpool_init(ev_threadpool_t       *pool,
-                                const ev_thread_opt_t *opt,
-                                ev_os_thread_t *storage, size_t num);
+                                const ev_thread_opt_t *opt, size_t num);
 
 /**
  * @brief Exit thread pool

@@ -30,7 +30,6 @@
 #   include "ev/win/process_win.h"
 #   include "ev/win/pipe_win.h"
 #   include "ev/win/misc_win.h"
-#   include "ev/win/thread_win.h"
 #   include "ev/win/threadpool_win.h"
 #   include "ev/win/tcp_win.h"
 

@@ -12,11 +12,6 @@ typedef struct ev_loop_win_ctx
     {
         char                    zero_[1];                   /**< A zero length buffer */
     } net;
-
-    struct
-    {
-        ev_tls_t                thread_key;                 /**< Thread handle */
-    }thread;
 } ev_loop_win_ctx_t;
 
 extern ev_loop_win_ctx_t        g_ev_loop_win_ctx;          /**< Global runtime for Windows */

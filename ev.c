@@ -1122,8 +1122,8 @@ EV_LOCAL ring_buffer_token_t* ring_buffer_next(const ring_buffer_t* handler,
 // #line 16 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/threadpool.h
-// SIZE:    4400
-// SHA-256: 28933a93de34b824dcee71f129625fc04d3e1ba16e9930f4841306c6fd989406
+// SIZE:    4459
+// SHA-256: 98e78360e8c193a3b3a7843a7da6eb8395e1c37196b3cd827770bea58bb144c7
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/threadpool.h"
 #ifndef __EV_THREADPOOL_INTERNAL_H__
@@ -1160,14 +1160,14 @@ typedef struct ev_threadpool ev_threadpool_t;
  */
 struct ev_threadpool
 {
-    ev_os_thread_t *threads; /**< Threads */
-    size_t          thrnum;  /**< The number of threads */
-
     ev_list_t loop_table; /**< Loop table */
 
     ev_mutex_t *mutex;   /**< Thread pool mutex */
     ev_sem_t   *p2w_sem; /**< Semaphore for pool to worker */
     int         looping; /**< Looping flag */
+
+    ev_thread_t **threads;   /**< Threads */
+    size_t        thread_sz; /**< The number of threads. */
 
     ev_queue_node_t work_queue[3]; /**< Work queue. Index is #ev_work_type_t */
 };
@@ -1178,6 +1178,8 @@ struct ev_threadpool
         0,                                                                     \
         EV_LIST_INIT,                                                          \
         EV_MUTEX_INVALID,                                                      \
+        NULL,                                                                  \
+        0,                                                                     \
         NULL,                                                                  \
         0,                                                                     \
         {                                                                      \
@@ -1195,13 +1197,11 @@ EV_LOCAL void ev_threadpool_default_cleanup(void);
  * @brief Initialize thread pool
  * @param[out] pool     Thread pool
  * @param[in] opt       Thread option
- * @param[in] storage   Storage to save thread
  * @param[in] num       Storage size
  * @return              #ev_errno_t
  */
 EV_LOCAL int ev_threadpool_init(ev_threadpool_t       *pool,
-                                const ev_thread_opt_t *opt,
-                                ev_os_thread_t *storage, size_t num);
+                                const ev_thread_opt_t *opt, size_t num);
 
 /**
  * @brief Exit thread pool
@@ -2167,8 +2167,8 @@ extern "C" {
 // #line 29 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/loop_win.h
-// SIZE:    1604
-// SHA-256: 4c4b65599419899d8cd57cf2a647a3b7dafbc3b742a1faa9481a17452291b858
+// SIZE:    1491
+// SHA-256: 1b74a5342c43ac2000f57aff71c4d84d1577c6bbabf6c055cdce197e4b87b1ec
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/loop_win.h"
 #ifndef __EV_LOOP_WIN_INTERNAL_H__
@@ -2185,11 +2185,6 @@ typedef struct ev_loop_win_ctx
     {
         char                    zero_[1];                   /**< A zero length buffer */
     } net;
-
-    struct
-    {
-        ev_tls_t                thread_key;                 /**< Thread handle */
-    }thread;
 } ev_loop_win_ctx_t;
 
 extern ev_loop_win_ctx_t        g_ev_loop_win_ctx;          /**< Global runtime for Windows */
@@ -2325,29 +2320,6 @@ EV_LOCAL void ev__fatal_syscall(const char *file, int line, DWORD errcode,
 
 // #line 33 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/thread_win.h
-// SIZE:    236
-// SHA-256: 3ad3572993454f2f3ba31566a0ef4564730397ef862fb84b3cb82a82c24de8d8
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/thread_win.h"
-#ifndef __EV_THREAD_WIN_INTERNAL_H__
-#define __EV_THREAD_WIN_INTERNAL_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * @brief Initialize thread context.
- */
-EV_LOCAL void ev__thread_init_win(void);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 34 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/threadpool_win.h
 // SIZE:    270
 // SHA-256: 150fac7481e8e3372c59b11704333a9b1fbe20e3a1d1691c370a60a19751c60d
@@ -2367,7 +2339,7 @@ EV_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop);
 #endif
 #endif
 
-// #line 35 "ev.c"
+// #line 34 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/tcp_win.h
 // SIZE:    3451
@@ -2482,7 +2454,7 @@ EV_LOCAL int ev__tcp_open_win(ev_tcp_t *tcp, SOCKET fd);
 #endif
 #endif
 
-// #line 36 "ev.c"
+// #line 35 "ev.c"
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/async_win.c
@@ -2573,7 +2545,7 @@ void ev_async_wakeup(ev_async_t* handle)
     }
 }
 
-// #line 38 "ev.c"
+// #line 37 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/fs_win.c
 // SIZE:    25863
@@ -3494,11 +3466,11 @@ void ev_file_munmap(ev_file_map_t* view)
     view->size = 0;
 }
 
-// #line 39 "ev.c"
+// #line 38 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/loop_win.c
-// SIZE:    3767
-// SHA-256: 28425c1382afb331abc7817bf8bd2dc34f5e51401faff1c847ea1688135e3432
+// SIZE:    3740
+// SHA-256: e7dab6b4613d9e03bc802e50c2c69e68af9851e5d80215de2e8825215b7d8574
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/loop_win.c"
 #include <assert.h>
@@ -3531,7 +3503,6 @@ static void _ev_init_once_win(void)
     ev__winsock_init();
     ev__winapi_init();
     ev__time_init_win();
-    ev__thread_init_win();
 }
 
 EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
@@ -3663,7 +3634,7 @@ EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt)
     return 0;
 }
 
-// #line 40 "ev.c"
+// #line 39 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/misc_win.c
 // SIZE:    8944
@@ -3891,17 +3862,17 @@ EV_LOCAL void ev__backend_shutdown(void)
 {
 }
 
-// #line 41 "ev.c"
+// #line 40 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/mutex_win.c
-// SIZE:    746
-// SHA-256: bc8cb146ca579cc8031f31da769da05062f2cdfec1c32a1af706c5b22710e99a
+// SIZE:    749
+// SHA-256: 83538d7b70959dee0d4d12a8bf40a1a58f5fff4b9d9fbef69194393529c968a1
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/mutex_win.c"
 
 struct ev_mutex
 {
-    ev_os_mutex_t r; /**< Real mutex */
+    CRITICAL_SECTION r; /**< Real mutex */
 };
 
 void ev_mutex_init(ev_mutex_t **handle, int recursive)
@@ -3944,7 +3915,7 @@ int ev_mutex_try_enter(ev_mutex_t *handle)
     return EV_EBUSY;
 }
 
-// #line 42 "ev.c"
+// #line 41 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/once_win.c
 // SIZE:    445
@@ -3970,7 +3941,7 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
     }
 }
 
-// #line 43 "ev.c"
+// #line 42 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/pipe_win.c
 // SIZE:    42909
@@ -5552,7 +5523,7 @@ void ev_pipe_close(ev_os_pipe_t fd)
     CloseHandle(fd);
 }
 
-// #line 44 "ev.c"
+// #line 43 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/process_win.c
 // SIZE:    16212
@@ -6201,17 +6172,17 @@ error:
     return ev__translate_sys_error(err);
 }
 
-// #line 45 "ev.c"
+// #line 44 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/sem_win.c
-// SIZE:    1363
-// SHA-256: d4efbaacb95cc460d97ffd3a1be565951b87bf55fa5108c7873f8a2071f5848b
+// SIZE:    1358
+// SHA-256: 38e4841db4ec5e96c9ced518157f7483af2335ad868bd216bb2b9c1505fc1e87
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/sem_win.c"
 
 struct ev_sem_s
 {
-    ev_os_sem_t r;
+    HANDLE r;
 };
 
 void ev_sem_init(ev_sem_t **sem, unsigned value)
@@ -6282,7 +6253,7 @@ int ev_sem_try_wait(ev_sem_t *sem)
     EV_ABORT("ret:%lu, GetLastError:%lu", ret, errcode);
 }
 
-// #line 46 "ev.c"
+// #line 45 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/shdlib_win.c
 // SIZE:    1764
@@ -6360,7 +6331,7 @@ int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr)
     return 0;
 }
 
-// #line 47 "ev.c"
+// #line 46 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/shmem_win.c
 // SIZE:    1854
@@ -6446,7 +6417,7 @@ void ev_shm_exit(ev_shm_t* shm)
     }
 }
 
-// #line 48 "ev.c"
+// #line 47 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/tcp_win.c
 // SIZE:    23772
@@ -7345,24 +7316,34 @@ EV_LOCAL int ev__tcp_open_win(ev_tcp_t *tcp, SOCKET fd)
     return 0;
 }
 
-// #line 49 "ev.c"
+// #line 48 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/thread_win.c
-// SIZE:    4117
-// SHA-256: b80229a5263c71a3b5ef797a46850d7ad92d07c033b569ce1ce3c017acecba3b
+// SIZE:    4563
+// SHA-256: 0d9d67e3fd8d0adf3189314d46966150cfa2c14fa8534b20e9f790e7b7e0c904
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/thread_win.c"
 #include <process.h>
 
+struct ev_thread
+{
+    HANDLE thread;
+};
+
+struct ev_thread_key
+{
+    DWORD tls; /**< Thread local storage */
+};
+
 typedef struct ev_thread_helper_win
 {
-    ev_thread_cb    cb;         /**< User thread body */
-    void*           arg;        /**< User thread argument */
-    HANDLE          start_sem;  /**< Start semaphore */
-    HANDLE          thread_id;  /**< Thread handle */
-}ev_thread_helper_win_t;
+    ev_thread_cb cb;        /**< User thread body */
+    void        *arg;       /**< User thread argument */
+    HANDLE       start_sem; /**< Start semaphore */
+    HANDLE       thread_id; /**< Thread handle */
+} ev_thread_helper_win_t;
 
-static size_t _ev_thread_calculate_stack_size_win(const ev_thread_opt_t* opt)
+static size_t _ev_thread_calculate_stack_size_win(const ev_thread_opt_t *opt)
 {
     if (opt == NULL || !opt->flags.have_stack_size)
     {
@@ -7372,13 +7353,12 @@ static size_t _ev_thread_calculate_stack_size_win(const ev_thread_opt_t* opt)
     return opt->stack_size;
 }
 
-static unsigned __stdcall _ev_thread_proxy_proc_win(void* lpThreadParameter)
+static unsigned CALLBACK _ev_thread_proxy_proc_win(void *lpThreadParameter)
 {
-    DWORD errcode;
-    ev_thread_helper_win_t* p_helper = lpThreadParameter;
-    ev_thread_helper_win_t helper = *p_helper;
+    DWORD                   errcode;
+    ev_thread_helper_win_t *p_helper = lpThreadParameter;
+    ev_thread_helper_win_t  helper = *p_helper;
 
-    ev_tls_set(&g_ev_loop_win_ctx.thread.thread_key, (void*)p_helper->thread_id);
     if (!ReleaseSemaphore(p_helper->start_sem, 1, NULL))
     {
         errcode = GetLastError();
@@ -7389,20 +7369,10 @@ static unsigned __stdcall _ev_thread_proxy_proc_win(void* lpThreadParameter)
     return 0;
 }
 
-EV_LOCAL void ev__thread_init_win(void)
-{
-    int ret = ev_tls_init(&g_ev_loop_win_ctx.thread.thread_key);
-    if (ret != 0)
-    {
-        EV_ABORT("ret:%d", ret);
-    }
-}
-
-int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
-    ev_thread_cb cb, void* arg)
+static int s_ev_thread_init(ev_thread_t *thr, const ev_thread_opt_t *opt,
+                            ev_thread_cb cb, void *arg)
 {
     DWORD err = 0;
-    ev__init_once_win();
 
     ev_thread_helper_win_t helper;
     helper.cb = cb;
@@ -7415,7 +7385,8 @@ int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
 
     size_t stack_size = _ev_thread_calculate_stack_size_win(opt);
     helper.thread_id = (HANDLE)_beginthreadex(NULL, (unsigned)stack_size,
-        _ev_thread_proxy_proc_win, &helper, CREATE_SUSPENDED, NULL);
+                                              _ev_thread_proxy_proc_win,
+                                              &helper, CREATE_SUSPENDED, NULL);
     if (helper.thread_id == NULL)
     {
         err = GetLastError();
@@ -7435,7 +7406,7 @@ int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
         goto err_create_thread;
     }
 
-    *thr = helper.thread_id;
+    thr->thread = helper.thread_id;
 
 err_create_thread:
     CloseHandle(helper.start_sem);
@@ -7443,9 +7414,31 @@ err_fin:
     return ev__translate_sys_error(err);
 }
 
-int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
+int ev_thread_init(ev_thread_t **thr, const ev_thread_opt_t *opt,
+                   ev_thread_cb cb, void *arg)
 {
-    int ret = WaitForSingleObject(*thr, timeout);
+    ev__init_once_win();
+
+    ev_thread_t *new_thread = ev_malloc(sizeof(ev_thread_t));
+    if (new_thread == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    const int ret = s_ev_thread_init(new_thread, opt, cb, arg);
+    if (ret != 0)
+    {
+        ev_free(new_thread);
+        return ret;
+    }
+
+    *thr = new_thread;
+    return 0;
+}
+
+int ev_thread_exit(ev_thread_t *thr, unsigned long timeout)
+{
+    int ret = WaitForSingleObject(thr->thread, timeout);
     switch (ret)
     {
     case WAIT_TIMEOUT:
@@ -7455,21 +7448,18 @@ int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
         break;
     case WAIT_FAILED:
         ret = GetLastError();
-        return ret == WAIT_TIMEOUT ? EV_ETIMEDOUT : ev__translate_sys_error(ret);
+        return ret == WAIT_TIMEOUT ? EV_ETIMEDOUT
+                                   : ev__translate_sys_error(ret);
     default:
         break;
     }
 
-    CloseHandle(*thr);
-    *thr = NULL;
+    CloseHandle(thr->thread);
+    thr->thread = NULL;
+
+    ev_free(thr);
 
     return 0;
-}
-
-ev_os_thread_t ev_thread_self(void)
-{
-    ev__init_once_win();
-    return ev_tls_get(&g_ev_loop_win_ctx.thread.thread_key);
 }
 
 ev_os_tid_t ev_thread_id(void)
@@ -7477,56 +7467,56 @@ ev_os_tid_t ev_thread_id(void)
     return GetCurrentThreadId();
 }
 
-int ev_thread_equal(const ev_os_thread_t* t1, const ev_os_thread_t* t2)
-{
-    return *t1 == *t2;
-}
-
 void ev_thread_sleep(uint32_t timeout)
 {
     Sleep(timeout);
 }
 
-int ev_tls_init(ev_tls_t* tls)
+int ev_thread_key_init(ev_thread_key_t **key)
 {
-    int err;
-    if ((tls->tls = TlsAlloc()) == TLS_OUT_OF_INDEXES)
+    ev_thread_key_t *new_key = ev_malloc(sizeof(ev_thread_key_t));
+    if (new_key == NULL)
     {
-        err = GetLastError();
+        return EV_ENOMEM;
+    }
+
+    if ((new_key->tls = TlsAlloc()) == TLS_OUT_OF_INDEXES)
+    {
+        DWORD err = GetLastError();
+        ev_free(new_key);
         return ev__translate_sys_error(err);
     }
 
+    *key = new_key;
     return 0;
 }
 
-void ev_tls_exit(ev_tls_t* tls)
+void ev_thread_key_exit(ev_thread_key_t *key)
 {
-    DWORD errcode;
-    if (TlsFree(tls->tls) == FALSE)
+    if (TlsFree(key->tls) == FALSE)
     {
-        errcode = GetLastError();
+        DWORD errcode = GetLastError();
         EV_ABORT("GetLastError:%lu", errcode);
     }
-    tls->tls = TLS_OUT_OF_INDEXES;
+    ev_free(key);
 }
 
-void ev_tls_set(ev_tls_t* tls, void* val)
+void ev_thread_key_set(ev_thread_key_t *key, void *val)
 {
-    DWORD errcode;
-    if (TlsSetValue(tls->tls, val) == FALSE)
+    if (TlsSetValue(key->tls, val) == FALSE)
     {
-        errcode = GetLastError();
+        DWORD errcode = GetLastError();
         EV_ABORT("GetLastError:%lu", errcode);
     }
 }
 
-void* ev_tls_get(ev_tls_t* tls)
+void *ev_thread_key_get(ev_thread_key_t *key)
 {
-    DWORD errcode;
-    void* val = TlsGetValue(tls->tls);
+    void *val = TlsGetValue(key->tls);
     if (val == NULL)
     {
-        if ((errcode = GetLastError()) != ERROR_SUCCESS)
+        DWORD errcode = GetLastError();
+        if (errcode != ERROR_SUCCESS)
         {
             EV_ABORT("GetLastError:%lu", errcode);
         }
@@ -7534,7 +7524,7 @@ void* ev_tls_get(ev_tls_t* tls)
     return val;
 }
 
-// #line 50 "ev.c"
+// #line 49 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/threadpool_win.c
 // SIZE:    545
@@ -7566,7 +7556,7 @@ EV_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop)
     (void)loop;
 }
 
-// #line 51 "ev.c"
+// #line 50 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/time_win.c
 // SIZE:    1385
@@ -7631,7 +7621,7 @@ uint64_t ev_hrtime(void)
     return _ev_hrtime_win(EV__NANOSEC);
 #undef EV__NANOSEC
 }
-// #line 52 "ev.c"
+// #line 51 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/udp_win.c
 // SIZE:    24654
@@ -8595,7 +8585,7 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
     return 0;
 }
 
-// #line 53 "ev.c"
+// #line 52 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/winapi.c
 // SIZE:    594
@@ -8629,7 +8619,7 @@ EV_LOCAL void ev__winapi_init(void)
 #undef GET_NTDLL_FUNC
 }
 
-// #line 54 "ev.c"
+// #line 53 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/winsock.c
 // SIZE:    9169
@@ -9015,7 +9005,7 @@ EV_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status)
     }
 }
 
-// #line 55 "ev.c"
+// #line 54 "ev.c"
 
 #else
 
@@ -9054,7 +9044,7 @@ EV_LOCAL void ev__async_pend(int rfd);
 #endif
 #endif
 
-// #line 59 "ev.c"
+// #line 58 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/io_unix.h
 // SIZE:    2857
@@ -9169,7 +9159,7 @@ EV_LOCAL int ev__send_unix(int fd, ev_write_t* req,
 #endif
 #endif
 
-// #line 60 "ev.c"
+// #line 59 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/process_unix.h
 // SIZE:    269
@@ -9194,7 +9184,7 @@ EV_LOCAL void ev__exit_process_unix(void);
 #endif
 #endif
 
-// #line 61 "ev.c"
+// #line 60 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/tcp_unix.h
 // SIZE:    2129
@@ -9276,7 +9266,7 @@ EV_LOCAL int ev__tcp_open(ev_tcp_t *tcp, int fd);
 #endif
 #endif
 
-// #line 62 "ev.c"
+// #line 61 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/loop_unix.h
 // SIZE:    500
@@ -9310,7 +9300,7 @@ EV_LOCAL void ev__init_once_unix(void);
 #endif
 #endif
 
-// #line 63 "ev.c"
+// #line 62 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/stream_unix.h
 // SIZE:    1796
@@ -9383,7 +9373,7 @@ EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned
 #endif
 #endif
 
-// #line 64 "ev.c"
+// #line 63 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/work.h
 // SIZE:    231
@@ -9405,7 +9395,7 @@ EV_LOCAL void ev__exit_work(ev_loop_t* loop);
 #endif
 #endif
 
-// #line 65 "ev.c"
+// #line 64 "ev.c"
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/async_unix.c
@@ -9597,7 +9587,7 @@ void ev_async_wakeup(ev_async_t *handle)
     ev__async_post(handle->backend.pipfd[1]);
 }
 
-// #line 67 "ev.c"
+// #line 66 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/fs_unix.c
 // SIZE:    11029
@@ -10014,7 +10004,7 @@ void ev_file_munmap(ev_file_map_t* view)
     view->size = 0;
 }
 
-// #line 68 "ev.c"
+// #line 67 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/io_unix.c
 // SIZE:    8754
@@ -10449,7 +10439,7 @@ EV_LOCAL int ev__send_unix(int fd, ev_write_t* req,
     return _ev_io_finalize_send_req_unix(req, (size_t)write_size);
 }
 
-// #line 69 "ev.c"
+// #line 68 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/loop_unix.c
 // SIZE:    4177
@@ -10629,7 +10619,7 @@ EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
     }
 }
 
-// #line 70 "ev.c"
+// #line 69 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/misc_unix.c
 // SIZE:    356
@@ -10659,7 +10649,7 @@ void ev__backend_shutdown(void)
     ev__exit_process_unix();
 }
 
-// #line 71 "ev.c"
+// #line 70 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/misc_random_unix.c
 // SIZE:    7547
@@ -11021,20 +11011,20 @@ EV_LOCAL int ev__random(void* buf, size_t len)
 
 #endif
 
-// #line 72 "ev.c"
+// #line 71 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/mutex_unix.c
-// SIZE:    2023
-// SHA-256: 0bfe750223ef4f1e677414bb24694ca7700a497713d43d927ade733e3546622f
+// SIZE:    2029
+// SHA-256: a9dde486ca6edb5452379d52666991fc0572e695f3826ea72b3bacade84650cf
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/unix/mutex_unix.c"
 
 struct ev_mutex
 {
-    ev_os_mutex_t r; /**< Real mutex */
+    pthread_mutex_t r; /**< Real mutex */
 };
 
-static void _ev_mutex_init_unix(ev_os_mutex_t *handle)
+static void _ev_mutex_init_unix(pthread_mutex_t *handle)
 {
 #if defined(NDEBUG) || !defined(PTHREAD_MUTEX_ERRORCHECK)
     if (pthread_mutex_init(handle, NULL) != 0)
@@ -11066,7 +11056,7 @@ static void _ev_mutex_init_unix(ev_os_mutex_t *handle)
 #endif
 }
 
-static void _ev_mutex_init_recursive_unix(ev_os_mutex_t *handle)
+static void _ev_mutex_init_recursive_unix(pthread_mutex_t *handle)
 {
     pthread_mutexattr_t attr;
 
@@ -11153,7 +11143,7 @@ int ev_mutex_try_enter(ev_mutex_t *handle)
     return EV_EBUSY;
 }
 
-// #line 73 "ev.c"
+// #line 72 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/once_unix.c
 // SIZE:    157
@@ -11170,7 +11160,7 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
     }
 }
 
-// #line 74 "ev.c"
+// #line 73 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/pipe_unix.c
 // SIZE:    27171
@@ -12173,7 +12163,7 @@ void ev_pipe_close(ev_os_pipe_t fd)
     }
 }
 
-// #line 75 "ev.c"
+// #line 74 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/process_unix.c
 // SIZE:    16851
@@ -12911,17 +12901,17 @@ error:
     return errcode;
 }
 
-// #line 76 "ev.c"
+// #line 75 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/sem_unix.c
-// SIZE:    969
-// SHA-256: e74ab232fd73fad192840b3c17bf96cafe08f59c003f200236e8eba9b006d2d7
+// SIZE:    963
+// SHA-256: 001d29bb77aac9adb412d764e0f2d46fde5e33d5fbc0de29f63d763b6eff9904
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/unix/sem_unix.c"
 
 struct ev_sem_s
 {
-    ev_os_sem_t r;
+    sem_t r;
 };
 
 void ev_sem_init(ev_sem_t **sem, unsigned value)
@@ -12993,7 +12983,7 @@ int ev_sem_try_wait(ev_sem_t *sem)
     return 0;
 }
 
-// #line 77 "ev.c"
+// #line 76 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/shdlib_unix.c
 // SIZE:    963
@@ -13056,7 +13046,7 @@ int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr)
     return EV_ENOENT;
 }
 
-// #line 78 "ev.c"
+// #line 77 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/shmem_unix.c
 // SIZE:    2334
@@ -13165,7 +13155,7 @@ void ev_shm_exit(ev_shm_t* shm)
     close(shm->backend.map_file);
 }
 
-// #line 79 "ev.c"
+// #line 78 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/stream_unix.c
 // SIZE:    6160
@@ -13413,7 +13403,7 @@ EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned
     }
 }
 
-// #line 80 "ev.c"
+// #line 79 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/tcp_unix.c
 // SIZE:    14926
@@ -14010,11 +14000,11 @@ EV_LOCAL int ev__tcp_open(ev_tcp_t *tcp, int fd)
     return 0;
 }
 
-// #line 81 "ev.c"
+// #line 80 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/thread_unix.c
-// SIZE:    3650
-// SHA-256: c9657f65b8d8414261c6026f3c68d1b38f5e7b9ab17da1a67bd0ee46da5df176
+// SIZE:    4496
+// SHA-256: 13b9aee2aa71d4bdf5bb081742e23eb63fe086866e1565ec37b028d1f83e50b9
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/unix/thread_unix.c"
 #define _GNU_SOURCE
@@ -14023,17 +14013,27 @@ EV_LOCAL int ev__tcp_open(ev_tcp_t *tcp, int fd)
 #include <unistd.h>
 #include <sys/syscall.h>
 
+struct ev_thread
+{
+    pthread_t thr;
+};
+
+struct ev_thread_key
+{
+    pthread_key_t tls; /**< Thread local storage */
+};
+
 typedef struct ev_thread_helper_unix
 {
-    ev_thread_cb    cb;
-    void*           arg;
-    sem_t           sem;
-}ev_thread_helper_unix_t;
+    ev_thread_cb cb;
+    void        *arg;
+    sem_t        sem;
+} ev_thread_helper_unix_t;
 
-static void* _ev_thread_proxy_unix(void* arg)
+static void *_ev_thread_proxy_unix(void *arg)
 {
-    ev_thread_helper_unix_t* p_helper = arg;
-    ev_thread_helper_unix_t helper = *p_helper;
+    ev_thread_helper_unix_t *p_helper = arg;
+    ev_thread_helper_unix_t  helper = *p_helper;
 
     if (sem_post(&p_helper->sem) != 0)
     {
@@ -14044,13 +14044,12 @@ static void* _ev_thread_proxy_unix(void* arg)
     return NULL;
 }
 
-int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
-    ev_thread_cb cb, void* arg)
+static int s_thread_init(ev_thread_t *thr, const ev_thread_opt_t *opt,
+                         ev_thread_cb cb, void *arg)
 {
-    int err = 0;
-
-    pthread_attr_t* attr = NULL;
-    pthread_attr_t attr_storage;
+    int             err;
+    pthread_attr_t *attr = NULL;
+    pthread_attr_t  attr_storage;
 
     if (opt != NULL && opt->flags.have_stack_size)
     {
@@ -14078,12 +14077,13 @@ int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
         goto err_fin;
     }
 
-    if ((err = pthread_create(thr, attr, _ev_thread_proxy_unix, &helper)) != 0)
+    if ((err = pthread_create(&thr->thr, attr, _ev_thread_proxy_unix,
+                              &helper)) != 0)
     {
         goto release_sem;
     }
 
-    do 
+    do
     {
         err = sem_wait(&helper.sem);
     } while (err == -1 && errno == EINTR);
@@ -14100,12 +14100,37 @@ err_fin:
     return ev__translate_sys_error(err);
 }
 
-int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
+int ev_thread_init(ev_thread_t **thr, const ev_thread_opt_t *opt,
+                   ev_thread_cb cb, void *arg)
+{
+    ev_thread_t *new_thread = ev_malloc(sizeof(ev_thread_t));
+    if (new_thread == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    int ret = s_thread_init(new_thread, opt, cb, arg);
+    if (ret != 0)
+    {
+        ev_free(new_thread);
+        return ret;
+    }
+
+    *thr = new_thread;
+    return 0;
+}
+
+int ev_thread_exit(ev_thread_t *thr, unsigned long timeout)
 {
     int ret = EBUSY;
     if (timeout == EV_INFINITE_TIMEOUT)
     {
-        int err = pthread_join(*thr, NULL);
+        int err = pthread_join(thr->thr, NULL);
+        if (err == 0)
+        {
+            ev_free(thr);
+            return 0;
+        }
         return ev__translate_sys_error(err);
     }
 
@@ -14115,7 +14140,7 @@ int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
     uint64_t t_now;
     while ((t_now = ev_hrtime() / 1000000) < t_end)
     {
-        if ((ret = pthread_tryjoin_np(*thr, NULL)) == 0)
+        if ((ret = pthread_tryjoin_np(thr->thr, NULL)) == 0)
         {
             break;
         }
@@ -14128,25 +14153,20 @@ int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
     /* try last time */
     if (ret == EBUSY)
     {
-        ret = pthread_tryjoin_np(*thr, NULL);
+        ret = pthread_tryjoin_np(thr->thr, NULL);
+    }
+    if (ret == 0)
+    {
+        ev_free(thr);
+        return 0;
     }
 
     return ret == EBUSY ? EV_ETIMEDOUT : ev__translate_sys_error(ret);
 }
 
-ev_os_thread_t ev_thread_self(void)
-{
-    return pthread_self();
-}
-
 ev_os_tid_t ev_thread_id(void)
 {
     return syscall(__NR_gettid);
-}
-
-int ev_thread_equal(const ev_os_thread_t* t1, const ev_os_thread_t* t2)
-{
-    return pthread_equal(*t1, *t2);
 }
 
 void ev_thread_sleep(uint32_t timeout)
@@ -14156,7 +14176,7 @@ void ev_thread_sleep(uint32_t timeout)
     t_req.tv_nsec = (timeout - t_req.tv_sec * 1000) * 1000 * 1000;
 
     int ret;
-    while((ret = nanosleep(&t_req, &t_rem)) != 0)
+    while ((ret = nanosleep(&t_req, &t_rem)) != 0)
     {
         ret = errno;
         if (ret != EINTR)
@@ -14167,40 +14187,50 @@ void ev_thread_sleep(uint32_t timeout)
     }
 }
 
-int ev_tls_init(ev_tls_t* tls)
+int ev_thread_key_init(ev_thread_key_t **key)
 {
-    int ret = pthread_key_create(&tls->tls, NULL);
-    if (ret == 0)
+    ev_thread_key_t *new_key = ev_malloc(sizeof(ev_thread_key_t));
+    if (new_key == NULL)
     {
-        return 0;
+        return EV_ENOMEM;
     }
-    return ev__translate_sys_error(ret);
+
+    int ret = pthread_key_create(&new_key->tls, NULL);
+    if (ret != 0)
+    {
+        ev_free(new_key);
+        return ev__translate_sys_error(ret);
+    }
+
+    *key = new_key;
+    return 0;
 }
 
-void ev_tls_exit(ev_tls_t* tls)
+void ev_thread_key_exit(ev_thread_key_t *key)
 {
-    int ret = pthread_key_delete(tls->tls);
+    int ret = pthread_key_delete(key->tls);
+    if (ret != 0)
+    {
+        EV_ABORT();
+    }
+    ev_free(key);
+}
+
+void ev_thread_key_set(ev_thread_key_t *key, void *val)
+{
+    int ret = pthread_setspecific(key->tls, val);
     if (ret != 0)
     {
         EV_ABORT();
     }
 }
 
-void ev_tls_set(ev_tls_t* tls, void* val)
+void *ev_thread_key_get(ev_thread_key_t *key)
 {
-    int ret = pthread_setspecific(tls->tls, val);
-    if (ret != 0)
-    {
-        EV_ABORT();
-    }
+    return pthread_getspecific(key->tls);
 }
 
-void* ev_tls_get(ev_tls_t* tls)
-{
-    return pthread_getspecific(tls->tls);
-}
-
-// #line 82 "ev.c"
+// #line 81 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/threadpool_unix.c
 // SIZE:    942
@@ -14240,7 +14270,7 @@ EV_LOCAL void ev__exit_work(ev_loop_t* loop)
     loop->backend.threadpool.evtfd[1] = -1;
 }
 
-// #line 83 "ev.c"
+// #line 82 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/time_unix.c
 // SIZE:    284
@@ -14263,7 +14293,7 @@ uint64_t ev_hrtime(void)
     return t.tv_sec * (uint64_t) 1e9 + t.tv_nsec;
 }
 
-// #line 84 "ev.c"
+// #line 83 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/udp_unix.c
 // SIZE:    25305
@@ -15286,7 +15316,7 @@ int ev_udp_set_ttl(ev_udp_t *udp, int ttl)
     return _ev_udp_set_ttl_unix(udp, ttl, IP_TTL, IPV6_UNICAST_HOPS);
 }
 
-// #line 85 "ev.c"
+// #line 84 "ev.c"
 
 #endif
 
@@ -15313,7 +15343,7 @@ EV_LOCAL void ev__assertion_failure(const char* exp, const char* file, int line,
     abort();
 }
 
-// #line 89 "ev.c"
+// #line 88 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/allocator.c
 // SIZE:    1108
@@ -15384,7 +15414,7 @@ char *ev__strdup(const char *s)
     return memcpy(m, s, len);
 }
 
-// #line 90 "ev.c"
+// #line 89 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/atomic.c
 // SIZE:    5881
@@ -15705,7 +15735,7 @@ EV_LOCAL void ev__atomic_exit(void)
 
 #endif
 
-// #line 91 "ev.c"
+// #line 90 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/errno.c
 // SIZE:    438
@@ -15731,7 +15761,7 @@ const char* ev_strerror(int err)
 #undef EV_EXPAND_ERRMAP
 }
 
-// #line 92 "ev.c"
+// #line 91 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs.c
 // SIZE:    25615
@@ -16791,7 +16821,7 @@ finish:
     return _ev_fs_remove(path);
 }
 
-// #line 93 "ev.c"
+// #line 92 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/handle.c
 // SIZE:    3642
@@ -16942,7 +16972,7 @@ EV_LOCAL size_t ev__process_endgame(ev_loop_t* loop)
     return active_count;
 }
 
-// #line 94 "ev.c"
+// #line 93 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/list.c
 // SIZE:    3572
@@ -17132,7 +17162,7 @@ void ev_list_migrate(ev_list_t* dst, ev_list_t* src)
     src->size = 0;
 }
 
-// #line 95 "ev.c"
+// #line 94 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/log.c
 // SIZE:    1941
@@ -17228,7 +17258,7 @@ EV_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width)
 
 }
 
-// #line 96 "ev.c"
+// #line 95 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/loop.c
 // SIZE:    8737
@@ -17625,7 +17655,7 @@ void ev_loop_walk(ev_loop_t* loop, ev_walk_cb cb, void* arg)
     }
 }
 
-// #line 97 "ev.c"
+// #line 96 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/map.c
 // SIZE:    23122
@@ -18405,7 +18435,7 @@ ev_map_node_t* ev_map_prev(const ev_map_node_t* node)
     return _ev_map_low_prev(node);
 }
 
-// #line 98 "ev.c"
+// #line 97 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/misc.c
 // SIZE:    4675
@@ -18620,7 +18650,7 @@ EV_API int ev_random(ev_loop_t* loop, ev_random_req_t* req, void* buf,
     return ev_loop_queue_work(loop, &req->work, _ev_random_on_work, _ev_random_on_done);
 }
 
-// #line 99 "ev.c"
+// #line 98 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/pipe.c
 // SIZE:    1714
@@ -18691,7 +18721,7 @@ EV_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t *req,
     return 0;
 }
 
-// #line 100 "ev.c"
+// #line 99 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/queue.c
 // SIZE:    1816
@@ -18774,7 +18804,7 @@ int ev_queue_empty(const ev_queue_node_t* node)
     return EV_QUEUE_NEXT(node) == node;
 }
 
-// #line 101 "ev.c"
+// #line 100 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/ringbuffer.c
 // SIZE:    17440
@@ -19329,7 +19359,7 @@ EV_LOCAL ring_buffer_token_t* ring_buffer_next(const ring_buffer_t* handler, con
     return &(node->token);
 }
 
-// #line 102 "ev.c"
+// #line 101 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/shmem.c
 // SIZE:    121
@@ -19347,11 +19377,11 @@ size_t ev_shm_size(ev_shm_t* shm)
     return shm->size;
 }
 
-// #line 103 "ev.c"
+// #line 102 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/threadpool.c
-// SIZE:    9219
-// SHA-256: 78d14594569ae2783bc65256c8110bc7293ff6cb58e34766a484bd341407268b
+// SIZE:    9221
+// SHA-256: 651df358bac08a32719cd41273843e9e30f72e33f9da2dd3aaab81b6124123ad
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/threadpool.c"
 #include <assert.h>
@@ -19359,16 +19389,13 @@ size_t ev_shm_size(ev_shm_t* shm)
 typedef struct ev_threadpool_default
 {
     ev_threadpool_t pool;
-    ev_os_thread_t  storage[4];
 } ev_threadpool_default_t;
 
 static ev_threadpool_default_t s_default_threadpool;
 
 static void _ev_threadpool_on_init_default(void)
 {
-    int ret = ev_threadpool_init(&s_default_threadpool.pool, NULL,
-                                 s_default_threadpool.storage,
-                                 ARRAY_SIZE(s_default_threadpool.storage));
+    int ret = ev_threadpool_init(&s_default_threadpool.pool, NULL, 4);
     if (ret != 0)
     {
         EV_ABORT("%s(%d)", ev_strerror(ret), ret);
@@ -19460,7 +19487,7 @@ static void _ev_threadpool_cleanup(ev_threadpool_t *pool)
     }
 }
 
-static void _ev_threadpool_worker(void *arg)
+static void s_threadpool_worker(void *arg)
 {
     ev_threadpool_t *pool = arg;
 
@@ -19498,25 +19525,28 @@ static void _cancel_work_queue_for_loop(ev_threadpool_t *pool,
 }
 
 int ev_threadpool_init(ev_threadpool_t *pool, const ev_thread_opt_t *opt,
-                       ev_os_thread_t *storage, size_t num)
+                       size_t num)
 {
     int    ret;
-    size_t i, idx;
+    size_t i;
+
+    if ((pool->threads = ev_calloc(num, sizeof(ev_thread_t *))) == NULL)
+    {
+        return EV_ENOMEM;
+    }
+    pool->thread_sz = num;
 
     for (i = 0; i < ARRAY_SIZE(pool->work_queue); i++)
     {
         ev_queue_init(&pool->work_queue[i]);
     }
-
-    pool->threads = storage;
-    pool->thrnum = num;
     pool->looping = 1;
     ev_mutex_init(&pool->mutex, 0);
     ev_sem_init(&pool->p2w_sem, 0);
 
-    for (idx = 0; idx < num; idx++)
+    for (i = 0; i < num; i++)
     {
-        ret = ev_thread_init(&storage[idx], opt, _ev_threadpool_worker, pool);
+        ret = ev_thread_init(&pool->threads[i], opt, s_threadpool_worker, pool);
         if (ret < 0)
         {
             goto err_release_thread;
@@ -19527,10 +19557,11 @@ int ev_threadpool_init(ev_threadpool_t *pool, const ev_thread_opt_t *opt,
 
 err_release_thread:
     pool->looping = 0;
-    for (i = 0; i < idx; i++)
+    for (i = 0; i < num && pool->threads[i] != NULL; i++)
     {
-        ev_thread_exit(&storage[i], EV_INFINITE_TIMEOUT);
+        ev_thread_exit(pool->threads[i], EV_INFINITE_TIMEOUT);
     }
+    ev_free(pool->threads);
     ev_sem_exit(pool->p2w_sem);
     ev_mutex_exit(pool->mutex);
     return ret;
@@ -19617,20 +19648,22 @@ void ev_threadpool_exit(ev_threadpool_t *pool)
 
     /* stop loop */
     pool->looping = 0;
-    for (i = 0; i < pool->thrnum; i++)
+    for (i = 0; i < pool->thread_sz; i++)
     {
         ev_sem_post(pool->p2w_sem);
     }
 
     /* exit thread */
-    for (i = 0; i < pool->thrnum; i++)
+    for (i = 0; i < pool->thread_sz; i++)
     {
-        errcode = ev_thread_exit(&pool->threads[i], EV_INFINITE_TIMEOUT);
+        errcode = ev_thread_exit(pool->threads[i], EV_INFINITE_TIMEOUT);
         if (errcode != 0)
         {
             EV_ABORT("ev_thread_exit:%d", errcode);
         }
     }
+    ev_free(pool->threads);
+    pool->threads = NULL;
 
     /* now we can do some cleanup */
     _ev_threadpool_cancel_all(pool);
@@ -19738,7 +19771,7 @@ EV_LOCAL void ev__threadpool_process(ev_loop_t *loop)
     }
 }
 
-// #line 104 "ev.c"
+// #line 103 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/timer.c
 // SIZE:    2849
@@ -19865,7 +19898,7 @@ void ev_timer_stop(ev_timer_t *handle)
     ev_map_erase(&handle->base.loop->timer.heap, &handle->node);
 }
 
-// #line 105 "ev.c"
+// #line 104 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/udp.c
 // SIZE:    3071
@@ -19999,7 +20032,7 @@ err:
     return ret;
 }
 
-// #line 106 "ev.c"
+// #line 105 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.c
 // SIZE:    303
@@ -20023,5 +20056,5 @@ unsigned ev_version_code(void)
     return EV_VERSION_CODE;
 }
 
-// #line 107 "ev.c"
+// #line 106 "ev.c"
 
