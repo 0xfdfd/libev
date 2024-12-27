@@ -1,4 +1,9 @@
 
+struct ev_sem_s
+{
+    ev_os_sem_t r;
+};
+
 void ev_sem_init(ev_sem_t **sem, unsigned value)
 {
     ev_sem_t *new_sem = ev_malloc(sizeof(ev_sem_t));

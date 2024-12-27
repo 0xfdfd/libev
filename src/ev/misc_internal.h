@@ -26,6 +26,8 @@ EV_LOCAL int ev__translate_posix_sys_error(int syserr);
  */
 EV_LOCAL int ev__random(void* buf, size_t len);
 
+EV_LOCAL void ev__backend_shutdown(void);
+
 #ifdef __cplusplus
 }
 #endif

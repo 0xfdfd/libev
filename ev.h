@@ -1176,8 +1176,8 @@ EV_API const char* ev_strerror(int err);
 // #line 73 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/allocator.h
-// SIZE:    2625
-// SHA-256: 46ca9a6aa1ad1c458eb28672baabcb209a2d11685eb5048a6931e980de2e5cac
+// SIZE:    1933
+// SHA-256: d094345d9727bfdbeb994b3906bf0788c71f24dcf651ff0432c120bf7efd2c73
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/allocator.h"
 #ifndef __EV_ALLOCATOR_H__
@@ -1192,28 +1192,10 @@ extern "C" {
  */
 
 /**
- * @brief Replacement function for malloc.
- * @see https://man7.org/linux/man-pages/man3/malloc.3.html
- */
-typedef void* (*ev_malloc_fn)(size_t size);
-
-/**
- * @brief Replacement function for calloc.
- * @see https://man7.org/linux/man-pages/man3/calloc.3.html
- */
-typedef void* (*ev_calloc_fn)(size_t nmemb, size_t size);
-
-/**
  * @brief Replacement function for realloc.
  * @see https://man7.org/linux/man-pages/man3/realloc.3.html
  */
-typedef void* (*ev_realloc_fn)(void* ptr, size_t size);
-
-/**
- * @brief Replacement function for free.
- * @see https://man7.org/linux/man-pages/man3/free.3.html
- */
-typedef void (*ev_free_fn)(void* ptr);
+typedef void *(*ev_realloc_fn)(void *ptr, size_t size);
 
 /**
  * @brief Override the use of the standard library's malloc(3), calloc(3),
@@ -1228,40 +1210,40 @@ typedef void (*ev_free_fn)(void* ptr);
  *   allocator is changed while no memory was allocated with the previous
  *   allocator, or that they are compatible.
  * @warngin Allocator must be thread-safe.
- * 
- * @param[in] malloc_func   Replacement function for malloc.
- * @param[in] calloc_func   Replacement function for calloc.
- * @param[in] realloc_func  Replacement function for realloc.
- * @param[in] free_func     Replacement function for free.
- * @return On success, it returns 0. if any of the function pointers is NULL it returns #EV_EINVAL.
+ *
+ * @param[in] new_allocator   Replacement function..
+ * @param[out] old_allocator  Old allocator functions.
+ * @return #ev_errno_t.
  */
-EV_API int ev_replace_allocator(ev_malloc_fn malloc_func, ev_calloc_fn calloc_func,
-    ev_realloc_fn realloc_func, ev_free_fn free_func);
+EV_API int ev_replace_allocator(ev_realloc_fn  new_allocator,
+                                 ev_realloc_fn *old_allocator);
 
 /**
  * @brief Same as [malloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
  */
-EV_API void* ev_malloc(size_t size);
+EV_API void *ev_malloc(size_t size);
 
 /**
  * @brief Same as [calloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
  */
-EV_API void* ev_calloc(size_t nmemb, size_t size);
+EV_API void *ev_calloc(size_t nmemb, size_t size);
 
 /**
- * @brief Same as [realloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
+ * @brief Same as
+ * [realloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
  */
-EV_API void* ev_realloc(void* ptr, size_t size);
+EV_API void *ev_realloc(void *ptr, size_t size);
 
 /**
  * @brief Same as [free(3)](https://man7.org/linux/man-pages/man3/free.3.html)
  */
-EV_API void ev_free(void* ptr);
+EV_API void ev_free(void *ptr);
 
 /**
- * @brief Same as [strdup(3)](https://man7.org/linux/man-pages/man3/strdup.3.html)
+ * @brief Same as
+ * [strdup(3)](https://man7.org/linux/man-pages/man3/strdup.3.html)
  */
-EV_API char* ev__strdup(const char* str);
+EV_API char *ev__strdup(const char *str);
 
 /**
  * @} EV_ALLOCATOR
@@ -2940,8 +2922,8 @@ typedef struct ev_write
 // #line 85 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/mutex.h
-// SIZE:    1792
-// SHA-256: 1515bf5bea434cab023869083c48b79f29217f86906e6a25b904773a4bcc41f7
+// SIZE:    1500
+// SHA-256: a5601678145d8d6cdc8de0e9d25213c9f39086da7da073b7c0d8260807256f94
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/mutex.h"
 #ifndef __EV_MUTEX_H__
@@ -2958,25 +2940,7 @@ extern "C" {
 /**
  * @brief Mutex handle type.
  */
-typedef struct ev_mutex
-{
-    union
-    {
-        int             i;  /**< For static initialize */
-        ev_os_mutex_t   r;  /**< Real mutex */
-    }u;
-}ev_mutex_t;
-
-/**
- * @brief Initialize #ev_mutex_t to an invalid value.
- * @see ev_mutex_init()
- */
-#define EV_MUTEX_INVALID    \
-    {\
-        {\
-            0\
-        }\
-    }
+typedef struct ev_mutex ev_mutex_t;
 
 /**
  * @brief Initialize the mutex.
@@ -2985,34 +2949,36 @@ typedef struct ev_mutex
  *   recursive mutex. However, a value of zero does not means it is a non-
  *   recursive mutex, it is implementation depend.
  */
-EV_API void ev_mutex_init(ev_mutex_t* handle, int recursive);
+EV_API void ev_mutex_init(ev_mutex_t **handle, int recursive);
 
 /**
  * @brief Destroy the mutex object referenced by \p handle
  * @param[in] handle    Mutex object
  */
-EV_API void ev_mutex_exit(ev_mutex_t* handle);
+EV_API void ev_mutex_exit(ev_mutex_t *handle);
 
 /**
  * @brief The mutex object referenced by \p handle shall be locked.
  * @param[in] handle    Mutex object
  */
-EV_API void ev_mutex_enter(ev_mutex_t* handle);
+EV_API void ev_mutex_enter(ev_mutex_t *handle);
 
 /**
  * @brief Release the mutex object referenced by \p handle.
  * @param[in] handle    Mutex object
  */
-EV_API void ev_mutex_leave(ev_mutex_t* handle);
+EV_API void ev_mutex_leave(ev_mutex_t *handle);
 
 /**
  * @brief If the mutex object referenced by \p handle is currently locked, the
  *   call shall return immediately.
  * @param[in] handle    Mutex object.
- * @return              #EV_SUCCESS: a lock on the mutex object referenced by \p handle is acquired.
- * @return              #EV_EBUSY: The \p handle could not be acquired because it was already locked.
+ * @return              #EV_SUCCESS: a lock on the mutex object referenced by \p
+ * handle is acquired.
+ * @return              #EV_EBUSY: The \p handle could not be acquired because
+ * it was already locked.
  */
-EV_API int ev_mutex_try_enter(ev_mutex_t* handle);
+EV_API int ev_mutex_try_enter(ev_mutex_t *handle);
 
 /**
  * @} EV_MUTEX

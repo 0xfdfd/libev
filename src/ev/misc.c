@@ -185,6 +185,7 @@ EV_LOCAL int ev__translate_posix_sys_error(int syserr)
 
 void ev_library_shutdown(void)
 {
+    ev__backend_shutdown();
     ev_threadpool_default_cleanup();
     ev__atomic_exit();
 }

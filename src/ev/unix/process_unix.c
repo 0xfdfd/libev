@@ -36,6 +36,14 @@ typedef struct spawn_helper_s
     } child;
 } spawn_helper_t;
 
+typedef struct ev_process_ctx_s
+{
+    ev_list_t   wait_queue;       /**< #ev_process_t::node */
+    ev_mutex_t *wait_queue_mutex; /**< Mutex for wait_queue */
+} ev_process_ctx_t;
+
+static ev_process_ctx_t *s_process_ctx = NULL;
+
 static void _ev_spawn_write_errno_and_exit(spawn_helper_t *helper, int value)
 {
     ssize_t n;
@@ -254,8 +262,14 @@ static int _ev_spawn_parent(ev_process_t *handle, spawn_helper_t *spawn_helper)
 
 EV_LOCAL void ev__init_process_unix(void)
 {
-    ev_list_init(&g_ev_loop_unix_ctx.process.wait_queue);
-    ev_mutex_init(&g_ev_loop_unix_ctx.process.wait_queue_mutex, 0);
+    assert(s_process_ctx == NULL);
+    if ((s_process_ctx = ev_malloc(sizeof(ev_process_ctx_t))) == NULL)
+    {
+        EV_ABORT("out of memory.");
+    }
+
+    ev_list_init(&s_process_ctx->wait_queue);
+    ev_mutex_init(&s_process_ctx->wait_queue_mutex, 0);
 
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
@@ -271,6 +285,15 @@ EV_LOCAL void ev__init_process_unix(void)
     {
         EV_ABORT();
     }
+}
+
+EV_LOCAL void ev__exit_process_unix(void)
+{
+    ev_mutex_exit(s_process_ctx->wait_queue_mutex);
+    s_process_ctx->wait_queue_mutex = NULL;
+
+    ev_free(s_process_ctx);
+    s_process_ctx = NULL;
 }
 
 static void _ev_process_on_async_close(ev_async_t *async, void *arg)
@@ -361,12 +384,9 @@ static int _ev_process_init_process(ev_loop_t *loop, ev_process_t *handle,
         return ret;
     }
 
-    ev_mutex_enter(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
-    {
-        ev_list_push_back(&g_ev_loop_unix_ctx.process.wait_queue,
-                          &handle->node);
-    }
-    ev_mutex_leave(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
+    ev_mutex_enter(s_process_ctx->wait_queue_mutex);
+    ev_list_push_back(&s_process_ctx->wait_queue, &handle->node);
+    ev_mutex_leave(s_process_ctx->wait_queue_mutex);
 
     return 0;
 }
@@ -604,11 +624,9 @@ void ev_process_exit(ev_process_t *handle, ev_process_exit_cb cb)
         handle->pid = EV_OS_PID_INVALID;
     }
 
-    ev_mutex_enter(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
-    {
-        ev_list_erase(&g_ev_loop_unix_ctx.process.wait_queue, &handle->node);
-    }
-    ev_mutex_leave(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
+    ev_mutex_enter(s_process_ctx->wait_queue_mutex);
+    ev_list_erase(&s_process_ctx->wait_queue, &handle->node);
+    ev_mutex_leave(s_process_ctx->wait_queue_mutex);
 
     handle->exit_cb = cb;
     ev_async_exit(handle->sigchld, _ev_process_on_async_close, handle);
@@ -619,7 +637,7 @@ void ev_process_sigchld(int signum)
     assert(signum == SIGCHLD);
     (void)signum;
 
-    ev_list_node_t *it = ev_list_begin(&g_ev_loop_unix_ctx.process.wait_queue);
+    ev_list_node_t *it = ev_list_begin(&s_process_ctx->wait_queue);
     for (; it != NULL; it = ev_list_next(it))
     {
         ev_process_t *handle = EV_CONTAINER_OF(it, ev_process_t, node);

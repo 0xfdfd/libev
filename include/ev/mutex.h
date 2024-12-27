@@ -12,25 +12,7 @@ extern "C" {
 /**
  * @brief Mutex handle type.
  */
-typedef struct ev_mutex
-{
-    union
-    {
-        int             i;  /**< For static initialize */
-        ev_os_mutex_t   r;  /**< Real mutex */
-    }u;
-}ev_mutex_t;
-
-/**
- * @brief Initialize #ev_mutex_t to an invalid value.
- * @see ev_mutex_init()
- */
-#define EV_MUTEX_INVALID    \
-    {\
-        {\
-            0\
-        }\
-    }
+typedef struct ev_mutex ev_mutex_t;
 
 /**
  * @brief Initialize the mutex.
@@ -39,34 +21,36 @@ typedef struct ev_mutex
  *   recursive mutex. However, a value of zero does not means it is a non-
  *   recursive mutex, it is implementation depend.
  */
-EV_API void ev_mutex_init(ev_mutex_t* handle, int recursive);
+EV_API void ev_mutex_init(ev_mutex_t **handle, int recursive);
 
 /**
  * @brief Destroy the mutex object referenced by \p handle
  * @param[in] handle    Mutex object
  */
-EV_API void ev_mutex_exit(ev_mutex_t* handle);
+EV_API void ev_mutex_exit(ev_mutex_t *handle);
 
 /**
  * @brief The mutex object referenced by \p handle shall be locked.
  * @param[in] handle    Mutex object
  */
-EV_API void ev_mutex_enter(ev_mutex_t* handle);
+EV_API void ev_mutex_enter(ev_mutex_t *handle);
 
 /**
  * @brief Release the mutex object referenced by \p handle.
  * @param[in] handle    Mutex object
  */
-EV_API void ev_mutex_leave(ev_mutex_t* handle);
+EV_API void ev_mutex_leave(ev_mutex_t *handle);
 
 /**
  * @brief If the mutex object referenced by \p handle is currently locked, the
  *   call shall return immediately.
  * @param[in] handle    Mutex object.
- * @return              #EV_SUCCESS: a lock on the mutex object referenced by \p handle is acquired.
- * @return              #EV_EBUSY: The \p handle could not be acquired because it was already locked.
+ * @return              #EV_SUCCESS: a lock on the mutex object referenced by \p
+ * handle is acquired.
+ * @return              #EV_EBUSY: The \p handle could not be acquired because
+ * it was already locked.
  */
-EV_API int ev_mutex_try_enter(ev_mutex_t* handle);
+EV_API int ev_mutex_try_enter(ev_mutex_t *handle);
 
 /**
  * @} EV_MUTEX

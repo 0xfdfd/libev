@@ -38,8 +38,8 @@ struct ev_loop
         struct ev_threadpool *pool; /**< Thread pool */
         ev_list_node_t node; /**< node for #ev_threadpool_t::loop_table */
 
-        ev_mutex_t mutex;      /**< Work queue lock */
-        ev_list_t  work_queue; /**< Work queue */
+        ev_mutex_t *mutex;      /**< Work queue lock */
+        ev_list_t   work_queue; /**< Work queue */
     } threadpool;
 
     struct

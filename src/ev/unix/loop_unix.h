@@ -8,7 +8,6 @@ typedef struct ev_loop_unix_ctx
 {
     clockid_t           hwtime_clock_id;    /**< Clock id */
     int                 iovmax;             /**< The limits instead of readv/writev */
-    ev_process_ctx_t    process;            /**< Process context */
 }ev_loop_unix_ctx_t;
 
 /**

@@ -37,9 +37,9 @@ struct ev_threadpool
 
     ev_list_t loop_table; /**< Loop table */
 
-    ev_mutex_t mutex;   /**< Thread pool mutex */
-    ev_sem_t  *p2w_sem; /**< Semaphore for pool to worker */
-    int        looping; /**< Looping flag */
+    ev_mutex_t *mutex;   /**< Thread pool mutex */
+    ev_sem_t   *p2w_sem; /**< Semaphore for pool to worker */
+    int         looping; /**< Looping flag */
 
     ev_queue_node_t work_queue[3]; /**< Work queue. Index is #ev_work_type_t */
 };

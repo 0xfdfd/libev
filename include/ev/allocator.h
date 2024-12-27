@@ -10,28 +10,10 @@ extern "C" {
  */
 
 /**
- * @brief Replacement function for malloc.
- * @see https://man7.org/linux/man-pages/man3/malloc.3.html
- */
-typedef void* (*ev_malloc_fn)(size_t size);
-
-/**
- * @brief Replacement function for calloc.
- * @see https://man7.org/linux/man-pages/man3/calloc.3.html
- */
-typedef void* (*ev_calloc_fn)(size_t nmemb, size_t size);
-
-/**
  * @brief Replacement function for realloc.
  * @see https://man7.org/linux/man-pages/man3/realloc.3.html
  */
-typedef void* (*ev_realloc_fn)(void* ptr, size_t size);
-
-/**
- * @brief Replacement function for free.
- * @see https://man7.org/linux/man-pages/man3/free.3.html
- */
-typedef void (*ev_free_fn)(void* ptr);
+typedef void *(*ev_realloc_fn)(void *ptr, size_t size);
 
 /**
  * @brief Override the use of the standard library's malloc(3), calloc(3),
@@ -46,40 +28,40 @@ typedef void (*ev_free_fn)(void* ptr);
  *   allocator is changed while no memory was allocated with the previous
  *   allocator, or that they are compatible.
  * @warngin Allocator must be thread-safe.
- * 
- * @param[in] malloc_func   Replacement function for malloc.
- * @param[in] calloc_func   Replacement function for calloc.
- * @param[in] realloc_func  Replacement function for realloc.
- * @param[in] free_func     Replacement function for free.
- * @return On success, it returns 0. if any of the function pointers is NULL it returns #EV_EINVAL.
+ *
+ * @param[in] new_allocator   Replacement function..
+ * @param[out] old_allocator  Old allocator functions.
+ * @return #ev_errno_t.
  */
-EV_API int ev_replace_allocator(ev_malloc_fn malloc_func, ev_calloc_fn calloc_func,
-    ev_realloc_fn realloc_func, ev_free_fn free_func);
+EV_API int ev_replace_allocator(ev_realloc_fn  new_allocator,
+                                 ev_realloc_fn *old_allocator);
 
 /**
  * @brief Same as [malloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
  */
-EV_API void* ev_malloc(size_t size);
+EV_API void *ev_malloc(size_t size);
 
 /**
  * @brief Same as [calloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
  */
-EV_API void* ev_calloc(size_t nmemb, size_t size);
+EV_API void *ev_calloc(size_t nmemb, size_t size);
 
 /**
- * @brief Same as [realloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
+ * @brief Same as
+ * [realloc(3)](https://man7.org/linux/man-pages/man3/free.3.html)
  */
-EV_API void* ev_realloc(void* ptr, size_t size);
+EV_API void *ev_realloc(void *ptr, size_t size);
 
 /**
  * @brief Same as [free(3)](https://man7.org/linux/man-pages/man3/free.3.html)
  */
-EV_API void ev_free(void* ptr);
+EV_API void ev_free(void *ptr);
 
 /**
- * @brief Same as [strdup(3)](https://man7.org/linux/man-pages/man3/strdup.3.html)
+ * @brief Same as
+ * [strdup(3)](https://man7.org/linux/man-pages/man3/strdup.3.html)
  */
-EV_API char* ev__strdup(const char* str);
+EV_API char *ev__strdup(const char *str);
 
 /**
  * @} EV_ALLOCATOR

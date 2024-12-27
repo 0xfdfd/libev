@@ -214,3 +214,7 @@ size_t ev_os_mmap_offset_granularity(void)
     GetSystemInfo(&sys_info);
     return sys_info.dwAllocationGranularity;
 }
+
+EV_LOCAL void ev__backend_shutdown(void)
+{
+}

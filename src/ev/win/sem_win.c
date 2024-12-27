@@ -1,4 +1,9 @@
 
+struct ev_sem_s
+{
+    ev_os_sem_t r;
+};
+
 void ev_sem_init(ev_sem_t **sem, unsigned value)
 {
     DWORD     errcode;

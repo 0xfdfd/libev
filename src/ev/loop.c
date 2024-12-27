@@ -39,7 +39,7 @@ static int _ev_loop_init(ev_loop_t* loop)
 
 static void _ev_loop_exit(ev_loop_t* loop)
 {
-    ev_mutex_exit(&loop->threadpool.mutex);
+    ev_mutex_exit(loop->threadpool.mutex);
     ev_loop_unlink_threadpool(loop);
 }
 

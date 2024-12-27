@@ -15,3 +15,8 @@ size_t ev_os_mmap_offset_granularity(void)
 {
     return ev_os_page_size();
 }
+
+void ev__backend_shutdown(void)
+{
+    ev__exit_process_unix();
+}

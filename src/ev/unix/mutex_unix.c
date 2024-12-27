@@ -1,5 +1,10 @@
 
-static void _ev_mutex_init_unix(ev_os_mutex_t* handle)
+struct ev_mutex
+{
+    ev_os_mutex_t r; /**< Real mutex */
+};
+
+static void _ev_mutex_init_unix(ev_os_mutex_t *handle)
 {
 #if defined(NDEBUG) || !defined(PTHREAD_MUTEX_ERRORCHECK)
     if (pthread_mutex_init(handle, NULL) != 0)
@@ -31,7 +36,7 @@ static void _ev_mutex_init_unix(ev_os_mutex_t* handle)
 #endif
 }
 
-static void _ev_mutex_init_recursive_unix(ev_os_mutex_t* handle)
+static void _ev_mutex_init_recursive_unix(ev_os_mutex_t *handle)
 {
     pthread_mutexattr_t attr;
 
@@ -56,45 +61,55 @@ static void _ev_mutex_init_recursive_unix(ev_os_mutex_t* handle)
     }
 }
 
-void ev_mutex_init(ev_mutex_t* handle, int recursive)
+void ev_mutex_init(ev_mutex_t **handle, int recursive)
 {
+    ev_mutex_t *new_mutex = ev_malloc(sizeof(ev_mutex_t));
+    if (new_mutex == NULL)
+    {
+        abort();
+    }
+
     if (recursive)
     {
-        _ev_mutex_init_recursive_unix(&handle->u.r);
+        _ev_mutex_init_recursive_unix(&new_mutex->r);
     }
     else
     {
-        _ev_mutex_init_unix(&handle->u.r);
+        _ev_mutex_init_unix(&new_mutex->r);
     }
+
+    *handle = new_mutex;
 }
 
-void ev_mutex_exit(ev_mutex_t* handle)
+void ev_mutex_exit(ev_mutex_t *handle)
 {
-    if (pthread_mutex_destroy(&handle->u.r))
+    if (pthread_mutex_destroy(&handle->r))
+    {
+        EV_ABORT();
+    }
+
+    ev_free(handle);
+}
+
+void ev_mutex_enter(ev_mutex_t *handle)
+{
+    if (pthread_mutex_lock(&handle->r))
     {
         EV_ABORT();
     }
 }
 
-void ev_mutex_enter(ev_mutex_t* handle)
+void ev_mutex_leave(ev_mutex_t *handle)
 {
-    if (pthread_mutex_lock(&handle->u.r))
+    if (pthread_mutex_unlock(&handle->r))
     {
         EV_ABORT();
     }
 }
 
-void ev_mutex_leave(ev_mutex_t* handle)
+int ev_mutex_try_enter(ev_mutex_t *handle)
 {
-    if (pthread_mutex_unlock(&handle->u.r))
-    {
-        EV_ABORT();
-    }
-}
-
-int ev_mutex_try_enter(ev_mutex_t* handle)
-{
-    int err = pthread_mutex_trylock(&handle->u.r);
+    int err = pthread_mutex_trylock(&handle->r);
     if (!err)
     {
         return 0;

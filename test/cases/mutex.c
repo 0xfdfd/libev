@@ -2,7 +2,7 @@
 
 struct test_3b3b
 {
-    ev_mutex_t  mutex_r;
+    ev_mutex_t *mutex_r;
 };
 
 struct test_3b3b g_test_3b3b;
@@ -14,22 +14,16 @@ TEST_FIXTURE_SETUP(mutex)
 
 TEST_FIXTURE_TEARDOWN(mutex)
 {
-    ev_mutex_exit(&g_test_3b3b.mutex_r);
+    ev_mutex_exit(g_test_3b3b.mutex_r);
 }
 
 TEST_F(mutex, recursive)
 {
-    ev_mutex_enter(&g_test_3b3b.mutex_r);
-    ev_mutex_enter(&g_test_3b3b.mutex_r);
-    ASSERT_EQ_INT(ev_mutex_try_enter(&g_test_3b3b.mutex_r), 0);
+    ev_mutex_enter(g_test_3b3b.mutex_r);
+    ev_mutex_enter(g_test_3b3b.mutex_r);
+    ASSERT_EQ_INT(ev_mutex_try_enter(g_test_3b3b.mutex_r), 0);
 
-    ev_mutex_leave(&g_test_3b3b.mutex_r);
-    ev_mutex_leave(&g_test_3b3b.mutex_r);
-    ev_mutex_leave(&g_test_3b3b.mutex_r);
-}
-
-TEST_F(mutex, static_initializer)
-{
-    static ev_mutex_t tmp = EV_MUTEX_INVALID;
-    (void)tmp;
+    ev_mutex_leave(g_test_3b3b.mutex_r);
+    ev_mutex_leave(g_test_3b3b.mutex_r);
+    ev_mutex_leave(g_test_3b3b.mutex_r);
 }

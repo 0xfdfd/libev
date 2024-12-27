@@ -40,12 +40,12 @@ static void _ev_threadpool_submit_to_loop(ev_work_t *work)
     ev_loop_t *loop = work->base.loop;
 
     work->base.backlog.cb = _ev_threadpool_on_loop;
-    ev_mutex_enter(&loop->threadpool.mutex);
+    ev_mutex_enter(loop->threadpool.mutex);
     {
         ev_list_push_back(&loop->threadpool.work_queue,
                           &work->base.backlog.node);
     }
-    ev_mutex_leave(&loop->threadpool.mutex);
+    ev_mutex_leave(loop->threadpool.mutex);
 
     ev__threadpool_wakeup(loop);
 }
@@ -55,7 +55,7 @@ static ev_work_t *_ev_threadpool_get_work_locked(ev_threadpool_t *pool)
     ev_queue_node_t *it;
     size_t           i;
 
-    ev_mutex_enter(&pool->mutex);
+    ev_mutex_enter(pool->mutex);
     for (i = 0; i < ARRAY_SIZE(pool->work_queue); i++)
     {
         it = ev_queue_pop_front(&pool->work_queue[i]);
@@ -65,7 +65,7 @@ static ev_work_t *_ev_threadpool_get_work_locked(ev_threadpool_t *pool)
             break;
         }
     }
-    ev_mutex_leave(&pool->mutex);
+    ev_mutex_leave(pool->mutex);
 
     if (it == NULL)
     {
@@ -122,7 +122,7 @@ static void _cancel_work_queue_for_loop(ev_threadpool_t *pool,
 {
     ev_queue_node_t *it;
 
-    ev_mutex_enter(&pool->mutex);
+    ev_mutex_enter(pool->mutex);
     {
         it = ev_queue_head(wqueue);
         while (it != NULL)
@@ -138,7 +138,7 @@ static void _cancel_work_queue_for_loop(ev_threadpool_t *pool,
             _ev_threadpool_commit(work, EV_ECANCELED);
         }
     }
-    ev_mutex_leave(&pool->mutex);
+    ev_mutex_leave(pool->mutex);
 }
 
 int ev_threadpool_init(ev_threadpool_t *pool, const ev_thread_opt_t *opt,
@@ -176,7 +176,7 @@ err_release_thread:
         ev_thread_exit(&storage[i], EV_INFINITE_TIMEOUT);
     }
     ev_sem_exit(pool->p2w_sem);
-    ev_mutex_exit(&pool->mutex);
+    ev_mutex_exit(pool->mutex);
     return ret;
 }
 
@@ -197,11 +197,11 @@ int ev_threadpool_submit(ev_threadpool_t *pool, ev_loop_t *loop,
     work->data.work_cb = work_cb;
     work->data.done_cb = done_cb;
 
-    ev_mutex_enter(&pool->mutex);
+    ev_mutex_enter(pool->mutex);
     {
         ev_queue_push_back(&pool->work_queue[type], &work->node);
     }
-    ev_mutex_leave(&pool->mutex);
+    ev_mutex_leave(pool->mutex);
 
     ev_sem_post(pool->p2w_sem);
 
@@ -213,7 +213,7 @@ int ev_loop_cancel(ev_work_t *work)
     ev_threadpool_t *pool = work->data.pool;
 
     int cancelled;
-    ev_mutex_enter(&pool->mutex);
+    ev_mutex_enter(pool->mutex);
     {
         cancelled = !ev_queue_empty(&work->node);
         if (cancelled)
@@ -221,7 +221,7 @@ int ev_loop_cancel(ev_work_t *work)
             ev_queue_erase(&work->node);
         }
     }
-    ev_mutex_leave(&pool->mutex);
+    ev_mutex_leave(pool->mutex);
 
     if (!cancelled)
     {
@@ -279,7 +279,7 @@ void ev_threadpool_exit(ev_threadpool_t *pool)
     /* now we can do some cleanup */
     _ev_threadpool_cancel_all(pool);
 
-    ev_mutex_exit(&pool->mutex);
+    ev_mutex_exit(pool->mutex);
     ev_sem_exit(pool->p2w_sem);
 }
 
@@ -310,11 +310,11 @@ EV_LOCAL int ev_loop_link_threadpool(ev_loop_t *loop, ev_threadpool_t *pool)
 
     loop->threadpool.pool = pool;
 
-    ev_mutex_enter(&pool->mutex);
+    ev_mutex_enter(pool->mutex);
     {
         ev_list_push_back(&pool->loop_table, &loop->threadpool.node);
     }
-    ev_mutex_leave(&pool->mutex);
+    ev_mutex_leave(pool->mutex);
 
     return 0;
 }
@@ -337,11 +337,11 @@ int ev_loop_unlink_threadpool(ev_loop_t *loop)
 
     /* From now there should no futher work from loop incoming. */
     loop->threadpool.pool = NULL;
-    ev_mutex_enter(&pool->mutex);
+    ev_mutex_enter(pool->mutex);
     {
         ev_list_erase(&pool->loop_table, &loop->threadpool.node);
     }
-    ev_mutex_leave(&pool->mutex);
+    ev_mutex_leave(pool->mutex);
 
     return 0;
 }
@@ -366,11 +366,11 @@ EV_LOCAL void ev__threadpool_process(ev_loop_t *loop)
     ev_list_node_t *node;
     for (;;)
     {
-        ev_mutex_enter(&loop->threadpool.mutex);
+        ev_mutex_enter(loop->threadpool.mutex);
         {
             node = ev_list_pop_front(&loop->threadpool.work_queue);
         }
-        ev_mutex_leave(&loop->threadpool.mutex);
+        ev_mutex_leave(loop->threadpool.mutex);
 
         if (node == NULL)
         {
