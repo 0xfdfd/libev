@@ -254,16 +254,6 @@ struct ev_iocp
     }
 
 /**
- * @brief  Windows backend for #ev_tcp_write_req_t.
- */
-#define EV_TCP_WRITE_BACKEND    \
-    struct ev_tcp_write_backend {\
-        void*                       owner;              /**< Owner */\
-        int                         stat;               /**< Write result */\
-        ev_iocp_t                   io;                 /**< IOCP backend */\
-    }
-
-/**
  * @brief Initialize #EV_TCP_BACKEND to Windows specific invalid value.
  */
 #define EV_TCP_BACKEND_INIT     \

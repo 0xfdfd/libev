@@ -115,7 +115,8 @@ static void _ev_tcp_w_user_callback_win(ev_tcp_t *sock, ev_tcp_write_req_t *req,
 {
     _ev_tcp_smart_deactive_win(sock);
     ev__write_exit(&req->base);
-    req->user_callback(req, size);
+    req->write_cb(sock, size, req->write_arg);
+    ev_free(req);
 }
 
 static void _ev_tcp_r_user_callbak_win(ev_tcp_t *sock, ev_tcp_read_req_t *req,
@@ -123,7 +124,8 @@ static void _ev_tcp_r_user_callbak_win(ev_tcp_t *sock, ev_tcp_read_req_t *req,
 {
     _ev_tcp_smart_deactive_win(sock);
     ev__read_exit(&req->base);
-    req->user_callback(req, size);
+    req->read_cb(sock, size, req->read_arg);
+    ev_free(req);
 }
 
 static void _ev_tcp_cleanup_stream(ev_tcp_t *sock)
@@ -504,7 +506,7 @@ static void _ev_tcp_on_iocp(ev_iocp_t *req, size_t transferred, void *arg)
 
 static int _ev_tcp_init_write_req_win(ev_tcp_t *sock, ev_tcp_write_req_t *req,
                                       ev_buf_t *bufs, size_t nbuf,
-                                      ev_tcp_write_cb cb)
+                                      ev_tcp_write_cb cb, void *arg)
 {
     int ret;
     if ((ret = ev__write_init(&req->base, bufs, nbuf)) != 0)
@@ -512,7 +514,8 @@ static int _ev_tcp_init_write_req_win(ev_tcp_t *sock, ev_tcp_write_req_t *req,
         return ret;
     }
 
-    req->user_callback = cb;
+    req->write_cb = cb;
+    req->write_arg = arg;
     req->backend.owner = sock;
     req->backend.stat = EV_EINPROGRESS;
     ev__iocp_init(&req->backend.io, _ev_tcp_on_stream_write_done, req);
@@ -522,7 +525,7 @@ static int _ev_tcp_init_write_req_win(ev_tcp_t *sock, ev_tcp_write_req_t *req,
 
 static int _ev_tcp_init_read_req_win(ev_tcp_t *sock, ev_tcp_read_req_t *req,
                                      ev_buf_t *bufs, size_t nbuf,
-                                     ev_tcp_read_cb cb)
+                                     ev_tcp_read_cb cb, void *arg)
 {
     int ret;
 
@@ -531,7 +534,8 @@ static int _ev_tcp_init_read_req_win(ev_tcp_t *sock, ev_tcp_read_req_t *req,
         return ret;
     }
 
-    req->user_callback = cb;
+    req->read_cb = cb;
+    req->read_arg = arg;
     req->backend.owner = sock;
     req->backend.stat = EV_EINPROGRESS;
     ev__iocp_init(&req->backend.io, _ev_tcp_on_stream_read_done, req);
@@ -559,10 +563,10 @@ int ev_tcp_init(ev_loop_t *loop, ev_tcp_t **tcp)
     return 0;
 }
 
-void ev_tcp_exit(ev_tcp_t *sock, ev_tcp_close_cb cb, void *close_arg)
+void ev_tcp_exit(ev_tcp_t *sock, ev_tcp_close_cb cb, void *arg)
 {
     sock->close_cb = cb;
-    sock->close_arg = close_arg;
+    sock->close_arg = arg;
 
     /* Close socket to avoid IOCP conflict with exiting process */
     _ev_tcp_close_socket(sock);
@@ -629,8 +633,8 @@ int ev_tcp_listen(ev_tcp_t *sock, int backlog)
     return 0;
 }
 
-int ev_tcp_accept(ev_tcp_t *lisn, ev_tcp_t *conn, ev_tcp_accept_cb accept_cb,
-                  void *accept_arg)
+int ev_tcp_accept(ev_tcp_t *lisn, ev_tcp_t *conn, ev_tcp_accept_cb cb,
+                  void *arg)
 {
     int ret;
     int flag_new_sock = 0;
@@ -648,7 +652,7 @@ int ev_tcp_accept(ev_tcp_t *lisn, ev_tcp_t *conn, ev_tcp_accept_cb accept_cb,
         }
         flag_new_sock = 1;
     }
-    _ev_tcp_setup_accept_win(lisn, conn, accept_cb, accept_arg);
+    _ev_tcp_setup_accept_win(lisn, conn, cb, arg);
 
     ev__handle_active(&lisn->base);
     ev__handle_active(&conn->base);
@@ -719,7 +723,7 @@ int ev_tcp_getpeername(ev_tcp_t *sock, struct sockaddr *name, size_t *len)
 }
 
 int ev_tcp_connect(ev_tcp_t *sock, struct sockaddr *addr, size_t size,
-                   ev_tcp_connect_cb connect_cb, void *connect_arg)
+                   ev_tcp_connect_cb cb, void *arg)
 {
     int ret;
     int flag_new_sock = 0;
@@ -746,7 +750,7 @@ int ev_tcp_connect(ev_tcp_t *sock, struct sockaddr *addr, size_t size,
         }
     }
 
-    if ((ret = _ev_tcp_setup_client_win(sock, connect_cb, connect_arg)) != 0)
+    if ((ret = _ev_tcp_setup_client_win(sock, cb, arg)) != 0)
     {
         goto err;
     }
@@ -782,12 +786,20 @@ err:
     return ret;
 }
 
-int ev_tcp_write(ev_tcp_t *sock, ev_tcp_write_req_t *req, ev_buf_t *bufs,
-                 size_t nbuf, ev_tcp_write_cb cb)
+int ev_tcp_write(ev_tcp_t *sock, ev_buf_t *bufs, size_t nbuf,
+                 ev_tcp_write_cb cb, void *arg)
 {
-    int ret;
-    if ((ret = _ev_tcp_init_write_req_win(sock, req, bufs, nbuf, cb)) != 0)
+    int                 ret;
+    ev_tcp_write_req_t *req = ev_malloc(sizeof(ev_tcp_write_req_t));
+    if (req == NULL)
     {
+        return EV_ENOMEM;
+    }
+
+    ret = _ev_tcp_init_write_req_win(sock, req, bufs, nbuf, cb, arg);
+    if (ret != 0)
+    {
+        ev_free(req);
         return ret;
     }
 
@@ -813,19 +825,26 @@ int ev_tcp_write(ev_tcp_t *sock, ev_tcp_write_req_t *req, ev_buf_t *bufs,
     if ((ret = WSAGetLastError()) != WSA_IO_PENDING)
     {
         _ev_tcp_smart_deactive_win(sock);
+        ev_free(req);
         return ev__translate_sys_error(ret);
     }
 
     return 0;
 }
 
-int ev_tcp_read(ev_tcp_t *sock, ev_tcp_read_req_t *req, ev_buf_t *bufs,
-                size_t nbuf, ev_tcp_read_cb cb)
+int ev_tcp_read(ev_tcp_t *sock, ev_buf_t *bufs, size_t nbuf, ev_tcp_read_cb cb,
+                void *arg)
 {
-    int ret;
-
-    if ((ret = _ev_tcp_init_read_req_win(sock, req, bufs, nbuf, cb)) != 0)
+    int                ret;
+    ev_tcp_read_req_t *req = ev_malloc(sizeof(ev_tcp_read_req_t));
+    if (req == NULL)
     {
+        return EV_ENOMEM;
+    }
+
+    if ((ret = _ev_tcp_init_read_req_win(sock, req, bufs, nbuf, cb, arg)) != 0)
+    {
+        ev_free(req);
         return ret;
     }
 
@@ -853,6 +872,7 @@ int ev_tcp_read(ev_tcp_t *sock, ev_tcp_read_req_t *req, ev_buf_t *bufs,
     if ((ret = WSAGetLastError()) != WSA_IO_PENDING)
     {
         _ev_tcp_smart_deactive_win(sock);
+        ev_free(req);
         return ev__translate_sys_error(ret);
     }
 

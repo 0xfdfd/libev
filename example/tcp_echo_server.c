@@ -24,13 +24,11 @@
 
 typedef struct tcp_client
 {
-    ev_list_node_t     node;         /* list node */
-    ev_tcp_t          *client;       /* TCP connecting token */
-    ev_tcp_read_req_t  read_req;     /* Read token */
-    ev_tcp_write_req_t write_req;    /* Write token */
-    char               buffer[1024]; /* Receive / Send buffer */
-    char               ip[64];       /* Peer IP */
-    int                port;         /* Peer port */
+    ev_list_node_t node;         /* list node */
+    ev_tcp_t      *client;       /* TCP connecting token */
+    char           buffer[1024]; /* Receive / Send buffer */
+    char           ip[64];       /* Peer IP */
+    int            port;         /* Peer port */
 } tcp_client_t;
 
 typedef struct tcp_echo_server_s
@@ -169,9 +167,10 @@ static void _close_client(tcp_client_t *client)
     ev_tcp_exit(client->client, _on_client_close, client);
 }
 
-static void _on_write_done(ev_tcp_write_req_t *req, ssize_t size)
+static void _on_write_done(ev_tcp_t *sock, ssize_t size, void *arg)
 {
-    tcp_client_t *client = EV_CONTAINER_OF(req, tcp_client_t, write_req);
+    (void)sock;
+    tcp_client_t *client = (tcp_client_t *)arg;
 
     if (size < 0)
     {
@@ -182,10 +181,11 @@ static void _on_write_done(ev_tcp_write_req_t *req, ssize_t size)
     _want_read(client);
 }
 
-static void _on_read_done(ev_tcp_read_req_t *req, ssize_t size)
+static void _on_read_done(ev_tcp_t *sock, ssize_t size, void *arg)
 {
+    (void)sock;
     int           ret;
-    tcp_client_t *client = EV_CONTAINER_OF(req, tcp_client_t, read_req);
+    tcp_client_t *client = (tcp_client_t *)arg;
 
     if (size < 0)
     {
@@ -194,16 +194,14 @@ static void _on_read_done(ev_tcp_read_req_t *req, ssize_t size)
     }
 
     ev_buf_t buf = ev_buf_make(client->buffer, size);
-    ret = ev_tcp_write(client->client, &client->write_req, &buf, 1,
-                       _on_write_done);
+    ret = ev_tcp_write(client->client, &buf, 1, _on_write_done, client);
     CHECK_SUCCESS(ret);
 }
 
 static void _want_read(tcp_client_t *client)
 {
     ev_buf_t buf = ev_buf_make(client->buffer, sizeof(client->buffer));
-    int      ret =
-        ev_tcp_read(client->client, &client->read_req, &buf, 1, _on_read_done);
+    int      ret = ev_tcp_read(client->client, &buf, 1, _on_read_done, client);
     CHECK_SUCCESS(ret);
 }
 

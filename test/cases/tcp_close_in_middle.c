@@ -3,14 +3,12 @@
 
 typedef struct test_send_data_pack
 {
-    ev_tcp_write_req_t req;
-    char               data[128 * 1024 * 1024];
+    char data[128 * 1024 * 1024];
 } test_send_data_pack_t;
 
 typedef struct test_recv_data_pack
 {
-    ev_tcp_read_req_t req;
-    char              buff[128 * 1024];
+    char buff[128 * 1024];
 } test_recv_data_pack_t;
 
 typedef struct test_tcp_close_in_middle
@@ -114,21 +112,21 @@ static void _test_tcp_close_in_middle_on_accept(ev_tcp_t *lisn, ev_tcp_t *conn,
     ASSERT_EQ_PTR(conn, g_test_tcp_close_in_middle.s_sock);
 }
 
-static void _test_tcp_close_in_middle_on_send(ev_tcp_write_req_t *req,
-                                              ssize_t             size)
+static void _test_tcp_close_in_middle_on_send(ev_tcp_t *sock, ssize_t size,
+                                              void *arg)
 {
-    test_send_data_pack_t *send_data =
-        EV_CONTAINER_OF(req, test_send_data_pack_t, req);
+    (void)sock;
+    test_send_data_pack_t *send_data = (test_send_data_pack_t *)arg;
     ev_free(send_data);
 
     ASSERT_LT_SSIZE(size, 0);
 }
 
-static void _test_tcp_close_in_middle_on_recv(ev_tcp_read_req_t *req,
-                                              ssize_t            size)
+static void _test_tcp_close_in_middle_on_recv(ev_tcp_t *sock, ssize_t size,
+                                              void *arg)
 {
-    test_recv_data_pack_t *recv_data =
-        EV_CONTAINER_OF(req, test_recv_data_pack_t, req);
+    (void)sock;
+    test_recv_data_pack_t *recv_data = (test_recv_data_pack_t *)arg;
     ev_free(recv_data);
 
     ASSERT_LT_SSIZE(size, 0);
@@ -162,17 +160,15 @@ TEST_F(tcp, close_in_middle)
     test_send_data_pack_t *send_data = ev_malloc(sizeof(test_send_data_pack_t));
     ev_buf_t send_buf = ev_buf_make(send_data->data, sizeof(send_data->data));
     test_random(send_data->data, sizeof(send_data->data));
-    ASSERT_EQ_INT(ev_tcp_write(g_test_tcp_close_in_middle.s_sock,
-                               &send_data->req, &send_buf, 1,
-                               _test_tcp_close_in_middle_on_send),
+    ASSERT_EQ_INT(ev_tcp_write(g_test_tcp_close_in_middle.s_sock, &send_buf, 1,
+                               _test_tcp_close_in_middle_on_send, send_data),
                   0);
 
     /* Recv data. */
     test_recv_data_pack_t *recv_data = ev_malloc(sizeof(test_recv_data_pack_t));
     ev_buf_t recv_buf = ev_buf_make(recv_data->buff, sizeof(recv_data->buff));
-    ASSERT_EQ_INT(ev_tcp_read(g_test_tcp_close_in_middle.c_sock,
-                              &recv_data->req, &recv_buf, 1,
-                              _test_tcp_close_in_middle_on_recv),
+    ASSERT_EQ_INT(ev_tcp_read(g_test_tcp_close_in_middle.c_sock, &recv_buf, 1,
+                              _test_tcp_close_in_middle_on_recv, recv_data),
                   0);
 
     g_test_tcp_close_in_middle.s_sock_open = 0;

@@ -1388,8 +1388,8 @@ EV_API ev_queue_node_t* ev_queue_next(ev_queue_node_t* head, ev_queue_node_t* no
 #if defined(_WIN32)
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win.h
-// SIZE:    13714
-// SHA-256: 5491408f80ce0903c13b469cded66c4cf1651bab256ef0d515a8c90122a464d9
+// SIZE:    13351
+// SHA-256: 9432e218f2e0ada0ef73bf832a173370d9a960c74a1a6a2a6465899284fdf929
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win.h"
 /**
@@ -1645,16 +1645,6 @@ struct ev_iocp
         ev_tcp_t*                   owner;              /**< Owner */\
         ev_iocp_t                   io;                 /**< IOCP */\
         int                         stat;               /**< Read result */\
-    }
-
-/**
- * @brief  Windows backend for #ev_tcp_write_req_t.
- */
-#define EV_TCP_WRITE_BACKEND    \
-    struct ev_tcp_write_backend {\
-        void*                       owner;              /**< Owner */\
-        int                         stat;               /**< Write result */\
-        ev_iocp_t                   io;                 /**< IOCP backend */\
     }
 
 /**
@@ -3874,8 +3864,8 @@ EV_API void ev_timer_stop(ev_timer_t* handle);
 // #line 95 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/tcp.h
-// SIZE:    6478
-// SHA-256: 1b2cac34cd5727f79affb7e38f1158f35c77e68371ee59ae20e632932fca8d19
+// SIZE:    5797
+// SHA-256: 9ba2320f8106d7d52451cf6a21782ecf54984d92e2b547945d50a27ea6b7278b
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/tcp.h"
 #ifndef __EV_TCP_H__
@@ -3903,16 +3893,6 @@ extern "C" {
 typedef struct ev_tcp ev_tcp_t;
 
 /**
- * @brief Typedef of #ev_tcp_read_req.
- */
-typedef struct ev_tcp_read_req ev_tcp_read_req_t;
-
-/**
- * @brief Typedef of #ev_tcp_write_req.
- */
-typedef struct ev_tcp_write_req ev_tcp_write_req_t;
-
-/**
  * @brief Close callback for #ev_tcp_t
  * @param[in] sock      A closed socket
  * @param[in] arg       User defined argument.
@@ -3938,37 +3918,19 @@ typedef void (*ev_tcp_connect_cb)(ev_tcp_t *sock, int stat, void *arg);
 
 /**
  * @brief Write callback
- * @param[in] req       Write request token
+ * @param[in] sock      Socket.
  * @param[in] size      Write result
+ * @param[in] arg       User defined argument.
  */
-typedef void (*ev_tcp_write_cb)(ev_tcp_write_req_t *req, ssize_t size);
+typedef void (*ev_tcp_write_cb)(ev_tcp_t *sock, ssize_t size, void *arg);
 
 /**
  * @brief Read callback
- * @param[in] req       Read callback
- * @param[in] size      Read result
+ * @param[in] sock      Socket.
+ * @param[in] size      Read result.
+ * @param[in] arg       User defined argument.
  */
-typedef void (*ev_tcp_read_cb)(ev_tcp_read_req_t *req, ssize_t size);
-
-/**
- * @brief Read request token for TCP socket.
- */
-struct ev_tcp_read_req
-{
-    ev_read_t           base;          /**< Base object */
-    ev_tcp_read_cb      user_callback; /**< User callback */
-    EV_TCP_READ_BACKEND backend;       /**< Backend */
-};
-
-/**
- * @brief Write request token for TCP socket.
- */
-struct ev_tcp_write_req
-{
-    ev_write_t           base;          /**< Base object */
-    ev_tcp_write_cb      user_callback; /**< User callback */
-    EV_TCP_WRITE_BACKEND backend;       /**< Backend */
-};
+typedef void (*ev_tcp_read_cb)(ev_tcp_t *sock, ssize_t size, void *arg);
 
 /**
  * @brief Initialize a tcp socket
@@ -3980,11 +3942,10 @@ EV_API int ev_tcp_init(ev_loop_t *loop, ev_tcp_t **tcp);
 /**
  * @brief Destroy socket
  * @param[in] sock      Socket
- * @param[in] close_cb  Destroy callback
- * @param[in] close_arg User defined argument.
+ * @param[in] cb        Destroy callback
+ * @param[in] arg       User defined argument.
  */
-EV_API void ev_tcp_exit(ev_tcp_t *sock, ev_tcp_close_cb close_cb,
-                        void *close_arg);
+EV_API void ev_tcp_exit(ev_tcp_t *sock, ev_tcp_close_cb cb, void *arg);
 
 /**
  * @brief Bind the handle to an address and port.
@@ -4010,24 +3971,24 @@ EV_API int ev_tcp_listen(ev_tcp_t *sock, int backlog);
  * @brief Accept a connection from listen socket
  * @param[in] acpt          Listen socket
  * @param[in] conn          The socket to store new connection
- * @param[in] accept_cb     Accept callback
- * @param[in] accept_arg    User defined argument pass to \p accept_cb.
+ * @param[in] cb            Accept callback
+ * @param[in] arg           User defined argument pass to \p cb.
  * @return                  #ev_errno_t
  */
-EV_API int ev_tcp_accept(ev_tcp_t *acpt, ev_tcp_t *conn,
-                         ev_tcp_accept_cb accept_cb, void *accept_arg);
+EV_API int ev_tcp_accept(ev_tcp_t *acpt, ev_tcp_t *conn, ev_tcp_accept_cb cb,
+                         void *arg);
 
 /**
  * @brief Connect to address
  * @param[in] sock          Socket handle
  * @param[in] addr          Address
  * @param[in] size          Address size
- * @param[in] connect_cb  Connect callback
- * @param[in] connect_arg Connect argument.
- * @return          #ev_errno_t
+ * @param[in] cb            Connect callback
+ * @param[in] arg           Connect argument.
+ * @return                  #ev_errno_t
  */
 EV_API int ev_tcp_connect(ev_tcp_t *sock, struct sockaddr *addr, size_t size,
-                          ev_tcp_connect_cb connect_cb, void *connect_arg);
+                          ev_tcp_connect_cb cb, void *arg);
 
 /**
  * @brief Write data
@@ -4042,15 +4003,15 @@ EV_API int ev_tcp_connect(ev_tcp_t *sock, struct sockaddr *addr, size_t size,
  *   + If \p pipe is exiting but there are pending write request. The callback
  *     will be called with status #EV_ECANCELED.
  *
- * @param[in] sock  Socket handle
- * @param[in] req   Write request
- * @param[in] bufs  Buffer list
- * @param[in] nbuf  Buffer number
- * @param[in] cb    Send result callback
- * @return          #ev_errno_t
+ * @param[in] sock      Socket handle
+ * @param[in] bufs      Buffer list
+ * @param[in] nbuf      Buffer number
+ * @param[in] cb        Send result callback
+ * @param[in] arg       User defined argument.
+ * @return              #ev_errno_t
  */
-EV_API int ev_tcp_write(ev_tcp_t *sock, ev_tcp_write_req_t *req, ev_buf_t *bufs,
-                        size_t nbuf, ev_tcp_write_cb cb);
+EV_API int ev_tcp_write(ev_tcp_t *sock, ev_buf_t *bufs, size_t nbuf,
+                        ev_tcp_write_cb cb, void *arg);
 
 /**
  * @brief Read data
@@ -4065,14 +4026,14 @@ EV_API int ev_tcp_write(ev_tcp_t *sock, ev_tcp_write_req_t *req, ev_buf_t *bufs,
  *     will be called with status #EV_ECANCELED.
  *
  * @param[in] sock  Socket handle
- * @param[in] req   Read request
  * @param[in] bufs  Buffer list
  * @param[in] nbuf  Buffer number
  * @param[in] cb    Read result callback
+ * @param[in] arg   User defined argument.
  * @return          #ev_errno_t
  */
-EV_API int ev_tcp_read(ev_tcp_t *sock, ev_tcp_read_req_t *req, ev_buf_t *bufs,
-                       size_t nbuf, ev_tcp_read_cb cb);
+EV_API int ev_tcp_read(ev_tcp_t *sock, ev_buf_t *bufs, size_t nbuf,
+                       ev_tcp_read_cb cb, void *arg);
 
 /**
  * @brief Get the current address to which the socket is bound.

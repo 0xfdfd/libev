@@ -23,17 +23,15 @@ struct test_6d69
 
     struct
     {
-        ev_tcp_write_req_t w_req;
-        ev_buf_t           buf;
-        char               send_buf[4 * 1024 * 1024];
+        ev_buf_t buf;
+        char     send_buf[4 * 1024 * 1024];
     } s_write_pack;
 
     struct
     {
-        ev_tcp_read_req_t r_req;
-        ev_buf_t          buf;
-        size_t            pos;
-        char              recv_buf[6 * 1024 * 1024];
+        ev_buf_t buf;
+        size_t   pos;
+        char     recv_buf[6 * 1024 * 1024];
     } s_read_pack;
 };
 
@@ -60,9 +58,10 @@ static void _on_close_client_socket_6d69(ev_tcp_t *sock, void *arg)
     g_test_6d69->s_cnt_client_close++;
 }
 
-static void _on_send_finish_6d69(ev_tcp_write_req_t *req, ssize_t size)
+static void _on_send_finish_6d69(ev_tcp_t *sock, ssize_t size, void *arg)
 {
-    (void)req;
+    (void)sock;
+    (void)arg;
     ASSERT_EQ_SSIZE(size, sizeof(g_test_6d69->s_write_pack.send_buf));
 
     /* Close connection */
@@ -77,15 +76,15 @@ static void _on_accept_6d69(ev_tcp_t *from, ev_tcp_t *to, int stat, void *arg)
     ASSERT_EQ_INT(stat, 0);
 
     ev_tcp_exit(g_test_6d69->s_server, _on_close_server_socket, NULL);
-    ASSERT_EQ_INT(ev_tcp_write(to, &g_test_6d69->s_write_pack.w_req,
-                               &g_test_6d69->s_write_pack.buf, 1,
-                               _on_send_finish_6d69),
+    ASSERT_EQ_INT(ev_tcp_write(to, &g_test_6d69->s_write_pack.buf, 1,
+                               _on_send_finish_6d69, NULL),
                   0);
 }
 
-static void _on_read_6d69(ev_tcp_read_req_t *req, ssize_t size)
+static void _on_read_6d69(ev_tcp_t *sock, ssize_t size, void *arg)
 {
-    (void)req;
+    (void)sock;
+    (void)arg;
 
     ASSERT_LE_SSIZE(size, sizeof(g_test_6d69->s_write_pack.send_buf));
 
@@ -108,8 +107,8 @@ static void _on_read_6d69(ev_tcp_read_req_t *req, ssize_t size)
         sizeof(g_test_6d69->s_read_pack.recv_buf) -
             g_test_6d69->s_read_pack.pos);
     ASSERT_EQ_INT(ev_tcp_read(g_test_6d69->s_client,
-                              &g_test_6d69->s_read_pack.r_req,
-                              &g_test_6d69->s_read_pack.buf, 1, _on_read_6d69),
+                              &g_test_6d69->s_read_pack.buf, 1, _on_read_6d69,
+                              NULL),
                   0);
 }
 
@@ -120,8 +119,8 @@ static void _on_connect_6d69(ev_tcp_t *sock, int stat, void *arg)
     ASSERT_EQ_INT(stat, 0);
 
     ASSERT_EQ_INT(ev_tcp_read(g_test_6d69->s_client,
-                              &g_test_6d69->s_read_pack.r_req,
-                              &g_test_6d69->s_read_pack.buf, 1, _on_read_6d69),
+                              &g_test_6d69->s_read_pack.buf, 1, _on_read_6d69,
+                              NULL),
                   0);
 }
 

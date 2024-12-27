@@ -17,12 +17,6 @@ struct test_19f1
 
     struct
     {
-        ev_tcp_read_req_t  r_req;
-        ev_tcp_write_req_t w_req;
-    } tcp;
-
-    struct
-    {
         ev_pipe_read_req_t r_req; /**< Read request */
     } pipe;
 
@@ -83,9 +77,10 @@ static void _on_pipe_write_done_19f1(ev_pipe_t *pipe, ssize_t size, void *arg)
     g_test_19f1->cnt_wcb++;
 }
 
-static void _on_tcp_write_done_19f1(ev_tcp_write_req_t *req, ssize_t size)
+static void _on_tcp_write_done_19f1(ev_tcp_t *sock, ssize_t size, void *arg)
 {
-    ASSERT_EQ_PTR(req, &g_test_19f1->tcp.w_req);
+    (void)sock;
+    (void)arg;
     ASSERT_EQ_SSIZE(size, sizeof(g_test_19f1->data1));
 
     g_test_19f1->cnt_wcb++;
@@ -99,9 +94,10 @@ static void _on_pipe_read_done_19f1(ev_pipe_read_req_t *req, ssize_t size)
     g_test_19f1->cnt_rcb++;
 }
 
-static void _on_tcp_read_done_19f1(ev_tcp_read_req_t *req, ssize_t size)
+static void _on_tcp_read_done_19f1(ev_tcp_t *sock, ssize_t size, void *arg)
 {
-    ASSERT_EQ_PTR(req, &g_test_19f1->tcp.r_req);
+    (void)sock;
+    (void)arg;
     ASSERT_GE_SSIZE(size, 0);
 
     g_test_19f1->cnt_rcb++;
@@ -138,14 +134,14 @@ TEST_F(pipe, ipc_mode_tcp_handle)
 
     /* now we are able to send data via d_tcp */
     buf = ev_buf_make(g_test_19f1->data1, sizeof(g_test_19f1->data1));
-    ASSERT_EQ_INT(ev_tcp_write(g_test_19f1->d_tcp, &g_test_19f1->tcp.w_req,
-                               &buf, 1, _on_tcp_write_done_19f1),
+    ASSERT_EQ_INT(ev_tcp_write(g_test_19f1->d_tcp, &buf, 1,
+                               _on_tcp_write_done_19f1, NULL),
                   0);
 
     buf = ev_buf_make(g_test_19f1->data2, sizeof(g_test_19f1->data2));
-    ASSERT_EQ_INT(ev_tcp_read(g_test_19f1->c_tcp, &g_test_19f1->tcp.r_req, &buf,
-                              1, _on_tcp_read_done_19f1),
-                  0);
+    ASSERT_EQ_INT(
+        ev_tcp_read(g_test_19f1->c_tcp, &buf, 1, _on_tcp_read_done_19f1, NULL),
+        0);
 
     /* communicate */
     ASSERT_EQ_INT(ev_loop_run(g_test_19f1->loop, EV_LOOP_MODE_DEFAULT,

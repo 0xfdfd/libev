@@ -41,6 +41,25 @@ struct ev_tcp
     ev_tcp_backend_t backend;   /**< Platform related implementation */
 };
 
+typedef struct ev_tcp_write_req
+{
+    ev_write_t           base;      /**< Base object */
+    ev_tcp_write_cb      write_cb;  /**< User callback */
+    void                *write_arg; /**< User defined argument. */
+    EV_TCP_WRITE_BACKEND backend;   /**< Backend */
+} ev_tcp_write_req_t;
+
+/**
+ * @brief Read request token for TCP socket.
+ */
+typedef struct ev_tcp_read_req
+{
+    ev_read_t           base;     /**< Base object */
+    ev_tcp_read_cb      read_cb;  /**< User callback */
+    void               *read_arg; /**< User defined argument. */
+    EV_TCP_READ_BACKEND backend;  /**< Backend */
+} ev_tcp_read_req_t;
+
 /**
  * @brief Open fd for read/write.
  * @param[in] tcp   TCP handle
