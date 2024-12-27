@@ -3026,8 +3026,8 @@ EV_API int ev_mutex_try_enter(ev_mutex_t* handle);
 // #line 86 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/sem.h
-// SIZE:    1395
-// SHA-256: a0afad2d20e37aea4276faf384c07a5e5ff142befbe53fd25008be6eea37aca2
+// SIZE:    1290
+// SHA-256: ded2be40fb62d14dbe7663825024c416ea7d6c86440ece968ed9b907ee54851e
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/sem.h"
 #ifndef __EV_SEMAPHORE_H__
@@ -3044,22 +3044,14 @@ extern "C" {
 /**
  * @brief Semaphore handle type.
  */
-typedef struct ev_sem_s
-{
-    union
-    {
-        int         i;
-        ev_os_sem_t r;
-    }u;
-}ev_sem_t;
-#define EV_SEM_INVALID { { 0 } }
+typedef struct ev_sem_s ev_sem_t;
 
 /**
  * @brief Initializes the unnamed semaphore at the address pointed to by \p sem.
  * @param[out] sem      Semaphore to be initialized.
  * @param[in] value     Initial value
  */
-EV_API void ev_sem_init(ev_sem_t* sem, unsigned value);
+EV_API void ev_sem_init(ev_sem_t** sem, unsigned value);
 
 /**
  * @brief Destroy the unnamed semaphore at the address pointed to by \p sem.

@@ -1120,8 +1120,8 @@ EV_LOCAL ring_buffer_token_t* ring_buffer_next(const ring_buffer_t* handler,
 // #line 16 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/threadpool.h
-// SIZE:    3732
-// SHA-256: 0195fb89d355d0720666129cf75bccbf67e06a176f9e025042fbd2c9c3e95170
+// SIZE:    4397
+// SHA-256: 20e105da9186b55efa7be01a685712bcae951154902a2fbcc8345dac07cd39fd
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/threadpool.h"
 #ifndef __EV_THREADPOOL_INTERNAL_H__
@@ -1138,17 +1138,17 @@ typedef enum ev_work_type
     /**
      * @brief CPU work
      */
-    EV_THREADPOOL_WORK_CPU      = 0,
+    EV_THREADPOOL_WORK_CPU = 0,
 
     /**
      * @brief Fast IO. Typically file system operations.
      */
-    EV_THREADPOOL_WORK_IO_FAST  = 1,
+    EV_THREADPOOL_WORK_IO_FAST = 1,
 
     /**
      * @brief Slow IO. Typically network operations.
      */
-    EV_THREADPOOL_WORK_IO_SLOW  = 2,
+    EV_THREADPOOL_WORK_IO_SLOW = 2,
 } ev_work_type_t;
 
 typedef struct ev_threadpool ev_threadpool_t;
@@ -1158,36 +1158,34 @@ typedef struct ev_threadpool ev_threadpool_t;
  */
 struct ev_threadpool
 {
-    ev_os_thread_t*                 threads;        /**< Threads */
-    size_t                          thrnum;         /**< The number of threads */
+    ev_os_thread_t *threads; /**< Threads */
+    size_t          thrnum;  /**< The number of threads */
 
-    ev_list_t                       loop_table;     /**< Loop table */
+    ev_list_t loop_table; /**< Loop table */
 
-    ev_mutex_t                      mutex;          /**< Thread pool mutex */
-    ev_sem_t                        p2w_sem;        /**< Semaphore for pool to worker */
-    int                             looping;        /**< Looping flag */
+    ev_mutex_t mutex;   /**< Thread pool mutex */
+    ev_sem_t  *p2w_sem; /**< Semaphore for pool to worker */
+    int        looping; /**< Looping flag */
 
-    ev_queue_node_t                 work_queue[3];  /**< Work queue. Index is #ev_work_type_t */
+    ev_queue_node_t work_queue[3]; /**< Work queue. Index is #ev_work_type_t */
 };
 
-#define EV_THREADPOOL_INVALID   \
-    {\
-        NULL,\
-        0,\
-        EV_LIST_INIT,\
-        EV_MUTEX_INVALID,\
-        EV_SEM_INVALID,\
-        0,\
-        {\
-            EV_QUEUE_NODE_INVALID,\
-            EV_QUEUE_NODE_INVALID,\
-            EV_QUEUE_NODE_INVALID,\
-        },\
-    }
+#define EV_THREADPOOL_INVALID                                                  \
+    {                                                                          \
+        NULL,                                                                  \
+        0,                                                                     \
+        EV_LIST_INIT,                                                          \
+        EV_MUTEX_INVALID,                                                      \
+        NULL,                                                                  \
+        0,                                                                     \
+        {                                                                      \
+          EV_QUEUE_NODE_INVALID, EV_QUEUE_NODE_INVALID,                                             \
+          EV_QUEUE_NODE_INVALID, },                                                                     \
+}
 
-EV_LOCAL void ev__loop_link_to_default_threadpool(ev_loop_t* loop);
+EV_LOCAL void ev__loop_link_to_default_threadpool(ev_loop_t *loop);
 
-EV_LOCAL int ev_loop_unlink_threadpool(ev_loop_t* loop);
+EV_LOCAL int ev_loop_unlink_threadpool(ev_loop_t *loop);
 
 EV_LOCAL void ev_threadpool_default_cleanup(void);
 
@@ -1199,14 +1197,15 @@ EV_LOCAL void ev_threadpool_default_cleanup(void);
  * @param[in] num       Storage size
  * @return              #ev_errno_t
  */
-EV_LOCAL int ev_threadpool_init(ev_threadpool_t* pool, const ev_thread_opt_t* opt,
-    ev_os_thread_t* storage, size_t num);
+EV_LOCAL int ev_threadpool_init(ev_threadpool_t       *pool,
+                                const ev_thread_opt_t *opt,
+                                ev_os_thread_t *storage, size_t num);
 
 /**
  * @brief Exit thread pool
  * @param[in] pool      Thread pool
  */
-EV_LOCAL void ev_threadpool_exit(ev_threadpool_t* pool);
+EV_LOCAL void ev_threadpool_exit(ev_threadpool_t *pool);
 
 /**
  * @brief Link loop with thread pool.
@@ -1217,7 +1216,7 @@ EV_LOCAL void ev_threadpool_exit(ev_threadpool_t* pool);
  * @param[in] pool      The Thread pool.
  * @return              #ev_errno_t
  */
-EV_LOCAL int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool);
+EV_LOCAL int ev_loop_link_threadpool(ev_loop_t *loop, ev_threadpool_t *pool);
 
 /**
  * @brief Submit task into thread pool
@@ -1231,9 +1230,9 @@ EV_LOCAL int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool);
  * @param[in] done_cb   Work done callback
  * @return              #ev_errno_t
  */
-EV_LOCAL int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
-    ev_work_t* token, ev_work_type_t type,
-    ev_work_cb work_cb, ev_work_done_cb done_cb);
+EV_LOCAL int ev_threadpool_submit(ev_threadpool_t *pool, ev_loop_t *loop,
+                                  ev_work_t *token, ev_work_type_t type,
+                                  ev_work_cb work_cb, ev_work_done_cb done_cb);
 
 /**
  * @brief Submit task to threadpool.
@@ -1244,21 +1243,21 @@ EV_LOCAL int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
  * @param[in] done_cb   Work done callback.
  * @return              #ev_errno_t
  */
-EV_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
-    ev_work_t* work, ev_work_type_t type,
-    ev_work_cb work_cb, ev_work_done_cb done_cb);
+EV_LOCAL int ev__loop_submit_threadpool(ev_loop_t *loop, ev_work_t *work,
+                                        ev_work_type_t type, ev_work_cb work_cb,
+                                        ev_work_done_cb done_cb);
 
 /**
  * @brief Process thread pool events.
  * @param[in] loop Event loop.
  */
-EV_LOCAL void ev__threadpool_process(ev_loop_t* loop);
+EV_LOCAL void ev__threadpool_process(ev_loop_t *loop);
 
 /**
  * @brief Wakeup event loop.
  * @param[in] loop Event loop.
  */
-EV_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop);
+EV_LOCAL void ev__threadpool_wakeup(ev_loop_t *loop);
 
 #ifdef __cplusplus
 }
@@ -2232,6 +2231,29 @@ extern "C" {
 
 // #line 31 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/sem_win.h
+// SIZE:    158
+// SHA-256: c5682366a1d41561116340c6e700377b2cee35a63de1f6bce4e59885665d1dcb
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/sem_win.h"
+#ifndef EV_SEM_WIN_H
+#define EV_SEM_WIN_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+struct ev_sem_s
+{
+    ev_os_sem_t r;
+};
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 32 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/pipe_win.h
 // SIZE:    145
 // SHA-256: 11f24f7fd1297af0cdccd6ef1b33564be9f6906ccd53168e19a9b5d9953429a1
@@ -2248,7 +2270,7 @@ extern "C" {
 #endif
 #endif
 
-// #line 32 "ev.c"
+// #line 33 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/misc_win.h
 // SIZE:    1350
@@ -2298,7 +2320,7 @@ EV_LOCAL void ev__fatal_syscall(const char* file, int line,
 
 #endif
 
-// #line 33 "ev.c"
+// #line 34 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/thread_win.h
 // SIZE:    236
@@ -2321,7 +2343,7 @@ EV_LOCAL void ev__thread_init_win(void);
 #endif
 #endif
 
-// #line 34 "ev.c"
+// #line 35 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/threadpool_win.h
 // SIZE:    270
@@ -2342,7 +2364,7 @@ EV_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop);
 #endif
 #endif
 
-// #line 35 "ev.c"
+// #line 36 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/tcp_win.h
 // SIZE:    3451
@@ -2457,7 +2479,7 @@ EV_LOCAL int ev__tcp_open_win(ev_tcp_t *tcp, SOCKET fd);
 #endif
 #endif
 
-// #line 36 "ev.c"
+// #line 37 "ev.c"
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/async_win.c
@@ -2548,7 +2570,7 @@ void ev_async_wakeup(ev_async_t* handle)
     }
 }
 
-// #line 38 "ev.c"
+// #line 39 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/fs_win.c
 // SIZE:    25863
@@ -3469,7 +3491,7 @@ void ev_file_munmap(ev_file_map_t* view)
     view->size = 0;
 }
 
-// #line 39 "ev.c"
+// #line 40 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/loop_win.c
 // SIZE:    3767
@@ -3638,7 +3660,7 @@ EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt)
     return 0;
 }
 
-// #line 40 "ev.c"
+// #line 41 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/misc_win.c
 // SIZE:    8898
@@ -3862,7 +3884,7 @@ size_t ev_os_mmap_offset_granularity(void)
     return sys_info.dwAllocationGranularity;
 }
 
-// #line 41 "ev.c"
+// #line 42 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/mutex_win.c
 // SIZE:    527
@@ -3901,7 +3923,7 @@ int ev_mutex_try_enter(ev_mutex_t* handle)
     return EV_EBUSY;
 }
 
-// #line 42 "ev.c"
+// #line 43 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/once_win.c
 // SIZE:    445
@@ -3927,7 +3949,7 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
     }
 }
 
-// #line 43 "ev.c"
+// #line 44 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/pipe_win.c
 // SIZE:    42909
@@ -5509,7 +5531,7 @@ void ev_pipe_close(ev_os_pipe_t fd)
     CloseHandle(fd);
 }
 
-// #line 44 "ev.c"
+// #line 45 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/process_win.c
 // SIZE:    16212
@@ -6158,58 +6180,67 @@ error:
     return ev__translate_sys_error(err);
 }
 
-// #line 45 "ev.c"
+// #line 46 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/sem_win.c
-// SIZE:    1155
-// SHA-256: a113b4c52567893a1df6c51747489d3185ef36a96c8ca2723489b865a1bafbaa
+// SIZE:    1322
+// SHA-256: e953f8559fe3e48f3146bfd853440796c8cfb7862507f6960cabd2270a445504
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/sem_win.c"
 
-void ev_sem_init(ev_sem_t* sem, unsigned value)
+void ev_sem_init(ev_sem_t **sem, unsigned value)
+{
+    DWORD     errcode;
+    ev_sem_t *new_sem = ev_malloc(sizeof(ev_sem_t));
+    if (new_sem == NULL)
+    {
+        EV_ABORT("out of memory.");
+    }
+
+    new_sem->r = CreateSemaphore(NULL, value, INT_MAX, NULL);
+    if (new_sem->r == NULL)
+    {
+        errcode = GetLastError();
+        EV_ABORT("GetLastError:%lu", errcode);
+    }
+
+    *sem = new_sem;
+}
+
+void ev_sem_exit(ev_sem_t *sem)
 {
     DWORD errcode;
-    sem->u.r = CreateSemaphore(NULL, value, INT_MAX, NULL);
-    if (sem->u.r == NULL)
+    if (!CloseHandle(sem->r))
+    {
+        errcode = GetLastError();
+        EV_ABORT("GetLastError:%lu", errcode);
+    }
+    ev_free(sem);
+}
+
+void ev_sem_post(ev_sem_t *sem)
+{
+    DWORD errcode;
+    if (!ReleaseSemaphore(sem->r, 1, NULL))
     {
         errcode = GetLastError();
         EV_ABORT("GetLastError:%lu", errcode);
     }
 }
 
-void ev_sem_exit(ev_sem_t* sem)
+void ev_sem_wait(ev_sem_t *sem)
 {
     DWORD errcode;
-    if (!CloseHandle(sem->u.r))
+    if (WaitForSingleObject(sem->r, INFINITE) != WAIT_OBJECT_0)
     {
         errcode = GetLastError();
         EV_ABORT("GetLastError:%lu", errcode);
     }
 }
 
-void ev_sem_post(ev_sem_t* sem)
+int ev_sem_try_wait(ev_sem_t *sem)
 {
-    DWORD errcode;
-    if (!ReleaseSemaphore(sem->u.r, 1, NULL))
-    {
-        errcode = GetLastError();
-        EV_ABORT("GetLastError:%lu", errcode);
-    }
-}
-
-void ev_sem_wait(ev_sem_t* sem)
-{
-    DWORD errcode;
-    if (WaitForSingleObject(sem->u.r, INFINITE) != WAIT_OBJECT_0)
-    {
-        errcode = GetLastError();
-        EV_ABORT("GetLastError:%lu", errcode);
-    }
-}
-
-int ev_sem_try_wait(ev_sem_t* sem)
-{
-    DWORD ret = WaitForSingleObject(sem->u.r, 0);
+    DWORD ret = WaitForSingleObject(sem->r, 0);
 
     if (ret == WAIT_OBJECT_0)
     {
@@ -6225,7 +6256,7 @@ int ev_sem_try_wait(ev_sem_t* sem)
     EV_ABORT("ret:%lu, GetLastError:%lu", ret, errcode);
 }
 
-// #line 46 "ev.c"
+// #line 47 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/shdlib_win.c
 // SIZE:    1764
@@ -6303,7 +6334,7 @@ int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr)
     return 0;
 }
 
-// #line 47 "ev.c"
+// #line 48 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/shmem_win.c
 // SIZE:    1854
@@ -6389,7 +6420,7 @@ void ev_shm_exit(ev_shm_t* shm)
     }
 }
 
-// #line 48 "ev.c"
+// #line 49 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/tcp_win.c
 // SIZE:    23772
@@ -7288,7 +7319,7 @@ EV_LOCAL int ev__tcp_open_win(ev_tcp_t *tcp, SOCKET fd)
     return 0;
 }
 
-// #line 49 "ev.c"
+// #line 50 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/thread_win.c
 // SIZE:    4117
@@ -7477,7 +7508,7 @@ void* ev_tls_get(ev_tls_t* tls)
     return val;
 }
 
-// #line 50 "ev.c"
+// #line 51 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/threadpool_win.c
 // SIZE:    545
@@ -7509,7 +7540,7 @@ EV_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop)
     (void)loop;
 }
 
-// #line 51 "ev.c"
+// #line 52 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/time_win.c
 // SIZE:    1385
@@ -7574,7 +7605,7 @@ uint64_t ev_hrtime(void)
     return _ev_hrtime_win(EV__NANOSEC);
 #undef EV__NANOSEC
 }
-// #line 52 "ev.c"
+// #line 53 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/udp_win.c
 // SIZE:    24654
@@ -8538,7 +8569,7 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
     return 0;
 }
 
-// #line 53 "ev.c"
+// #line 54 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/winapi.c
 // SIZE:    594
@@ -8572,7 +8603,7 @@ EV_LOCAL void ev__winapi_init(void)
 #undef GET_NTDLL_FUNC
 }
 
-// #line 54 "ev.c"
+// #line 55 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/winsock.c
 // SIZE:    9169
@@ -8958,7 +8989,7 @@ EV_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status)
     }
 }
 
-// #line 55 "ev.c"
+// #line 56 "ev.c"
 
 #else
 
@@ -8997,7 +9028,7 @@ EV_LOCAL void ev__async_pend(int rfd);
 #endif
 #endif
 
-// #line 59 "ev.c"
+// #line 60 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/io_unix.h
 // SIZE:    2857
@@ -9112,7 +9143,7 @@ EV_LOCAL int ev__send_unix(int fd, ev_write_t* req,
 #endif
 #endif
 
-// #line 60 "ev.c"
+// #line 61 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/process_unix.h
 // SIZE:    417
@@ -9141,7 +9172,30 @@ EV_LOCAL void ev__init_process_unix(void);
 #endif
 #endif
 
-// #line 61 "ev.c"
+// #line 62 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/sem_unix.h
+// SIZE:    160
+// SHA-256: 207c580c2c20afe6e57c4ce8a8294252681fd1860ce7ac544b9432711cf3695a
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/sem_unix.h"
+#ifndef EV_SEM_UNIX_H
+#define EV_SEM_UNIX_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+struct ev_sem_s
+{
+    ev_os_sem_t r;
+};
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 63 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/tcp_unix.h
 // SIZE:    2129
@@ -9223,7 +9277,7 @@ EV_LOCAL int ev__tcp_open(ev_tcp_t *tcp, int fd);
 #endif
 #endif
 
-// #line 62 "ev.c"
+// #line 64 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/loop_unix.h
 // SIZE:    568
@@ -9258,7 +9312,7 @@ EV_LOCAL void ev__init_once_unix(void);
 #endif
 #endif
 
-// #line 63 "ev.c"
+// #line 65 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/stream_unix.h
 // SIZE:    1796
@@ -9331,7 +9385,7 @@ EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned
 #endif
 #endif
 
-// #line 64 "ev.c"
+// #line 66 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/work.h
 // SIZE:    231
@@ -9353,7 +9407,7 @@ EV_LOCAL void ev__exit_work(ev_loop_t* loop);
 #endif
 #endif
 
-// #line 65 "ev.c"
+// #line 67 "ev.c"
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/async_unix.c
@@ -9545,7 +9599,7 @@ void ev_async_wakeup(ev_async_t *handle)
     ev__async_post(handle->backend.pipfd[1]);
 }
 
-// #line 67 "ev.c"
+// #line 69 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/fs_unix.c
 // SIZE:    11029
@@ -9962,7 +10016,7 @@ void ev_file_munmap(ev_file_map_t* view)
     view->size = 0;
 }
 
-// #line 68 "ev.c"
+// #line 70 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/io_unix.c
 // SIZE:    8754
@@ -10397,7 +10451,7 @@ EV_LOCAL int ev__send_unix(int fd, ev_write_t* req,
     return _ev_io_finalize_send_req_unix(req, (size_t)write_size);
 }
 
-// #line 69 "ev.c"
+// #line 71 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/loop_unix.c
 // SIZE:    4177
@@ -10577,7 +10631,7 @@ EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
     }
 }
 
-// #line 70 "ev.c"
+// #line 72 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/misc_unix.c
 // SIZE:    290
@@ -10602,7 +10656,7 @@ size_t ev_os_mmap_offset_granularity(void)
     return ev_os_page_size();
 }
 
-// #line 71 "ev.c"
+// #line 73 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/misc_random_unix.c
 // SIZE:    7547
@@ -10964,7 +11018,7 @@ EV_LOCAL int ev__random(void* buf, size_t len)
 
 #endif
 
-// #line 72 "ev.c"
+// #line 74 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/mutex_unix.c
 // SIZE:    1802
@@ -11081,7 +11135,7 @@ int ev_mutex_try_enter(ev_mutex_t* handle)
     return EV_EBUSY;
 }
 
-// #line 73 "ev.c"
+// #line 75 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/once_unix.c
 // SIZE:    157
@@ -11098,11 +11152,11 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
     }
 }
 
-// #line 74 "ev.c"
+// #line 76 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/pipe_unix.c
-// SIZE:    27150
-// SHA-256: f2af1d59aca28df700ab52daf931921f6325b4feb88366da5dafe1e715ed0784
+// SIZE:    27171
+// SHA-256: a9b15c67084d259e78d7fcdbe6e78cae9ae2d2ab4816c8e22a806ce2f4fd25a0
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/unix/pipe_unix.c"
 #define _GNU_SOURCE
@@ -11170,6 +11224,7 @@ static void _ev_pipe_w_user_callback_unix(ev_pipe_t           *pipe,
     _ev_pipe_smart_deactive(pipe);
     ev__write_exit(&req->base);
     req->ucb(pipe, size, req->ucb_arg);
+    ev_free(req);
 }
 
 static void _ev_pipe_r_user_callback_unix(ev_pipe_t          *pipe,
@@ -11999,7 +12054,7 @@ int ev_pipe_write_ex(ev_pipe_t *pipe, ev_buf_t *bufs, size_t nbuf,
         return EV_EBADF;
     }
 
-    ev_pipe_write_req_t *req = malloc(sizeof(ev_pipe_write_req_t));
+    ev_pipe_write_req_t *req = ev_malloc(sizeof(ev_pipe_write_req_t));
     if (req == NULL)
     {
         return EV_ENOMEM;
@@ -12100,7 +12155,7 @@ void ev_pipe_close(ev_os_pipe_t fd)
     }
 }
 
-// #line 75 "ev.c"
+// #line 77 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/process_unix.c
 // SIZE:    16440
@@ -12820,44 +12875,54 @@ error:
     return errcode;
 }
 
-// #line 76 "ev.c"
+// #line 78 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/sem_unix.c
-// SIZE:    782
-// SHA-256: 73e0c3a42e346fb929e6d6733e67c7f5840337f9830d521ef1e573c505e72cdf
+// SIZE:    928
+// SHA-256: eb5a19f27e1e299755304c903451b91bb8fb1f75ed27cfe7a30cd4d8196c93f3
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/unix/sem_unix.c"
 
-void ev_sem_init(ev_sem_t* sem, unsigned value)
+void ev_sem_init(ev_sem_t **sem, unsigned value)
 {
-    if (sem_init(&sem->u.r, 0, value))
+    ev_sem_t *new_sem = ev_malloc(sizeof(ev_sem_t));
+    if (new_sem == NULL)
+    {
+        EV_ABORT();
+    }
+
+    if (sem_init(&new_sem->r, 0, value))
+    {
+        EV_ABORT();
+    }
+
+    *sem = new_sem;
+}
+
+void ev_sem_exit(ev_sem_t *sem)
+{
+    if (sem_destroy(&sem->r))
+    {
+        EV_ABORT();
+    }
+
+    ev_free(sem);
+}
+
+void ev_sem_post(ev_sem_t *sem)
+{
+    if (sem_post(&sem->r))
     {
         EV_ABORT();
     }
 }
 
-void ev_sem_exit(ev_sem_t* sem)
-{
-    if (sem_destroy(&sem->u.r))
-    {
-        EV_ABORT();
-    }
-}
-
-void ev_sem_post(ev_sem_t* sem)
-{
-    if (sem_post(&sem->u.r))
-    {
-        EV_ABORT();
-    }
-}
-
-void ev_sem_wait(ev_sem_t* sem)
+void ev_sem_wait(ev_sem_t *sem)
 {
     int r;
     do
     {
-        r = sem_wait(&sem->u.r);
+        r = sem_wait(&sem->r);
     } while (r == -1 && errno == EINTR);
 
     if (r)
@@ -12866,13 +12931,13 @@ void ev_sem_wait(ev_sem_t* sem)
     }
 }
 
-int ev_sem_try_wait(ev_sem_t* sem)
+int ev_sem_try_wait(ev_sem_t *sem)
 {
     int r;
 
     do
     {
-        r = sem_trywait(&sem->u.r);
+        r = sem_trywait(&sem->r);
     } while (r == -1 && errno == EINTR);
 
     if (r)
@@ -12887,7 +12952,7 @@ int ev_sem_try_wait(ev_sem_t* sem)
     return 0;
 }
 
-// #line 77 "ev.c"
+// #line 79 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/shdlib_unix.c
 // SIZE:    963
@@ -12950,7 +13015,7 @@ int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr)
     return EV_ENOENT;
 }
 
-// #line 78 "ev.c"
+// #line 80 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/shmem_unix.c
 // SIZE:    2334
@@ -13059,7 +13124,7 @@ void ev_shm_exit(ev_shm_t* shm)
     close(shm->backend.map_file);
 }
 
-// #line 79 "ev.c"
+// #line 81 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/stream_unix.c
 // SIZE:    6160
@@ -13307,7 +13372,7 @@ EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned
     }
 }
 
-// #line 80 "ev.c"
+// #line 82 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/tcp_unix.c
 // SIZE:    14926
@@ -13904,7 +13969,7 @@ EV_LOCAL int ev__tcp_open(ev_tcp_t *tcp, int fd)
     return 0;
 }
 
-// #line 81 "ev.c"
+// #line 83 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/thread_unix.c
 // SIZE:    3650
@@ -14094,7 +14159,7 @@ void* ev_tls_get(ev_tls_t* tls)
     return pthread_getspecific(tls->tls);
 }
 
-// #line 82 "ev.c"
+// #line 84 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/threadpool_unix.c
 // SIZE:    942
@@ -14134,7 +14199,7 @@ EV_LOCAL void ev__exit_work(ev_loop_t* loop)
     loop->backend.threadpool.evtfd[1] = -1;
 }
 
-// #line 83 "ev.c"
+// #line 85 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/time_unix.c
 // SIZE:    284
@@ -14157,7 +14222,7 @@ uint64_t ev_hrtime(void)
     return t.tv_sec * (uint64_t) 1e9 + t.tv_nsec;
 }
 
-// #line 84 "ev.c"
+// #line 86 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/udp_unix.c
 // SIZE:    25305
@@ -15180,7 +15245,7 @@ int ev_udp_set_ttl(ev_udp_t *udp, int ttl)
     return _ev_udp_set_ttl_unix(udp, ttl, IP_TTL, IPV6_UNICAST_HOPS);
 }
 
-// #line 85 "ev.c"
+// #line 87 "ev.c"
 
 #endif
 
@@ -15207,7 +15272,7 @@ EV_LOCAL void ev__assertion_failure(const char* exp, const char* file, int line,
     abort();
 }
 
-// #line 89 "ev.c"
+// #line 91 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/allocator.c
 // SIZE:    1763
@@ -15299,7 +15364,7 @@ char* ev__strdup(const char* s)
     return memcpy(m, s, len);
 }
 
-// #line 90 "ev.c"
+// #line 92 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/atomic.c
 // SIZE:    5881
@@ -15620,7 +15685,7 @@ EV_LOCAL void ev__atomic_exit(void)
 
 #endif
 
-// #line 91 "ev.c"
+// #line 93 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/errno.c
 // SIZE:    438
@@ -15646,7 +15711,7 @@ const char* ev_strerror(int err)
 #undef EV_EXPAND_ERRMAP
 }
 
-// #line 92 "ev.c"
+// #line 94 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs.c
 // SIZE:    25615
@@ -16706,7 +16771,7 @@ finish:
     return _ev_fs_remove(path);
 }
 
-// #line 93 "ev.c"
+// #line 95 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/handle.c
 // SIZE:    3642
@@ -16857,7 +16922,7 @@ EV_LOCAL size_t ev__process_endgame(ev_loop_t* loop)
     return active_count;
 }
 
-// #line 94 "ev.c"
+// #line 96 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/list.c
 // SIZE:    3572
@@ -17047,7 +17112,7 @@ void ev_list_migrate(ev_list_t* dst, ev_list_t* src)
     src->size = 0;
 }
 
-// #line 95 "ev.c"
+// #line 97 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/log.c
 // SIZE:    1941
@@ -17143,7 +17208,7 @@ EV_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width)
 
 }
 
-// #line 96 "ev.c"
+// #line 98 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/loop.c
 // SIZE:    8738
@@ -17540,7 +17605,7 @@ void ev_loop_walk(ev_loop_t* loop, ev_walk_cb cb, void* arg)
     }
 }
 
-// #line 97 "ev.c"
+// #line 99 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/map.c
 // SIZE:    23122
@@ -18320,7 +18385,7 @@ ev_map_node_t* ev_map_prev(const ev_map_node_t* node)
     return _ev_map_low_prev(node);
 }
 
-// #line 98 "ev.c"
+// #line 100 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/misc.c
 // SIZE:    4647
@@ -18534,7 +18599,7 @@ EV_API int ev_random(ev_loop_t* loop, ev_random_req_t* req, void* buf,
     return ev_loop_queue_work(loop, &req->work, _ev_random_on_work, _ev_random_on_done);
 }
 
-// #line 99 "ev.c"
+// #line 101 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/pipe.c
 // SIZE:    1714
@@ -18605,7 +18670,7 @@ EV_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t *req,
     return 0;
 }
 
-// #line 100 "ev.c"
+// #line 102 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/queue.c
 // SIZE:    1816
@@ -18688,7 +18753,7 @@ int ev_queue_empty(const ev_queue_node_t* node)
     return EV_QUEUE_NEXT(node) == node;
 }
 
-// #line 101 "ev.c"
+// #line 103 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/ringbuffer.c
 // SIZE:    17440
@@ -19243,7 +19308,7 @@ EV_LOCAL ring_buffer_token_t* ring_buffer_next(const ring_buffer_t* handler, con
     return &(node->token);
 }
 
-// #line 102 "ev.c"
+// #line 104 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/shmem.c
 // SIZE:    121
@@ -19261,11 +19326,11 @@ size_t ev_shm_size(ev_shm_t* shm)
     return shm->size;
 }
 
-// #line 103 "ev.c"
+// #line 105 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/threadpool.c
-// SIZE:    8840
-// SHA-256: 91e30f77c23e61c34331cc3efa5a2288b46f35a742597452b3caf444778b1129
+// SIZE:    9237
+// SHA-256: 85cfc0d1b7bdc1f9963e3c71cb009ebc87f53191973ba8928dcf56454b9c4038
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/threadpool.c"
 #include <assert.h>
@@ -19281,7 +19346,8 @@ static ev_threadpool_default_t s_default_threadpool;
 static void _ev_threadpool_on_init_default(void)
 {
     int ret = ev_threadpool_init(&s_default_threadpool.pool, NULL,
-        s_default_threadpool.storage, ARRAY_SIZE(s_default_threadpool.storage));
+                                 s_default_threadpool.storage,
+                                 ARRAY_SIZE(s_default_threadpool.storage));
     if (ret != 0)
     {
         EV_ABORT("%s(%d)", ev_strerror(ret), ret);
@@ -19294,9 +19360,9 @@ static void _ev_threadpool_init_default(void)
     ev_once_execute(&token, _ev_threadpool_on_init_default);
 }
 
-static void _ev_threadpool_on_loop(ev_handle_t* handle)
+static void _ev_threadpool_on_loop(ev_handle_t *handle)
 {
-    ev_work_t* work = EV_CONTAINER_OF(handle, ev_work_t, base);
+    ev_work_t *work = EV_CONTAINER_OF(handle, ev_work_t, base);
 
     ev__handle_deactive(&work->base);
     ev__handle_exit(&work->base, NULL);
@@ -19304,24 +19370,25 @@ static void _ev_threadpool_on_loop(ev_handle_t* handle)
     work->data.done_cb(work, work->data.status);
 }
 
-static void _ev_threadpool_submit_to_loop(ev_work_t* work)
+static void _ev_threadpool_submit_to_loop(ev_work_t *work)
 {
-    ev_loop_t* loop = work->base.loop;
+    ev_loop_t *loop = work->base.loop;
 
     work->base.backlog.cb = _ev_threadpool_on_loop;
     ev_mutex_enter(&loop->threadpool.mutex);
     {
-        ev_list_push_back(&loop->threadpool.work_queue, &work->base.backlog.node);
+        ev_list_push_back(&loop->threadpool.work_queue,
+                          &work->base.backlog.node);
     }
     ev_mutex_leave(&loop->threadpool.mutex);
 
     ev__threadpool_wakeup(loop);
 }
 
-static ev_work_t* _ev_threadpool_get_work_locked(ev_threadpool_t* pool)
+static ev_work_t *_ev_threadpool_get_work_locked(ev_threadpool_t *pool)
 {
-    ev_queue_node_t* it;
-    size_t i;
+    ev_queue_node_t *it;
+    size_t           i;
 
     ev_mutex_enter(&pool->mutex);
     for (i = 0; i < ARRAY_SIZE(pool->work_queue); i++)
@@ -19343,15 +19410,15 @@ static ev_work_t* _ev_threadpool_get_work_locked(ev_threadpool_t* pool)
     return EV_CONTAINER_OF(it, ev_work_t, node);
 }
 
-static void _ev_threadpool_commit(ev_work_t* work, int status)
+static void _ev_threadpool_commit(ev_work_t *work, int status)
 {
     work->data.status = status;
     _ev_threadpool_submit_to_loop(work);
 }
 
-static void _ev_threadpool_do_work(ev_threadpool_t* pool)
+static void _ev_threadpool_do_work(ev_threadpool_t *pool)
 {
-    ev_work_t* work = _ev_threadpool_get_work_locked(pool);
+    ev_work_t *work = _ev_threadpool_get_work_locked(pool);
     if (work == NULL)
     {
         return;
@@ -19363,38 +19430,39 @@ static void _ev_threadpool_do_work(ev_threadpool_t* pool)
     _ev_threadpool_commit(work, 0);
 }
 
-static void _ev_threadpool_cleanup(ev_threadpool_t* pool)
+static void _ev_threadpool_cleanup(ev_threadpool_t *pool)
 {
-    ev_work_t* work;
+    ev_work_t *work;
     while ((work = _ev_threadpool_get_work_locked(pool)) != NULL)
     {
         _ev_threadpool_commit(work, EV_ECANCELED);
     }
 }
 
-static void _ev_threadpool_worker(void* arg)
+static void _ev_threadpool_worker(void *arg)
 {
-    ev_threadpool_t* pool = arg;
+    ev_threadpool_t *pool = arg;
 
     while (pool->looping)
     {
-        ev_sem_wait(&pool->p2w_sem);
+        ev_sem_wait(pool->p2w_sem);
         _ev_threadpool_do_work(pool);
     }
     _ev_threadpool_cleanup(pool);
 }
 
-static void _cancel_work_queue_for_loop(ev_threadpool_t* pool,
-        ev_queue_node_t* wqueue, ev_loop_t* loop)
+static void _cancel_work_queue_for_loop(ev_threadpool_t *pool,
+                                        ev_queue_node_t *wqueue,
+                                        ev_loop_t       *loop)
 {
-    ev_queue_node_t* it;
+    ev_queue_node_t *it;
 
     ev_mutex_enter(&pool->mutex);
     {
         it = ev_queue_head(wqueue);
         while (it != NULL)
         {
-            ev_work_t* work = EV_CONTAINER_OF(it, ev_work_t, node);
+            ev_work_t *work = EV_CONTAINER_OF(it, ev_work_t, node);
             it = ev_queue_next(wqueue, it);
 
             if (work->base.loop != loop)
@@ -19408,10 +19476,10 @@ static void _cancel_work_queue_for_loop(ev_threadpool_t* pool,
     ev_mutex_leave(&pool->mutex);
 }
 
-int ev_threadpool_init(ev_threadpool_t* pool, const ev_thread_opt_t* opt,
-    ev_os_thread_t* storage, size_t num)
+int ev_threadpool_init(ev_threadpool_t *pool, const ev_thread_opt_t *opt,
+                       ev_os_thread_t *storage, size_t num)
 {
-    int ret;
+    int    ret;
     size_t i, idx;
 
     for (i = 0; i < ARRAY_SIZE(pool->work_queue); i++)
@@ -19442,14 +19510,14 @@ err_release_thread:
     {
         ev_thread_exit(&storage[i], EV_INFINITE_TIMEOUT);
     }
-    ev_sem_exit(&pool->p2w_sem);
+    ev_sem_exit(pool->p2w_sem);
     ev_mutex_exit(&pool->mutex);
     return ret;
 }
 
-int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
-    ev_work_t* work, ev_work_type_t type,
-    ev_work_cb work_cb, ev_work_done_cb done_cb)
+int ev_threadpool_submit(ev_threadpool_t *pool, ev_loop_t *loop,
+                         ev_work_t *work, ev_work_type_t type,
+                         ev_work_cb work_cb, ev_work_done_cb done_cb)
 {
     if (!pool->looping)
     {
@@ -19470,14 +19538,14 @@ int ev_threadpool_submit(ev_threadpool_t* pool, ev_loop_t* loop,
     }
     ev_mutex_leave(&pool->mutex);
 
-    ev_sem_post(&pool->p2w_sem);
+    ev_sem_post(pool->p2w_sem);
 
     return 0;
 }
 
-int ev_loop_cancel(ev_work_t* work)
+int ev_loop_cancel(ev_work_t *work)
 {
-    ev_threadpool_t* pool = work->data.pool;
+    ev_threadpool_t *pool = work->data.pool;
 
     int cancelled;
     ev_mutex_enter(&pool->mutex);
@@ -19500,18 +19568,19 @@ int ev_loop_cancel(ev_work_t* work)
     return 0;
 }
 
-static void _threadpool_cancel_work_queue(ev_threadpool_t* pool, ev_queue_node_t* wqueue)
+static void _threadpool_cancel_work_queue(ev_threadpool_t *pool,
+                                          ev_queue_node_t *wqueue)
 {
     (void)pool;
-    ev_queue_node_t* node;
+    ev_queue_node_t *node;
     while ((node = ev_queue_pop_front(wqueue)) != NULL)
     {
-        ev_work_t* work = EV_CONTAINER_OF(node, ev_work_t, node);
+        ev_work_t *work = EV_CONTAINER_OF(node, ev_work_t, node);
         _ev_threadpool_commit(work, EV_ECANCELED);
     }
 }
 
-static void _ev_threadpool_cancel_all(ev_threadpool_t* pool)
+static void _ev_threadpool_cancel_all(ev_threadpool_t *pool)
 {
     size_t i;
     for (i = 0; i < ARRAY_SIZE(pool->work_queue); i++)
@@ -19520,16 +19589,16 @@ static void _ev_threadpool_cancel_all(ev_threadpool_t* pool)
     }
 }
 
-void ev_threadpool_exit(ev_threadpool_t* pool)
+void ev_threadpool_exit(ev_threadpool_t *pool)
 {
     size_t i;
-    int errcode;
+    int    errcode;
 
     /* stop loop */
     pool->looping = 0;
     for (i = 0; i < pool->thrnum; i++)
     {
-        ev_sem_post(&pool->p2w_sem);
+        ev_sem_post(pool->p2w_sem);
     }
 
     /* exit thread */
@@ -19546,10 +19615,10 @@ void ev_threadpool_exit(ev_threadpool_t* pool)
     _ev_threadpool_cancel_all(pool);
 
     ev_mutex_exit(&pool->mutex);
-    ev_sem_exit(&pool->p2w_sem);
+    ev_sem_exit(pool->p2w_sem);
 }
 
-EV_LOCAL void ev__loop_link_to_default_threadpool(ev_loop_t* loop)
+EV_LOCAL void ev__loop_link_to_default_threadpool(ev_loop_t *loop)
 {
     _ev_threadpool_init_default();
     if (loop->threadpool.pool == NULL)
@@ -19558,17 +19627,16 @@ EV_LOCAL void ev__loop_link_to_default_threadpool(ev_loop_t* loop)
     }
 }
 
-EV_LOCAL int ev__loop_submit_threadpool(ev_loop_t* loop,
-    ev_work_t* work,
-    ev_work_type_t type, ev_work_cb work_cb,
-    ev_work_done_cb done_cb)
+EV_LOCAL int ev__loop_submit_threadpool(ev_loop_t *loop, ev_work_t *work,
+                                        ev_work_type_t type, ev_work_cb work_cb,
+                                        ev_work_done_cb done_cb)
 {
-    ev_threadpool_t* pool = loop->threadpool.pool;
+    ev_threadpool_t *pool = loop->threadpool.pool;
 
     return ev_threadpool_submit(pool, loop, work, type, work_cb, done_cb);
 }
 
-EV_LOCAL int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool)
+EV_LOCAL int ev_loop_link_threadpool(ev_loop_t *loop, ev_threadpool_t *pool)
 {
     if (loop->threadpool.pool != NULL)
     {
@@ -19586,10 +19654,10 @@ EV_LOCAL int ev_loop_link_threadpool(ev_loop_t* loop, ev_threadpool_t* pool)
     return 0;
 }
 
-int ev_loop_unlink_threadpool(ev_loop_t* loop)
+int ev_loop_unlink_threadpool(ev_loop_t *loop)
 {
-    size_t i;
-    ev_threadpool_t* pool = loop->threadpool.pool;
+    size_t           i;
+    ev_threadpool_t *pool = loop->threadpool.pool;
 
     /**
      * Cancel all pending task from target loop.
@@ -19621,16 +19689,16 @@ void ev_threadpool_default_cleanup(void)
     }
 }
 
-int ev_loop_queue_work(ev_loop_t* loop, ev_work_t* token,
-    ev_work_cb work_cb, ev_work_done_cb done_cb)
+int ev_loop_queue_work(ev_loop_t *loop, ev_work_t *token, ev_work_cb work_cb,
+                       ev_work_done_cb done_cb)
 {
     return ev_threadpool_submit(loop->threadpool.pool, loop, token,
-        EV_THREADPOOL_WORK_CPU, work_cb, done_cb);
+                                EV_THREADPOOL_WORK_CPU, work_cb, done_cb);
 }
 
-EV_LOCAL void ev__threadpool_process(ev_loop_t* loop)
+EV_LOCAL void ev__threadpool_process(ev_loop_t *loop)
 {
-    ev_list_node_t* node;
+    ev_list_node_t *node;
     for (;;)
     {
         ev_mutex_enter(&loop->threadpool.mutex);
@@ -19644,12 +19712,12 @@ EV_LOCAL void ev__threadpool_process(ev_loop_t* loop)
             break;
         }
 
-        ev_handle_t* handle = EV_CONTAINER_OF(node, ev_handle_t, backlog.node);
+        ev_handle_t *handle = EV_CONTAINER_OF(node, ev_handle_t, backlog.node);
         handle->backlog.cb(handle);
     }
 }
 
-// #line 104 "ev.c"
+// #line 106 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/timer.c
 // SIZE:    2469
@@ -19764,7 +19832,7 @@ void ev_timer_stop(ev_timer_t* handle)
     ev_map_erase(&handle->base.loop->timer.heap, &handle->node);
 }
 
-// #line 105 "ev.c"
+// #line 107 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/udp.c
 // SIZE:    3071
@@ -19898,7 +19966,7 @@ err:
     return ret;
 }
 
-// #line 106 "ev.c"
+// #line 108 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.c
 // SIZE:    303
@@ -19922,5 +19990,5 @@ unsigned ev_version_code(void)
     return EV_VERSION_CODE;
 }
 
-// #line 107 "ev.c"
+// #line 109 "ev.c"
 

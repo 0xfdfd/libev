@@ -63,6 +63,7 @@ static void _ev_pipe_w_user_callback_unix(ev_pipe_t           *pipe,
     _ev_pipe_smart_deactive(pipe);
     ev__write_exit(&req->base);
     req->ucb(pipe, size, req->ucb_arg);
+    ev_free(req);
 }
 
 static void _ev_pipe_r_user_callback_unix(ev_pipe_t          *pipe,
@@ -892,7 +893,7 @@ int ev_pipe_write_ex(ev_pipe_t *pipe, ev_buf_t *bufs, size_t nbuf,
         return EV_EBADF;
     }
 
-    ev_pipe_write_req_t *req = malloc(sizeof(ev_pipe_write_req_t));
+    ev_pipe_write_req_t *req = ev_malloc(sizeof(ev_pipe_write_req_t));
     if (req == NULL)
     {
         return EV_ENOMEM;

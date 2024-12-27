@@ -12,22 +12,14 @@ extern "C" {
 /**
  * @brief Semaphore handle type.
  */
-typedef struct ev_sem_s
-{
-    union
-    {
-        int         i;
-        ev_os_sem_t r;
-    }u;
-}ev_sem_t;
-#define EV_SEM_INVALID { { 0 } }
+typedef struct ev_sem_s ev_sem_t;
 
 /**
  * @brief Initializes the unnamed semaphore at the address pointed to by \p sem.
  * @param[out] sem      Semaphore to be initialized.
  * @param[in] value     Initial value
  */
-EV_API void ev_sem_init(ev_sem_t* sem, unsigned value);
+EV_API void ev_sem_init(ev_sem_t** sem, unsigned value);
 
 /**
  * @brief Destroy the unnamed semaphore at the address pointed to by \p sem.
