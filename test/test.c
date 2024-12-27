@@ -41,7 +41,11 @@ static void _before_all_test(int argc, char* argv[])
 {
     test_config_setup(argc, argv);
 
+#if defined(TEST_NO_MMC)
+    mmc_init(0);
+#else
     mmc_init(!test_config.config.pure_malloc);
+#endif
 
     register_types();
 
@@ -111,8 +115,6 @@ cutest_hook_t test_hook = {
     NULL,                       /* .before_test */
     NULL,                       /* .after_test */
 };
-
-ev_loop_t empty_loop = EV_LOOP_INVALID;
 
 static void _test_proxy(void* arg)
 {

@@ -79,9 +79,13 @@ err:
 static void _ev_udp_on_close_win(ev_handle_t* handle)
 {
     ev_udp_t* udp = EV_CONTAINER_OF(handle, ev_udp_t, base);
-    if (udp->close_cb != NULL)
+    ev_udp_cb close_cb = udp->close_cb;
+    void     *close_arg = udp->close_arg;
+
+    ev_free(udp);
+    if (close_cb != NULL)
     {
-        udp->close_cb(udp);
+        close_cb(udp, close_arg);
     }
 }
 
@@ -335,7 +339,8 @@ static void _ev_udp_w_user_callback_win(ev_udp_write_t* req, ssize_t size)
     ev__write_exit(&req->base);
     ev__handle_exit(&req->handle, NULL);
 
-    req->usr_cb(req, size);
+    req->usr_cb(udp, size, req->usr_cb_arg);
+    ev_free(req);
 }
 
 static void _ev_udp_r_user_callback_win(ev_udp_read_t* req, const struct sockaddr* addr, ssize_t size)
@@ -346,7 +351,8 @@ static void _ev_udp_r_user_callback_win(ev_udp_read_t* req, const struct sockadd
     ev__read_exit(&req->base);
     ev__handle_exit(&req->handle, NULL);
 
-    req->usr_cb(req, addr, size);
+    req->usr_cb(udp, addr, size, req->usr_cb_arg);
+    ev_free(req);
 }
 
 static void _ev_udp_on_send_complete_win(ev_udp_t* udp, ev_udp_write_t* req)
@@ -570,34 +576,43 @@ EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
     return ev__translate_sys_error(err);
 }
 
-int ev_udp_init(ev_loop_t* loop, ev_udp_t* udp, int domain)
+int ev_udp_init(ev_loop_t* loop, ev_udp_t** udp, int domain)
 {
     int err;
+    ev_udp_t *new_udp = ev_malloc(sizeof(ev_udp_t));
+    if (new_udp == NULL)
+    {
+        return EV_ENOMEM;
+    }
 
-    udp->sock = EV_OS_SOCKET_INVALID;
-    udp->close_cb = NULL;
-    ev_list_init(&udp->send_list);
-    ev_list_init(&udp->recv_list);
-    ev__handle_init(loop, &udp->base, EV_ROLE_EV_UDP);
+    new_udp->sock = EV_OS_SOCKET_INVALID;
+    new_udp->close_cb = NULL;
+    new_udp->close_arg = NULL;
+    ev_list_init(&new_udp->send_list);
+    ev_list_init(&new_udp->recv_list);
+    ev__handle_init(loop, &new_udp->base, EV_ROLE_EV_UDP);
 
-    udp->backend.fn_wsarecv = WSARecv;
-    udp->backend.fn_wsarecvfrom = WSARecvFrom;
+    new_udp->backend.fn_wsarecv = WSARecv;
+    new_udp->backend.fn_wsarecvfrom = WSARecvFrom;
 
     if (domain != AF_UNSPEC)
     {
-        if ((err = _ev_udp_maybe_deferred_socket_win(udp, domain)) != 0)
+        if ((err = _ev_udp_maybe_deferred_socket_win(new_udp, domain)) != 0)
         {
-            ev__handle_exit(&udp->base, NULL);
+            ev__handle_exit(&new_udp->base, NULL);
+            ev_free(new_udp);
             return err;
         }
     }
 
+    *udp = new_udp;
     return 0;
 }
 
-void ev_udp_exit(ev_udp_t* udp, ev_udp_cb close_cb)
+void ev_udp_exit(ev_udp_t *udp, ev_udp_cb close_cb, void *close_arg)
 {
     udp->close_cb = close_cb;
+    udp->close_arg = close_arg;
 
     _ev_udp_close_socket_win(udp);
     ev__handle_exit(&udp->base, _ev_udp_on_close_win);

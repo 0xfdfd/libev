@@ -322,29 +322,6 @@ struct ev_nonblock_stream
     }
 
 /**
- * @brief Unix backend for #ev_tcp_t.
- */
-#define EV_TCP_BACKEND    \
-    struct ev_tcp_backend {\
-        union {\
-            struct {\
-                ev_nonblock_io_t            io;                 /**< IO object */\
-                ev_list_t                   accept_queue;       /**< Accept queue */\
-            }listen;\
-            struct {\
-                ev_tcp_accept_cb            cb;                 /**< Accept callback */\
-                ev_list_node_t              accept_node;        /**< Accept queue node */\
-            }accept;\
-            ev_nonblock_stream_t            stream;             /**< IO component */\
-            struct {\
-                ev_nonblock_io_t            io;                 /**< IO object */\
-                ev_tcp_connect_cb           cb;                 /**< Connect callback */\
-                int                         stat;               /**< Connect result */\
-            }client;\
-        }u;\
-    }
-
-/**
  * @brief Initialize #EV_TCP_BACKEND to Unix specific invalid value.
  */
 #define EV_TCP_BACKEND_INIT         { { { EV_NONBLOCK_IO_INVALID, EV_LIST_INIT } } }
@@ -378,7 +355,6 @@ struct ev_nonblock_stream
  */
 #define EV_PIPE_BACKEND \
     union ev_pipe_backend {\
-        int                                 _useless;           /**< For static initializer */\
         struct {\
             ev_nonblock_stream_t            stream;             /**< Stream */\
         }data_mode;\

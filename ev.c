@@ -308,8 +308,8 @@ EV_LOCAL void ev__assertion_failure(const char* exp, const char* file, int line,
 // #line 8 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/async_internal.h
-// SIZE:    300
-// SHA-256: cd08764945ac0830a5a6ca2ef782e94b400aaca74b41513f0222906a490d4a47
+// SIZE:    657
+// SHA-256: 9e8f86f5b191bbc637a6bc61995673e4f813fd5c329873e4c84ee9dc653edc78
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/async_internal.h"
 #ifndef __EV_ASYNC_INTERNAL_H__
@@ -318,11 +318,21 @@ EV_LOCAL void ev__assertion_failure(const char* exp, const char* file, int line,
 extern "C" {
 #endif
 
+struct ev_async
+{
+    ev_handle_t      base;         /**< Base object */
+    ev_async_cb      activate_cb;  /**< Activate callback */
+    void            *activate_arg; /**< Activate argument. */
+    ev_async_cb      close_cb;     /**< Close callback */
+    void*            close_arg;
+    EV_ASYNC_BACKEND backend;      /**< Platform related fields */
+};
+
 /**
  * @brief Force destroy #ev_async_t.
  * @param[in] handle    A initialized #ev_async_t handler.
  */
-EV_LOCAL void ev__async_exit_force(ev_async_t* handle);
+EV_LOCAL void ev__async_exit_force(ev_async_t *handle);
 
 #ifdef __cplusplus
 }
@@ -474,8 +484,8 @@ EV_LOCAL size_t ev__process_endgame(ev_loop_t* loop);
 // #line 11 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/loop_internal.h
-// SIZE:    2644
-// SHA-256: 4168b8edcf40936745a0fa830d55726a2c43d6710208db65af588148fe7b52bc
+// SIZE:    3690
+// SHA-256: 5ae66af7652950394df5c1b9b7c185e47ee9054d8aa2be25e585d8c34072fee4
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/loop_internal.h"
 #ifndef __EV_LOOP_INTERNAL_H__
@@ -487,14 +497,55 @@ extern "C" {
 typedef enum ev_ipc_frame_flag
 {
     EV_IPC_FRAME_FLAG_INFORMATION = 1,
-}ev_ipc_frame_flag_t;
+} ev_ipc_frame_flag_t;
+
+/**
+ * @brief Event loop type.
+ */
+struct ev_loop
+{
+    uint64_t hwtime; /**< A fast clock time in milliseconds */
+
+    struct
+    {
+        ev_list_t idle_list;   /**< (#ev_handle::node) All idle handles */
+        ev_list_t active_list; /**< (#ev_handle::node) All active handles */
+    } handles;                 /**< table for handles */
+
+    ev_list_t backlog_queue; /**< Backlog queue */
+    ev_list_t endgame_queue; /**< Close queue */
+
+    /**
+     * @brief Timer context
+     */
+    struct
+    {
+        ev_map_t heap; /**< #ev_timer_t::node. Timer heap */
+    } timer;
+
+    struct
+    {
+        struct ev_threadpool *pool; /**< Thread pool */
+        ev_list_node_t node; /**< node for #ev_threadpool_t::loop_table */
+
+        ev_mutex_t mutex;      /**< Work queue lock */
+        ev_list_t  work_queue; /**< Work queue */
+    } threadpool;
+
+    struct
+    {
+        unsigned b_stop : 1; /**< Flag: need to stop */
+    } mask;
+
+    EV_LOOP_BACKEND backend; /**< Platform related implementation */
+};
 
 /**
  * @brief Get event loop for the handle.
  * @param[in] handle    handler
  * @return              Event loop
  */
-EV_LOCAL ev_loop_t* ev__handle_loop(ev_handle_t* handle);
+EV_LOCAL ev_loop_t *ev__handle_loop(ev_handle_t *handle);
 
 /**
  * @brief Check IPC frame header
@@ -502,7 +553,7 @@ EV_LOCAL ev_loop_t* ev__handle_loop(ev_handle_t* handle);
  * @param[in] size      Buffer size
  * @return              bool
  */
-EV_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size);
+EV_LOCAL int ev__ipc_check_frame_hdr(const void *buffer, size_t size);
 
 /**
  * @brief Initialize IPC frame header
@@ -511,21 +562,21 @@ EV_LOCAL int ev__ipc_check_frame_hdr(const void* buffer, size_t size);
  * @param[in] exsz      Extra information size
  * @param[in] dtsz      Data size
  */
-EV_LOCAL void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t* hdr,
-    uint8_t flags, uint16_t exsz, uint32_t dtsz);
+EV_LOCAL void ev__ipc_init_frame_hdr(ev_ipc_frame_hdr_t *hdr, uint8_t flags,
+                                     uint16_t exsz, uint32_t dtsz);
 
 /**
  * @brief Update loop time
  * @param[in] loop  loop handler
  */
-EV_LOCAL void ev__loop_update_time(ev_loop_t* loop);
+EV_LOCAL void ev__loop_update_time(ev_loop_t *loop);
 
 /**
  * @brief Get minimal length of specific \p addr type.
  * @param[in] addr  A valid sockaddr buffer
  * @return          A valid minimal length, or (socklen_t)-1 if error.
  */
-EV_LOCAL socklen_t ev__get_addr_len(const struct sockaddr* addr);
+EV_LOCAL socklen_t ev__get_addr_len(const struct sockaddr *addr);
 
 /**
  * @brief Initialize #ev_write_t
@@ -534,13 +585,13 @@ EV_LOCAL socklen_t ev__get_addr_len(const struct sockaddr* addr);
  * @param[in] nbuf  Buffer list size, can not larger than #EV_IOV_MAX.
  * @return          #ev_errno_t
  */
-EV_LOCAL int ev__write_init(ev_write_t* req, ev_buf_t* bufs, size_t nbuf);
+EV_LOCAL int ev__write_init(ev_write_t *req, ev_buf_t *bufs, size_t nbuf);
 
 /**
  * @brief Cleanup write request
  * @param[in] req   Write request
  */
-EV_LOCAL void ev__write_exit(ev_write_t* req);
+EV_LOCAL void ev__write_exit(ev_write_t *req);
 
 /**
  * @brief Initialize #ev_read_t
@@ -549,33 +600,33 @@ EV_LOCAL void ev__write_exit(ev_write_t* req);
  * @param[in] nbuf  Buffer list size, can not larger than #EV_IOV_MAX.
  * @return          #ev_errno_t
  */
-EV_LOCAL int ev__read_init(ev_read_t* req, ev_buf_t* bufs, size_t nbuf);
+EV_LOCAL int ev__read_init(ev_read_t *req, ev_buf_t *bufs, size_t nbuf);
 
 /**
  * @brief Cleanup read request
  * @param[in] req   read request
  */
-EV_LOCAL void ev__read_exit(ev_read_t* req);
+EV_LOCAL void ev__read_exit(ev_read_t *req);
 
 /**
  * @brief Initialize backend
  * @param[in] loop      loop handler
  * @return              #ev_errno_t
  */
-EV_LOCAL int ev__loop_init_backend(ev_loop_t* loop);
+EV_LOCAL int ev__loop_init_backend(ev_loop_t *loop);
 
 /**
  * @brief Destroy backend
  * @param[in] loop  loop handler
  */
-EV_LOCAL void ev__loop_exit_backend(ev_loop_t* loop);
+EV_LOCAL void ev__loop_exit_backend(ev_loop_t *loop);
 
 /**
  * @brief Wait for IO event and process
  * @param[in] loop  loop handler
  * @param[in] timeout   timeout in milliseconds
  */
-EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout);
+EV_LOCAL void ev__poll(ev_loop_t *loop, uint32_t timeout);
 
 #ifdef __cplusplus
 }
@@ -755,8 +806,8 @@ EV_LOCAL int ev__random(void* buf, size_t len);
 // #line 14 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/pipe_internal.h
-// SIZE:    2343
-// SHA-256: 2af7aac76918f9f6c0bb5cd2869ad2564d6a5d6cdfccbb1b90aa64a0c0368944
+// SIZE:    3341
+// SHA-256: 667e85a7dfe0d5005204802b13581dea97d718d58eaa23117b184787c2688fa3
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/pipe_internal.h"
 #ifndef __EV_PIPE_INTERNAL_H__
@@ -766,6 +817,33 @@ extern "C" {
 #endif
 
 /**
+ * @brief Write request token for pipe.
+ */
+typedef struct ev_pipe_write_req
+{
+    ev_write_t       base;    /**< Base object */
+    ev_pipe_write_cb ucb;     /**< User callback */
+    void            *ucb_arg; /**< User defined argument. */
+    struct
+    {
+        ev_role_t role; /**< The type of handle to send */
+        union {
+            ev_os_socket_t os_socket; /**< A EV handle instance */
+        } u;
+    } handle;
+    EV_PIPE_WRITE_BACKEND backend; /**< Backend */
+} ev_pipe_write_req_t;
+
+struct ev_pipe
+{
+    ev_handle_t     base;      /**< Base object */
+    ev_pipe_cb      close_cb;  /**< User close callback */
+    void           *close_arg; /**< Close argument. */
+    ev_os_pipe_t    pipfd;     /**< Pipe handle */
+    EV_PIPE_BACKEND backend;   /**< Platform related implementation */
+};
+
+/**
  * @brief Initialize #ev_pipe_read_req_t
  * @param[out] req  A read request to be initialized
  * @param[in] bufs  Buffer list
@@ -773,7 +851,8 @@ extern "C" {
  * @param[in] cb    Read complete callback
  * @return          #ev_errno_t
  */
-EV_LOCAL int ev__pipe_read_init(ev_pipe_read_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_pipe_read_cb cb);
+EV_LOCAL int ev__pipe_read_init(ev_pipe_read_req_t *req, ev_buf_t *bufs,
+                                size_t nbuf, ev_pipe_read_cb cb);
 
 /**
  * @brief Initialize #ev_pipe_write_req_t
@@ -781,9 +860,11 @@ EV_LOCAL int ev__pipe_read_init(ev_pipe_read_req_t* req, ev_buf_t* bufs, size_t 
  * @param[in] bufs  Buffer list
  * @param[in] nbuf  Buffer list size, can not larger than #EV_IOV_MAX.
  * @param[in] cb    Write complete callback
+ * @param[in] arg   User defined argument.
  * @return          #ev_errno_t
  */
-EV_LOCAL int ev__pipe_write_init(ev_pipe_write_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_pipe_write_cb cb);
+EV_LOCAL int ev__pipe_write_init(ev_pipe_write_req_t *req, ev_buf_t *bufs,
+                                 size_t nbuf, ev_pipe_write_cb cb, void* arg);
 
 /**
  * @brief Initialize #ev_pipe_write_req_t
@@ -793,28 +874,29 @@ EV_LOCAL int ev__pipe_write_init(ev_pipe_write_req_t* req, ev_buf_t* bufs, size_
  *
  *   + The value of \p nbuf is larger than #EV_IOV_MAX.<br>
  *     In this case you should pass \p iov_bufs as storage, the minimum value of
- *     \p iov_size can be calculated by #EV_IOV_BUF_SIZE(). \p take the ownership
- *     of \p iov_bufs, so you cannot modify or free \p iov_bufs until \p callback
- *     is called.
+ *     \p iov_size can be calculated by #EV_IOV_BUF_SIZE(). \p take the
+ * ownership of \p iov_bufs, so you cannot modify or free \p iov_bufs until \p
+ * callback is called.
  *
  *   + Need to transfer a handle to peer.<br>
- *     In this case you should set the type of handle via \p handle_role and pass
- *     the address of the handle via \p handle_addr. \p req does not take the ownership
- *     of the handle, but the handle should not be closed or destroy until \p callback
- *     is called.
+ *     In this case you should set the type of handle via \p handle_role and
+ * pass the address of the handle via \p handle_addr. \p req does not take the
+ * ownership of the handle, but the handle should not be closed or destroy until
+ * \p callback is called.
  *
  * @param[out] req          A write request to be initialized
- * @param[in] callback      Write complete callback
+ * @param[in] cb            Write complete callback
+ * @param[in] arg           User defined argument.
  * @param[in] bufs          Buffer list
  * @param[in] nbuf          Buffer list size
  * @param[in] handle_role   The type of handle to send
  * @param[in] handle_addr   The address of handle to send
- * @param[in] handle_size   The size of handle to send
  * @return                  #ev_errno_t
  */
-EV_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t* req, ev_pipe_write_cb callback,
-    ev_buf_t* bufs, size_t nbuf,
-    ev_role_t handle_role, void* handle_addr, size_t handle_size);
+EV_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t *req,
+                                     ev_pipe_write_cb cb, void *arg,
+                                     ev_buf_t *bufs, size_t nbuf,
+                                     ev_role_t handle_role, void *handle_addr);
 
 #ifdef __cplusplus
 }
@@ -1275,8 +1357,8 @@ EV_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width);
 // #line 19 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/udp_internal.h
-// SIZE:    1032
-// SHA-256: cdf70f8dc10ca90a1844b4af4495df657a8b92dcb421d8ea69d0157f4b1c1fab
+// SIZE:    2409
+// SHA-256: bb8ef03cf6461c6ce077c2155320f3cc910b5ab89e5555bb85afd7f62396a8c2
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/udp_internal.h"
 #ifndef __EV_UDP_INTERNAL_H__
@@ -1286,14 +1368,54 @@ extern "C" {
 #endif
 
 /**
+ * @brief Read request token for UDP socket.
+ */
+typedef struct ev_udp_read
+{
+    ev_handle_t             handle;     /**< Base object */
+    ev_read_t               base;       /**< Base request */
+    ev_udp_recv_cb          usr_cb;     /**< User callback */
+    void                   *usr_cb_arg; /**< User defined argument */
+    struct sockaddr_storage addr;       /**< Peer address */
+    EV_UDP_READ_BACKEND     backend;    /**< Backend */
+} ev_udp_read_t;
+
+/**
+ * @brief Write request token for UDP socket.
+ */
+typedef struct ev_udp_write
+{
+    ev_handle_t          handle;     /**< Base object */
+    ev_write_t           base;       /**< Base request */
+    ev_udp_write_cb      usr_cb;     /**< User callback */
+    void                *usr_cb_arg; /**< User defined argument */
+    EV_UDP_WRITE_BACKEND backend;    /**< Backend */
+} ev_udp_write_t;
+
+struct ev_udp
+{
+    ev_handle_t    base;      /**< Base object */
+    ev_udp_cb      close_cb;  /**< Close callback */
+    void          *close_arg; /**< User defined argument */
+    ev_os_socket_t sock;      /**< OS socket */
+
+    ev_list_t send_list; /**< Send queue */
+    ev_list_t recv_list; /**< Recv queue */
+
+    EV_UDP_BACKEND backend; /**< Platform related implementation */
+};
+
+/**
  * @brief Convert \p interface_addr to \p dst.
  * @param[out] dst              A buffer to store address.
  * @param[in] interface_addr    Interface address
- * @param[in] is_ipv6           Whether a IPv6 address. Only valid if \p interface_addr is NULL.
+ * @param[in] is_ipv6           Whether a IPv6 address. Only valid if \p
+ * interface_addr is NULL.
  * @return                      #ev_errno_t
  */
-EV_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
-        const char* interface_addr, int is_ipv6);
+EV_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage *dst,
+                                                const char *interface_addr,
+                                                int         is_ipv6);
 
 /**
  * @brief Queue a UDP receive request
@@ -1301,7 +1423,7 @@ EV_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
  * @param[in] req   Receive request
  * @return          #ev_errno_t
  */
-EV_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req);
+EV_LOCAL int ev__udp_recv(ev_udp_t *udp, ev_udp_read_t *req);
 
 /**
  * @brief Queue a UDP Send request
@@ -1309,8 +1431,8 @@ EV_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req);
  * @param[in] req   Send request
  * @return          #ev_errno_t
  */
-EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
-    const struct sockaddr* addr, socklen_t addrlen);
+EV_LOCAL int ev__udp_send(ev_udp_t *udp, ev_udp_write_t *req,
+                          const struct sockaddr *addr, socklen_t addrlen);
 
 #ifdef __cplusplus
 }
@@ -1318,6 +1440,13661 @@ EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
 #endif
 
 // #line 20 "ev.c"
+
+#if defined(_WIN32)
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/winapi.h
+// SIZE:    14830
+// SHA-256: 20fbc56305ae60bd2d38585915aa872c4e8870ec46d4093d680f7aa3d768cfaa
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/winapi.h"
+#ifndef __EV_WINAPI_INTERNAL_H__
+#define __EV_WINAPI_INTERNAL_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <windows.h>
+
+#ifndef _NTDEF_
+typedef _Return_type_success_(return >= 0)  LONG NTSTATUS;
+#endif
+
+#ifndef FACILITY_NTWIN32
+#   define FACILITY_NTWIN32                 0x7
+#endif
+
+#ifndef NT_SUCCESS
+#   define NT_SUCCESS(Status)               (((NTSTATUS)(Status)) >= 0)
+#endif
+
+#ifndef NT_INFORMATION
+# define NT_INFORMATION(status) ((((ULONG) (status)) >> 30) == 1)
+#endif
+
+#ifndef NT_WARNING
+# define NT_WARNING(status) ((((ULONG) (status)) >> 30) == 2)
+#endif
+
+#ifndef NT_ERROR
+#   define NT_ERROR(status) ((((ULONG) (status)) >> 30) == 3)
+#endif
+
+#ifndef STATUS_SUCCESS
+#   define STATUS_SUCCESS                   ((NTSTATUS)0x00000000L)
+#endif
+
+#ifndef STATUS_RECEIVE_PARTIAL
+#   define STATUS_RECEIVE_PARTIAL           ((NTSTATUS)0x4000000FL)
+#endif
+
+#ifndef STATUS_RECEIVE_EXPEDITED
+#   define STATUS_RECEIVE_EXPEDITED         ((NTSTATUS)0x40000010L)
+#endif
+
+#ifndef STATUS_RECEIVE_PARTIAL_EXPEDITED
+#   define STATUS_RECEIVE_PARTIAL_EXPEDITED ((NTSTATUS)0x40000011L)
+#endif
+
+#ifndef STATUS_BUFFER_OVERFLOW
+#   define STATUS_BUFFER_OVERFLOW           ((NTSTATUS)0x80000005L)
+#endif
+
+#ifndef STATUS_NOT_IMPLEMENTED
+#   define STATUS_NOT_IMPLEMENTED           ((NTSTATUS)0xC0000002L)
+#endif
+
+#ifndef STATUS_PAGEFILE_QUOTA
+#   define STATUS_PAGEFILE_QUOTA            ((NTSTATUS)0xC0000007L)
+#endif
+
+#ifndef STATUS_NO_SUCH_DEVICE
+#   define STATUS_NO_SUCH_DEVICE            ((NTSTATUS)0xC000000EL)
+#endif
+
+#ifndef STATUS_NO_SUCH_FILE
+#   define STATUS_NO_SUCH_FILE              ((NTSTATUS)0xC000000FL)
+#endif
+
+#ifndef STATUS_CONFLICTING_ADDRESSES
+#   define STATUS_CONFLICTING_ADDRESSES     ((NTSTATUS)0xC0000018L)
+#endif
+
+#ifndef STATUS_ACCESS_DENIED
+#   define STATUS_ACCESS_DENIED             ((NTSTATUS)0xC0000022L)
+#endif
+
+#ifndef STATUS_BUFFER_TOO_SMALL
+#   define STATUS_BUFFER_TOO_SMALL          ((NTSTATUS)0xC0000023L)
+#endif
+
+#ifndef STATUS_OBJECT_TYPE_MISMATCH
+#   define STATUS_OBJECT_TYPE_MISMATCH      ((NTSTATUS)0xC0000024L)
+#endif
+
+#ifndef STATUS_OBJECT_NAME_NOT_FOUND
+#   define STATUS_OBJECT_NAME_NOT_FOUND     ((NTSTATUS)0xC0000034L)
+#endif
+
+#ifndef STATUS_OBJECT_PATH_NOT_FOUND
+#   define STATUS_OBJECT_PATH_NOT_FOUND     ((NTSTATUS)0xC000003AL)
+#endif
+
+#ifndef STATUS_SHARING_VIOLATION
+#   define STATUS_SHARING_VIOLATION         ((NTSTATUS)0xC0000043L)
+#endif
+
+#ifndef STATUS_QUOTA_EXCEEDED
+#   define STATUS_QUOTA_EXCEEDED            ((NTSTATUS)0xC0000044L)
+#endif
+
+#ifndef STATUS_TOO_MANY_PAGING_FILES
+#   define STATUS_TOO_MANY_PAGING_FILES     ((NTSTATUS)0xC0000097L)
+#endif
+
+#ifndef STATUS_INSUFFICIENT_RESOURCES
+#   define STATUS_INSUFFICIENT_RESOURCES    ((NTSTATUS)0xC000009AL)
+#endif
+
+#ifndef STATUS_WORKING_SET_QUOTA
+#   define STATUS_WORKING_SET_QUOTA         ((NTSTATUS)0xC00000A1L)
+#endif
+
+#ifndef STATUS_DEVICE_NOT_READY
+#   define STATUS_DEVICE_NOT_READY          ((NTSTATUS)0xC00000A3L)
+#endif
+
+#ifndef STATUS_PIPE_DISCONNECTED
+#   define STATUS_PIPE_DISCONNECTED         ((NTSTATUS)0xC00000B0L)
+#endif
+
+#ifndef STATUS_IO_TIMEOUT
+#   define STATUS_IO_TIMEOUT                ((NTSTATUS)0xC00000B5L)
+#endif
+
+#ifndef STATUS_NOT_SUPPORTED
+#   define STATUS_NOT_SUPPORTED             ((NTSTATUS)0xC00000BBL)
+#endif
+
+#ifndef STATUS_REMOTE_NOT_LISTENING
+#   define STATUS_REMOTE_NOT_LISTENING      ((NTSTATUS)0xC00000BCL)
+#endif
+
+#ifndef STATUS_BAD_NETWORK_PATH
+#   define STATUS_BAD_NETWORK_PATH          ((NTSTATUS)0xC00000BEL)
+#endif
+
+#ifndef STATUS_NETWORK_BUSY
+#   define STATUS_NETWORK_BUSY              ((NTSTATUS)0xC00000BFL)
+#endif
+
+#ifndef STATUS_INVALID_NETWORK_RESPONSE
+#   define STATUS_INVALID_NETWORK_RESPONSE  ((NTSTATUS)0xC00000C3L)
+#endif
+
+#ifndef STATUS_UNEXPECTED_NETWORK_ERROR
+#   define STATUS_UNEXPECTED_NETWORK_ERROR  ((NTSTATUS)0xC00000C4L)
+#endif
+
+#ifndef STATUS_REQUEST_NOT_ACCEPTED
+#   define STATUS_REQUEST_NOT_ACCEPTED      ((NTSTATUS)0xC00000D0L)
+#endif
+
+#ifndef STATUS_CANCELLED
+#   define STATUS_CANCELLED                 ((NTSTATUS)0xC0000120L)
+#endif
+
+#ifndef STATUS_COMMITMENT_LIMIT
+#   define STATUS_COMMITMENT_LIMIT          ((NTSTATUS)0xC000012DL)
+#endif
+
+#ifndef STATUS_LOCAL_DISCONNECT
+#   define STATUS_LOCAL_DISCONNECT          ((NTSTATUS)0xC000013BL)
+#endif
+
+#ifndef STATUS_REMOTE_DISCONNECT
+#   define STATUS_REMOTE_DISCONNECT         ((NTSTATUS)0xC000013CL)
+#endif
+
+#ifndef STATUS_REMOTE_RESOURCES
+#   define STATUS_REMOTE_RESOURCES          ((NTSTATUS)0xC000013DL)
+#endif
+
+#ifndef STATUS_LINK_FAILED
+#   define STATUS_LINK_FAILED               ((NTSTATUS)0xC000013EL)
+#endif
+
+#ifndef STATUS_LINK_TIMEOUT
+#   define STATUS_LINK_TIMEOUT              ((NTSTATUS)0xC000013FL)
+#endif
+
+#ifndef STATUS_INVALID_CONNECTION
+#   define STATUS_INVALID_CONNECTION        ((NTSTATUS)0xC0000140L)
+#endif
+
+#ifndef STATUS_INVALID_ADDRESS
+#   define STATUS_INVALID_ADDRESS           ((NTSTATUS)0xC0000141L)
+#endif
+
+#ifndef STATUS_INVALID_BUFFER_SIZE
+#   define STATUS_INVALID_BUFFER_SIZE       ((NTSTATUS)0xC0000206L)
+#endif
+
+#ifndef STATUS_INVALID_ADDRESS_COMPONENT
+#   define STATUS_INVALID_ADDRESS_COMPONENT ((NTSTATUS)0xC0000207L)
+#endif
+
+#ifndef STATUS_TOO_MANY_ADDRESSES
+#   define STATUS_TOO_MANY_ADDRESSES        ((NTSTATUS)0xC0000209L)
+#endif
+
+#ifndef STATUS_ADDRESS_ALREADY_EXISTS
+#   define STATUS_ADDRESS_ALREADY_EXISTS    ((NTSTATUS)0xC000020AL)
+#endif
+
+#ifndef STATUS_CONNECTION_DISCONNECTED
+#   define STATUS_CONNECTION_DISCONNECTED   ((NTSTATUS)0xC000020CL)
+#endif
+
+#ifndef STATUS_CONNECTION_RESET
+#   define STATUS_CONNECTION_RESET          ((NTSTATUS)0xC000020DL)
+#endif
+
+#ifndef STATUS_TRANSACTION_ABORTED
+#   define STATUS_TRANSACTION_ABORTED       ((NTSTATUS)0xC000020FL)
+#endif
+
+#ifndef STATUS_CONNECTION_REFUSED
+#   define STATUS_CONNECTION_REFUSED        ((NTSTATUS)0xC0000236L)
+#endif
+
+#ifndef STATUS_GRACEFUL_DISCONNECT
+#   define STATUS_GRACEFUL_DISCONNECT       ((NTSTATUS)0xC0000237L)
+#endif
+
+#ifndef STATUS_NETWORK_UNREACHABLE
+#   define STATUS_NETWORK_UNREACHABLE       ((NTSTATUS)0xC000023CL)
+#endif
+
+#ifndef STATUS_HOST_UNREACHABLE
+#   define STATUS_HOST_UNREACHABLE          ((NTSTATUS)0xC000023DL)
+#endif
+
+#ifndef STATUS_PROTOCOL_UNREACHABLE
+#   define STATUS_PROTOCOL_UNREACHABLE      ((NTSTATUS)0xC000023EL)
+#endif
+
+#ifndef STATUS_PORT_UNREACHABLE
+#   define STATUS_PORT_UNREACHABLE          ((NTSTATUS)0xC000023FL)
+#endif
+
+#ifndef STATUS_REQUEST_ABORTED
+#   define STATUS_REQUEST_ABORTED           ((NTSTATUS)0xC0000240L)
+#endif
+
+#ifndef STATUS_CONNECTION_ABORTED
+#   define STATUS_CONNECTION_ABORTED        ((NTSTATUS)0xC0000241L)
+#endif
+
+#ifndef STATUS_HOPLIMIT_EXCEEDED
+#   define STATUS_HOPLIMIT_EXCEEDED         ((NTSTATUS)0xC000A012L)
+#endif
+
+typedef enum _FILE_INFORMATION_CLASS {
+    FileDirectoryInformation = 1,
+    FileFullDirectoryInformation,
+    FileBothDirectoryInformation,
+    FileBasicInformation,
+    FileStandardInformation,
+    FileInternalInformation,
+    FileEaInformation,
+    FileAccessInformation,
+    FileNameInformation,
+    FileRenameInformation,
+    FileLinkInformation,
+    FileNamesInformation,
+    FileDispositionInformation,
+    FilePositionInformation,
+    FileFullEaInformation,
+    FileModeInformation,
+    FileAlignmentInformation,
+    FileAllInformation,
+    FileAllocationInformation,
+    FileEndOfFileInformation,
+    FileAlternateNameInformation,
+    FileStreamInformation,
+    FilePipeInformation,
+    FilePipeLocalInformation,
+    FilePipeRemoteInformation,
+    FileMailslotQueryInformation,
+    FileMailslotSetInformation,
+    FileCompressionInformation,
+    FileObjectIdInformation,
+    FileCompletionInformation,
+    FileMoveClusterInformation,
+    FileQuotaInformation,
+    FileReparsePointInformation,
+    FileNetworkOpenInformation,
+    FileAttributeTagInformation,
+    FileTrackingInformation,
+    FileIdBothDirectoryInformation,
+    FileIdFullDirectoryInformation,
+    FileValidDataLengthInformation,
+    FileShortNameInformation,
+    FileIoCompletionNotificationInformation,
+    FileIoStatusBlockRangeInformation,
+    FileIoPriorityHintInformation,
+    FileSfioReserveInformation,
+    FileSfioVolumeInformation,
+    FileHardLinkInformation,
+    FileProcessIdsUsingFileInformation,
+    FileNormalizedNameInformation,
+    FileNetworkPhysicalNameInformation,
+    FileIdGlobalTxDirectoryInformation,
+    FileIsRemoteDeviceInformation,
+    FileAttributeCacheInformation,
+    FileNumaNodeInformation,
+    FileStandardLinkInformation,
+    FileRemoteProtocolInformation,
+    FileMaximumInformation
+} FILE_INFORMATION_CLASS, * PFILE_INFORMATION_CLASS;
+
+typedef enum _FS_INFORMATION_CLASS {
+    FileFsVolumeInformation = 1,
+    FileFsLabelInformation = 2,
+    FileFsSizeInformation = 3,
+    FileFsDeviceInformation = 4,
+    FileFsAttributeInformation = 5,
+    FileFsControlInformation = 6,
+    FileFsFullSizeInformation = 7,
+    FileFsObjectIdInformation = 8,
+    FileFsDriverPathInformation = 9,
+    FileFsVolumeFlagsInformation = 10,
+    FileFsSectorSizeInformation = 11
+} FS_INFORMATION_CLASS, * PFS_INFORMATION_CLASS;
+
+typedef struct _IO_STATUS_BLOCK {
+#pragma warning(push)
+#pragma warning(disable: 4201) // we'll always use the Microsoft compiler
+    union {
+        NTSTATUS Status;
+        PVOID Pointer;
+    } DUMMYUNIONNAME;
+#pragma warning(pop)
+
+    ULONG_PTR Information;
+} IO_STATUS_BLOCK, * PIO_STATUS_BLOCK;
+
+typedef struct _FILE_BASIC_INFORMATION {
+    LARGE_INTEGER CreationTime;
+    LARGE_INTEGER LastAccessTime;
+    LARGE_INTEGER LastWriteTime;
+    LARGE_INTEGER ChangeTime;
+    DWORD FileAttributes;
+} FILE_BASIC_INFORMATION, * PFILE_BASIC_INFORMATION;
+
+typedef struct _FILE_STANDARD_INFORMATION {
+    LARGE_INTEGER AllocationSize;
+    LARGE_INTEGER EndOfFile;
+    ULONG         NumberOfLinks;
+    BOOLEAN       DeletePending;
+    BOOLEAN       Directory;
+} FILE_STANDARD_INFORMATION, * PFILE_STANDARD_INFORMATION;
+
+typedef struct _FILE_INTERNAL_INFORMATION {
+    LARGE_INTEGER IndexNumber;
+} FILE_INTERNAL_INFORMATION, * PFILE_INTERNAL_INFORMATION;
+
+typedef struct _FILE_EA_INFORMATION {
+    ULONG EaSize;
+} FILE_EA_INFORMATION, * PFILE_EA_INFORMATION;
+
+typedef struct _FILE_ACCESS_INFORMATION {
+    ACCESS_MASK AccessFlags;
+} FILE_ACCESS_INFORMATION, * PFILE_ACCESS_INFORMATION;
+
+typedef struct _FILE_POSITION_INFORMATION {
+    LARGE_INTEGER CurrentByteOffset;
+} FILE_POSITION_INFORMATION, * PFILE_POSITION_INFORMATION;
+
+typedef struct _FILE_MODE_INFORMATION {
+    ULONG Mode;
+} FILE_MODE_INFORMATION, * PFILE_MODE_INFORMATION;
+
+typedef struct _FILE_ALIGNMENT_INFORMATION {
+    ULONG AlignmentRequirement;
+} FILE_ALIGNMENT_INFORMATION, * PFILE_ALIGNMENT_INFORMATION;
+
+typedef struct _FILE_NAME_INFORMATION {
+    ULONG FileNameLength;
+    WCHAR FileName[1];
+} FILE_NAME_INFORMATION, * PFILE_NAME_INFORMATION;
+
+typedef struct _FILE_ALL_INFORMATION {
+    FILE_BASIC_INFORMATION     BasicInformation;
+    FILE_STANDARD_INFORMATION  StandardInformation;
+    FILE_INTERNAL_INFORMATION  InternalInformation;
+    FILE_EA_INFORMATION        EaInformation;
+    FILE_ACCESS_INFORMATION    AccessInformation;
+    FILE_POSITION_INFORMATION  PositionInformation;
+    FILE_MODE_INFORMATION      ModeInformation;
+    FILE_ALIGNMENT_INFORMATION AlignmentInformation;
+    FILE_NAME_INFORMATION      NameInformation;
+} FILE_ALL_INFORMATION, * PFILE_ALL_INFORMATION;
+
+typedef struct _FILE_FS_VOLUME_INFORMATION {
+    LARGE_INTEGER VolumeCreationTime;
+    ULONG         VolumeSerialNumber;
+    ULONG         VolumeLabelLength;
+    BOOLEAN       SupportsObjects;
+    WCHAR         VolumeLabel[1];
+} FILE_FS_VOLUME_INFORMATION, * PFILE_FS_VOLUME_INFORMATION;
+
+/**
+ * MinGW already has a definition for REPARSE_DATA_BUFFER, but mingw-w64 does
+ * not.
+ */
+#if defined(_MSC_VER) || defined(__MINGW64_VERSION_MAJOR)
+typedef struct _REPARSE_DATA_BUFFER {
+    ULONG  ReparseTag;
+    USHORT ReparseDataLength;
+    USHORT Reserved;
+#pragma warning(push)
+#pragma warning(disable : 4201)
+    union {
+        struct {
+            USHORT SubstituteNameOffset;
+            USHORT SubstituteNameLength;
+            USHORT PrintNameOffset;
+            USHORT PrintNameLength;
+            ULONG Flags;
+            WCHAR PathBuffer[1];
+        } SymbolicLinkReparseBuffer;
+        struct {
+            USHORT SubstituteNameOffset;
+            USHORT SubstituteNameLength;
+            USHORT PrintNameOffset;
+            USHORT PrintNameLength;
+            WCHAR PathBuffer[1];
+        } MountPointReparseBuffer;
+        struct {
+            UCHAR  DataBuffer[1];
+        } GenericReparseBuffer;
+        struct {
+            ULONG StringCount;
+            WCHAR StringList[1];
+        } AppExecLinkReparseBuffer;
+    };
+#pragma warning(pop)
+} REPARSE_DATA_BUFFER, * PREPARSE_DATA_BUFFER;
+#endif
+
+/**
+ * @brief The NtQueryInformationFile routine returns various kinds of information about a file object.
+ * @see https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntqueryinformationfile
+ */
+typedef NTSTATUS (NTAPI* fn_NtQueryInformationFile)(HANDLE FileHandle, PIO_STATUS_BLOCK IoStatusBlock,
+    PVOID FileInformation,ULONG Length,FILE_INFORMATION_CLASS FileInformationClass);
+
+/**
+ * @brief Converts the specified NTSTATUS code to its equivalent system error code.
+ * @see https://docs.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-rtlntstatustodoserror
+ */
+typedef ULONG (NTAPI* fn_RtlNtStatusToDosError)(NTSTATUS Status);
+
+/**
+ * @brief Retrieves information about the volume associated with a given file, directory, storage device, or volume.
+ * @see https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntqueryvolumeinformationfile
+ */
+typedef NTSTATUS(NTAPI* fn_NtQueryVolumeInformationFile)(HANDLE FileHandle,
+    PIO_STATUS_BLOCK IoStatusBlock, PVOID FsInformation, ULONG Length,
+    FS_INFORMATION_CLASS FsInformationClass);
+
+/**
+ * @see https://learn.microsoft.com/en-us/windows/win32/api/icmpapi/nf-icmpapi-icmpsendecho2
+ */
+typedef VOID(NTAPI* PIO_APC_ROUTINE)(PVOID ApcContext,
+    PIO_STATUS_BLOCK IoStatusBlock,
+    ULONG Reserved);
+
+/**
+ * @see https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntdeviceiocontrolfile
+ */
+typedef NTSTATUS(NTAPI* fn_NtDeviceIoControlFile)(HANDLE FileHandle,
+    HANDLE Event,
+    PIO_APC_ROUTINE ApcRoutine,
+    PVOID ApcContext,
+    PIO_STATUS_BLOCK IoStatusBlock,
+    ULONG IoControlCode,
+    PVOID InputBuffer,
+    ULONG InputBufferLength,
+    PVOID OutputBuffer,
+    ULONG OutputBufferLength);
+
+typedef struct ev_winapi_s
+{
+    fn_NtQueryInformationFile       NtQueryInformationFile;
+    fn_RtlNtStatusToDosError        RtlNtStatusToDosError;
+    fn_NtQueryVolumeInformationFile NtQueryVolumeInformationFile;
+    fn_NtDeviceIoControlFile        NtDeviceIoControlFile;
+}ev_winapi_t;
+
+/**
+ * @brief Windows API.
+ */
+extern ev_winapi_t ev_winapi;
+
+/**
+ * @brief Initialize WinAPI
+ */
+EV_LOCAL void ev__winapi_init(void);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 24 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/winsock.h
+// SIZE:    2168
+// SHA-256: e720c93759b6343b5a149e2efd7c5d9e6f34c4ded58e3743d89a7105b90128bf
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/winsock.h"
+#ifndef __EV_WINSOCK_INTERNAL_H__
+#define __EV_WINSOCK_INTERNAL_H__
+
+#define AFD_OVERLAPPED                      0x00000002
+#define AFD_RECEIVE                         5
+#define AFD_RECEIVE_DATAGRAM                6
+
+#ifndef TDI_RECEIVE_NORMAL
+#   define TDI_RECEIVE_PARTIAL              0x00000010
+#   define TDI_RECEIVE_NORMAL               0x00000020
+#   define TDI_RECEIVE_PEEK                 0x00000080
+#endif
+
+#define FSCTL_AFD_BASE                      FILE_DEVICE_NETWORK
+
+#define _AFD_CONTROL_CODE(operation, method) \
+    ((FSCTL_AFD_BASE) << 12 | (operation << 2) | method)
+
+#define IOCTL_AFD_RECEIVE \
+    _AFD_CONTROL_CODE(AFD_RECEIVE, METHOD_NEITHER)
+
+#define IOCTL_AFD_RECEIVE_DATAGRAM \
+    _AFD_CONTROL_CODE(AFD_RECEIVE_DATAGRAM, METHOD_NEITHER)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct _AFD_RECV_DATAGRAM_INFO {
+    LPWSABUF BufferArray;
+    ULONG BufferCount;
+    ULONG AfdFlags;
+    ULONG TdiFlags;
+    struct sockaddr* Address;
+    int* AddressLength;
+} AFD_RECV_DATAGRAM_INFO, * PAFD_RECV_DATAGRAM_INFO;
+
+typedef struct _AFD_RECV_INFO {
+    LPWSABUF BufferArray;
+    ULONG BufferCount;
+    ULONG AfdFlags;
+    ULONG TdiFlags;
+} AFD_RECV_INFO, * PAFD_RECV_INFO;
+
+extern int ev_tcp_non_ifs_lsp_ipv4;
+extern int ev_tcp_non_ifs_lsp_ipv6;
+
+extern struct sockaddr_in ev_addr_ip4_any_;
+extern struct sockaddr_in6 ev_addr_ip6_any_;
+
+EV_LOCAL int WSAAPI ev__wsa_recv_workaround(SOCKET socket, WSABUF* buffers,
+    DWORD buffer_count, DWORD* bytes, DWORD* flags, WSAOVERLAPPED* overlapped,
+    LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine);
+
+/**
+ * @brief 
+ */
+EV_LOCAL int WSAAPI ev__wsa_recvfrom_workaround(SOCKET socket, WSABUF* buffers,
+    DWORD buffer_count, DWORD* bytes, DWORD* flags, struct sockaddr* addr,
+    int* addr_len, WSAOVERLAPPED* overlapped,
+    LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine);
+
+/**
+ * @brief Initialize winsock.
+ */
+EV_LOCAL void ev__winsock_init(void);
+
+/**
+ * @brief Convert typeof NTSTATUS error to typeof WinSock error
+ * @param[in] status  NTSTATUS error
+ * @return WinSock error
+ */
+EV_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 25 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/async_win.h
+// SIZE:    147
+// SHA-256: 3d23b3abb07d0ea794094e1cc94a3ba69a8f3c56ae8c4667b1f85f44b35a0637
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/async_win.h"
+#ifndef __EV_ASYNC_WIN_INTERNAL_H__
+#define __EV_ASYNC_WIN_INTERNAL_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 26 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/fs_win.h
+// SIZE:    914
+// SHA-256: 9a0f9e48a320872421edeb883011aa336b319c9d79c9a95177918eb228c0e5c1
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/fs_win.h"
+#ifndef __EV_FS_WIN_INTERNAL_H__
+#define __EV_FS_WIN_INTERNAL_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct ev_dirent_w_s
+{
+    WCHAR*              name;           /**< Entry name */
+    ev_dirent_type_t    type;           /**< Entry type */
+}ev_dirent_w_t;
+
+/**
+ * @brief Directory information callback.
+ * @param[in] info  Directory information.
+ * @param[in] arg   User defined argument.
+ * @return  non-zero to stop.
+ */
+typedef int (*ev_readdir_w_cb)(ev_dirent_w_t* info, void* arg);
+
+/**
+ * @brief Same as [readdir(3)](https://man7.org/linux/man-pages/man3/readdir.3.html)
+ * @param[in] path      Directory path. The path can be end with or without '/'.
+ * @param[in] cb        Dirent callback.
+ * @param[in] arg       User defined data.
+ * @return              #ev_errno_t
+ */
+EV_LOCAL int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 27 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/time_win.h
+// SIZE:    219
+// SHA-256: 423739e03114d41cd8bc1d4587561928ba5534de38d089c593e782bc03b310cc
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/time_win.h"
+#ifndef __EV_WIN_TIME_INTERNAL_H__
+#define __EV_WIN_TIME_INTERNAL_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Initialize time context.
+ */
+void ev__time_init_win(void);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 28 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/udp_win.h
+// SIZE:    143
+// SHA-256: fc4f27c8fb979b9dd836a968e4458273a351f73dbdd6908561d91d8fb60778d6
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/udp_win.h"
+#ifndef __EV_UDP_WIN_INTERNAL_H__
+#define __EV_UDP_WIN_INTERNAL_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 29 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/loop_win.h
+// SIZE:    1604
+// SHA-256: 4c4b65599419899d8cd57cf2a647a3b7dafbc3b742a1faa9481a17452291b858
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/loop_win.h"
+#ifndef __EV_LOOP_WIN_INTERNAL_H__
+#define __EV_LOOP_WIN_INTERNAL_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define EV_INVALID_PID_WIN  0
+
+typedef struct ev_loop_win_ctx
+{
+    struct
+    {
+        char                    zero_[1];                   /**< A zero length buffer */
+    } net;
+
+    struct
+    {
+        ev_tls_t                thread_key;                 /**< Thread handle */
+    }thread;
+} ev_loop_win_ctx_t;
+
+extern ev_loop_win_ctx_t        g_ev_loop_win_ctx;          /**< Global runtime for Windows */
+
+/**
+ * @brief Initialize windows context.
+ */
+EV_LOCAL void ev__init_once_win(void);
+
+/**
+ * @brief Initialize IOCP request
+ * @param[out] req      A pointer to the IOCP request
+ * @param[in] callback  A callback when the request is finish
+ * @param[in] arg       User defined argument passed to callback
+ */
+EV_LOCAL void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg);
+
+/**
+ * @brief Post to specific IOCP request.
+ * @param[in] loop      Event loop
+ * @param[in] req       IOCP request
+ */
+EV_LOCAL void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req);
+
+/**
+ * @brief Set \p sock as reusable address.
+ * @param[in] sock  Socket to set reusable.
+ * @param[in] opt   0 if not reusable, otherwise reusable.
+ * @return          #ev_errnot_t
+ */
+EV_LOCAL int ev__reuse_win(SOCKET sock, int opt);
+
+/**
+ * @brief Set \p sock as IPv6 only.
+ * @param[in] sock  Socket to set IPv6 only.
+ * @param[in] opt   0 if IPv4 available, otherwise IPv6 only.
+ * @return          #ev_errnot_t
+ */
+EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 30 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/process_win.h
+// SIZE:    151
+// SHA-256: 778fcff8b8c0e17cd74ccf016e6e2fdab1baf00b0fada41fd7e9431c8f51b5e7
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/process_win.h"
+#ifndef __EV_PROCESS_WIN_INTERNAL_H__
+#define __EV_PROCESS_WIN_INTERNAL_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 31 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/pipe_win.h
+// SIZE:    145
+// SHA-256: 11f24f7fd1297af0cdccd6ef1b33564be9f6906ccd53168e19a9b5d9953429a1
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/pipe_win.h"
+#ifndef __EV_PIPE_WIN_INTERNAL_H__
+#define __EV_PIPE_WIN_INTERNAL_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 32 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/misc_win.h
+// SIZE:    1350
+// SHA-256: 97320935a6327cc693cfe92211c4ebe23105ccf9000014021cdc04ecb8ebc9d1
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/misc_win.h"
+#ifndef __EV_MISC_WIN_INTERNAL_H__
+#define __EV_MISC_WIN_INTERNAL_H__
+
+#define EV_FATAL_SYSCALL(errcode, syscall)  \
+    ev__fatal_syscall(__FILE__, __LINE__, errcode, syscall)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Maps a character string to a UTF-16 (wide character) string.
+ * @param[out] dst  Pointer to store wide string. Use #ev_free() to release it.
+ * @param[in] src   Source string.
+ * @return          The number of characters (not bytes) of \p dst, or #ev_errno_t if error.
+ */
+EV_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src);
+
+/**
+ * @brief Maps a UTF-16 (wide character) string to a character string.
+ * @param[out] dst  Pointer to store wide string. Use #ev_free() to release it.
+ * @param[in] src   Source string.
+ * @return          The number of characters (not bytes) of \p dst, or #ev_errno_t if error.
+ */
+EV_LOCAL ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src);
+
+/**
+ * @brief Show fatal information about syscall and abort().
+ * @warning This function does not return.
+ * @param[in] file      File path.
+ * @param[in] line      The line number.
+ * @param[in] errcode   Error code from GetLastError().
+ * @param[in] syscall   The name of syscall.
+ */
+EV_LOCAL void ev__fatal_syscall(const char* file, int line,
+    DWORD errcode, const char* syscall);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
+
+// #line 33 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/thread_win.h
+// SIZE:    236
+// SHA-256: 3ad3572993454f2f3ba31566a0ef4564730397ef862fb84b3cb82a82c24de8d8
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/thread_win.h"
+#ifndef __EV_THREAD_WIN_INTERNAL_H__
+#define __EV_THREAD_WIN_INTERNAL_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Initialize thread context.
+ */
+EV_LOCAL void ev__thread_init_win(void);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 34 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/threadpool_win.h
+// SIZE:    270
+// SHA-256: 150fac7481e8e3372c59b11704333a9b1fbe20e3a1d1691c370a60a19751c60d
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/threadpool_win.h"
+#ifndef __EV_THREADPOOL_WIN_INTERNAL_H__
+#define __EV_THREADPOOL_WIN_INTERNAL_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+EV_LOCAL void ev__threadpool_init_win(ev_loop_t* loop);
+EV_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 35 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/tcp_win.h
+// SIZE:    2576
+// SHA-256: e06bcf1c784d4ac9f5dce86e04ee2abc5ef73208fef5173f41fe73574e87647f
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/tcp_win.h"
+#ifndef __EV_TCP_WIN_INTERNAL_H__
+#define __EV_TCP_WIN_INTERNAL_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Windows backend for #ev_tcp_t.
+ */
+typedef struct ev_tcp_backend
+{
+    int       af; /**< AF_INET / AF_INET6 */
+    ev_iocp_t io; /**< IOCP */
+    struct
+    {
+        unsigned todo_pending : 1; /**< Already submit todo request */
+    } mask;
+    union {
+        struct
+        {
+            ev_list_t
+                a_queue; /**< (#ev_tcp_backend::u::accept::node) Accept queue */
+            ev_list_t a_queue_done; /**< (#ev_tcp_backend::u::accept::node)
+                                       Accept done queue */
+        } listen;
+        struct
+        {
+            ev_tcp_accept_cb cb;  /**< Accept callback */
+            void            *arg; /**< Accept callback argument */
+            ev_list_node_t
+                node; /**< (#ev_tcp_backend::u::listen) Accept queue node */
+            ev_tcp_t *listen; /**< Listen socket */
+            int       stat;   /**< Accept result */
+            /**\
+             * lpOutputBuffer for AcceptEx.\
+             * dwLocalAddressLength and dwRemoteAddressLength require 16 bytes\
+             * more than the maximum address length for the transport protocol.\
+             */
+            char buffer[(sizeof(struct sockaddr_storage) + 16) * 2];
+        } accept;
+        struct
+        {
+            ev_tcp_connect_cb cb;           /**< Callback */
+            void             *arg;          /**< User defined argument. */
+            LPFN_CONNECTEX    fn_connectex; /**< ConnectEx */
+            int               stat;         /**< Connect result */
+        } client;
+        struct
+        {
+            ev_list_t w_queue;      /**< (#ev_write_t::node) Write queue */
+            ev_list_t w_queue_done; /**< (#ev_write_t::node) Write done queue */
+            ev_list_t r_queue;      /**< (#ev_read_t::node) Read queue */
+            ev_list_t r_queue_done; /**< (#ev_read_t::node) Read done queue */
+        } stream;
+    } u;
+} ev_tcp_backend_t;
+
+struct ev_tcp
+{
+    ev_handle_t      base;      /**< Base object */
+    ev_tcp_close_cb  close_cb;  /**< User close callback */
+    void            *close_arg; /**< User defined argument. */
+    ev_os_socket_t   sock;      /**< Socket handle */
+    ev_tcp_backend_t backend;   /**< Platform related implementation */
+};
+
+/**
+ * @brief Open fd for read/write.
+ * @param[in] tcp   TCP handle
+ * @param[in] fd    fd
+ * @return          #ev_errno_t
+ */
+EV_LOCAL int ev__tcp_open_win(ev_tcp_t *tcp, SOCKET fd);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 36 "ev.c"
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/async_win.c
+// SIZE:    2078
+// SHA-256: f99598e05a6c5193a28466eb266541536ae754c8e8be771b8a06aeae0266627a
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/async_win.c"
+#include <assert.h>
+
+static void _async_on_iocp_win(ev_iocp_t* iocp, size_t transferred, void* arg)
+{
+    (void)transferred; (void)arg;
+    ev_async_t* handle = EV_CONTAINER_OF(iocp, ev_async_t, backend.io);
+
+    handle->backend.async_sent = 0;
+    handle->activate_cb(handle, handle->activate_arg);
+}
+
+static void _ev_async_on_close_win(ev_handle_t* handle)
+{
+    ev_async_t* async = EV_CONTAINER_OF(handle, ev_async_t, base);
+    ev_async_cb close_cb = async->close_cb;
+    void* close_arg = async->close_arg;
+    ev_free(async);
+
+    if (close_cb != NULL)
+    {
+        close_cb(async, close_arg);
+    }
+}
+
+static void _ev_asyc_exit_win(ev_async_t* handle, ev_async_cb close_cb,
+    void* close_arg)
+{
+    handle->close_cb = close_cb;
+    handle->close_arg = close_arg;
+    ev__handle_deactive(&handle->base);
+    if (close_cb != NULL)
+    {
+        ev__handle_exit(&handle->base, _ev_async_on_close_win);
+    }
+    else
+    {
+        ev__handle_exit(&handle->base, NULL);
+        ev_free(handle);
+    }
+}
+
+EV_LOCAL void ev__async_exit_force(ev_async_t* handle)
+{
+    _ev_asyc_exit_win(handle, NULL, NULL);
+}
+
+int ev_async_init(ev_loop_t *loop, ev_async_t **handle,
+    ev_async_cb activate_cb, void *activate_arg)
+{
+    ev_async_t* new_handle = ev_malloc(sizeof(ev_async_t));
+    if (new_handle == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    new_handle->activate_cb = activate_cb;
+    new_handle->activate_arg = activate_arg;
+    new_handle->close_cb = NULL;
+    new_handle->close_arg = NULL;
+    new_handle->backend.async_sent = 0;
+
+    ev__iocp_init(&new_handle->backend.io, _async_on_iocp_win, NULL);
+    ev__handle_init(loop, &new_handle->base, EV_ROLE_EV_ASYNC);
+    ev__handle_active(&new_handle->base);
+
+    *handle = new_handle;
+    return 0;
+}
+
+void ev_async_exit(ev_async_t *handle, ev_async_cb close_cb,
+    void *close_arg)
+{
+    _ev_asyc_exit_win(handle, close_cb, close_arg);
+}
+
+void ev_async_wakeup(ev_async_t* handle)
+{
+    if (!InterlockedOr(&handle->backend.async_sent, 1))
+    {
+        ev__iocp_post(handle->base.loop, &handle->backend.io);
+    }
+}
+
+// #line 38 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/fs_win.c
+// SIZE:    25863
+// SHA-256: 3627f9c751813937357e4d770f451414c5078bdf6612933e361d20bfff971b4b
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/fs_win.c"
+#include <assert.h>
+#include <stdio.h>
+
+#define MILLION ((int64_t) 1000 * 1000)
+#define BILLION ((int64_t) 1000 * 1000 * 1000)
+#define NSEC_IN_SEC (1 * 1000 * 1000 * 1000)
+
+#ifndef S_IFLNK
+#   define S_IFLNK 0xA000
+#endif
+
+typedef struct file_open_info_win_s
+{
+    DWORD   access;
+    DWORD   share;
+    DWORD   attributes;
+    DWORD   disposition;
+} file_open_info_win_t;
+
+typedef struct fs_readdir_win_helper
+{
+    ev_fs_readdir_cb    cb;
+    void*               arg;
+    int                 errcode;
+} fs_readdir_win_helper_t;
+
+static int _ev_file_get_open_attributes(int flags, int mode, file_open_info_win_t* info)
+{
+    info->access = 0;
+    info->share = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
+    info->attributes = FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS;
+    info->disposition = 0;
+
+    switch (flags & (EV_FS_O_RDONLY | EV_FS_O_WRONLY | EV_FS_O_RDWR))
+    {
+    case EV_FS_O_RDONLY:
+        info->access = FILE_GENERIC_READ;
+        break;
+    case EV_FS_O_WRONLY:
+        info->access = FILE_GENERIC_WRITE;
+        break;
+    case EV_FS_O_RDWR:
+        info->access = FILE_GENERIC_READ | FILE_GENERIC_WRITE;
+        break;
+    default:
+        return EV_EINVAL;
+    }
+
+    if (flags & EV_FS_O_APPEND)
+    {
+        info->access &= ~FILE_WRITE_DATA;
+        info->access |= FILE_APPEND_DATA;
+    }
+
+    switch (flags & (EV_FS_O_CREAT | EV_FS_O_EXCL | EV_FS_O_TRUNC))
+    {
+    case 0:
+    case EV_FS_O_EXCL:
+        info->disposition = OPEN_EXISTING;
+        break;
+    case EV_FS_O_CREAT:
+        info->disposition = OPEN_ALWAYS;
+        break;
+    case EV_FS_O_CREAT | EV_FS_O_EXCL:
+    case EV_FS_O_CREAT | EV_FS_O_TRUNC | EV_FS_O_EXCL:
+        info->disposition = CREATE_NEW;
+        break;
+    case EV_FS_O_TRUNC:
+    case EV_FS_O_TRUNC | EV_FS_O_EXCL:
+        info->disposition = TRUNCATE_EXISTING;
+        break;
+    case EV_FS_O_CREAT | EV_FS_O_TRUNC:
+        info->disposition = CREATE_ALWAYS;
+        break;
+    default:
+        return EV_EINVAL;
+    }
+
+    if ((flags & EV_FS_O_CREAT) && !(mode & _S_IWRITE))
+    {
+        info->attributes |= FILE_ATTRIBUTE_READONLY;
+    }
+
+    switch (flags & (EV_FS_O_DSYNC | EV_FS_O_SYNC))
+    {
+    case 0:
+        break;
+    case EV_FS_O_DSYNC:
+#if EV_FS_O_SYNC != EV_FS_O_DSYNC
+    case EV_FS_O_SYNC:
+#endif
+        info->attributes |= FILE_FLAG_WRITE_THROUGH;
+        break;
+    default:
+        return EV_EINVAL;
+    }
+
+    return 0;
+}
+
+static int _ev_fs_readlink_handle(HANDLE handle, char** target_ptr,
+    uint64_t* target_len_ptr)
+{
+    char buffer[MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
+    REPARSE_DATA_BUFFER* reparse_data = (REPARSE_DATA_BUFFER*)buffer;
+    WCHAR* w_target;
+    DWORD w_target_len;
+    DWORD bytes;
+    size_t i;
+    size_t len;
+
+    if (!DeviceIoControl(handle,
+        FSCTL_GET_REPARSE_POINT,
+        NULL,
+        0,
+        buffer,
+        sizeof buffer,
+        &bytes,
+        NULL)) {
+        return -1;
+    }
+
+    if (reparse_data->ReparseTag == IO_REPARSE_TAG_SYMLINK) {
+        /* Real symlink */
+        w_target = reparse_data->SymbolicLinkReparseBuffer.PathBuffer +
+            (reparse_data->SymbolicLinkReparseBuffer.SubstituteNameOffset /
+                sizeof(WCHAR));
+        w_target_len =
+            reparse_data->SymbolicLinkReparseBuffer.SubstituteNameLength /
+            sizeof(WCHAR);
+
+        /* Real symlinks can contain pretty much everything, but the only thing we
+         * really care about is undoing the implicit conversion to an NT namespaced
+         * path that CreateSymbolicLink will perform on absolute paths. If the path
+         * is win32-namespaced then the user must have explicitly made it so, and
+         * we better just return the unmodified reparse data. */
+        if (w_target_len >= 4 &&
+            w_target[0] == L'\\' &&
+            w_target[1] == L'?' &&
+            w_target[2] == L'?' &&
+            w_target[3] == L'\\') {
+            /* Starts with \??\ */
+            if (w_target_len >= 6 &&
+                ((w_target[4] >= L'A' && w_target[4] <= L'Z') ||
+                    (w_target[4] >= L'a' && w_target[4] <= L'z')) &&
+                w_target[5] == L':' &&
+                (w_target_len == 6 || w_target[6] == L'\\')) {
+                /* \??\<drive>:\ */
+                w_target += 4;
+                w_target_len -= 4;
+
+            }
+            else if (w_target_len >= 8 &&
+                (w_target[4] == L'U' || w_target[4] == L'u') &&
+                (w_target[5] == L'N' || w_target[5] == L'n') &&
+                (w_target[6] == L'C' || w_target[6] == L'c') &&
+                w_target[7] == L'\\') {
+                /* \??\UNC\<server>\<share>\ - make sure the final path looks like
+                 * \\<server>\<share>\ */
+                w_target += 6;
+                w_target[0] = L'\\';
+                w_target_len -= 6;
+            }
+        }
+
+    }
+    else if (reparse_data->ReparseTag == IO_REPARSE_TAG_MOUNT_POINT) {
+        /* Junction. */
+        w_target = reparse_data->MountPointReparseBuffer.PathBuffer +
+            (reparse_data->MountPointReparseBuffer.SubstituteNameOffset /
+                sizeof(WCHAR));
+        w_target_len = reparse_data->MountPointReparseBuffer.SubstituteNameLength /
+            sizeof(WCHAR);
+
+        /* Only treat junctions that look like \??\<drive>:\ as symlink. Junctions
+         * can also be used as mount points, like \??\Volume{<guid>}, but that's
+         * confusing for programs since they wouldn't be able to actually
+         * understand such a path when returned by uv_readlink(). UNC paths are
+         * never valid for junctions so we don't care about them. */
+        if (!(w_target_len >= 6 &&
+            w_target[0] == L'\\' &&
+            w_target[1] == L'?' &&
+            w_target[2] == L'?' &&
+            w_target[3] == L'\\' &&
+            ((w_target[4] >= L'A' && w_target[4] <= L'Z') ||
+                (w_target[4] >= L'a' && w_target[4] <= L'z')) &&
+            w_target[5] == L':' &&
+            (w_target_len == 6 || w_target[6] == L'\\'))) {
+            SetLastError(ERROR_SYMLINK_NOT_SUPPORTED);
+            return -1;
+        }
+
+        /* Remove leading \??\ */
+        w_target += 4;
+        w_target_len -= 4;
+
+    }
+    else if (reparse_data->ReparseTag == IO_REPARSE_TAG_APPEXECLINK) {
+        /* String #3 in the list has the target filename. */
+        if (reparse_data->AppExecLinkReparseBuffer.StringCount < 3) {
+            SetLastError(ERROR_SYMLINK_NOT_SUPPORTED);
+            return -1;
+        }
+        w_target = reparse_data->AppExecLinkReparseBuffer.StringList;
+        /* The StringList buffer contains a list of strings separated by "\0",   */
+        /* with "\0\0" terminating the list. Move to the 3rd string in the list: */
+        for (i = 0; i < 2; ++i) {
+            len = wcslen(w_target);
+            if (len == 0) {
+                SetLastError(ERROR_SYMLINK_NOT_SUPPORTED);
+                return -1;
+            }
+            w_target += len + 1;
+        }
+        w_target_len = (DWORD)wcslen(w_target);
+        if (w_target_len == 0) {
+            SetLastError(ERROR_SYMLINK_NOT_SUPPORTED);
+            return -1;
+        }
+        /* Make sure it is an absolute path. */
+        if (!(w_target_len >= 3 &&
+            ((w_target[0] >= L'a' && w_target[0] <= L'z') ||
+                (w_target[0] >= L'A' && w_target[0] <= L'Z')) &&
+            w_target[1] == L':' &&
+            w_target[2] == L'\\')) {
+            SetLastError(ERROR_SYMLINK_NOT_SUPPORTED);
+            return -1;
+        }
+
+    }
+    else {
+        /* Reparse tag does not indicate a symlink. */
+        SetLastError(ERROR_SYMLINK_NOT_SUPPORTED);
+        return -1;
+    }
+
+    ssize_t utf8_len = ev__wide_to_utf8(target_ptr, w_target);
+    if (utf8_len < 0)
+    {
+        return -1;
+    }
+
+    *target_len_ptr = utf8_len;
+    return 0;
+}
+
+static void _ev_filetime_to_timespec(ev_timespec_t* ts, int64_t filetime)
+{
+    filetime -= 116444736 * BILLION;
+    ts->tv_sec = (long)(filetime / (10 * MILLION));
+    ts->tv_nsec = (long)((filetime - ts->tv_sec * 10 * MILLION) * 100U);
+    if (ts->tv_nsec < 0)
+    {
+        ts->tv_sec -= 1;
+        ts->tv_nsec += NSEC_IN_SEC;
+    }
+}
+
+static int _ev_file_wrap_fstat_win(HANDLE handle, ev_fs_stat_t* statbuf, int do_lstat)
+{
+    FILE_ALL_INFORMATION file_info;
+    FILE_FS_VOLUME_INFORMATION volume_info;
+    NTSTATUS nt_status;
+    IO_STATUS_BLOCK io_status;
+
+    ev__init_once_win();
+
+    nt_status = ev_winapi.NtQueryInformationFile(handle,
+        &io_status,
+        &file_info,
+        sizeof(file_info),
+        FileAllInformation);
+
+    /* Buffer overflow (a warning status code) is expected here. */
+    if (NT_ERROR(nt_status))
+    {
+        SetLastError(ev_winapi.RtlNtStatusToDosError(nt_status));
+        return -1;
+    }
+
+    nt_status = ev_winapi.NtQueryVolumeInformationFile(handle,
+        &io_status,
+        &volume_info,
+        sizeof volume_info,
+        FileFsVolumeInformation);
+
+    /* Buffer overflow (a warning status code) is expected here. */
+    if (io_status.Status == STATUS_NOT_IMPLEMENTED)
+    {
+        statbuf->st_dev = 0;
+    }
+    else if (NT_ERROR(nt_status))
+    {
+        SetLastError(ev_winapi.RtlNtStatusToDosError(nt_status));
+        return -1;
+    }
+    else
+    {
+        statbuf->st_dev = volume_info.VolumeSerialNumber;
+    }
+
+    /* Todo: st_mode should probably always be 0666 for everyone. We might also
+     * want to report 0777 if the file is a .exe or a directory.
+     *
+     * Currently it's based on whether the 'readonly' attribute is set, which
+     * makes little sense because the semantics are so different: the 'read-only'
+     * flag is just a way for a user to protect against accidental deletion, and
+     * serves no security purpose. Windows uses ACLs for that.
+     *
+     * Also people now use uv_fs_chmod() to take away the writable bit for good
+     * reasons. Windows however just makes the file read-only, which makes it
+     * impossible to delete the file afterwards, since read-only files can't be
+     * deleted.
+     *
+     * IOW it's all just a clusterfuck and we should think of something that
+     * makes slightly more sense.
+     *
+     * And uv_fs_chmod should probably just fail on windows or be a total no-op.
+     * There's nothing sensible it can do anyway.
+     */
+    statbuf->st_mode = 0;
+
+    /*
+    * On Windows, FILE_ATTRIBUTE_REPARSE_POINT is a general purpose mechanism
+    * by which filesystem drivers can intercept and alter file system requests.
+    *
+    * The only reparse points we care about are symlinks and mount points, both
+    * of which are treated as POSIX symlinks. Further, we only care when
+    * invoked via lstat, which seeks information about the link instead of its
+    * target. Otherwise, reparse points must be treated as regular files.
+    */
+    if (do_lstat &&
+        (file_info.BasicInformation.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
+    {
+        /*
+         * If reading the link fails, the reparse point is not a symlink and needs
+         * to be treated as a regular file. The higher level lstat function will
+         * detect this failure and retry without do_lstat if appropriate.
+         */
+        if (_ev_fs_readlink_handle(handle, NULL, &statbuf->st_size) != 0)
+            return -1;
+        statbuf->st_mode |= S_IFLNK;
+    }
+
+    if (statbuf->st_mode == 0) {
+        if (file_info.BasicInformation.FileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            statbuf->st_mode |= _S_IFDIR;
+            statbuf->st_size = 0;
+        }
+        else {
+            statbuf->st_mode |= _S_IFREG;
+            statbuf->st_size = file_info.StandardInformation.EndOfFile.QuadPart;
+        }
+    }
+
+    if (file_info.BasicInformation.FileAttributes & FILE_ATTRIBUTE_READONLY)
+        statbuf->st_mode |= _S_IREAD | (_S_IREAD >> 3) | (_S_IREAD >> 6);
+    else
+        statbuf->st_mode |= (_S_IREAD | _S_IWRITE) | ((_S_IREAD | _S_IWRITE) >> 3) |
+        ((_S_IREAD | _S_IWRITE) >> 6);
+
+    _ev_filetime_to_timespec(&statbuf->st_atim,
+        file_info.BasicInformation.LastAccessTime.QuadPart);
+    _ev_filetime_to_timespec(&statbuf->st_ctim,
+        file_info.BasicInformation.ChangeTime.QuadPart);
+    _ev_filetime_to_timespec(&statbuf->st_mtim,
+        file_info.BasicInformation.LastWriteTime.QuadPart);
+    _ev_filetime_to_timespec(&statbuf->st_birthtim,
+        file_info.BasicInformation.CreationTime.QuadPart);
+
+    statbuf->st_ino = file_info.InternalInformation.IndexNumber.QuadPart;
+
+    /* st_blocks contains the on-disk allocation size in 512-byte units. */
+    statbuf->st_blocks =
+        (uint64_t)file_info.StandardInformation.AllocationSize.QuadPart >> 9;
+
+    statbuf->st_nlink = file_info.StandardInformation.NumberOfLinks;
+
+    /* The st_blksize is supposed to be the 'optimal' number of bytes for reading
+     * and writing to the disk. That is, for any definition of 'optimal' - it's
+     * supposed to at least avoid read-update-write behavior when writing to the
+     * disk.
+     *
+     * However nobody knows this and even fewer people actually use this value,
+     * and in order to fill it out we'd have to make another syscall to query the
+     * volume for FILE_FS_SECTOR_SIZE_INFORMATION.
+     *
+     * Therefore we'll just report a sensible value that's quite commonly okay
+     * on modern hardware.
+     *
+     * 4096 is the minimum required to be compatible with newer Advanced Format
+     * drives (which have 4096 bytes per physical sector), and to be backwards
+     * compatible with older drives (which have 512 bytes per physical sector).
+     */
+    statbuf->st_blksize = 4096;
+
+    /* Todo: set st_flags to something meaningful. Also provide a wrapper for
+     * chattr(2).
+     */
+    statbuf->st_flags = 0;
+
+    /* Windows has nothing sensible to say about these values, so they'll just
+     * remain empty.
+     */
+    statbuf->st_gid = 0;
+    statbuf->st_uid = 0;
+    statbuf->st_rdev = 0;
+    statbuf->st_gen = 0;
+
+    return 0;
+}
+
+static ev_dirent_type_t _ev_fs_get_dirent_type_win(WIN32_FIND_DATAW* info)
+{
+    if (info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+    {
+        return EV_DIRENT_DIR;
+    }
+    if (info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
+    {
+        return EV_DIRENT_LINK;
+    }
+    if (info->dwFileAttributes & FILE_ATTRIBUTE_DEVICE)
+    {
+        return EV_DIRENT_CHR;
+    }
+    return EV_DIRENT_FILE;
+}
+
+static int _ev_fs_wmkdir(WCHAR* path, int mode)
+{
+    (void)mode;
+
+    wchar_t* p;
+    wchar_t backup;
+    DWORD errcode;
+    const wchar_t* path_delim = L"\\/";
+
+    for (p = wcspbrk(path, path_delim); p != NULL; p = wcspbrk(p + 1, path_delim))
+    {
+        backup = *p;
+        *p = L'\0';
+        if (!CreateDirectoryW(path, NULL))
+        {
+            errcode = GetLastError();
+            if (errcode != ERROR_ALREADY_EXISTS)
+            {
+                *p = backup;
+                return ev__translate_sys_error(errcode);
+            }
+        }
+        *p = backup;
+    }
+
+    if (CreateDirectoryW(path, NULL))
+    {
+        return 0;
+    }
+
+    errcode = GetLastError();
+    if (errcode == ERROR_ALREADY_EXISTS)
+    {
+        return 0;
+    }
+
+    if (errcode == ERROR_INVALID_NAME || errcode == ERROR_DIRECTORY)
+    {
+        return EV_EINVAL;
+    }
+
+    return ev__translate_sys_error(errcode);
+}
+
+static int _ev_fs_readdir_w_on_dirent(ev_dirent_w_t* info, void* arg)
+{
+    fs_readdir_win_helper_t* helper = arg;
+
+    ev_dirent_t wrap_info;
+    wrap_info.type = info->type;
+    ssize_t ret = ev__wide_to_utf8(&wrap_info.name, info->name);
+    if (ret < 0)
+    {
+        helper->errcode = (int)ret;
+        return -1;
+    }
+
+    ret = helper->cb(&wrap_info, helper->arg);
+    ev_free(wrap_info.name);
+
+    return (int)ret;
+}
+
+static DWORD _ev_file_mmap_to_native_protect_win32(int flags)
+{
+    if (flags & EV_FS_S_IXUSR)
+    {
+        return (flags & EV_FS_S_IWUSR) ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ;
+    }
+    return (flags & EV_FS_S_IWUSR) ? PAGE_READWRITE : PAGE_READONLY;
+}
+
+static DWORD _ev_file_mmap_to_native_access(int flags)
+{
+    DWORD dwDesiredAccess = 0;
+    if (flags & EV_FS_S_IXUSR)
+    {
+        dwDesiredAccess |= FILE_MAP_EXECUTE;
+    }
+    if (flags & EV_FS_S_IRUSR)
+    {
+        if (flags & EV_FS_S_IWUSR)
+        {
+            dwDesiredAccess |= FILE_MAP_ALL_ACCESS;
+        }
+        else
+        {
+            dwDesiredAccess |= FILE_MAP_READ;
+        }
+    }
+    else
+    {
+        dwDesiredAccess |= FILE_MAP_WRITE;
+    }
+    return dwDesiredAccess;
+}
+
+EV_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mode)
+{
+    int ret;
+    DWORD errcode;
+
+    file_open_info_win_t info;
+    ret = _ev_file_get_open_attributes(flags, mode, &info);
+    if (ret != 0)
+    {
+        return ret;
+    }
+
+    WCHAR* path_w = NULL;
+    ssize_t path_sz = ev__utf8_to_wide(&path_w, path);
+    if (path_sz < 0)
+    {
+        return (int)path_sz;
+    }
+
+    HANDLE filehandle = CreateFileW(path_w, info.access, info.share, NULL,
+        info.disposition, info.attributes, NULL);
+    ev_free(path_w);
+
+    if (filehandle == INVALID_HANDLE_VALUE)
+    {
+        errcode = GetLastError();
+        if (errcode == ERROR_FILE_EXISTS && (flags & EV_FS_O_CREAT) && !(flags & EV_FS_O_EXCL))
+        {
+            return EV_EISDIR;
+        }
+
+        return ev__translate_sys_error(errcode);
+    }
+
+    *file = filehandle;
+    return 0;
+}
+
+EV_LOCAL int64_t ev__fs_seek(ev_os_file_t file, int whence, int64_t offset)
+{
+    LARGE_INTEGER liDistanceToMove;
+    liDistanceToMove.QuadPart = offset;
+
+    LARGE_INTEGER liNewFilePointer;
+    if (!SetFilePointerEx(file, liDistanceToMove, &liNewFilePointer, whence) == INVALID_SET_FILE_POINTER)
+    {
+        DWORD errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    return liNewFilePointer.QuadPart;
+}
+
+EV_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
+{
+    DWORD errcode;
+    DWORD bytes = 0;
+    if (file == INVALID_HANDLE_VALUE)
+    {
+        return ev__translate_sys_error(ERROR_INVALID_HANDLE);
+    }
+
+    size_t idx;
+    for (idx = 0; idx < nbuf; idx++)
+    {
+        DWORD incremental_bytes;
+        BOOL read_ret = ReadFile(file, bufs[idx].data, bufs[idx].size,
+            &incremental_bytes, NULL);
+        if (!read_ret)
+        {
+            goto error;
+        }
+        bytes += incremental_bytes;
+    }
+
+    return bytes;
+
+error:
+    errcode = GetLastError();
+    if (errcode == ERROR_HANDLE_EOF || errcode == ERROR_BROKEN_PIPE)
+    {
+        return bytes;
+    }
+
+    if (errcode == ERROR_ACCESS_DENIED)
+    {
+        errcode = ERROR_INVALID_FLAGS;
+    }
+    return ev__translate_sys_error(errcode);
+}
+
+EV_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, int64_t offset)
+{
+    if (file == INVALID_HANDLE_VALUE)
+    {
+        return ev__translate_sys_error(ERROR_INVALID_HANDLE);
+    }
+
+    OVERLAPPED overlapped;
+    memset(&overlapped, 0, sizeof(overlapped));
+
+    size_t idx;
+    LARGE_INTEGER offset_;
+    DWORD bytes = 0;
+    BOOL read_ret = TRUE;
+    for (idx = 0; read_ret && idx < nbuf; idx++)
+    {
+        offset_.QuadPart = offset + bytes;
+        overlapped.Offset = offset_.LowPart;
+        overlapped.OffsetHigh = offset_.HighPart;
+
+        DWORD incremental_bytes;
+        read_ret = ReadFile(file, bufs[idx].data, bufs[idx].size,
+            &incremental_bytes, &overlapped);
+        bytes += incremental_bytes;
+    }
+
+    if (read_ret || bytes > 0)
+    {
+        return bytes;
+    }
+
+    DWORD err = GetLastError();
+    if (err == ERROR_HANDLE_EOF || err == ERROR_BROKEN_PIPE)
+    {
+        return bytes;
+    }
+
+    if (err == ERROR_ACCESS_DENIED)
+    {
+        err = ERROR_INVALID_FLAGS;
+    }
+    return ev__translate_sys_error(err);
+}
+
+EV_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
+{
+    DWORD errcode;
+    DWORD bytes = 0;
+    if (file == INVALID_HANDLE_VALUE)
+    {
+        return ev__translate_sys_error(ERROR_INVALID_HANDLE);
+    }
+
+    size_t idx;
+    for (idx = 0; idx < nbuf; idx++)
+    {
+        DWORD incremental_bytes;
+        BOOL write_ret = WriteFile(file, bufs[idx].data, bufs[idx].size,
+            &incremental_bytes, NULL);
+        if (!write_ret)
+        {
+            goto error;
+        }
+
+        bytes += incremental_bytes;
+    }
+
+    return bytes;
+
+error:
+    errcode = GetLastError();
+    if (errcode == ERROR_ACCESS_DENIED)
+    {
+        errcode = ERROR_INVALID_FLAGS;
+    }
+    return ev__translate_sys_error(errcode);
+}
+
+EV_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
+    int64_t offset)
+{
+    if (file == INVALID_HANDLE_VALUE)
+    {
+        return ev__translate_sys_error(ERROR_INVALID_HANDLE);
+    }
+
+    OVERLAPPED overlapped;
+    memset(&overlapped, 0, sizeof(overlapped));
+
+    size_t idx;
+    LARGE_INTEGER offset_;
+    DWORD bytes = 0;
+    BOOL write_ret = TRUE;
+    for (idx = 0; write_ret && idx < nbuf; idx++)
+    {
+        offset_.QuadPart = offset + bytes;
+        overlapped.Offset = offset_.LowPart;
+        overlapped.OffsetHigh = offset_.HighPart;
+
+        DWORD incremental_bytes;
+        write_ret = WriteFile(file, bufs[idx].data,
+            bufs[idx].size, &incremental_bytes, &overlapped);
+        bytes += incremental_bytes;
+    }
+
+    if (write_ret || bytes > 0)
+    {
+        return bytes;
+    }
+
+    DWORD err = GetLastError();
+    if (err == ERROR_ACCESS_DENIED)
+    {
+        err = ERROR_INVALID_FLAGS;
+    }
+    return ev__translate_sys_error(err);
+}
+
+EV_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
+{
+    int errcode;
+    if (_ev_file_wrap_fstat_win(file, statbuf, 0) != 0)
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    return 0;
+}
+
+EV_LOCAL int ev__fs_close(ev_os_file_t file)
+{
+    DWORD errcode;
+    if (!CloseHandle(file))
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+    return 0;
+}
+
+EV_LOCAL int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg)
+{
+    WIN32_FIND_DATAW info;
+    ev_dirent_w_t dirent_info;
+
+    int ret = 0;
+    HANDLE dir_handle = INVALID_HANDLE_VALUE;
+    WCHAR* fixed_path = NULL;
+
+    size_t path_len = wcslen(path);
+    size_t fixed_path_len = path_len + 3;
+    fixed_path = ev_malloc(sizeof(WCHAR) * fixed_path_len);
+    if (fixed_path == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    const WCHAR* fmt = L"%s\\*";
+    if (path[path_len - 1] == L'/' || path[path_len - 1] == L'\\')
+    {
+        fmt = L"%s*";
+    }
+    _snwprintf_s(fixed_path, fixed_path_len, _TRUNCATE, fmt, path);
+
+    dir_handle = FindFirstFileW(fixed_path, &info);
+    if (dir_handle == INVALID_HANDLE_VALUE)
+    {
+        ret = ev__translate_sys_error(GetLastError());
+        goto cleanup;
+    }
+
+    do
+    {
+        if (wcscmp(info.cFileName, L".") == 0 || wcscmp(info.cFileName, L"..") == 0)
+        {
+            continue;
+        }
+
+        dirent_info.type = _ev_fs_get_dirent_type_win(&info);
+        dirent_info.name = info.cFileName;
+
+        if (cb(&dirent_info, arg))
+        {
+            break;
+        }
+    } while (FindNextFileW(dir_handle, &info));
+
+cleanup:
+    if (dir_handle != INVALID_HANDLE_VALUE)
+    {
+        FindClose(dir_handle);
+    }
+    if (fixed_path != NULL)
+    {
+        ev_free(fixed_path);
+    }
+    return ret;
+}
+
+EV_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
+{
+    WCHAR* wide_path = NULL;
+    size_t wide_path_len = ev__utf8_to_wide(&wide_path, path);
+    if (wide_path_len < 0)
+    {
+        return (int)wide_path_len;
+    }
+
+    fs_readdir_win_helper_t helper = { cb, arg, 0 };
+    int ret = ev__fs_readdir_w(wide_path, _ev_fs_readdir_w_on_dirent, &helper);
+
+    ev_free(wide_path);
+    return helper.errcode != 0 ? helper.errcode : ret;
+}
+
+EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
+{
+    WCHAR* copy_wpath;
+    ssize_t ret = ev__utf8_to_wide(&copy_wpath, path);
+    if (ret < 0)
+    {
+        return (int)ret;
+    }
+
+    ret = _ev_fs_wmkdir(copy_wpath, mode);
+    ev_free(copy_wpath);
+
+    return (int)ret;
+}
+
+int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t offset,
+    size_t size, int flags)
+{
+    DWORD errcode;
+
+    LARGE_INTEGER file_sz;
+    if (!GetFileSizeEx(file->file, &file_sz))
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    if (offset >= (uint64_t)file_sz.QuadPart)
+    {
+        EV_ASSERT(size > 0);
+    }
+    else if (size == 0)
+    {
+        size = (size_t)(file_sz.QuadPart - offset);
+    }
+    const uint64_t map_sz = offset + size;
+
+    const DWORD dwMaximumSizeHigh = map_sz >> 32;
+    const DWORD dwMaximumSizeLow = (DWORD)map_sz;
+    const DWORD flProtect = _ev_file_mmap_to_native_protect_win32(flags);
+    view->backend.file_map_obj = CreateFileMappingW(file->file, NULL, flProtect,
+        dwMaximumSizeHigh, dwMaximumSizeLow, NULL);
+    if (view->backend.file_map_obj == NULL)
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    const DWORD dwDesiredAccess = _ev_file_mmap_to_native_access(flags);
+    const DWORD dwFileOffsetHigh = offset >> 32;
+    const DWORD dwFileOffsetLow = (DWORD)offset;
+    view->addr = MapViewOfFile(view->backend.file_map_obj, dwDesiredAccess,
+        dwFileOffsetHigh, dwFileOffsetLow, size);
+    if (view->addr == NULL)
+    {
+        CloseHandle(view->backend.file_map_obj);
+        view->backend.file_map_obj = NULL;
+
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+    view->size = size;
+
+    return 0;
+}
+
+void ev_file_munmap(ev_file_map_t* view)
+{
+    if (view->addr != NULL)
+    {
+        UnmapViewOfFile(view->addr);
+        view->addr = NULL;
+    }
+    if (view->backend.file_map_obj != NULL)
+    {
+        CloseHandle(view->backend.file_map_obj);
+        view->backend.file_map_obj = NULL;
+    }
+    view->size = 0;
+}
+
+// #line 39 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/loop_win.c
+// SIZE:    3767
+// SHA-256: 28425c1382afb331abc7817bf8bd2dc34f5e51401faff1c847ea1688135e3432
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/loop_win.c"
+#include <assert.h>
+
+ev_loop_win_ctx_t g_ev_loop_win_ctx;
+
+static void _ev_pool_win_handle_req(OVERLAPPED_ENTRY* overlappeds, ULONG count)
+{
+    ULONG i;
+    for (i = 0; i < count; i++)
+    {
+        if (overlappeds[i].lpOverlapped)
+        {
+            ev_iocp_t* req = EV_CONTAINER_OF(overlappeds[i].lpOverlapped, ev_iocp_t, overlapped);
+            req->cb(req, overlappeds[i].dwNumberOfBytesTransferred, req->arg);
+        }
+    }
+}
+
+static void _ev_check_layout_win(void)
+{
+    ENSURE_LAYOUT(ev_buf_t, size, data, WSABUF, len, buf);
+}
+
+static void _ev_init_once_win(void)
+{
+    g_ev_loop_win_ctx.net.zero_[0] = '\0';
+
+    _ev_check_layout_win();
+    ev__winsock_init();
+    ev__winapi_init();
+    ev__time_init_win();
+    ev__thread_init_win();
+}
+
+EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
+{
+    int repeat;
+    BOOL success;
+    ULONG count;
+    DWORD errcode;
+    OVERLAPPED_ENTRY overlappeds[128];
+
+    uint64_t timeout_time = loop->hwtime + timeout;
+
+    for (repeat = 0;; repeat++)
+    {
+        success = GetQueuedCompletionStatusEx(loop->backend.iocp, overlappeds,
+            ARRAY_SIZE(overlappeds), &count, timeout, FALSE);
+
+        /* If success, handle all IOCP request */
+        if (success)
+        {
+            _ev_pool_win_handle_req(overlappeds, count);
+            return;
+        }
+
+        /* Cannot handle any other error */
+        errcode = GetLastError();
+        if (errcode != WAIT_TIMEOUT)
+        {
+            EV_ABORT("GetLastError:%lu", (unsigned long)errcode);
+        }
+
+        if (timeout == 0)
+        {
+            return;
+        }
+
+        /**
+         * GetQueuedCompletionStatusEx() can occasionally return a little early.
+         * Make sure that the desired timeout target time is reached.
+         */
+        ev__loop_update_time(loop);
+
+        if (timeout_time <= loop->hwtime)
+        {
+            break;
+        }
+
+        timeout = (uint32_t)(timeout_time - loop->hwtime);
+        timeout += repeat ? (1U << (repeat - 1)) : 0;
+    }
+}
+
+EV_LOCAL void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg)
+{
+    req->cb = callback;
+    req->arg = arg;
+    memset(&req->overlapped, 0, sizeof(req->overlapped));
+}
+
+EV_LOCAL void ev__loop_exit_backend(ev_loop_t* loop)
+{
+    ev__threadpool_exit_win(loop);
+
+    if (loop->backend.iocp != NULL)
+    {
+        CloseHandle(loop->backend.iocp);
+        loop->backend.iocp = NULL;
+    }
+}
+
+EV_LOCAL void ev__init_once_win(void)
+{
+    static ev_once_t once = EV_ONCE_INIT;
+    ev_once_execute(&once, _ev_init_once_win);
+}
+
+EV_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
+{
+    ev__init_once_win();
+
+    loop->backend.iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 1);
+    if (loop->backend.iocp == NULL)
+    {
+        int err = GetLastError();
+        return ev__translate_sys_error(err);
+    }
+
+    ev__threadpool_init_win(loop);
+
+    return 0;
+}
+
+EV_LOCAL void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req)
+{
+    DWORD errcode;
+    if (!PostQueuedCompletionStatus(loop->backend.iocp, 0, 0, &req->overlapped))
+    {
+        errcode = GetLastError();
+        EV_ABORT("GetLastError:%lu", errcode);
+    }
+}
+
+EV_LOCAL int ev__reuse_win(SOCKET sock, int opt)
+{
+    DWORD optval = !!opt;
+    int optlen = sizeof(optval);
+
+    int err;
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&optval, optlen) != 0)
+    {
+        err = WSAGetLastError();
+        return ev__translate_sys_error(err);
+    }
+
+    return 0;
+}
+
+EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt)
+{
+    DWORD optval = !!opt;
+    int optlen = sizeof(optval);
+
+    if (setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&optval, optlen) != 0)
+    {
+        int err = WSAGetLastError();
+        return ev__translate_sys_error(err);
+    }
+
+    return 0;
+}
+
+// #line 40 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/misc_win.c
+// SIZE:    8898
+// SHA-256: 1b4f99a5074186ab04cbb91dd5ba21f5c1dd046ba64f01ea76903f9a7001bb0b
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/misc_win.c"
+#include <assert.h>
+
+/* A RtlGenRandom() by any other name... */
+extern BOOLEAN NTAPI SystemFunction036(PVOID Buffer, ULONG BufferLength);
+
+EV_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src)
+{
+    int errcode;
+    int pathw_len = MultiByteToWideChar(CP_UTF8, 0, src, -1, NULL, 0);
+    if (pathw_len == 0)
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    size_t buf_sz = pathw_len * sizeof(WCHAR);
+    WCHAR* buf = ev_malloc(buf_sz);
+    if (buf == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    int r = MultiByteToWideChar(CP_UTF8, 0, src, -1, buf, pathw_len);
+    assert(r == pathw_len);
+
+    *dst = buf;
+
+    return r;
+}
+
+EV_LOCAL ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src)
+{
+    int errcode;
+    int target_len = WideCharToMultiByte(CP_UTF8, 0, src, -1, NULL, 0,
+                                         NULL, NULL);
+    if (target_len == 0)
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    char* buf = ev_malloc(target_len);
+    if (buf == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    int ret = WideCharToMultiByte(CP_UTF8, 0, src, -1, buf, target_len, NULL,
+                                  NULL);
+    assert(ret == target_len);
+    *dst = buf;
+
+    return (ssize_t)ret;
+}
+
+EV_LOCAL int ev__translate_sys_error(int err)
+{
+    switch (err)
+    {
+    case 0:                                 return 0;
+    case ERROR_NOACCESS:                    return EV_EACCES;
+    case WSAEACCES:                         return EV_EACCES;
+    case ERROR_ELEVATION_REQUIRED:          return EV_EACCES;
+    case ERROR_CANT_ACCESS_FILE:            return EV_EACCES;
+    case ERROR_ADDRESS_ALREADY_ASSOCIATED:  return EV_EADDRINUSE;
+    case WSAEADDRINUSE:                     return EV_EADDRINUSE;
+    case WSAEADDRNOTAVAIL:                  return EV_EADDRNOTAVAIL;
+    case WSAEAFNOSUPPORT:                   return EV_EAFNOSUPPORT;
+    case WSAEWOULDBLOCK:                    return EV_EAGAIN;
+    case WSAEALREADY:                       return EV_EALREADY;
+    case ERROR_INVALID_FLAGS:               return EV_EBADF;
+    case ERROR_INVALID_HANDLE:              return EV_EBADF;
+    case ERROR_LOCK_VIOLATION:              return EV_EBUSY;
+    case ERROR_PIPE_BUSY:                   return EV_EBUSY;
+    case ERROR_SHARING_VIOLATION:           return EV_EBUSY;
+    case ERROR_OPERATION_ABORTED:           return EV_ECANCELED;
+    case WSAEINTR:                          return EV_ECANCELED;
+    case ERROR_CONNECTION_ABORTED:          return EV_ECONNABORTED;
+    case WSAECONNABORTED:                   return EV_ECONNABORTED;
+    case ERROR_CONNECTION_REFUSED:          return EV_ECONNREFUSED;
+    case WSAECONNREFUSED:                   return EV_ECONNREFUSED;
+    case ERROR_NETNAME_DELETED:             return EV_ECONNRESET;
+    case WSAECONNRESET:                     return EV_ECONNRESET;
+    case ERROR_ALREADY_EXISTS:              return EV_EEXIST;
+    case ERROR_FILE_EXISTS:                 return EV_EEXIST;
+    case ERROR_BUFFER_OVERFLOW:             return EV_EFAULT;
+    case WSAEFAULT:                         return EV_EFAULT;
+    case ERROR_HOST_UNREACHABLE:            return EV_EHOSTUNREACH;
+    case WSAEHOSTUNREACH:                   return EV_EHOSTUNREACH;
+    case ERROR_INSUFFICIENT_BUFFER:         return EV_EINVAL;
+    case ERROR_INVALID_DATA:                return EV_EINVAL;
+    case ERROR_INVALID_PARAMETER:           return EV_EINVAL;
+    case ERROR_SYMLINK_NOT_SUPPORTED:       return EV_EINVAL;
+    case WSAEINVAL:                         return EV_EINVAL;
+    case WSAEPFNOSUPPORT:                   return EV_EINVAL;
+    case WSAESOCKTNOSUPPORT:                return EV_EINVAL;
+    case ERROR_BEGINNING_OF_MEDIA:          return EV_EIO;
+    case ERROR_BUS_RESET:                   return EV_EIO;
+    case ERROR_CRC:                         return EV_EIO;
+    case ERROR_DEVICE_DOOR_OPEN:            return EV_EIO;
+    case ERROR_DEVICE_REQUIRES_CLEANING:    return EV_EIO;
+    case ERROR_DISK_CORRUPT:                return EV_EIO;
+    case ERROR_EOM_OVERFLOW:                return EV_EIO;
+    case ERROR_FILEMARK_DETECTED:           return EV_EIO;
+    case ERROR_GEN_FAILURE:                 return EV_EIO;
+    case ERROR_INVALID_BLOCK_LENGTH:        return EV_EIO;
+    case ERROR_IO_DEVICE:                   return EV_EIO;
+    case ERROR_NO_DATA_DETECTED:            return EV_EIO;
+    case ERROR_NO_SIGNAL_SENT:              return EV_EIO;
+    case ERROR_OPEN_FAILED:                 return EV_EIO;
+    case ERROR_SETMARK_DETECTED:            return EV_EIO;
+    case ERROR_SIGNAL_REFUSED:              return EV_EIO;
+    case WSAEISCONN:                        return EV_EISCONN;
+    case ERROR_CANT_RESOLVE_FILENAME:       return EV_ELOOP;
+    case ERROR_TOO_MANY_OPEN_FILES:         return EV_EMFILE;
+    case WSAEMFILE:                         return EV_EMFILE;
+    case WSAEMSGSIZE:                       return EV_EMSGSIZE;
+    case ERROR_FILENAME_EXCED_RANGE:        return EV_ENAMETOOLONG;
+    case ERROR_NETWORK_UNREACHABLE:         return EV_ENETUNREACH;
+    case WSAENETUNREACH:                    return EV_ENETUNREACH;
+    case WSAENOBUFS:                        return EV_ENOBUFS;
+    case ERROR_BAD_PATHNAME:                return EV_ENOENT;
+    case ERROR_DIRECTORY:                   return EV_ENOENT;
+    case ERROR_ENVVAR_NOT_FOUND:            return EV_ENOENT;
+    case ERROR_FILE_NOT_FOUND:              return EV_ENOENT;
+    case ERROR_INVALID_NAME:                return EV_ENOENT;
+    case ERROR_INVALID_DRIVE:               return EV_ENOENT;
+    case ERROR_INVALID_REPARSE_DATA:        return EV_ENOENT;
+    case ERROR_MOD_NOT_FOUND:               return EV_ENOENT;
+    case ERROR_PATH_NOT_FOUND:              return EV_ENOENT;
+    case WSAHOST_NOT_FOUND:                 return EV_ENOENT;
+    case WSANO_DATA:                        return EV_ENOENT;
+    case ERROR_PROC_NOT_FOUND:              return EV_ENOENT;
+    case ERROR_NOT_ENOUGH_MEMORY:           return EV_ENOMEM;
+    case ERROR_OUTOFMEMORY:                 return EV_ENOMEM;
+    case ERROR_CANNOT_MAKE:                 return EV_ENOSPC;
+    case ERROR_DISK_FULL:                   return EV_ENOSPC;
+    case ERROR_EA_TABLE_FULL:               return EV_ENOSPC;
+    case ERROR_END_OF_MEDIA:                return EV_ENOSPC;
+    case ERROR_HANDLE_DISK_FULL:            return EV_ENOSPC;
+    case ERROR_NOT_CONNECTED:               return EV_ENOTCONN;
+    case WSAENOTCONN:                       return EV_ENOTCONN;
+    case ERROR_DIR_NOT_EMPTY:               return EV_ENOTEMPTY;
+    case WSAENOTSOCK:                       return EV_ENOTSOCK;
+    case ERROR_NOT_SUPPORTED:               return EV_ENOTSUP;
+    case ERROR_BROKEN_PIPE:                 return EV_EOF;
+    case ERROR_ACCESS_DENIED:               return EV_EPERM;
+    case ERROR_PRIVILEGE_NOT_HELD:          return EV_EPERM;
+    case ERROR_BAD_PIPE:                    return EV_EPIPE;
+    case ERROR_NO_DATA:                     return EV_EPIPE;
+    case ERROR_PIPE_NOT_CONNECTED:          return EV_EPIPE;
+    case WSAESHUTDOWN:                      return EV_EPIPE;
+    case WSAEPROTONOSUPPORT:                return EV_EPROTONOSUPPORT;
+    case ERROR_WRITE_PROTECT:               return EV_EROFS;
+    case ERROR_SEM_TIMEOUT:                 return EV_ETIMEDOUT;
+    case WSAETIMEDOUT:                      return EV_ETIMEDOUT;
+    case ERROR_NOT_SAME_DEVICE:             return EV_EXDEV;
+    case ERROR_INVALID_FUNCTION:            return EV_EISDIR;
+    case ERROR_META_EXPANSION_TOO_LONG:     return EV_E2BIG;
+    default:                                return ev__translate_posix_sys_error(err);
+    }
+}
+
+EV_LOCAL void ev__fatal_syscall(const char* file, int line,
+    DWORD errcode, const char* syscall)
+{
+    const char* errmsg = "Unknown error";
+    char* buf = NULL;
+    FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL, errcode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&buf, 0, NULL);
+    if (buf)
+    {
+        errmsg = buf;
+    }
+
+    if (syscall != NULL)
+    {
+        fprintf(stderr, "%s:%d: [%s] %s(%d)\n", file, line, syscall, errmsg, (int)errcode);
+    }
+    else
+    {
+        fprintf(stderr, "%s:%d: %s(%d)\n", file, line, errmsg, (int)errcode);
+    }
+
+    if (buf)
+    {
+        LocalFree(buf);
+        buf = NULL;
+    }
+
+    __debugbreak();
+    abort();
+}
+
+EV_LOCAL int ev__random(void* buf, size_t len)
+{
+    if (SystemFunction036(buf, (ULONG)len) == FALSE)
+    {
+        return EV_EIO;
+    }
+    return 0;
+}
+
+size_t ev_os_page_size(void)
+{
+    SYSTEM_INFO sys_info;
+    GetSystemInfo(&sys_info);
+    return sys_info.dwPageSize;
+}
+
+size_t ev_os_mmap_offset_granularity(void)
+{
+    SYSTEM_INFO sys_info;
+    GetSystemInfo(&sys_info);
+    return sys_info.dwAllocationGranularity;
+}
+
+// #line 41 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/mutex_win.c
+// SIZE:    527
+// SHA-256: bba803aefe10be28a952f9af290bf88ff97957b4db0e03f44950306dadd16aa6
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/mutex_win.c"
+
+void ev_mutex_init(ev_mutex_t* handle, int recursive)
+{
+    (void)recursive;
+    InitializeCriticalSection(&handle->u.r);
+}
+
+void ev_mutex_exit(ev_mutex_t* handle)
+{
+    DeleteCriticalSection(&handle->u.r);
+}
+
+void ev_mutex_enter(ev_mutex_t* handle)
+{
+    EnterCriticalSection(&handle->u.r);
+}
+
+void ev_mutex_leave(ev_mutex_t* handle)
+{
+    LeaveCriticalSection(&handle->u.r);
+}
+
+int ev_mutex_try_enter(ev_mutex_t* handle)
+{
+    if (TryEnterCriticalSection(&handle->u.r))
+    {
+        return 0;
+    }
+
+    return EV_EBUSY;
+}
+
+// #line 42 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/once_win.c
+// SIZE:    445
+// SHA-256: 803aeeffc5aa8681dc3a1f4a799bfb0b2bf191504a40fe73c73f8468177a5b78
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/once_win.c"
+
+static BOOL WINAPI _ev_once_proxy(PINIT_ONCE InitOnce, PVOID Parameter, PVOID *Context)
+{
+    (void)InitOnce; (void)Context;
+
+    ((ev_once_cb)Parameter)();
+    return TRUE;
+}
+
+void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
+{
+    DWORD errcode;
+    if (InitOnceExecuteOnce(&guard->guard, _ev_once_proxy, (PVOID)cb, NULL) == 0)
+    {
+        errcode = GetLastError();
+        EV_ABORT("GetLastError:%lu", (unsigned long)errcode);
+    }
+}
+
+// #line 43 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/pipe_win.c
+// SIZE:    42909
+// SHA-256: 1516dd61b78f2b427d88aaa8030e85cf01a9a4a747b8e2fffe45064f93898280
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/pipe_win.c"
+#include <stdio.h>
+#include <assert.h>
+
+static char s_ev_zero[] = "";
+
+static int _ev_pipe_make_s(HANDLE *pip_handle, const char *name, int flags)
+{
+    DWORD r_open_mode = WRITE_DAC | FILE_FLAG_FIRST_PIPE_INSTANCE;
+    r_open_mode |= (flags & EV_PIPE_READABLE) ? PIPE_ACCESS_INBOUND : 0;
+    r_open_mode |= (flags & EV_PIPE_WRITABLE) ? PIPE_ACCESS_OUTBOUND : 0;
+    r_open_mode |= (flags & EV_PIPE_NONBLOCK) ? FILE_FLAG_OVERLAPPED : 0;
+
+    HANDLE pip_r = CreateNamedPipeA(
+        name, r_open_mode, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1,
+        65535, 65535, 0, NULL);
+    if (pip_r != INVALID_HANDLE_VALUE)
+    {
+        *pip_handle = pip_r;
+        return 0;
+    }
+
+    DWORD errcode = GetLastError();
+    return ev__translate_sys_error(errcode);
+}
+
+static int _ev_pipe_make_c(HANDLE *pipe_handle, const char *name, int flags)
+{
+    DWORD w_open_mode = WRITE_DAC;
+    w_open_mode |=
+        (flags & EV_PIPE_READABLE) ? GENERIC_READ : FILE_READ_ATTRIBUTES;
+    w_open_mode |=
+        (flags & EV_PIPE_WRITABLE) ? GENERIC_WRITE : FILE_WRITE_ATTRIBUTES;
+
+    SECURITY_ATTRIBUTES sa;
+    sa.nLength = sizeof sa;
+    sa.lpSecurityDescriptor = NULL;
+    sa.bInheritHandle = 0;
+
+    DWORD dwFlagsAndAttributes =
+        (flags & EV_PIPE_NONBLOCK) ? FILE_FLAG_OVERLAPPED : 0;
+    HANDLE pip_w = CreateFileA(name, w_open_mode, 0, &sa, OPEN_EXISTING,
+                               dwFlagsAndAttributes, NULL);
+
+    if (pip_w != INVALID_HANDLE_VALUE)
+    {
+        *pipe_handle = pip_w;
+        return 0;
+    }
+
+    DWORD errcode = GetLastError();
+    return ev__translate_sys_error(errcode);
+}
+
+static void _ev_pipe_smart_deactive_win(ev_pipe_t *pipe)
+{
+    size_t io_sz = 0;
+
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
+    {
+        io_sz += ev_list_size(&pipe->backend.ipc_mode.rio.pending);
+        io_sz += ev_list_size(&pipe->backend.ipc_mode.wio.pending);
+        io_sz += pipe->backend.ipc_mode.wio.sending.w_req != NULL ? 1 : 0;
+    }
+    else
+    {
+        io_sz += ev_list_size(&pipe->backend.data_mode.rio.r_pending);
+        io_sz += ev_list_size(&pipe->backend.data_mode.wio.w_pending);
+        io_sz += ev_list_size(&pipe->backend.data_mode.wio.w_doing);
+    }
+
+    if (io_sz == 0)
+    {
+        ev__handle_deactive(&pipe->base);
+    }
+}
+
+static void _ev_pipe_r_user_callback_win(ev_pipe_read_req_t *req, ssize_t size)
+{
+    ev_pipe_t *pipe = req->backend.owner;
+    _ev_pipe_smart_deactive_win(pipe);
+
+    ev__read_exit(&req->base);
+    req->ucb(req, size);
+}
+
+static void _ev_pipe_cancel_all_r_ipc_mode(ev_pipe_t *pipe, int stat)
+{
+    ev_pipe_read_req_t *req;
+    if ((req = pipe->backend.ipc_mode.rio.reading.reading) != NULL)
+    {
+        pipe->backend.ipc_mode.rio.reading.reading = NULL;
+        _ev_pipe_r_user_callback_win(req, stat);
+    }
+    pipe->backend.ipc_mode.rio.reading.buf_idx = 0;
+    pipe->backend.ipc_mode.rio.reading.buf_pos = 0;
+
+    ev_list_node_t *it;
+    while ((it = ev_list_pop_front(&pipe->backend.ipc_mode.rio.pending)) !=
+           NULL)
+    {
+        req = EV_CONTAINER_OF(it, ev_pipe_read_req_t, base.node);
+        _ev_pipe_r_user_callback_win(req, stat);
+    }
+}
+
+static void _ev_pipe_cancel_all_r_data_mode(ev_pipe_t *pipe, int stat)
+{
+    ev_pipe_read_req_t *req;
+    if ((req = pipe->backend.data_mode.rio.r_doing) != NULL)
+    {
+        pipe->backend.data_mode.rio.r_doing = NULL;
+        _ev_pipe_r_user_callback_win(req, stat);
+    }
+
+    ev_list_node_t *it;
+    while ((it = ev_list_pop_front(&pipe->backend.data_mode.rio.r_pending)) !=
+           NULL)
+    {
+        req = EV_CONTAINER_OF(it, ev_pipe_read_req_t, base.node);
+        _ev_pipe_r_user_callback_win(req, stat);
+    }
+}
+
+static void _ev_pipe_cancel_all_r(ev_pipe_t *pipe, int stat)
+{
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
+    {
+        _ev_pipe_cancel_all_r_ipc_mode(pipe, stat);
+    }
+    else
+    {
+        _ev_pipe_cancel_all_r_data_mode(pipe, stat);
+    }
+}
+
+static void _ev_pipe_w_user_callback_win(ev_pipe_write_req_t *req, ssize_t size)
+{
+    ev_pipe_t       *pipe = req->backend.owner;
+    ev_pipe_write_cb ucb = req->ucb;
+    void            *arg = req->ucb_arg;
+
+    _ev_pipe_smart_deactive_win(pipe);
+    ev__write_exit(&req->base);
+    ev_free(req);
+
+    ucb(pipe, size, arg);
+}
+
+static void _ev_pipe_cancel_all_w_data_mode(ev_pipe_t *pipe, int stat)
+{
+    ev_pipe_write_req_t *req;
+    if ((req = pipe->backend.data_mode.wio.w_half) != NULL)
+    {
+        _ev_pipe_w_user_callback_win(req, stat);
+        pipe->backend.data_mode.wio.w_half = NULL;
+    }
+    pipe->backend.data_mode.wio.w_half_idx = 0;
+
+    ev_list_node_t *it;
+    while ((it = ev_list_pop_front(&pipe->backend.data_mode.wio.w_pending)) !=
+           NULL)
+    {
+        req = EV_CONTAINER_OF(it, ev_pipe_write_req_t, base.node);
+        _ev_pipe_w_user_callback_win(req, stat);
+    }
+}
+
+static void _ev_pipe_cancel_all_w_ipc_mode(ev_pipe_t *pipe, int stat)
+{
+    ev_pipe_write_req_t *req;
+    if ((req = pipe->backend.ipc_mode.wio.sending.w_req) != NULL)
+    {
+        pipe->backend.ipc_mode.wio.sending.w_req = NULL;
+        _ev_pipe_w_user_callback_win(req, stat);
+    }
+    pipe->backend.ipc_mode.wio.sending.donecnt = 0;
+
+    ev_list_node_t *it;
+    while ((it = ev_list_pop_front(&pipe->backend.ipc_mode.wio.pending)) !=
+           NULL)
+    {
+        req = EV_CONTAINER_OF(it, ev_pipe_write_req_t, base.node);
+        _ev_pipe_w_user_callback_win(req, stat);
+    }
+}
+
+static void _ev_pipe_cancel_all_w(ev_pipe_t *pipe, int stat)
+{
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
+    {
+        _ev_pipe_cancel_all_w_ipc_mode(pipe, stat);
+    }
+    else
+    {
+        _ev_pipe_cancel_all_w_data_mode(pipe, stat);
+    }
+}
+
+static void _ev_pipe_close_pipe(ev_pipe_t *pipe)
+{
+    if (pipe->pipfd != EV_OS_PIPE_INVALID)
+    {
+        CloseHandle(pipe->pipfd);
+        pipe->pipfd = EV_OS_PIPE_INVALID;
+    }
+}
+
+/**
+ * @brief Abort all pending task and close pipe.
+ * The pipe is no longer usable.
+ */
+static void _ev_pipe_abort(ev_pipe_t *pipe, int stat)
+{
+    _ev_pipe_close_pipe(pipe);
+
+    _ev_pipe_cancel_all_r(pipe, stat);
+    _ev_pipe_cancel_all_w(pipe, stat);
+}
+
+static void _ev_pipe_on_close_win(ev_handle_t *handle)
+{
+    ev_pipe_t *pipe = EV_CONTAINER_OF(handle, ev_pipe_t, base);
+    ev_pipe_cb close_cb = pipe->close_cb;
+    void      *close_arg = pipe->close_arg;
+
+    _ev_pipe_abort(pipe, EV_ECANCELED);
+    ev_free(pipe);
+
+    if (close_cb != NULL)
+    {
+        close_cb(pipe, close_arg);
+    }
+}
+
+static int _ev_pipe_read_into_req(HANDLE file, ev_pipe_read_req_t *req,
+                                  size_t minimum_size, size_t bufidx,
+                                  size_t bufpos, size_t *dbufidx,
+                                  size_t *dbufpos, size_t *total)
+{
+    int    ret = 0;
+    size_t total_size = 0;
+
+    while (bufidx < req->base.data.nbuf && total_size < minimum_size)
+    {
+        ev_buf_t *buf = &req->base.data.bufs[bufidx];
+        void     *buffer = (uint8_t *)buf->data + bufpos;
+        size_t    buffersize = buf->size - bufpos;
+
+        DWORD read_size;
+        if (!ReadFile(file, buffer, (DWORD)buffersize, &read_size, NULL))
+        {
+            int err = GetLastError();
+            ret = ev__translate_sys_error(err);
+            break;
+        }
+
+        total_size += read_size;
+        if (read_size < buffersize)
+        {
+            bufpos += read_size;
+            continue;
+        }
+
+        bufidx++;
+        bufpos = 0;
+    }
+
+    if (dbufidx != NULL)
+    {
+        *dbufidx = bufidx;
+    }
+    if (dbufpos != NULL)
+    {
+        *dbufpos = bufpos;
+    }
+    if (total != NULL)
+    {
+        *total = total_size;
+    }
+    return ret;
+}
+
+static int _ev_pipe_data_mode_want_read(ev_pipe_t *pipe)
+{
+    int ret = ReadFile(pipe->pipfd, s_ev_zero, 0, NULL,
+                       &pipe->backend.data_mode.rio.io.overlapped);
+
+    if (!ret)
+    {
+        DWORD err = GetLastError();
+        if (err != ERROR_IO_PENDING)
+        {
+            return ev__translate_sys_error(err);
+        }
+    }
+
+    return 0;
+}
+
+static void _ev_pipe_data_mode_callback_and_mount_next_win(
+    ev_pipe_t *pipe, ev_pipe_read_req_t *req)
+{
+    ev_list_node_t *it =
+        ev_list_pop_front(&pipe->backend.data_mode.rio.r_pending);
+    if (it == NULL)
+    {
+        pipe->backend.data_mode.rio.r_doing = NULL;
+    }
+    else
+    {
+        pipe->backend.data_mode.rio.r_doing =
+            EV_CONTAINER_OF(it, ev_pipe_read_req_t, base.node);
+    }
+
+    _ev_pipe_r_user_callback_win(req, req->base.data.size);
+}
+
+static int _ev_pipe_on_data_mode_read_recv(ev_pipe_t *pipe)
+{
+    int ret = 0;
+
+    ev_pipe_read_req_t *req;
+
+    size_t bufidx = 0;
+    size_t bufpos = 0;
+
+    DWORD avail;
+    while ((req = pipe->backend.data_mode.rio.r_doing) != NULL)
+    {
+        if (!PeekNamedPipe(pipe->pipfd, NULL, 0, NULL, &avail, NULL))
+        {
+            ret = GetLastError();
+            return ev__translate_sys_error(ret);
+        }
+
+        /* no more data to read */
+        if (avail == 0)
+        {
+            _ev_pipe_data_mode_callback_and_mount_next_win(pipe, req);
+            break;
+        }
+
+        size_t total = 0;
+        ret = _ev_pipe_read_into_req(pipe->pipfd, req, avail, bufidx, bufpos,
+                                     &bufidx, &bufpos, &total);
+        req->base.data.size += total;
+
+        if (ret != 0)
+        {
+            return ret;
+        }
+
+        if (req->base.data.size < req->base.data.capacity)
+        {
+            continue;
+        }
+
+        _ev_pipe_data_mode_callback_and_mount_next_win(pipe, req);
+    }
+
+    return 0;
+}
+
+static int _ev_pipe_is_success_iocp_request(const ev_iocp_t *iocp)
+{
+    NTSTATUS status = (NTSTATUS)(iocp->overlapped.Internal);
+    return NT_SUCCESS(status);
+}
+
+static DWORD _ev_pipe_get_iocp_error(const ev_iocp_t *iocp)
+{
+    NTSTATUS status = (NTSTATUS)(iocp->overlapped.Internal);
+    return ev_winapi.RtlNtStatusToDosError(status);
+}
+
+static void _ev_pipe_on_data_mode_read_win(ev_iocp_t *iocp, size_t transferred,
+                                           void *arg)
+{
+    (void)transferred;
+
+    int        ret;
+    ev_pipe_t *pipe = arg;
+
+    if (!_ev_pipe_is_success_iocp_request(iocp))
+    {
+        int err = _ev_pipe_get_iocp_error(iocp);
+        ret = ev__translate_sys_error(err);
+        _ev_pipe_abort(pipe, ret);
+
+        return;
+    }
+
+    /* Do actual read */
+    ret = _ev_pipe_on_data_mode_read_recv(pipe);
+    if (ret != 0)
+    {
+        _ev_pipe_abort(pipe, ret);
+        return;
+    }
+
+    /* If there are pending read request, we submit another IOCP request */
+    if (pipe->backend.data_mode.rio.r_doing != NULL ||
+        ev_list_size(&pipe->backend.data_mode.rio.r_pending) != 0)
+    {
+        _ev_pipe_data_mode_want_read(pipe);
+        return;
+    }
+}
+
+static int _ev_pipe_write_file_iocp(HANDLE file, const void *buffer,
+                                    size_t size, LPOVERLAPPED iocp)
+{
+    memset(iocp, 0, sizeof(*iocp));
+    int result = WriteFile(file, buffer, (DWORD)size, NULL, iocp);
+    if (result)
+    {
+        return 0;
+    }
+
+    int err = GetLastError();
+    if (err == ERROR_IO_PENDING)
+    {
+        return 0;
+    }
+
+    return ev__translate_sys_error(err);
+}
+
+static int _ev_pipe_io_wio_submit_half(
+    ev_pipe_t *pipe, struct ev_pipe_backend_data_mode_wio *wio)
+{
+    ev_pipe_write_req_t *half_req = pipe->backend.data_mode.wio.w_half;
+    size_t               half_idx = pipe->backend.data_mode.wio.w_half_idx;
+
+    wio->w_req = half_req;
+    wio->w_buf_idx = half_idx;
+
+    int result = _ev_pipe_write_file_iocp(
+        pipe->pipfd, half_req->base.bufs[half_idx].data,
+        half_req->base.bufs[half_idx].size, &wio->io.overlapped);
+    pipe->backend.data_mode.wio.w_half_idx++;
+
+    /* move half record to doing list */
+    if (pipe->backend.data_mode.wio.w_half_idx == half_req->base.nbuf)
+    {
+        ev_list_push_back(&pipe->backend.data_mode.wio.w_doing,
+                          &half_req->base.node);
+        pipe->backend.data_mode.wio.w_half = NULL;
+        pipe->backend.data_mode.wio.w_half_idx = 0;
+    }
+
+    return result;
+}
+
+/**
+ * @return 1: no more buffer need to send
+ */
+static int _ev_pipe_io_wio_submit_pending(
+    ev_pipe_t *pipe, struct ev_pipe_backend_data_mode_wio *wio)
+{
+    ev_list_node_t *it =
+        ev_list_pop_front(&pipe->backend.data_mode.wio.w_pending);
+    if (it == NULL)
+    {
+        return 1;
+    }
+    ev_pipe_write_req_t *wreq =
+        EV_CONTAINER_OF(it, ev_pipe_write_req_t, base.node);
+
+    wio->w_req = wreq;
+    wio->w_buf_idx = 0;
+
+    int result =
+        _ev_pipe_write_file_iocp(pipe->pipfd, wreq->base.bufs[0].data,
+                                 wreq->base.bufs[0].size, &wio->io.overlapped);
+
+    if (wreq->base.nbuf == 1)
+    {
+        ev_list_push_back(&pipe->backend.data_mode.wio.w_doing,
+                          &wreq->base.node);
+    }
+    else
+    {
+        pipe->backend.data_mode.wio.w_half = wreq;
+        pipe->backend.data_mode.wio.w_half_idx = 1;
+    }
+
+    return result;
+}
+
+/**
+ * @return 0: success, 1: no more buffer need to send, any other value: failure
+ */
+static int _ev_pipe_io_wio_submit_next(
+    ev_pipe_t *pipe, struct ev_pipe_backend_data_mode_wio *wio)
+{
+    if (pipe->backend.data_mode.wio.w_half != NULL)
+    {
+        return _ev_pipe_io_wio_submit_half(pipe, wio);
+    }
+
+    return _ev_pipe_io_wio_submit_pending(pipe, wio);
+}
+
+static void _ev_pipe_on_data_mode_write(ev_iocp_t *iocp, size_t transferred,
+                                        void *arg)
+{
+    ev_pipe_t                            *pipe = arg;
+    struct ev_pipe_backend_data_mode_wio *wio =
+        EV_CONTAINER_OF(iocp, struct ev_pipe_backend_data_mode_wio, io);
+
+    /* wio will be override, we need to backup value */
+    ev_pipe_write_req_t *curr_req = wio->w_req;
+    size_t               curr_buf_idx = wio->w_buf_idx;
+
+    /* update send size */
+    curr_req->base.size += transferred;
+
+    /* override wio with next write request */
+    int submit_ret = _ev_pipe_io_wio_submit_next(pipe, wio);
+    if (submit_ret != 0)
+    {
+        pipe->backend.data_mode.wio.w_io_cnt--;
+    }
+
+    /* The last buffer */
+    if (curr_buf_idx == curr_req->base.nbuf - 1)
+    {
+        ssize_t stat =
+            NT_SUCCESS(iocp->overlapped.Internal)
+                ? 0
+                : ev__translate_sys_error(ev__ntstatus_to_winsock_error(
+                      (NTSTATUS)iocp->overlapped.Internal));
+        ev_list_erase(&pipe->backend.data_mode.wio.w_doing,
+                      &curr_req->base.node);
+
+        stat = stat < 0 ? stat : curr_req->base.size;
+        _ev_pipe_w_user_callback_win(curr_req, stat);
+    }
+
+    /* If submit error, abort any pending actions */
+    if (submit_ret != 0 && submit_ret != 1)
+    {
+        _ev_pipe_abort(pipe, submit_ret);
+    }
+}
+
+static void _ev_pipe_init_data_mode_r(ev_pipe_t *pipe)
+{
+    ev__iocp_init(&pipe->backend.data_mode.rio.io,
+                  _ev_pipe_on_data_mode_read_win, pipe);
+    ev_list_init(&pipe->backend.data_mode.rio.r_pending);
+    pipe->backend.data_mode.rio.r_doing = NULL;
+}
+
+static void _ev_pipe_init_data_mode_w(ev_pipe_t *pipe)
+{
+    size_t i;
+    for (i = 0; i < ARRAY_SIZE(pipe->backend.data_mode.wio.iocp); i++)
+    {
+        ev__iocp_init(&pipe->backend.data_mode.wio.iocp[i].io,
+                      _ev_pipe_on_data_mode_write, pipe);
+        pipe->backend.data_mode.wio.iocp[i].idx = i;
+        pipe->backend.data_mode.wio.iocp[i].w_req = NULL;
+        pipe->backend.data_mode.wio.iocp[i].w_buf_idx = 0;
+    }
+    pipe->backend.data_mode.wio.w_io_idx = 0;
+    pipe->backend.data_mode.wio.w_io_cnt = 0;
+
+    ev_list_init(&pipe->backend.data_mode.wio.w_pending);
+    ev_list_init(&pipe->backend.data_mode.wio.w_doing);
+    pipe->backend.data_mode.wio.w_half = NULL;
+    pipe->backend.data_mode.wio.w_half_idx = 0;
+}
+
+static int _ev_pipe_read_exactly(HANDLE file, void *buffer, size_t size)
+{
+    int   err;
+    DWORD bytes_read, bytes_read_now;
+
+    bytes_read = 0;
+    while (bytes_read < size)
+    {
+        if (!ReadFile(file, (char *)buffer + bytes_read,
+                      (DWORD)size - bytes_read, &bytes_read_now, NULL))
+        {
+            err = GetLastError();
+            return ev__translate_sys_error(err);
+        }
+
+        bytes_read += bytes_read_now;
+    }
+
+    assert(bytes_read == size);
+    return 0;
+}
+
+static ev_pipe_read_req_t *_ev_pipe_on_ipc_mode_read_mount_next(ev_pipe_t *pipe)
+{
+    pipe->backend.ipc_mode.rio.reading.buf_idx = 0;
+    pipe->backend.ipc_mode.rio.reading.buf_pos = 0;
+
+    ev_list_node_t *it = ev_list_pop_front(&pipe->backend.ipc_mode.rio.pending);
+    if (it == NULL)
+    {
+        pipe->backend.ipc_mode.rio.reading.reading = NULL;
+    }
+    else
+    {
+        pipe->backend.ipc_mode.rio.reading.reading =
+            EV_CONTAINER_OF(it, ev_pipe_read_req_t, base.node);
+    }
+
+    return pipe->backend.ipc_mode.rio.reading.reading;
+}
+
+static int _ev_pipe_on_ipc_mode_read_information(ev_pipe_t          *pipe,
+                                                 ev_ipc_frame_hdr_t *hdr)
+{
+    if (hdr->hdr_exsz != sizeof(ev_pipe_win_ipc_info_t))
+    {
+        return EV_EPROTO;
+    }
+
+    void *buffer = (uint8_t *)pipe->backend.ipc_mode.rio.buffer +
+                   sizeof(ev_ipc_frame_hdr_t);
+    size_t buffer_size =
+        sizeof(pipe->backend.ipc_mode.rio.buffer) - sizeof(ev_ipc_frame_hdr_t);
+    assert(buffer_size >= sizeof(ev_pipe_win_ipc_info_t));
+
+    int ret = _ev_pipe_read_exactly(pipe->pipfd, buffer, buffer_size);
+    assert(ret == 0);
+    (void)ret;
+
+    ev_pipe_read_req_t     *req;
+    ev_pipe_win_ipc_info_t *ipc_info = buffer;
+
+    switch (ipc_info->type)
+    {
+    case EV_PIPE_WIN_IPC_INFO_TYPE_STATUS:
+        pipe->backend.ipc_mode.peer_pid = ipc_info->data.as_status.pid;
+        break;
+
+    case EV_PIPE_WIN_IPC_INFO_TYPE_PROTOCOL_INFO:
+        if ((req = pipe->backend.ipc_mode.rio.reading.reading) == NULL)
+        {
+            req = _ev_pipe_on_ipc_mode_read_mount_next(pipe);
+        }
+        assert(req != NULL);
+        req->handle.os_socket = WSASocketW(
+            FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
+            &ipc_info->data.as_protocol_info, 0, WSA_FLAG_OVERLAPPED);
+        if (req->handle.os_socket == INVALID_SOCKET)
+        {
+            int errcode = WSAGetLastError();
+            return ev__translate_sys_error(errcode);
+        }
+        break;
+
+    default:
+        abort();
+        break;
+    }
+
+    return 0;
+}
+
+static int _ev_pipe_on_ipc_mode_read_remain(ev_pipe_t *pipe)
+{
+    DWORD avail, errcode;
+    while (pipe->backend.ipc_mode.rio.remain_size > 0 &&
+           PeekNamedPipe(pipe->pipfd, NULL, 0, NULL, &avail, NULL) && avail > 0)
+    {
+        ev_pipe_read_req_t *req = pipe->backend.ipc_mode.rio.reading.reading;
+        if (req == NULL)
+        {
+            req = _ev_pipe_on_ipc_mode_read_mount_next(pipe);
+            if (req == NULL)
+            {
+                return 0;
+            }
+        }
+
+        size_t    buf_idx = pipe->backend.ipc_mode.rio.reading.buf_idx;
+        ev_buf_t *buf = &req->base.data.bufs[buf_idx];
+        void     *buffer =
+            (uint8_t *)buf->data + pipe->backend.ipc_mode.rio.reading.buf_pos;
+
+        DWORD buffer_size =
+            buf->size - pipe->backend.ipc_mode.rio.reading.buf_pos;
+        buffer_size =
+            EV_MIN(buffer_size, pipe->backend.ipc_mode.rio.remain_size);
+        buffer_size = EV_MIN(buffer_size, avail);
+
+        DWORD read_size;
+        if (!ReadFile(pipe->pipfd, buffer, buffer_size, &read_size, NULL))
+        {
+            errcode = GetLastError();
+            goto err;
+        }
+        pipe->backend.ipc_mode.rio.remain_size -= read_size;
+        pipe->backend.ipc_mode.rio.reading.buf_pos += read_size;
+        req->base.data.size += read_size;
+
+        /* Read the whole frame */
+        if (pipe->backend.ipc_mode.rio.remain_size == 0)
+        {
+            pipe->backend.ipc_mode.rio.reading.reading = NULL;
+            _ev_pipe_r_user_callback_win(req, req->base.data.size);
+            continue;
+        }
+
+        /* Remain data to read */
+        if (pipe->backend.ipc_mode.rio.reading.buf_pos < buf->size)
+        {
+            continue;
+        }
+
+        /* Move to next buffer */
+        pipe->backend.ipc_mode.rio.reading.buf_pos = 0;
+        pipe->backend.ipc_mode.rio.reading.buf_idx++;
+        if (pipe->backend.ipc_mode.rio.reading.buf_idx < req->base.data.nbuf)
+        {
+            continue;
+        }
+
+        /* Buffer is full, need to notify user */
+        pipe->backend.ipc_mode.rio.reading.reading = NULL;
+        _ev_pipe_r_user_callback_win(req, req->base.data.size);
+    }
+
+    return 0;
+
+err:
+    return ev__translate_sys_error(errcode);
+}
+
+static int _ev_pipe_on_ipc_mode_read_first(ev_pipe_t *pipe)
+{
+    /* Read */
+    void *buffer = pipe->backend.ipc_mode.rio.buffer;
+    int   ret =
+        _ev_pipe_read_exactly(pipe->pipfd, buffer, sizeof(ev_ipc_frame_hdr_t));
+    if (ret != 0)
+    {
+        return ret;
+    }
+
+    if (!ev__ipc_check_frame_hdr(buffer, sizeof(ev_ipc_frame_hdr_t)))
+    {
+        return EV_EPROTO;
+    }
+
+    ev_ipc_frame_hdr_t *hdr = buffer;
+    if (hdr->hdr_flags & EV_IPC_FRAME_FLAG_INFORMATION)
+    {
+        if ((ret = _ev_pipe_on_ipc_mode_read_information(pipe, hdr)) != 0)
+        {
+            return ret;
+        }
+    }
+
+    pipe->backend.ipc_mode.rio.remain_size = hdr->hdr_dtsz;
+    return _ev_pipe_on_ipc_mode_read_remain(pipe);
+}
+
+static int _ev_pipe_ipc_mode_want_read(ev_pipe_t *pipe)
+{
+    if (pipe->backend.ipc_mode.rio.mask.rio_pending)
+    {
+        return 0;
+    }
+
+    int result = ReadFile(pipe->pipfd, s_ev_zero, 0, NULL,
+                          &pipe->backend.ipc_mode.rio.io.overlapped);
+    if (!result)
+    {
+        int err = GetLastError();
+        if (err != ERROR_IO_PENDING)
+        {
+            return ev__translate_sys_error(err);
+        }
+    }
+
+    pipe->backend.ipc_mode.rio.mask.rio_pending = 1;
+    return 0;
+}
+
+static void _ev_pipe_on_ipc_mode_read(ev_iocp_t *iocp, size_t transferred,
+                                      void *arg)
+{
+    (void)transferred;
+    ev_pipe_t *pipe = arg;
+    /* Clear IOCP pending flag */
+    pipe->backend.ipc_mode.rio.mask.rio_pending = 0;
+
+    /* Check error */
+    if (!NT_SUCCESS(iocp->overlapped.Internal))
+    {
+        int winsock_err =
+            ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal);
+        int ret = ev__translate_sys_error(winsock_err);
+        _ev_pipe_abort(pipe, ret);
+
+        return;
+    }
+
+    int ret;
+    if (pipe->backend.ipc_mode.rio.remain_size != 0)
+    {
+        ret = _ev_pipe_on_ipc_mode_read_remain(pipe);
+    }
+    else
+    {
+        ret = _ev_pipe_on_ipc_mode_read_first(pipe);
+    }
+
+    if (ret != 0)
+    {
+        _ev_pipe_abort(pipe, ret);
+        return;
+    }
+
+    if (pipe->backend.ipc_mode.rio.reading.reading != NULL ||
+        ev_list_size(&pipe->backend.ipc_mode.rio.pending))
+    {
+        _ev_pipe_ipc_mode_want_read(pipe);
+        return;
+    }
+}
+
+/**
+ * @breif Initialize buffer as #ev_ipc_frame_hdr_t
+ *
+ * Write sizeof(ev_ipc_frame_hdr_t) bytes
+ */
+static void _ev_pipe_init_ipc_frame_hdr(uint8_t *buffer, size_t bufsize,
+                                        uint8_t flags, uint32_t dtsz)
+{
+    assert(bufsize >= sizeof(ev_ipc_frame_hdr_t));
+    (void)bufsize;
+
+    uint16_t exsz = 0;
+    if (flags & EV_IPC_FRAME_FLAG_INFORMATION)
+    {
+        exsz = sizeof(ev_pipe_win_ipc_info_t);
+    }
+
+    ev__ipc_init_frame_hdr((ev_ipc_frame_hdr_t *)buffer, flags, exsz, dtsz);
+}
+
+/**
+ * @brief Send IPC data
+ */
+static int _ev_pipe_ipc_mode_write_data(ev_pipe_t           *pipe,
+                                        ev_pipe_write_req_t *req)
+{
+    uint8_t                flags = 0;
+    ev_pipe_win_ipc_info_t ipc_info;
+    size_t                 hdr_size = 0;
+
+    assert(pipe->backend.ipc_mode.wio.sending.w_req == NULL);
+
+    if (req->handle.role != EV_ROLE_UNKNOWN)
+    {
+        flags |= EV_IPC_FRAME_FLAG_INFORMATION;
+
+        DWORD target_pid = pipe->backend.ipc_mode.peer_pid;
+        if (target_pid == EV_INVALID_PID_WIN)
+        {
+            return EV_EAGAIN;
+        }
+
+        memset(&ipc_info, 0, sizeof(ipc_info));
+        ipc_info.type = EV_PIPE_WIN_IPC_INFO_TYPE_PROTOCOL_INFO;
+
+        if (WSADuplicateSocketW(req->handle.u.os_socket, target_pid,
+                                &ipc_info.data.as_protocol_info))
+        {
+            int err = WSAGetLastError();
+            return ev__translate_sys_error(err);
+        }
+
+        void *buffer = (uint8_t *)pipe->backend.ipc_mode.wio.buffer +
+                       sizeof(ev_ipc_frame_hdr_t);
+        memcpy(buffer, &ipc_info, sizeof(ipc_info));
+        hdr_size += sizeof(ipc_info);
+    }
+
+    _ev_pipe_init_ipc_frame_hdr(pipe->backend.ipc_mode.wio.buffer,
+                                sizeof(pipe->backend.ipc_mode.wio.buffer),
+                                flags, (uint32_t)req->base.capacity);
+    hdr_size += sizeof(ev_ipc_frame_hdr_t);
+
+    int ret = _ev_pipe_write_file_iocp(
+        pipe->pipfd, pipe->backend.ipc_mode.wio.buffer, hdr_size,
+        &pipe->backend.ipc_mode.wio.io.overlapped);
+    if (ret != 0)
+    {
+        return ret;
+    }
+
+    pipe->backend.ipc_mode.wio.sending.w_req = req;
+    pipe->backend.ipc_mode.wio.sending.donecnt = 0;
+
+    return 0;
+}
+
+static int _ev_pipe_ipc_mode_send_next(ev_pipe_t *pipe)
+{
+    ev_list_node_t *it = ev_list_pop_front(&pipe->backend.ipc_mode.wio.pending);
+    if (it == NULL)
+    {
+        return 0;
+    }
+
+    ev_pipe_write_req_t *next_req =
+        EV_CONTAINER_OF(it, ev_pipe_write_req_t, base.node);
+    int ret = _ev_pipe_ipc_mode_write_data(pipe, next_req);
+    if (ret != 0)
+    {
+        ev_list_push_front(&pipe->backend.ipc_mode.wio.pending, it);
+    }
+    return ret;
+}
+
+static int _ev_pipe_on_ipc_mode_write_process(ev_pipe_t *pipe,
+                                              size_t     transferred)
+{
+    if (pipe->backend.ipc_mode.wio.sending.w_req == NULL)
+    { /* This is a builtin status notify */
+        return _ev_pipe_ipc_mode_send_next(pipe);
+    }
+
+    pipe->backend.ipc_mode.wio.sending.donecnt++;
+
+    if (pipe->backend.ipc_mode.wio.sending.donecnt == 1)
+    { /* Frame header send success */
+        /* Do nothing */
+    }
+    else
+    {
+        pipe->backend.ipc_mode.wio.sending.w_req->base.size += transferred;
+
+        if (pipe->backend.ipc_mode.wio.sending.donecnt >
+            pipe->backend.ipc_mode.wio.sending.w_req->base.nbuf)
+        {
+            goto finish_request;
+        }
+    }
+
+    size_t send_buf_idx = pipe->backend.ipc_mode.wio.sending.donecnt - 1;
+    ev_pipe_write_req_t *req = pipe->backend.ipc_mode.wio.sending.w_req;
+    ev_buf_t            *buf = &req->base.bufs[send_buf_idx];
+
+    int ret =
+        _ev_pipe_write_file_iocp(pipe->pipfd, buf->data, buf->size,
+                                 &pipe->backend.ipc_mode.wio.io.overlapped);
+    return ret;
+
+finish_request:
+    req = pipe->backend.ipc_mode.wio.sending.w_req;
+    pipe->backend.ipc_mode.wio.sending.w_req = NULL;
+    pipe->backend.ipc_mode.wio.sending.donecnt = 0;
+
+    _ev_pipe_w_user_callback_win(req, req->base.size);
+
+    if ((ret = _ev_pipe_ipc_mode_send_next(pipe)) != 0)
+    {
+        return ret;
+    }
+
+    return 0;
+}
+
+static void _ev_pipe_on_ipc_mode_write(ev_iocp_t *iocp, size_t transferred,
+                                       void *arg)
+{
+    int        ret = 0;
+    ev_pipe_t *pipe = arg;
+    pipe->backend.ipc_mode.wio.mask.iocp_pending = 0;
+
+    /* Check status */
+    if (!NT_SUCCESS(iocp->overlapped.Internal))
+    {
+        int winsock_err =
+            ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal);
+        ret = ev__translate_sys_error(winsock_err);
+        goto err;
+    }
+
+    if ((ret = _ev_pipe_on_ipc_mode_write_process(pipe, transferred)) != 0)
+    {
+        goto err;
+    }
+    return;
+
+err:
+    if (ret != 0)
+    {
+        pipe->backend.ipc_mode.wio.w_err = ret;
+    }
+    _ev_pipe_abort(pipe, ret);
+}
+
+static void _ev_pipe_init_as_ipc(ev_pipe_t *pipe)
+{
+    pipe->backend.ipc_mode.iner_err = 0;
+    pipe->backend.ipc_mode.peer_pid = 0;
+
+    /* rio */
+    memset(&pipe->backend.ipc_mode.rio.mask, 0,
+           sizeof(pipe->backend.ipc_mode.rio.mask));
+    pipe->backend.ipc_mode.rio.reading.reading = NULL;
+    pipe->backend.ipc_mode.rio.reading.buf_idx = 0;
+    pipe->backend.ipc_mode.rio.reading.buf_pos = 0;
+    ev_list_init(&pipe->backend.ipc_mode.rio.pending);
+    pipe->backend.ipc_mode.rio.r_err = 0;
+    pipe->backend.ipc_mode.rio.remain_size = 0;
+    ev__iocp_init(&pipe->backend.ipc_mode.rio.io, _ev_pipe_on_ipc_mode_read,
+                  pipe);
+
+    /* wio */
+    memset(&pipe->backend.ipc_mode.wio.mask, 0,
+           sizeof(pipe->backend.ipc_mode.wio.mask));
+    pipe->backend.ipc_mode.wio.sending.w_req = NULL;
+    pipe->backend.ipc_mode.wio.sending.donecnt = 0;
+    ev_list_init(&pipe->backend.ipc_mode.wio.pending);
+    pipe->backend.ipc_mode.wio.w_err = 0;
+    ev__iocp_init(&pipe->backend.ipc_mode.wio.io, _ev_pipe_on_ipc_mode_write,
+                  pipe);
+}
+
+static void _ev_pipe_init_as_data(ev_pipe_t *pipe)
+{
+    _ev_pipe_init_data_mode_r(pipe);
+    _ev_pipe_init_data_mode_w(pipe);
+}
+
+static int _ev_pipe_notify_status(ev_pipe_t *pipe)
+{
+    _ev_pipe_init_ipc_frame_hdr(pipe->backend.ipc_mode.wio.buffer,
+                                sizeof(pipe->backend.ipc_mode.wio.buffer),
+                                EV_IPC_FRAME_FLAG_INFORMATION, 0);
+
+    ev_pipe_win_ipc_info_t ipc_info;
+    memset(&ipc_info, 0, sizeof(ev_pipe_win_ipc_info_t));
+    ipc_info.type = EV_PIPE_WIN_IPC_INFO_TYPE_STATUS;
+    ipc_info.data.as_status.pid = GetCurrentProcessId();
+    memcpy(pipe->backend.ipc_mode.wio.buffer + sizeof(ev_ipc_frame_hdr_t),
+           &ipc_info, sizeof(ipc_info));
+
+    DWORD send_size =
+        sizeof(ev_ipc_frame_hdr_t) + sizeof(ev_pipe_win_ipc_info_t);
+
+    pipe->backend.ipc_mode.wio.mask.iocp_pending = 1;
+    int ret = _ev_pipe_write_file_iocp(
+        pipe->pipfd, pipe->backend.ipc_mode.wio.buffer, send_size,
+        &pipe->backend.ipc_mode.wio.io.overlapped);
+    return ret;
+}
+
+static size_t _ev_pipe_get_and_forward_w_idx(ev_pipe_t *pipe)
+{
+    size_t ret = pipe->backend.data_mode.wio.w_io_idx;
+    if (pipe->backend.data_mode.wio.w_io_idx ==
+        ARRAY_SIZE(pipe->backend.data_mode.wio.iocp) - 1)
+    {
+        pipe->backend.data_mode.wio.w_io_idx = 0;
+    }
+    else
+    {
+        pipe->backend.data_mode.wio.w_io_idx++;
+    }
+    pipe->backend.data_mode.wio.w_io_cnt++;
+
+    return ret;
+}
+
+static size_t _ev_pipe_revert_w_idx(ev_pipe_t *pipe)
+{
+    if (pipe->backend.data_mode.wio.w_io_idx == 0)
+    {
+        pipe->backend.data_mode.wio.w_io_idx =
+            ARRAY_SIZE(pipe->backend.data_mode.wio.iocp) - 1;
+    }
+    else
+    {
+        pipe->backend.data_mode.wio.w_io_idx--;
+    }
+    pipe->backend.data_mode.wio.w_io_cnt--;
+
+    return pipe->backend.data_mode.wio.w_io_idx;
+}
+
+/**
+ * @brief Write in DATA mode.
+ *
+ * In DATA mode, every #ev_pipe_backend_t::w_io::iocp can be used to provide
+ * maximum performance.
+ */
+static int _ev_pipe_data_mode_write(ev_pipe_t *pipe, ev_pipe_write_req_t *req)
+{
+    int   result;
+    int   flag_failure = 0;
+    DWORD err = 0;
+
+    req->backend.owner = pipe;
+    req->backend.stat = EV_EINPROGRESS;
+
+    size_t available_iocp_cnt = ARRAY_SIZE(pipe->backend.data_mode.wio.iocp) -
+                                pipe->backend.data_mode.wio.w_io_cnt;
+    if (available_iocp_cnt == 0)
+    {
+        ev_list_push_back(&pipe->backend.data_mode.wio.w_pending,
+                          &req->base.node);
+        return 0;
+    }
+
+    size_t idx;
+    size_t nbuf = EV_MIN(available_iocp_cnt, req->base.nbuf);
+    for (idx = 0; idx < nbuf; idx++)
+    {
+        size_t pos = _ev_pipe_get_and_forward_w_idx(pipe);
+        assert(pipe->backend.data_mode.wio.iocp[pos].w_req == NULL);
+        assert(pipe->backend.data_mode.wio.iocp[pos].w_buf_idx == 0);
+
+        pipe->backend.data_mode.wio.iocp[pos].w_req = req;
+        pipe->backend.data_mode.wio.iocp[pos].w_buf_idx = idx;
+
+        result = _ev_pipe_write_file_iocp(
+            pipe->pipfd, req->base.bufs[idx].data, req->base.bufs[idx].size,
+            &pipe->backend.data_mode.wio.iocp[pos].io.overlapped);
+        /* write success */
+        if (result == 0)
+        {
+            continue;
+        }
+
+        flag_failure = 1;
+        break;
+    }
+
+    if (flag_failure)
+    {
+        size_t i;
+        for (i = 0; i <= idx; i++)
+        {
+            size_t pos = _ev_pipe_revert_w_idx(pipe);
+            CancelIoEx(pipe->pipfd,
+                       &pipe->backend.data_mode.wio.iocp[pos].io.overlapped);
+            pipe->backend.data_mode.wio.iocp[pos].w_req = NULL;
+            pipe->backend.data_mode.wio.iocp[pos].w_buf_idx = 0;
+        }
+        return ev__translate_sys_error(err);
+    }
+
+    if (nbuf < req->base.nbuf)
+    {
+        pipe->backend.data_mode.wio.w_half = req;
+        pipe->backend.data_mode.wio.w_half_idx = nbuf;
+    }
+    else
+    {
+        ev_list_push_back(&pipe->backend.data_mode.wio.w_doing,
+                          &req->base.node);
+    }
+
+    ev__handle_active(&pipe->base);
+    return 0;
+}
+
+/**
+ * @brief Write in IPC mode.
+ *
+ * In IPC mode, we only use #ev_pipe_backend_t::w_io::iocp[0] for simplify
+ * implementation.
+ */
+static int _ev_pipe_ipc_mode_write(ev_pipe_t *pipe, ev_pipe_write_req_t *req)
+{
+    if (pipe->backend.ipc_mode.iner_err != 0)
+    {
+        return pipe->backend.ipc_mode.iner_err;
+    }
+
+    /* Check total send size, limited by IPC protocol */
+    if (req->base.capacity > UINT32_MAX)
+    {
+        return EV_E2BIG;
+    }
+
+    /* If we have pending IOCP request, add it to queue */
+    if (pipe->backend.ipc_mode.wio.mask.iocp_pending ||
+        pipe->backend.ipc_mode.wio.sending.w_req != NULL)
+    {
+        ev_list_push_back(&pipe->backend.ipc_mode.wio.pending, &req->base.node);
+        return 0;
+    }
+
+    return _ev_pipe_ipc_mode_write_data(pipe, req);
+}
+
+static int _ev_pipe_read_ipc_mode(ev_pipe_t *pipe, ev_pipe_read_req_t *req)
+{
+    int ret;
+    if (pipe->backend.ipc_mode.iner_err != 0)
+    {
+        return pipe->backend.ipc_mode.iner_err;
+    }
+
+    ev_list_push_back(&pipe->backend.ipc_mode.rio.pending, &req->base.node);
+
+    if ((ret = _ev_pipe_ipc_mode_want_read(pipe)) != 0)
+    {
+        ev_list_erase(&pipe->backend.ipc_mode.rio.pending, &req->base.node);
+    }
+
+    return ret;
+}
+
+static int _ev_pipe_read_data_mode(ev_pipe_t *pipe, ev_pipe_read_req_t *req)
+{
+    if (pipe->backend.data_mode.rio.r_doing != NULL)
+    {
+        ev_list_push_back(&pipe->backend.data_mode.rio.r_pending,
+                          &req->base.node);
+        return 0;
+    }
+
+    pipe->backend.data_mode.rio.r_doing = req;
+    return _ev_pipe_data_mode_want_read(pipe);
+}
+
+static int _ev_pipe_init_read_token_win(ev_pipe_t          *pipe,
+                                        ev_pipe_read_req_t *req, ev_buf_t *bufs,
+                                        size_t nbuf, ev_pipe_read_cb cb)
+{
+    int ret;
+
+    if ((ret = ev__pipe_read_init(req, bufs, nbuf, cb)) != 0)
+    {
+        return ret;
+    }
+
+    req->backend.owner = pipe;
+    req->backend.stat = EV_EINPROGRESS;
+
+    return 0;
+}
+
+static int _ev_pipe_make_win(ev_os_pipe_t fds[2], int rflags, int wflags,
+                             const char *name)
+{
+    int    err;
+    HANDLE pip_r = INVALID_HANDLE_VALUE;
+    HANDLE pip_w = INVALID_HANDLE_VALUE;
+
+    err = _ev_pipe_make_s(&pip_r, name, rflags);
+    if (err != 0)
+    {
+        goto err_close_rw;
+    }
+
+    err = _ev_pipe_make_c(&pip_w, name, wflags);
+    if (pip_w == INVALID_HANDLE_VALUE)
+    {
+        goto err_close_rw;
+    }
+
+    if (!ConnectNamedPipe(pip_r, NULL))
+    {
+        err = GetLastError();
+        if (err != ERROR_PIPE_CONNECTED)
+        {
+            err = ev__translate_sys_error(err);
+            goto err_close_rw;
+        }
+    }
+
+    fds[0] = pip_r;
+    fds[1] = pip_w;
+
+    return 0;
+
+err_close_rw:
+    if (pip_r != INVALID_HANDLE_VALUE)
+    {
+        CloseHandle(pip_r);
+    }
+    if (pip_w != INVALID_HANDLE_VALUE)
+    {
+        CloseHandle(pip_w);
+    }
+    return err;
+}
+
+static int _ev_pipe_open_check_win(ev_pipe_t *pipe, ev_os_pipe_t handle)
+{
+    if (pipe->pipfd != EV_OS_PIPE_INVALID)
+    {
+        return EV_EEXIST;
+    }
+    if (handle == EV_OS_PIPE_INVALID)
+    {
+        return EV_EBADF;
+    }
+
+    IO_STATUS_BLOCK         io_status;
+    FILE_ACCESS_INFORMATION access;
+    NTSTATUS                nt_status = ev_winapi.NtQueryInformationFile(
+        handle, &io_status, &access, sizeof(access), FileAccessInformation);
+    if (nt_status != STATUS_SUCCESS)
+    {
+        return EV_EINVAL;
+    }
+
+    DWORD mode = PIPE_READMODE_BYTE | PIPE_WAIT;
+    if (!SetNamedPipeHandleState(handle, &mode, NULL, NULL))
+    {
+        DWORD err = GetLastError();
+        if (err != ERROR_ACCESS_DENIED)
+        {
+            return EV_EBADF;
+        }
+
+        DWORD current_mode = 0;
+        if (!GetNamedPipeHandleState(handle, &current_mode, NULL, NULL, NULL,
+                                     NULL, 0))
+        {
+            return ev__translate_sys_error(GetLastError());
+        }
+        if (current_mode & PIPE_NOWAIT)
+        {
+            return ev__translate_sys_error(ERROR_ACCESS_DENIED);
+        }
+    }
+
+    FILE_MODE_INFORMATION mode_info;
+    nt_status = ev_winapi.NtQueryInformationFile(
+        handle, &io_status, &mode_info, sizeof(mode_info), FileModeInformation);
+    if (nt_status != STATUS_SUCCESS)
+    {
+        return ev__translate_sys_error(GetLastError());
+    }
+
+    return 0;
+}
+
+int ev_pipe_make(ev_os_pipe_t fds[2], int rflags, int wflags)
+{
+    static long volatile s_pipe_serial_no = 0;
+    char buffer[128];
+
+    fds[0] = EV_OS_PIPE_INVALID;
+    fds[1] = EV_OS_PIPE_INVALID;
+    if ((rflags & EV_PIPE_IPC) != (wflags & EV_PIPE_IPC))
+    {
+        return EV_EINVAL;
+    }
+
+    snprintf(buffer, sizeof(buffer),
+             "\\\\.\\pipe\\LOCAL\\libev\\RemoteExeAnon.%08lx.%08lx",
+             (long)GetCurrentProcessId(),
+             InterlockedIncrement(&s_pipe_serial_no));
+
+    rflags |= EV_PIPE_READABLE;
+    wflags |= EV_PIPE_WRITABLE;
+
+    int is_ipc = rflags & EV_PIPE_IPC;
+    if (is_ipc)
+    {
+        rflags |= EV_PIPE_WRITABLE;
+        wflags |= EV_PIPE_READABLE;
+    }
+    else
+    {
+        rflags &= ~EV_PIPE_WRITABLE;
+        wflags &= ~EV_PIPE_READABLE;
+    }
+
+    return _ev_pipe_make_win(fds, rflags, wflags, buffer);
+}
+
+int ev_pipe_init(ev_loop_t *loop, ev_pipe_t **pipe, int ipc)
+{
+    ev_pipe_t *new_pipe = ev_malloc(sizeof(ev_pipe_t));
+    if (new_pipe == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    ev__handle_init(loop, &new_pipe->base, EV_ROLE_EV_PIPE);
+    new_pipe->close_cb = NULL;
+    new_pipe->pipfd = EV_OS_PIPE_INVALID;
+    new_pipe->base.data.flags |= ipc ? EV_HANDLE_PIPE_IPC : 0;
+
+    if (ipc)
+    {
+        _ev_pipe_init_as_ipc(new_pipe);
+    }
+    else
+    {
+        _ev_pipe_init_as_data(new_pipe);
+    }
+
+    *pipe = new_pipe;
+    return 0;
+}
+
+void ev_pipe_exit(ev_pipe_t *pipe, ev_pipe_cb close_cb, void *close_arg)
+{
+    _ev_pipe_close_pipe(pipe);
+
+    pipe->close_cb = close_cb;
+    pipe->close_arg = close_arg;
+    ev__handle_exit(&pipe->base, _ev_pipe_on_close_win);
+}
+
+int ev_pipe_open(ev_pipe_t *pipe, ev_os_pipe_t handle)
+{
+    int ret;
+
+    if ((ret = _ev_pipe_open_check_win(pipe, handle)) != 0)
+    {
+        return ret;
+    }
+
+    if (CreateIoCompletionPort(handle, pipe->base.loop->backend.iocp,
+                               (ULONG_PTR)pipe, 0) == NULL)
+    {
+        return ev__translate_sys_error(GetLastError());
+    }
+    pipe->pipfd = handle;
+    pipe->base.data.flags |= EV_HANDLE_PIPE_STREAMING;
+
+    if (!(pipe->base.data.flags & EV_HANDLE_PIPE_IPC))
+    {
+        return 0;
+    }
+
+    /**
+     * TODO:
+     * In IPC mode, we need to setup communication.
+     *
+     * Here we may have problem that if the pipe is read-only / write-only, we
+     * cannot unbind IOCP beacuse windows not support that.
+     *
+     * There are may ways to avoid it:
+     * 1. Avoid handeshake procedure. We need handeshake because we need child
+     *   process information to call DuplicateHandle(). But accroding to
+     *   https://stackoverflow.com/questions/46348163/how-to-transfer-the-duplicated-handle-to-the-child-process
+     *   we can call DuplicateHandle() in child process, as long as we wait for
+     *   peer response.
+     * 2. If handle is not readable, we return success but mark it as error, and
+     *   notify user error in future operation.
+     */
+    if ((ret = _ev_pipe_notify_status(pipe)) != 0)
+    {
+        pipe->backend.ipc_mode.iner_err = ret;
+        return 0;
+    }
+
+    if ((ret = _ev_pipe_ipc_mode_want_read(pipe)) != 0)
+    {
+        pipe->backend.ipc_mode.iner_err = ret;
+        return 0;
+    }
+
+    return 0;
+}
+
+int ev_pipe_write_ex(ev_pipe_t *pipe, ev_buf_t *bufs, size_t nbuf,
+                     ev_role_t handle_role, void *handle_addr,
+                     ev_pipe_write_cb cb, void *arg)
+{
+    if (pipe->pipfd == EV_OS_PIPE_INVALID)
+    {
+        return EV_EBADF;
+    }
+
+    ev_pipe_write_req_t *req = ev_malloc(sizeof(ev_pipe_write_req_t));
+    if (req == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    int ret = ev__pipe_write_init_ext(req, cb, arg, bufs, nbuf, handle_role,
+                                      handle_addr);
+    if (ret != 0)
+    {
+        ev_free(req);
+        return ret;
+    }
+
+    req->backend.owner = pipe;
+    ev__handle_active(&pipe->base);
+
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
+    {
+        ret = _ev_pipe_ipc_mode_write(pipe, req);
+    }
+    else
+    {
+        ret = _ev_pipe_data_mode_write(pipe, req);
+    }
+
+    if (ret != 0)
+    {
+        ev__write_exit(&req->base);
+        _ev_pipe_smart_deactive_win(pipe);
+        ev_free(req);
+    }
+
+    return ret;
+}
+
+int ev_pipe_read(ev_pipe_t *pipe, ev_pipe_read_req_t *req, ev_buf_t *bufs,
+                 size_t nbuf, ev_pipe_read_cb cb)
+{
+    if (pipe->pipfd == EV_OS_PIPE_INVALID)
+    {
+        return EV_EBADF;
+    }
+
+    int ret = _ev_pipe_init_read_token_win(pipe, req, bufs, nbuf, cb);
+    if (ret != 0)
+    {
+        return ret;
+    }
+
+    ev__handle_active(&pipe->base);
+
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
+    {
+        ret = _ev_pipe_read_ipc_mode(pipe, req);
+    }
+    else
+    {
+        ret = _ev_pipe_read_data_mode(pipe, req);
+    }
+
+    if (ret != 0)
+    {
+        _ev_pipe_smart_deactive_win(pipe);
+        ev__read_exit(&req->base);
+    }
+
+    return ret;
+}
+
+int ev_pipe_accept(ev_pipe_t *pipe, ev_pipe_read_req_t *req,
+                   ev_role_t handle_role, void *handle_addr)
+{
+    (void)pipe;
+    if (req->handle.os_socket == EV_OS_SOCKET_INVALID)
+    {
+        return EV_ENOENT;
+    }
+
+    if (handle_role != EV_ROLE_EV_TCP || handle_addr == NULL)
+    {
+        return EV_EINVAL;
+    }
+
+    int ret = ev__tcp_open_win((ev_tcp_t *)handle_addr, req->handle.os_socket);
+    req->handle.os_socket = EV_OS_SOCKET_INVALID;
+
+    return ret;
+}
+
+void ev_pipe_close(ev_os_pipe_t fd)
+{
+    CloseHandle(fd);
+}
+
+// #line 44 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/process_win.c
+// SIZE:    16212
+// SHA-256: 15009ecb2bd8fab75a34607503f3cce8982cd57a8c79996cf5b5d8c086793a32
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/process_win.c"
+#include <assert.h>
+
+typedef struct ev_startup_info
+{
+    STARTUPINFOA    start_info;
+    char*           cmdline;
+    char*           envline;
+}ev_startup_info_t;
+
+typedef struct stdio_pair_s
+{
+    HANDLE*     dst;
+    DWORD       type;
+} stdio_pair_t;
+
+static int _dup_cmd(char** buf, char* const argv[])
+{
+    char* cmdline = ev_malloc(MAX_PATH + 1);
+    if (cmdline == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    cmdline[0] = '\0';
+
+    strcat_s(cmdline, MAX_PATH, argv[0]);
+    for (int i = 1; argv[i] != NULL; i++)
+    {
+        strcat_s(cmdline, MAX_PATH, " ");
+        strcat_s(cmdline, MAX_PATH, argv[i]);
+    }
+
+    *buf = cmdline;
+    return 0;
+}
+
+static int _dup_envp(char**buf, char* const envp[])
+{
+    if (envp == NULL)
+    {
+        *buf = NULL;
+        return 0;
+    }
+
+    size_t malloc_size = 1;
+    size_t idx = 0;
+
+    for (idx = 0; envp[idx] != NULL; idx++)
+    {
+        malloc_size += strlen(envp[idx]) + 1;
+    }
+
+    char* envline = ev_malloc(malloc_size);
+    if (envline == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    envline[malloc_size - 1] = '\0';
+
+    size_t pos = 0;
+    for (idx = 0; envp[idx] != NULL; idx++)
+    {
+        size_t cplen = strlen(envp[idx]) + 1;
+        memcpy(envline + pos, envp[idx], cplen);
+        pos += cplen;
+    }
+
+    *buf = envline;
+    return 0;
+}
+
+static int _ev_process_setup_stdio_as_null(HANDLE* handle, DWORD dwDesiredAccess)
+{
+    DWORD errcode;
+    HANDLE nul_file = CreateFileW(L"NUL:", dwDesiredAccess,
+        FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL, NULL);
+    if (nul_file == INVALID_HANDLE_VALUE)
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    *handle = nul_file;
+    return 0;
+}
+
+static int _ev_process_setup_stdio_as_fd(HANDLE* duph, HANDLE handle)
+{
+    HANDLE current_process = GetCurrentProcess();
+    BOOL ret = DuplicateHandle(current_process, handle, current_process, duph, 0, TRUE, DUPLICATE_SAME_ACCESS);
+    if (!ret)
+    {
+        *duph = INVALID_HANDLE_VALUE;
+        DWORD errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    return 0;
+}
+
+static int _ev_process_setup_stdio_as_pipe_win(ev_pipe_t* pipe, HANDLE* handle, int is_pipe_read)
+{
+    int ret;
+    ev_os_pipe_t pipfd[2] = { EV_OS_PIPE_INVALID, EV_OS_PIPE_INVALID };
+
+    /* fd for #ev_pipe_t should open in nonblock mode */
+    int rflags = is_pipe_read ? EV_PIPE_NONBLOCK : 0;
+    int wflags = is_pipe_read ? 0 : EV_PIPE_NONBLOCK;
+
+    if ((ret = ev_pipe_make(pipfd, rflags, wflags)) != 0)
+    {
+        return ret;
+    }
+
+    if ((ret = ev_pipe_open(pipe, is_pipe_read ? pipfd[0] : pipfd[1])) != 0)
+    {
+        goto err;
+    }
+
+    *handle = is_pipe_read ? pipfd[1] : pipfd[0];
+
+    return 0;
+
+err:
+    ev_pipe_close(pipfd[0]);
+    ev_pipe_close(pipfd[1]);
+    return ret;
+}
+
+static int _ev_process_dup_stdin_win(ev_startup_info_t* info,
+    const ev_process_stdio_container_t* container)
+{
+    if (container->flag == EV_PROCESS_STDIO_IGNORE)
+    {
+        return 0;
+    }
+
+    if (container->flag & EV_PROCESS_STDIO_REDIRECT_NULL)
+    {
+        return _ev_process_setup_stdio_as_null(&info->start_info.hStdInput, GENERIC_READ);
+    }
+    if (container->flag & EV_PROCESS_STDIO_REDIRECT_FD)
+    {
+        return _ev_process_setup_stdio_as_fd(&info->start_info.hStdInput, container->data.fd);
+    }
+    if (container->flag & EV_PROCESS_STDIO_REDIRECT_PIPE)
+    {
+        return _ev_process_setup_stdio_as_pipe_win(container->data.pipe, &info->start_info.hStdInput, 0);
+    }
+
+    return 0;
+}
+
+static int _ev_process_dup_stdout_win(ev_startup_info_t* info,
+    const ev_process_stdio_container_t* container)
+{
+    if (container->flag == EV_PROCESS_STDIO_IGNORE)
+    {
+        return 0;
+    }
+
+    if (container->flag & EV_PROCESS_STDIO_REDIRECT_NULL)
+    {
+        return _ev_process_setup_stdio_as_null(&info->start_info.hStdOutput, GENERIC_WRITE);
+    }
+
+    if (container->flag & EV_PROCESS_STDIO_REDIRECT_FD)
+    {
+        return _ev_process_setup_stdio_as_fd(&info->start_info.hStdOutput, container->data.fd);
+    }
+
+    if (container->flag & EV_PROCESS_STDIO_REDIRECT_PIPE)
+    {
+        return _ev_process_setup_stdio_as_pipe_win(container->data.pipe, &info->start_info.hStdOutput, 1);
+    }
+
+    return 0;
+}
+
+static int _ev_process_dup_stderr_win(ev_startup_info_t* info,
+    const ev_process_stdio_container_t* container)
+{
+    if (container->flag == EV_PROCESS_STDIO_IGNORE)
+    {
+        return 0;
+    }
+
+    if (container->flag & EV_PROCESS_STDIO_REDIRECT_NULL)
+    {
+        return _ev_process_setup_stdio_as_null(&info->start_info.hStdError, GENERIC_WRITE);
+    }
+
+    if (container->flag & EV_PROCESS_STDIO_REDIRECT_FD)
+    {
+        return _ev_process_setup_stdio_as_fd(&info->start_info.hStdOutput, container->data.fd);
+    }
+
+    if (container->flag & EV_PROCESS_STDIO_REDIRECT_PIPE)
+    {
+        return _ev_process_setup_stdio_as_pipe_win(container->data.pipe, &info->start_info.hStdError, 1);
+    }
+
+    return 0;
+}
+
+static void _ev_process_close_stdin_win(ev_startup_info_t* info)
+{
+    if (info->start_info.hStdInput != INVALID_HANDLE_VALUE)
+    {
+        CloseHandle(info->start_info.hStdInput);
+        info->start_info.hStdInput = INVALID_HANDLE_VALUE;
+    }
+}
+
+static void _ev_process_close_stdout_win(ev_startup_info_t* info)
+{
+    if (info->start_info.hStdOutput != INVALID_HANDLE_VALUE)
+    {
+        CloseHandle(info->start_info.hStdOutput);
+        info->start_info.hStdOutput = INVALID_HANDLE_VALUE;
+    }
+}
+
+static void _ev_process_close_stderr_win(ev_startup_info_t* info)
+{
+    if (info->start_info.hStdError != INVALID_HANDLE_VALUE)
+    {
+        CloseHandle(info->start_info.hStdError);
+        info->start_info.hStdError = INVALID_HANDLE_VALUE;
+    }
+}
+
+static void _ev_process_cleanup_cmdline(ev_startup_info_t* start_info)
+{
+    if (start_info->cmdline != NULL)
+    {
+        ev_free(start_info->cmdline);
+        start_info->cmdline = NULL;
+    }
+}
+
+static void _ev_process_cleanup_envp(ev_startup_info_t* start_info)
+{
+    if (start_info->envline != NULL)
+    {
+        ev_free(start_info->envline);
+        start_info->envline = NULL;
+    }
+}
+
+static void _ev_process_cleanup_start_info(ev_startup_info_t* start_info)
+{
+    _ev_process_close_stdin_win(start_info);
+    _ev_process_close_stdout_win(start_info);
+    _ev_process_close_stderr_win(start_info);
+    _ev_process_cleanup_cmdline(start_info);
+    _ev_process_cleanup_envp(start_info);
+}
+
+static int _ev_process_inherit_stdio(ev_startup_info_t* info)
+{
+    stdio_pair_t stdio_pair_list[] = {
+        { &info->start_info.hStdInput, STD_INPUT_HANDLE },
+        { &info->start_info.hStdOutput, STD_OUTPUT_HANDLE },
+        { &info->start_info.hStdError, STD_ERROR_HANDLE },
+    };
+
+    BOOL dupret;
+    DWORD errcode;
+    HANDLE current_process = GetCurrentProcess();
+
+    size_t i;
+    for (i = 0; i < ARRAY_SIZE(stdio_pair_list); i++)
+    {
+        if (*(stdio_pair_list[i].dst) != INVALID_HANDLE_VALUE)
+        {
+            /* The stdio handle must be inherited */
+            if (!SetHandleInformation(*(stdio_pair_list[i].dst), HANDLE_FLAG_INHERIT, 1))
+            {
+                errcode = GetLastError();
+                return ev__translate_sys_error(errcode);
+            }
+            continue;
+        }
+
+        dupret = DuplicateHandle(current_process, GetStdHandle(stdio_pair_list[i].type),
+            current_process, stdio_pair_list[i].dst, 0, TRUE, DUPLICATE_SAME_ACCESS);
+        if (!dupret)
+        {
+            errcode = GetLastError();
+            return ev__translate_sys_error(errcode);
+        }
+    }
+
+    return 0;
+}
+
+static int _ev_process_dup_stdio_win(ev_startup_info_t* info, const ev_process_options_t* opt)
+{
+    int ret;
+
+    if ((ret = _ev_process_dup_stdin_win(info, &opt->stdios[0])) != 0)
+    {
+        return ret;
+    }
+
+    if ((ret = _ev_process_dup_stdout_win(info, &opt->stdios[1])) != 0)
+    {
+        goto err;
+    }
+
+    if ((ret = _ev_process_dup_stderr_win(info, &opt->stdios[2])) != 0)
+    {
+        goto err;
+    }
+
+    if (info->start_info.hStdInput == INVALID_HANDLE_VALUE
+        && info->start_info.hStdOutput == INVALID_HANDLE_VALUE
+        && info->start_info.hStdError == INVALID_HANDLE_VALUE)
+    {
+        return 0;
+    }
+
+    info->start_info.dwFlags |= STARTF_USESTDHANDLES;
+    if ((ret = _ev_process_inherit_stdio(info)) != 0)
+    {
+        goto err;
+    }
+
+    return 0;
+
+err:
+    _ev_process_cleanup_start_info(info);
+    return ret;
+}
+
+static void _ev_process_on_async_exit(ev_async_t* async, void* arg)
+{
+    (void)async;
+    ev_process_t* process = (ev_process_t*)arg;
+
+    if (process->exit_cb != NULL)
+    {
+        process->exit_cb(process);
+    }
+}
+
+static void _ev_process_unregister_wait_handle(ev_process_t* process)
+{
+    DWORD status;
+    if (process->backend.wait_handle == INVALID_HANDLE_VALUE)
+    {
+        return;
+    }
+
+    if (!UnregisterWait(process->backend.wait_handle))
+    {
+        status = GetLastError();
+
+        /**
+         * https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-unregisterwait
+         * According to remarks, ERROR_IO_PENDING does not means error.
+         */
+        if (status == ERROR_IO_PENDING)
+        {
+            goto fin;
+        }
+        process->exit_code = ev__translate_sys_error(status);
+        EV_ABORT("GetLastError:%lu", (unsigned long)status);
+    }
+
+fin:
+    process->backend.wait_handle = INVALID_HANDLE_VALUE;
+}
+
+static void _ev_process_on_sigchild_win(ev_async_t* async, void* arg)
+{
+    (void)async;
+    DWORD status;
+    ev_process_t* process = (ev_process_t*)arg;
+
+    _ev_process_unregister_wait_handle(process);
+
+    process->exit_status = EV_PROCESS_EXIT_NORMAL;
+    if (GetExitCodeProcess(process->pid, &status))
+    {
+        process->exit_code = status;
+    }
+    else
+    {
+        status = GetLastError();
+        process->exit_code = ev__translate_sys_error(status);
+    }
+
+    if (process->sigchild_cb != NULL)
+    {
+        process->sigchild_cb(process, process->exit_status, process->exit_code);
+    }
+}
+
+static int _ev_process_setup_start_info(ev_startup_info_t* start_info,
+    const ev_process_options_t* opt)
+{
+    int ret;
+    ZeroMemory(start_info, sizeof(*start_info));
+    start_info->start_info.cb = sizeof(start_info->start_info);
+    start_info->start_info.hStdError = INVALID_HANDLE_VALUE;
+    start_info->start_info.hStdOutput = INVALID_HANDLE_VALUE;
+    start_info->start_info.hStdInput = INVALID_HANDLE_VALUE;
+
+    ret = _dup_cmd(&start_info->cmdline, opt->argv);
+    if (ret != 0)
+    {
+        return ret;
+    }
+
+    ret = _dup_envp(&start_info->envline, opt->envp);
+    if (ret != 0)
+    {
+        goto err_free_cmdline;
+    }
+
+    ret = _ev_process_dup_stdio_win(start_info, opt);
+    if (ret != 0)
+    {
+        goto err_free_envp;
+    }
+
+    return 0;
+
+err_free_envp:
+    _ev_process_cleanup_envp(start_info);
+err_free_cmdline:
+    _ev_process_cleanup_cmdline(start_info);
+    return ret;
+}
+
+static VOID NTAPI _ev_process_on_object_exit(PVOID data, BOOLEAN didTimeout)
+{
+    ev_process_t* process = data;
+
+    assert(didTimeout == FALSE); (void) didTimeout;
+    assert(process != NULL);
+
+    ev_async_wakeup(process->sigchld);
+}
+
+static void _ev_process_init_win(ev_process_t* handle, const ev_process_options_t* opt)
+{
+    handle->sigchild_cb = opt->on_exit;
+    handle->exit_cb = NULL;
+    handle->pid = EV_OS_PID_INVALID;
+    handle->exit_status = EV_PROCESS_EXIT_UNKNOWN;
+    handle->exit_code = 0;
+    handle->backend.wait_handle = INVALID_HANDLE_VALUE;
+}
+
+int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_options_t* opt)
+{
+    int ret;
+    DWORD errcode;
+    PROCESS_INFORMATION piProcInfo;
+    ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
+
+    ev_startup_info_t start_info;
+    ret = _ev_process_setup_start_info(&start_info, opt);
+    if (ret != 0)
+    {
+        return ret;
+    }
+
+    _ev_process_init_win(handle, opt);
+
+    ret = ev_async_init(loop, &handle->sigchld, _ev_process_on_sigchild_win, handle);
+    if (ret != 0)
+    {
+        _ev_process_cleanup_start_info(&start_info);
+        return ret;
+    }
+
+    ret = CreateProcessA(opt->file, start_info.cmdline, NULL, NULL, TRUE, 0,
+        start_info.envline, opt->cwd, &start_info.start_info, &piProcInfo);
+
+    handle->pid = piProcInfo.hProcess;
+    _ev_process_cleanup_start_info(&start_info);
+
+    if (!ret)
+    {
+        errcode = GetLastError();
+        ev__async_exit_force(handle->sigchld);
+        return ev__translate_sys_error(errcode);
+    }
+
+    ret = RegisterWaitForSingleObject(&handle->backend.wait_handle, handle->pid,
+        _ev_process_on_object_exit, handle, INFINITE, WT_EXECUTEINWAITTHREAD | WT_EXECUTEONLYONCE);
+    if (!ret)
+    {
+        errcode = GetLastError();
+        EV_ABORT("GetLastError:%lu", (unsigned long)errcode);
+    }
+
+    CloseHandle(piProcInfo.hThread);
+    piProcInfo.hThread = INVALID_HANDLE_VALUE;
+
+    return 0;
+}
+
+void ev_process_exit(ev_process_t* handle, ev_process_exit_cb cb)
+{
+    DWORD errcode;
+    _ev_process_unregister_wait_handle(handle);
+
+    if (handle->pid != EV_OS_PID_INVALID)
+    {
+        if (CloseHandle(handle->pid) == 0)
+        {
+            errcode = GetLastError();
+            EV_ABORT("errcode: %d", (int)errcode);
+        }
+
+        handle->pid = EV_OS_PID_INVALID;
+    }
+
+    handle->sigchild_cb = NULL;
+    handle->exit_cb = cb;
+    ev_async_exit(handle->sigchld, _ev_process_on_async_exit, handle);
+}
+
+ssize_t ev_getcwd(char* buffer, size_t size)
+{
+    DWORD errcode;
+    DWORD wide_size = GetCurrentDirectoryW(0, NULL);
+    if (wide_size == 0)
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    WCHAR* tmp_buf = ev_malloc(wide_size * sizeof(WCHAR));
+    if (tmp_buf == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    wide_size = GetCurrentDirectoryW(wide_size, tmp_buf);
+    if (wide_size == 0)
+    {
+        errcode = GetLastError();
+        ev_free(tmp_buf);
+        return ev__translate_sys_error(errcode);
+    }
+
+    /* remove trailing slash */
+    if (wide_size == 3 && tmp_buf[2] == L':' && tmp_buf[3] == L'\\')
+    {
+        wide_size = 2;
+        tmp_buf[3] = L'\0';
+    }
+
+    /* check how many  */
+    int required_size = WideCharToMultiByte(CP_UTF8, 0, tmp_buf, -1, NULL, 0,
+        NULL, NULL);
+    if (required_size == 0)
+    {
+        errcode = GetLastError();
+        ev_free(tmp_buf);
+        return ev__translate_sys_error(errcode);
+    }
+
+    int write_size = WideCharToMultiByte(CP_UTF8, 0, tmp_buf, -1, buffer,
+        (int)size, NULL, NULL);
+    ev_free(tmp_buf);
+
+    if (write_size == 0)
+    {
+        errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    if (write_size < required_size)
+    {
+        buffer[write_size - 1] = '\0';
+    }
+
+    return (ssize_t)write_size - 1;
+}
+
+ssize_t ev_exepath(char* buffer, size_t size)
+{
+    int utf8_len;
+    int err;
+
+    DWORD utf16_buffer_len = WIN32_UNICODE_PATH_MAX;
+    WCHAR* utf16_buffer = (WCHAR*) ev_malloc(sizeof(WCHAR) * utf16_buffer_len);
+    if (!utf16_buffer)
+    {
+        return EV_ENOMEM;
+    }
+
+    /* Get the path as UTF-16. */
+    DWORD utf16_len = GetModuleFileNameW(NULL, utf16_buffer, utf16_buffer_len);
+    if (utf16_len == 0)
+    {
+        err = GetLastError();
+        goto error;
+    }
+
+    /* utf16_len contains the length, *not* including the terminating null. */
+    utf16_buffer[utf16_len] = L'\0';
+
+    /* Convert to UTF-8 */
+    utf8_len = WideCharToMultiByte(CP_UTF8,
+                                   0,
+                                   utf16_buffer,
+                                   -1,
+                                   buffer,
+                                   (int) size,
+                                   NULL,
+                                   NULL);
+    if (utf8_len == 0)
+    {
+        err = GetLastError();
+        goto error;
+    }
+
+    ev_free(utf16_buffer);
+
+    /* utf8_len *does* include the terminating null at this point, but the
+     * returned size shouldn't. */
+    return utf8_len - 1;
+
+error:
+    if (buffer != NULL && size > 0)
+    {
+        *buffer = '\0';
+    }
+    ev_free(utf16_buffer);
+    return ev__translate_sys_error(err);
+}
+
+// #line 45 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/sem_win.c
+// SIZE:    1155
+// SHA-256: a113b4c52567893a1df6c51747489d3185ef36a96c8ca2723489b865a1bafbaa
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/sem_win.c"
+
+void ev_sem_init(ev_sem_t* sem, unsigned value)
+{
+    DWORD errcode;
+    sem->u.r = CreateSemaphore(NULL, value, INT_MAX, NULL);
+    if (sem->u.r == NULL)
+    {
+        errcode = GetLastError();
+        EV_ABORT("GetLastError:%lu", errcode);
+    }
+}
+
+void ev_sem_exit(ev_sem_t* sem)
+{
+    DWORD errcode;
+    if (!CloseHandle(sem->u.r))
+    {
+        errcode = GetLastError();
+        EV_ABORT("GetLastError:%lu", errcode);
+    }
+}
+
+void ev_sem_post(ev_sem_t* sem)
+{
+    DWORD errcode;
+    if (!ReleaseSemaphore(sem->u.r, 1, NULL))
+    {
+        errcode = GetLastError();
+        EV_ABORT("GetLastError:%lu", errcode);
+    }
+}
+
+void ev_sem_wait(ev_sem_t* sem)
+{
+    DWORD errcode;
+    if (WaitForSingleObject(sem->u.r, INFINITE) != WAIT_OBJECT_0)
+    {
+        errcode = GetLastError();
+        EV_ABORT("GetLastError:%lu", errcode);
+    }
+}
+
+int ev_sem_try_wait(ev_sem_t* sem)
+{
+    DWORD ret = WaitForSingleObject(sem->u.r, 0);
+
+    if (ret == WAIT_OBJECT_0)
+    {
+        return 0;
+    }
+
+    if (ret == WAIT_TIMEOUT)
+    {
+        return EV_EAGAIN;
+    }
+
+    DWORD errcode = GetLastError();
+    EV_ABORT("ret:%lu, GetLastError:%lu", ret, errcode);
+}
+
+// #line 46 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/shdlib_win.c
+// SIZE:    1764
+// SHA-256: b95fb93faad22c63bae5065c13aa1c084b91de60d0aa979b7c4ea2ce86a63366
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/shdlib_win.c"
+
+int ev_dlopen(ev_shdlib_t* lib, const char* filename, char** errmsg)
+{
+    WCHAR* filename_w = NULL;
+    ssize_t wide_sz = ev__utf8_to_wide(&filename_w, filename);
+    if (wide_sz < 0)
+    {
+        return (int)wide_sz;
+    }
+
+    lib->handle = LoadLibraryExW(filename_w, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+    ev_free(filename_w);
+
+    if (lib->handle != EV_OS_SHDLIB_INVALID)
+    {
+        return 0;
+    }
+
+    DWORD errcode = GetLastError();
+    if (errmsg == NULL)
+    {
+        goto finish;
+    }
+
+    DWORD dwFlags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
+    DWORD dwLanguageId = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
+
+    char* tmp_errmsg = NULL;
+    DWORD res = FormatMessageA(dwFlags, NULL, errcode, dwLanguageId, (LPSTR)&tmp_errmsg, 0, NULL);
+    if (res == 0)
+    {
+        DWORD fmt_errcode = GetLastError();
+        if (fmt_errcode == ERROR_MUI_FILE_NOT_FOUND || fmt_errcode == ERROR_RESOURCE_TYPE_NOT_FOUND)
+        {
+            res = FormatMessageA(dwFlags, NULL, errcode, 0, (LPSTR)&tmp_errmsg, 0, NULL);
+        }
+        if (res == 0)
+        {
+            *errmsg = NULL;
+            goto finish;
+        }
+    }
+
+    *errmsg = ev__strdup(tmp_errmsg);
+    LocalFree(tmp_errmsg);
+
+finish:
+    return ev__translate_sys_error(errcode);
+}
+
+void ev_dlclose(ev_shdlib_t* lib)
+{
+    if (lib->handle != EV_OS_SHDLIB_INVALID)
+    {
+        FreeLibrary(lib->handle);
+        lib->handle = EV_OS_SHDLIB_INVALID;
+    }
+}
+
+int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr)
+{
+    *ptr = (void*)(uintptr_t)GetProcAddress(lib->handle, name);
+    if (*ptr == NULL)
+    {
+        DWORD errcode = GetLastError();
+        return ev__translate_sys_error(errcode);
+    }
+
+    return 0;
+}
+
+// #line 47 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/shmem_win.c
+// SIZE:    1854
+// SHA-256: 5664c4b4e6dfb9e3298c3f9acd07585c961d8a4c017d26dd3f13a2c30908d811
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/shmem_win.c"
+
+int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
+{
+    int err;
+
+    shm->size = size;
+
+    DWORD d_high = 0;
+    DWORD d_low = (DWORD)size;
+#if defined(_WIN64)
+    if (d_low != size)
+    {
+        d_high = size >> 32;
+    }
+#endif
+
+    shm->backend.map_file = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, d_high, d_low, key);
+    if (shm->backend.map_file == NULL)
+    {
+        err = GetLastError();
+        return ev__translate_sys_error(err);
+    }
+
+    shm->addr = MapViewOfFile(shm->backend.map_file, FILE_MAP_ALL_ACCESS, 0, 0, size);
+    if (shm->addr == NULL)
+    {
+        err = GetLastError();
+        CloseHandle(shm->backend.map_file);
+        return ev__translate_sys_error(err);
+    }
+
+    return 0;
+}
+
+int ev_shm_open(ev_shm_t* shm, const char* key)
+{
+    int err;
+
+    shm->backend.map_file = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, key);
+    if (shm->backend.map_file == NULL)
+    {
+        err = GetLastError();
+        return ev__translate_sys_error(err);
+    }
+
+    shm->addr = MapViewOfFile(shm->backend.map_file, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+    if (shm->addr == NULL)
+    {
+        err = GetLastError();
+        CloseHandle(shm->backend.map_file);
+        return ev__translate_sys_error(err);
+    }
+
+    MEMORY_BASIC_INFORMATION info;
+    if (VirtualQuery(shm->addr, &info, sizeof(info)) == 0)
+    {
+        err = GetLastError();
+        UnmapViewOfFile(shm->addr);
+        CloseHandle(shm->backend.map_file);
+        return ev__translate_sys_error(err);
+    }
+    shm->size = info.RegionSize;
+
+    return 0;
+}
+
+void ev_shm_exit(ev_shm_t* shm)
+{
+    if (!UnmapViewOfFile(shm->addr))
+    {
+        EV_ABORT("GetLastError:%lu", (unsigned long)GetLastError());
+    }
+
+    if (!CloseHandle(shm->backend.map_file))
+    {
+        EV_ABORT("GetLastError:%lu", (unsigned long)GetLastError());
+    }
+}
+
+// #line 48 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/tcp_win.c
+// SIZE:    23360
+// SHA-256: 190fda94ab4d648cfeaf2ecbe13922b2cfc85849ce62303bd663109e4d13cdca
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/tcp_win.c"
+#include <WinSock2.h>
+#include <assert.h>
+
+static void _ev_tcp_close_socket(ev_tcp_t *sock)
+{
+    if (sock->sock != EV_OS_SOCKET_INVALID)
+    {
+        closesocket(sock->sock);
+        sock->sock = EV_OS_SOCKET_INVALID;
+    }
+}
+
+static void _ev_tcp_smart_deactive_win(ev_tcp_t *sock)
+{
+    size_t io_sz = 0;
+    if (sock->base.data.flags & EV_HANDLE_TCP_LISTING)
+    {
+        io_sz = ev_list_size(&sock->backend.u.listen.a_queue);
+        if (io_sz != 0)
+        {
+            return;
+        }
+    }
+    else if (sock->base.data.flags & EV_HANDLE_TCP_ACCEPTING)
+    {
+        if (sock->backend.u.accept.cb != NULL)
+        {
+            return;
+        }
+    }
+    else if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
+    {
+        if (sock->backend.u.client.cb != NULL)
+        {
+            return;
+        }
+    }
+    else if (sock->base.data.flags & EV_HANDLE_TCP_STREAMING)
+    {
+        io_sz += ev_list_size(&sock->backend.u.stream.w_queue);
+        io_sz += ev_list_size(&sock->backend.u.stream.r_queue);
+        if (io_sz != 0)
+        {
+            return;
+        }
+    }
+
+    ev__handle_deactive(&sock->base);
+}
+
+static void _ev_tcp_accept_callback_once(ev_tcp_t *lisn, ev_tcp_t *conn,
+                                         int stat)
+{
+    ev_tcp_accept_cb bak_cb = conn->backend.u.accept.cb;
+    void            *cb_arg = conn->backend.u.accept.arg;
+    conn->backend.u.accept.cb = NULL;
+    conn->backend.u.accept.arg = NULL;
+    bak_cb(lisn, conn, stat, cb_arg);
+}
+
+static void _ev_tcp_finialize_accept(ev_tcp_t *conn)
+{
+    ev_tcp_t *lisn = conn->backend.u.accept.listen;
+    conn->backend.u.accept.listen = NULL;
+
+    if (conn->backend.u.accept.stat == EV_EINPROGRESS)
+    {
+        conn->backend.u.accept.stat = EV_ECANCELED;
+        ev_list_erase(&lisn->backend.u.listen.a_queue,
+                      &conn->backend.u.accept.node);
+    }
+    else
+    {
+        ev_list_erase(&lisn->backend.u.listen.a_queue_done,
+                      &conn->backend.u.accept.node);
+    }
+
+    conn->base.data.flags &= ~EV_HANDLE_TCP_ACCEPTING;
+    _ev_tcp_smart_deactive_win(lisn);
+    _ev_tcp_smart_deactive_win(conn);
+
+    _ev_tcp_accept_callback_once(lisn, conn, conn->backend.u.accept.stat);
+}
+
+static void _ev_tcp_cleanup_connection_in_listen(ev_tcp_t *conn)
+{
+    ev_tcp_t *lisn = conn->backend.u.accept.listen;
+
+    conn->base.data.flags &= ~EV_HANDLE_TCP_ACCEPTING;
+    _ev_tcp_smart_deactive_win(lisn);
+    _ev_tcp_smart_deactive_win(conn);
+
+    _ev_tcp_close_socket(conn);
+    _ev_tcp_accept_callback_once(lisn, conn, EV_ECANCELED);
+}
+
+static void _ev_tcp_cleanup_listen(ev_tcp_t *sock)
+{
+    ev_list_node_t *it;
+    while ((it = ev_list_pop_front(&sock->backend.u.listen.a_queue)) != NULL)
+    {
+        ev_tcp_t *conn = EV_CONTAINER_OF(it, ev_tcp_t, backend.u.accept.node);
+        _ev_tcp_cleanup_connection_in_listen(conn);
+    }
+    while ((it = ev_list_pop_front(&sock->backend.u.listen.a_queue_done)) !=
+           NULL)
+    {
+        ev_tcp_t *conn = EV_CONTAINER_OF(it, ev_tcp_t, backend.u.accept.node);
+        _ev_tcp_cleanup_connection_in_listen(conn);
+    }
+}
+
+static void _ev_tcp_w_user_callback_win(ev_tcp_t *sock, ev_tcp_write_req_t *req,
+                                        ssize_t size)
+{
+    _ev_tcp_smart_deactive_win(sock);
+    ev__write_exit(&req->base);
+    req->user_callback(req, size);
+}
+
+static void _ev_tcp_r_user_callbak_win(ev_tcp_t *sock, ev_tcp_read_req_t *req,
+                                       ssize_t size)
+{
+    _ev_tcp_smart_deactive_win(sock);
+    ev__read_exit(&req->base);
+    req->user_callback(req, size);
+}
+
+static void _ev_tcp_cleanup_stream(ev_tcp_t *sock)
+{
+    ev_list_node_t *it;
+    while ((it = ev_list_pop_front(&sock->backend.u.stream.r_queue_done)) !=
+           NULL)
+    {
+        ev_tcp_read_req_t *req =
+            EV_CONTAINER_OF(it, ev_tcp_read_req_t, base.node);
+        _ev_tcp_r_user_callbak_win(sock, req, req->base.data.size);
+    }
+    while ((it = ev_list_pop_front(&sock->backend.u.stream.r_queue)) != NULL)
+    {
+        ev_tcp_read_req_t *req =
+            EV_CONTAINER_OF(it, ev_tcp_read_req_t, base.node);
+        _ev_tcp_r_user_callbak_win(sock, req, EV_ECANCELED);
+    }
+    while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue_done)) !=
+           NULL)
+    {
+        ev_tcp_write_req_t *req =
+            EV_CONTAINER_OF(it, ev_tcp_write_req_t, base.node);
+        _ev_tcp_w_user_callback_win(sock, req, req->base.size);
+    }
+    while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue)) != NULL)
+    {
+        ev_tcp_write_req_t *req =
+            EV_CONTAINER_OF(it, ev_tcp_write_req_t, base.node);
+        _ev_tcp_w_user_callback_win(sock, req, EV_ECANCELED);
+    }
+}
+
+static void _ev_tcp_connect_callback_once_win(ev_tcp_t *sock, int stat)
+{
+    ev_tcp_connect_cb bak_cb = sock->backend.u.client.cb;
+    void             *cb_arg = sock->backend.u.client.arg;
+    sock->backend.u.client.cb = NULL;
+    sock->backend.u.client.arg = NULL;
+    bak_cb(sock, stat, cb_arg);
+}
+
+static void _ev_tcp_cleanup_connect(ev_tcp_t *sock)
+{
+    if (sock->backend.u.client.stat == EV_EINPROGRESS)
+    {
+        sock->backend.u.client.stat = EV_ECANCELED;
+    }
+
+    _ev_tcp_connect_callback_once_win(sock, sock->backend.u.client.stat);
+}
+
+static void _ev_tcp_on_close_win(ev_handle_t *handle)
+{
+    ev_tcp_t *sock = EV_CONTAINER_OF(handle, ev_tcp_t, base);
+
+    if (sock->base.data.flags & EV_HANDLE_TCP_LISTING)
+    {
+        sock->base.data.flags &= ~EV_HANDLE_TCP_LISTING;
+        _ev_tcp_cleanup_listen(sock);
+    }
+    if (sock->base.data.flags & EV_HANDLE_TCP_ACCEPTING)
+    {
+        _ev_tcp_finialize_accept(sock);
+    }
+    if (sock->base.data.flags & EV_HANDLE_TCP_STREAMING)
+    {
+        sock->base.data.flags &= ~EV_HANDLE_TCP_STREAMING;
+        _ev_tcp_cleanup_stream(sock);
+    }
+    if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
+    {
+        sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
+        _ev_tcp_cleanup_connect(sock);
+    }
+
+    if (sock->close_cb != NULL)
+    {
+        sock->close_cb(sock, sock->close_arg);
+    }
+    ev_free(sock);
+}
+
+static int _ev_tcp_get_connectex(ev_tcp_t *sock, LPFN_CONNECTEX *fn)
+{
+    int   ret;
+    DWORD bytes;
+    GUID  wsaid = WSAID_CONNECTEX;
+
+    ret = WSAIoctl(sock->sock, SIO_GET_EXTENSION_FUNCTION_POINTER, &wsaid,
+                   sizeof(wsaid), fn, sizeof(*fn), &bytes, NULL, NULL);
+    if (ret == 0)
+    {
+        return 0;
+    }
+
+    ret = WSAGetLastError();
+    return ev__translate_sys_error(ret);
+}
+
+static int _ev_tcp_setup_sock(ev_tcp_t *sock, int af, int with_iocp)
+{
+    int ret;
+
+    SOCKET os_sock = socket(af, SOCK_STREAM, 0);
+    if (os_sock == INVALID_SOCKET)
+    {
+        goto err;
+    }
+
+    u_long yes = 1;
+    if (ioctlsocket(os_sock, FIONBIO, &yes) == SOCKET_ERROR)
+    {
+        goto err;
+    }
+
+    if (!SetHandleInformation((HANDLE)os_sock, HANDLE_FLAG_INHERIT, 0))
+    {
+        goto err;
+    }
+
+    HANDLE iocp = sock->base.loop->backend.iocp;
+    if (with_iocp &&
+        CreateIoCompletionPort((HANDLE)os_sock, iocp, os_sock, 0) == 0)
+    {
+        goto err;
+    }
+
+    sock->sock = os_sock;
+    sock->backend.af = af;
+
+    return 0;
+
+err:
+    ret = ev__translate_sys_error(WSAGetLastError());
+    if (os_sock != EV_OS_SOCKET_INVALID)
+    {
+        closesocket(os_sock);
+    }
+    return ret;
+}
+
+static void _ev_tcp_setup_listen_win(ev_tcp_t *sock)
+{
+    ev_list_init(&sock->backend.u.listen.a_queue);
+    ev_list_init(&sock->backend.u.listen.a_queue_done);
+    sock->base.data.flags |= EV_HANDLE_TCP_LISTING;
+}
+
+static void _ev_tcp_setup_accept_win(ev_tcp_t *lisn, ev_tcp_t *conn,
+                                     ev_tcp_accept_cb cb, void *arg)
+{
+    conn->backend.u.accept.cb = cb;
+    conn->backend.u.accept.arg = arg;
+    conn->backend.u.accept.listen = lisn;
+    conn->backend.u.accept.stat = EV_EINPROGRESS;
+    conn->base.data.flags |= EV_HANDLE_TCP_ACCEPTING;
+}
+
+static int _ev_tcp_setup_client_win(ev_tcp_t *sock, ev_tcp_connect_cb cb,
+                                    void *arg)
+{
+    int ret;
+    if ((ret = _ev_tcp_get_connectex(
+             sock, &sock->backend.u.client.fn_connectex)) != 0)
+    {
+        return ret;
+    }
+
+    sock->backend.u.client.stat = EV_EINPROGRESS;
+    sock->backend.u.client.cb = cb;
+    sock->backend.u.client.arg = arg;
+    sock->base.data.flags |= EV_HANDLE_TCP_CONNECTING;
+
+    return 0;
+}
+
+static void _ev_tcp_setup_stream_win(ev_tcp_t *sock)
+{
+    ev_list_init(&sock->backend.u.stream.r_queue);
+    ev_list_init(&sock->backend.u.stream.r_queue_done);
+    ev_list_init(&sock->backend.u.stream.w_queue);
+    ev_list_init(&sock->backend.u.stream.w_queue_done);
+    sock->base.data.flags |= EV_HANDLE_TCP_STREAMING;
+}
+
+static void _ev_tcp_process_stream(ev_tcp_t *sock)
+{
+    ev_list_node_t *it;
+
+    while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue_done)) !=
+           NULL)
+    {
+        ev_tcp_write_req_t *req =
+            EV_CONTAINER_OF(it, ev_tcp_write_req_t, base.node);
+        size_t write_size = req->base.size;
+        int    write_stat = req->backend.stat;
+
+        ssize_t ret = write_stat < 0 ? write_stat : write_size;
+        _ev_tcp_w_user_callback_win(sock, req, ret);
+    }
+
+    while ((it = ev_list_pop_front(&sock->backend.u.stream.r_queue_done)) !=
+           NULL)
+    {
+        ev_tcp_read_req_t *req =
+            EV_CONTAINER_OF(it, ev_tcp_read_req_t, base.node);
+        size_t read_size = req->base.data.size;
+        int    read_stat = req->backend.stat;
+
+        ssize_t ret = read_stat < 0 ? read_stat : read_size;
+        _ev_tcp_r_user_callbak_win(sock, req, ret);
+    }
+}
+
+static void _ev_tcp_process_connect(ev_tcp_t *sock)
+{
+    int ret;
+    if (sock->backend.u.client.stat == 0)
+    {
+        if ((ret = setsockopt(sock->sock, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT,
+                              NULL, 0)) == SOCKET_ERROR)
+        {
+            ret = WSAGetLastError();
+            sock->backend.u.client.stat = ev__translate_sys_error(ret);
+        }
+    }
+
+    sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
+    _ev_tcp_smart_deactive_win(sock);
+
+    _ev_tcp_connect_callback_once_win(sock, sock->backend.u.client.stat);
+}
+
+static void _ev_tcp_on_task_done(ev_handle_t *handle)
+{
+    ev_tcp_t *sock = EV_CONTAINER_OF(handle, ev_tcp_t, base);
+    sock->backend.mask.todo_pending = 0;
+
+    if (sock->base.data.flags & EV_HANDLE_TCP_STREAMING)
+    {
+        _ev_tcp_process_stream(sock);
+    }
+    if (sock->base.data.flags & EV_HANDLE_TCP_ACCEPTING)
+    {
+        _ev_tcp_finialize_accept(sock);
+    }
+    if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
+    {
+        _ev_tcp_process_connect(sock);
+    }
+}
+
+static void _ev_tcp_submit_stream_todo(ev_tcp_t *sock)
+{
+    if (sock->backend.mask.todo_pending)
+    {
+        return;
+    }
+
+    ev__backlog_submit(&sock->base, _ev_tcp_on_task_done);
+    sock->backend.mask.todo_pending = 1;
+}
+
+static void _ev_tcp_on_accept_win(ev_tcp_t *conn, size_t transferred)
+{
+    (void)transferred;
+    ev_tcp_t *lisn = conn->backend.u.accept.listen;
+
+    ev_list_erase(&lisn->backend.u.listen.a_queue,
+                  &conn->backend.u.accept.node);
+    ev_list_push_back(&lisn->backend.u.listen.a_queue_done,
+                      &conn->backend.u.accept.node);
+
+    conn->backend.u.accept.stat =
+        NT_SUCCESS(conn->backend.io.overlapped.Internal)
+            ? 0
+            : ev__translate_sys_error(ev__ntstatus_to_winsock_error(
+                  (NTSTATUS)conn->backend.io.overlapped.Internal));
+    _ev_tcp_submit_stream_todo(conn);
+}
+
+static void _ev_tcp_on_connect_win(ev_tcp_t *sock, size_t transferred)
+{
+    (void)transferred;
+
+    sock->backend.u.client.stat =
+        NT_SUCCESS(sock->backend.io.overlapped.Internal)
+            ? 0
+            : ev__translate_sys_error(ev__ntstatus_to_winsock_error(
+                  (NTSTATUS)sock->backend.io.overlapped.Internal));
+    _ev_tcp_submit_stream_todo(sock);
+}
+
+static int _ev_tcp_bind_any_addr(ev_tcp_t *sock, int af)
+{
+    size_t                 name_len;
+    const struct sockaddr *bind_addr;
+
+    switch (af)
+    {
+    case AF_INET:
+        bind_addr = (struct sockaddr *)&ev_addr_ip4_any_;
+        name_len = sizeof(ev_addr_ip4_any_);
+        break;
+
+    case AF_INET6:
+        bind_addr = (struct sockaddr *)&ev_addr_ip6_any_;
+        name_len = sizeof(ev_addr_ip6_any_);
+        break;
+
+    default:
+        return EV_EINVAL;
+    }
+
+    return ev_tcp_bind(sock, bind_addr, name_len);
+}
+
+static void _ev_tcp_on_stream_write_done(ev_iocp_t *iocp, size_t transferred,
+                                         void *arg)
+{
+    ev_tcp_write_req_t *req = arg;
+    ev_tcp_t           *sock = req->backend.owner;
+
+    req->base.size = transferred;
+    req->backend.stat =
+        NT_SUCCESS(iocp->overlapped.Internal)
+            ? 0
+            : ev__translate_sys_error(ev__ntstatus_to_winsock_error(
+                  (NTSTATUS)iocp->overlapped.Internal));
+
+    ev_list_erase(&sock->backend.u.stream.w_queue, &req->base.node);
+    ev_list_push_back(&sock->backend.u.stream.w_queue_done, &req->base.node);
+
+    _ev_tcp_submit_stream_todo(sock);
+}
+
+static void _ev_tcp_on_stream_read_done(ev_iocp_t *iocp, size_t transferred,
+                                        void *arg)
+{
+    ev_tcp_read_req_t *req = arg;
+    ev_tcp_t          *sock = req->backend.owner;
+
+    req->base.data.size = transferred;
+    if (transferred == 0)
+    { /* Zero recv means peer close */
+        req->backend.stat = EV_EOF;
+    }
+    else
+    {
+        req->backend.stat =
+            NT_SUCCESS(iocp->overlapped.Internal)
+                ? 0
+                : ev__translate_sys_error(ev__ntstatus_to_winsock_error(
+                      (NTSTATUS)iocp->overlapped.Internal));
+    }
+
+    ev_list_erase(&sock->backend.u.stream.r_queue, &req->base.node);
+    ev_list_push_back(&sock->backend.u.stream.r_queue_done, &req->base.node);
+
+    _ev_tcp_submit_stream_todo(sock);
+}
+
+static void _ev_tcp_on_iocp(ev_iocp_t *req, size_t transferred, void *arg)
+{
+    (void)req;
+    ev_tcp_t *sock = arg;
+
+    if (sock->base.data.flags & EV_HANDLE_TCP_ACCEPTING)
+    {
+        _ev_tcp_on_accept_win(sock, transferred);
+    }
+    if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
+    {
+        _ev_tcp_on_connect_win(sock, transferred);
+    }
+}
+
+static int _ev_tcp_init_write_req_win(ev_tcp_t *sock, ev_tcp_write_req_t *req,
+                                      ev_buf_t *bufs, size_t nbuf,
+                                      ev_tcp_write_cb cb)
+{
+    int ret;
+    if ((ret = ev__write_init(&req->base, bufs, nbuf)) != 0)
+    {
+        return ret;
+    }
+
+    req->user_callback = cb;
+    req->backend.owner = sock;
+    req->backend.stat = EV_EINPROGRESS;
+    ev__iocp_init(&req->backend.io, _ev_tcp_on_stream_write_done, req);
+
+    return 0;
+}
+
+static int _ev_tcp_init_read_req_win(ev_tcp_t *sock, ev_tcp_read_req_t *req,
+                                     ev_buf_t *bufs, size_t nbuf,
+                                     ev_tcp_read_cb cb)
+{
+    int ret;
+
+    if ((ret = ev__read_init(&req->base, bufs, nbuf)) != 0)
+    {
+        return ret;
+    }
+
+    req->user_callback = cb;
+    req->backend.owner = sock;
+    req->backend.stat = EV_EINPROGRESS;
+    ev__iocp_init(&req->backend.io, _ev_tcp_on_stream_read_done, req);
+
+    return 0;
+}
+
+int ev_tcp_init(ev_loop_t *loop, ev_tcp_t **tcp)
+{
+    ev_tcp_t *new_tcp = ev_malloc(sizeof(ev_tcp_t));
+    if (new_tcp == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    ev__handle_init(loop, &new_tcp->base, EV_ROLE_EV_TCP);
+    new_tcp->close_cb = NULL;
+    new_tcp->sock = EV_OS_SOCKET_INVALID;
+
+    new_tcp->backend.af = AF_INET6;
+    ev__iocp_init(&new_tcp->backend.io, _ev_tcp_on_iocp, new_tcp);
+    memset(&new_tcp->backend.mask, 0, sizeof(new_tcp->backend.mask));
+
+    *tcp = new_tcp;
+    return 0;
+}
+
+void ev_tcp_exit(ev_tcp_t *sock, ev_tcp_close_cb cb, void *close_arg)
+{
+    sock->close_cb = cb;
+    sock->close_arg = close_arg;
+
+    /* Close socket to avoid IOCP conflict with exiting process */
+    _ev_tcp_close_socket(sock);
+
+    /**
+     * From this point, any complete IOCP operations should be in done_queue,
+     * and any pending IOCP operations is canceled.
+     */
+
+    /* Ready to close socket */
+    ev__handle_exit(&sock->base, _ev_tcp_on_close_win);
+}
+
+int ev_tcp_bind(ev_tcp_t *tcp, const struct sockaddr *addr, size_t addrlen)
+{
+    int ret;
+    int flag_new_socket = 0;
+
+    if (tcp->base.data.flags & EV_HABDLE_TCP_BOUND)
+    {
+        return EV_EALREADY;
+    }
+
+    if (tcp->sock == EV_OS_SOCKET_INVALID)
+    {
+        if ((ret = _ev_tcp_setup_sock(tcp, addr->sa_family, 1)) != 0)
+        {
+            return ret;
+        }
+        flag_new_socket = 1;
+    }
+
+    if ((ret = bind(tcp->sock, addr, (int)addrlen)) == SOCKET_ERROR)
+    {
+        ret = ev__translate_sys_error(WSAGetLastError());
+        goto err;
+    }
+    tcp->base.data.flags |= EV_HABDLE_TCP_BOUND;
+
+    return 0;
+
+err:
+    if (flag_new_socket)
+    {
+        _ev_tcp_close_socket(tcp);
+    }
+    return ret;
+}
+
+int ev_tcp_listen(ev_tcp_t *sock, int backlog)
+{
+    if (sock->base.data.flags & EV_HANDLE_TCP_LISTING)
+    {
+        return EV_EADDRINUSE;
+    }
+
+    int ret;
+    if ((ret = listen(sock->sock, backlog)) == SOCKET_ERROR)
+    {
+        return ev__translate_sys_error(WSAGetLastError());
+    }
+    _ev_tcp_setup_listen_win(sock);
+
+    return 0;
+}
+
+int ev_tcp_accept(ev_tcp_t *lisn, ev_tcp_t *conn, ev_tcp_accept_cb accept_cb,
+                  void *accept_arg)
+{
+    int ret;
+    int flag_new_sock = 0;
+
+    if (conn->base.data.flags & EV_HANDLE_TCP_ACCEPTING)
+    {
+        return EV_EINPROGRESS;
+    }
+
+    if (conn->sock == EV_OS_SOCKET_INVALID)
+    {
+        if ((ret = _ev_tcp_setup_sock(conn, lisn->backend.af, 1)) != 0)
+        {
+            goto err;
+        }
+        flag_new_sock = 1;
+    }
+    _ev_tcp_setup_accept_win(lisn, conn, accept_cb, accept_arg);
+
+    ev__handle_active(&lisn->base);
+    ev__handle_active(&conn->base);
+
+    DWORD bytes = 0;
+    ret = AcceptEx(lisn->sock, conn->sock, conn->backend.u.accept.buffer, 0,
+                   sizeof(struct sockaddr_storage),
+                   sizeof(struct sockaddr_storage), &bytes,
+                   &conn->backend.io.overlapped);
+
+    /* Accept success */
+    if (ret)
+    {
+        conn->backend.u.accept.stat = 0;
+        ev_list_push_back(&lisn->backend.u.listen.a_queue_done,
+                          &conn->backend.u.accept.node);
+        _ev_tcp_submit_stream_todo(conn);
+        return 0;
+    }
+
+    if ((ret = WSAGetLastError()) != WSA_IO_PENDING)
+    {
+        conn->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
+        _ev_tcp_smart_deactive_win(lisn);
+        _ev_tcp_smart_deactive_win(conn);
+        return ev__translate_sys_error(ret);
+    }
+    conn->base.data.flags |= EV_HANDLE_TCP_ACCEPTING;
+    ev_list_push_back(&lisn->backend.u.listen.a_queue,
+                      &conn->backend.u.accept.node);
+
+    return 0;
+
+err:
+    if (flag_new_sock)
+    {
+        _ev_tcp_close_socket(conn);
+    }
+    return ret;
+}
+
+int ev_tcp_getsockname(ev_tcp_t *sock, struct sockaddr *name, size_t *len)
+{
+    int ret;
+    int socklen = (int)*len;
+
+    if ((ret = getsockname(sock->sock, name, &socklen)) == SOCKET_ERROR)
+    {
+        return ev__translate_sys_error(WSAGetLastError());
+    }
+
+    *len = socklen;
+    return 0;
+}
+
+int ev_tcp_getpeername(ev_tcp_t *sock, struct sockaddr *name, size_t *len)
+{
+    int ret;
+    int socklen = (int)*len;
+
+    if ((ret = getpeername(sock->sock, name, &socklen)) == SOCKET_ERROR)
+    {
+        return ev__translate_sys_error(WSAGetLastError());
+    }
+
+    *len = socklen;
+    return 0;
+}
+
+int ev_tcp_connect(ev_tcp_t *sock, struct sockaddr *addr, size_t size,
+                   ev_tcp_connect_cb connect_cb, void *connect_arg)
+{
+    int ret;
+    int flag_new_sock = 0;
+
+    if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
+    {
+        return EV_EINPROGRESS;
+    }
+
+    if (sock->sock == EV_OS_SOCKET_INVALID)
+    {
+        if ((ret = _ev_tcp_setup_sock(sock, addr->sa_family, 1)) != 0)
+        {
+            goto err;
+        }
+        flag_new_sock = 1;
+    }
+
+    if (!(sock->base.data.flags & EV_HABDLE_TCP_BOUND))
+    {
+        if ((ret = _ev_tcp_bind_any_addr(sock, addr->sa_family)) != 0)
+        {
+            goto err;
+        }
+    }
+
+    if ((ret = _ev_tcp_setup_client_win(sock, connect_cb, connect_arg)) != 0)
+    {
+        goto err;
+    }
+    ev__handle_active(&sock->base);
+
+    DWORD bytes;
+    ret = sock->backend.u.client.fn_connectex(sock->sock, addr, (int)size, NULL,
+                                              0, &bytes,
+                                              &sock->backend.io.overlapped);
+    if (ret)
+    {
+        sock->backend.u.client.stat = 0;
+        _ev_tcp_submit_stream_todo(sock);
+        return 0;
+    }
+
+    ret = WSAGetLastError();
+    if (ret != WSA_IO_PENDING)
+    {
+        sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
+        _ev_tcp_smart_deactive_win(sock);
+        ret = ev__translate_sys_error(ret);
+        goto err;
+    }
+
+    return 0;
+
+err:
+    if (flag_new_sock)
+    {
+        _ev_tcp_close_socket(sock);
+    }
+    return ret;
+}
+
+int ev_tcp_write(ev_tcp_t *sock, ev_tcp_write_req_t *req, ev_buf_t *bufs,
+                 size_t nbuf, ev_tcp_write_cb cb)
+{
+    int ret;
+    if ((ret = _ev_tcp_init_write_req_win(sock, req, bufs, nbuf, cb)) != 0)
+    {
+        return ret;
+    }
+
+    if (!(sock->base.data.flags & EV_HANDLE_TCP_STREAMING))
+    {
+        _ev_tcp_setup_stream_win(sock);
+    }
+
+    ev_list_push_back(&sock->backend.u.stream.w_queue, &req->base.node);
+    ev__handle_active(&sock->base);
+
+    ret = WSASend(sock->sock, (WSABUF *)req->base.bufs, (DWORD)req->base.nbuf,
+                  NULL, 0, &req->backend.io.overlapped, NULL);
+    if (ret == 0)
+    {
+        /*
+         * A result of zero means send successful, but the result will still go
+         * through IOCP callback, so it is necessary to return directly.
+         */
+        return 0;
+    }
+
+    if ((ret = WSAGetLastError()) != WSA_IO_PENDING)
+    {
+        _ev_tcp_smart_deactive_win(sock);
+        return ev__translate_sys_error(ret);
+    }
+
+    return 0;
+}
+
+int ev_tcp_read(ev_tcp_t *sock, ev_tcp_read_req_t *req, ev_buf_t *bufs,
+                size_t nbuf, ev_tcp_read_cb cb)
+{
+    int ret;
+
+    if ((ret = _ev_tcp_init_read_req_win(sock, req, bufs, nbuf, cb)) != 0)
+    {
+        return ret;
+    }
+
+    if (!(sock->base.data.flags & EV_HANDLE_TCP_STREAMING))
+    {
+        _ev_tcp_setup_stream_win(sock);
+    }
+
+    ev_list_push_back(&sock->backend.u.stream.r_queue, &req->base.node);
+    ev__handle_active(&sock->base);
+
+    DWORD flags = 0;
+    ret = WSARecv(sock->sock, (WSABUF *)req->base.data.bufs,
+                  (DWORD)req->base.data.nbuf, NULL, &flags,
+                  &req->backend.io.overlapped, NULL);
+    if (ret == 0)
+    {
+        /*
+         * A result of zero means recv successful, but the result will still go
+         * through IOCP callback, so it is necessary to return directly.
+         */
+        return 0;
+    }
+
+    if ((ret = WSAGetLastError()) != WSA_IO_PENDING)
+    {
+        _ev_tcp_smart_deactive_win(sock);
+        return ev__translate_sys_error(ret);
+    }
+
+    return 0;
+}
+
+EV_LOCAL int ev__tcp_open_win(ev_tcp_t *tcp, SOCKET fd)
+{
+    tcp->sock = fd;
+    if (!(tcp->base.data.flags & EV_HANDLE_TCP_STREAMING))
+    {
+        _ev_tcp_setup_stream_win(tcp);
+    }
+
+    return 0;
+}
+
+// #line 49 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/thread_win.c
+// SIZE:    4117
+// SHA-256: b80229a5263c71a3b5ef797a46850d7ad92d07c033b569ce1ce3c017acecba3b
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/thread_win.c"
+#include <process.h>
+
+typedef struct ev_thread_helper_win
+{
+    ev_thread_cb    cb;         /**< User thread body */
+    void*           arg;        /**< User thread argument */
+    HANDLE          start_sem;  /**< Start semaphore */
+    HANDLE          thread_id;  /**< Thread handle */
+}ev_thread_helper_win_t;
+
+static size_t _ev_thread_calculate_stack_size_win(const ev_thread_opt_t* opt)
+{
+    if (opt == NULL || !opt->flags.have_stack_size)
+    {
+        return 0;
+    }
+
+    return opt->stack_size;
+}
+
+static unsigned __stdcall _ev_thread_proxy_proc_win(void* lpThreadParameter)
+{
+    DWORD errcode;
+    ev_thread_helper_win_t* p_helper = lpThreadParameter;
+    ev_thread_helper_win_t helper = *p_helper;
+
+    ev_tls_set(&g_ev_loop_win_ctx.thread.thread_key, (void*)p_helper->thread_id);
+    if (!ReleaseSemaphore(p_helper->start_sem, 1, NULL))
+    {
+        errcode = GetLastError();
+        EV_ABORT("GetLastError:%lu", (unsigned long)errcode);
+    }
+
+    helper.cb(helper.arg);
+    return 0;
+}
+
+EV_LOCAL void ev__thread_init_win(void)
+{
+    int ret = ev_tls_init(&g_ev_loop_win_ctx.thread.thread_key);
+    if (ret != 0)
+    {
+        EV_ABORT("ret:%d", ret);
+    }
+}
+
+int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
+    ev_thread_cb cb, void* arg)
+{
+    DWORD err = 0;
+    ev__init_once_win();
+
+    ev_thread_helper_win_t helper;
+    helper.cb = cb;
+    helper.arg = arg;
+    if ((helper.start_sem = CreateSemaphore(NULL, 0, 1, NULL)) == NULL)
+    {
+        err = GetLastError();
+        goto err_fin;
+    }
+
+    size_t stack_size = _ev_thread_calculate_stack_size_win(opt);
+    helper.thread_id = (HANDLE)_beginthreadex(NULL, (unsigned)stack_size,
+        _ev_thread_proxy_proc_win, &helper, CREATE_SUSPENDED, NULL);
+    if (helper.thread_id == NULL)
+    {
+        err = GetLastError();
+        goto err_create_thread;
+    }
+
+    if (ResumeThread(helper.thread_id) == -1)
+    {
+        err = GetLastError();
+        EV_ABORT("GetLastError:%lu", err);
+    }
+
+    int ret = WaitForSingleObject(helper.start_sem, INFINITE);
+    if (ret != WAIT_OBJECT_0)
+    {
+        err = (ret != WAIT_FAILED) ? ERROR_INVALID_PARAMETER : GetLastError();
+        goto err_create_thread;
+    }
+
+    *thr = helper.thread_id;
+
+err_create_thread:
+    CloseHandle(helper.start_sem);
+err_fin:
+    return ev__translate_sys_error(err);
+}
+
+int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
+{
+    int ret = WaitForSingleObject(*thr, timeout);
+    switch (ret)
+    {
+    case WAIT_TIMEOUT:
+        return EV_ETIMEDOUT;
+    case WAIT_ABANDONED:
+        EV_ABORT("WAIT_ABANDONED"); // should not happen
+        break;
+    case WAIT_FAILED:
+        ret = GetLastError();
+        return ret == WAIT_TIMEOUT ? EV_ETIMEDOUT : ev__translate_sys_error(ret);
+    default:
+        break;
+    }
+
+    CloseHandle(*thr);
+    *thr = NULL;
+
+    return 0;
+}
+
+ev_os_thread_t ev_thread_self(void)
+{
+    ev__init_once_win();
+    return ev_tls_get(&g_ev_loop_win_ctx.thread.thread_key);
+}
+
+ev_os_tid_t ev_thread_id(void)
+{
+    return GetCurrentThreadId();
+}
+
+int ev_thread_equal(const ev_os_thread_t* t1, const ev_os_thread_t* t2)
+{
+    return *t1 == *t2;
+}
+
+void ev_thread_sleep(uint32_t timeout)
+{
+    Sleep(timeout);
+}
+
+int ev_tls_init(ev_tls_t* tls)
+{
+    int err;
+    if ((tls->tls = TlsAlloc()) == TLS_OUT_OF_INDEXES)
+    {
+        err = GetLastError();
+        return ev__translate_sys_error(err);
+    }
+
+    return 0;
+}
+
+void ev_tls_exit(ev_tls_t* tls)
+{
+    DWORD errcode;
+    if (TlsFree(tls->tls) == FALSE)
+    {
+        errcode = GetLastError();
+        EV_ABORT("GetLastError:%lu", errcode);
+    }
+    tls->tls = TLS_OUT_OF_INDEXES;
+}
+
+void ev_tls_set(ev_tls_t* tls, void* val)
+{
+    DWORD errcode;
+    if (TlsSetValue(tls->tls, val) == FALSE)
+    {
+        errcode = GetLastError();
+        EV_ABORT("GetLastError:%lu", errcode);
+    }
+}
+
+void* ev_tls_get(ev_tls_t* tls)
+{
+    DWORD errcode;
+    void* val = TlsGetValue(tls->tls);
+    if (val == NULL)
+    {
+        if ((errcode = GetLastError()) != ERROR_SUCCESS)
+        {
+            EV_ABORT("GetLastError:%lu", errcode);
+        }
+    }
+    return val;
+}
+
+// #line 50 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/threadpool_win.c
+// SIZE:    545
+// SHA-256: e9729a6a63f16fa056602b60ebf49481d8c4cd0a0b9f69ee3390a53e985266ce
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/threadpool_win.c"
+
+static void _on_work_win(ev_iocp_t* iocp, size_t transferred, void* arg)
+{
+    (void)transferred; (void)arg;
+
+    ev_loop_t* loop = EV_CONTAINER_OF(iocp, ev_loop_t, backend.threadpool.io);
+
+    ev__threadpool_process(loop);
+}
+
+EV_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop)
+{
+    ev__iocp_post(loop, &loop->backend.threadpool.io);
+}
+
+EV_LOCAL void ev__threadpool_init_win(ev_loop_t* loop)
+{
+    ev__iocp_init(&loop->backend.threadpool.io, _on_work_win, NULL);
+}
+
+EV_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop)
+{
+    (void)loop;
+}
+
+// #line 51 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/time_win.c
+// SIZE:    1385
+// SHA-256: 9246a34372c69801f1b89ce7a4b92b49c9e1a8d2a034ac2ebde0faa536629b2b
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/time_win.c"
+/**
+ * Frequency of the high-resolution clock.
+ */
+static uint64_t s_hrtime_frequency = 0;
+
+static uint64_t _ev_hrtime_win(unsigned int scale)
+{
+    LARGE_INTEGER counter;
+    double scaled_freq;
+    double result;
+    DWORD errcode;
+
+    assert(s_hrtime_frequency != 0);
+    assert(scale != 0);
+
+    if (!QueryPerformanceCounter(&counter))
+    {
+        errcode = GetLastError();
+        EV_ABORT("GetLastError:%lu", errcode);
+    }
+    assert(counter.QuadPart != 0);
+
+    /*
+     * Because we have no guarantee about the order of magnitude of the
+     * performance counter interval, integer math could cause this computation
+     * to overflow. Therefore we resort to floating point math.
+     */
+    scaled_freq = (double)s_hrtime_frequency / scale;
+    result = (double)counter.QuadPart / scaled_freq;
+    return (uint64_t)result;
+}
+
+void ev__time_init_win(void)
+{
+    DWORD errcode;
+    LARGE_INTEGER perf_frequency;
+
+    /*
+     * Retrieve high-resolution timer frequency and pre-compute its reciprocal.
+     */
+    if (QueryPerformanceFrequency(&perf_frequency))
+    {
+        s_hrtime_frequency = perf_frequency.QuadPart;
+    }
+    else
+    {
+        errcode = GetLastError();
+        EV_ABORT("GetLastError:%lu", errcode);
+    }
+}
+
+uint64_t ev_hrtime(void)
+{
+    ev__init_once_win();
+#define EV__NANOSEC 1000000000
+    return _ev_hrtime_win(EV__NANOSEC);
+#undef EV__NANOSEC
+}
+// #line 52 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/udp_win.c
+// SIZE:    24654
+// SHA-256: 032b22f706399b5476b3b5f5e638801a494973dcb5c56e67fa479191cdef2eae
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/udp_win.c"
+#include <assert.h>
+
+static int _ev_udp_setup_socket_attribute_win(ev_loop_t* loop, ev_udp_t* udp, int family)
+{
+    DWORD yes = 1;
+    WSAPROTOCOL_INFOW info;
+    int opt_len;
+    int ret;
+
+    assert(udp->sock != EV_OS_SOCKET_INVALID);
+
+    /* Set the socket to nonblocking mode */
+    if (ioctlsocket(udp->sock, FIONBIO, &yes) == SOCKET_ERROR)
+    {
+        ret = WSAGetLastError();
+        goto err;
+    }
+
+    /* Make the socket non-inheritable */
+    if (!SetHandleInformation((HANDLE)udp->sock, HANDLE_FLAG_INHERIT, 0))
+    {
+        ret = GetLastError();
+        goto err;
+    }
+
+    /**
+     * Associate it with the I/O completion port. Use uv_handle_t pointer as
+     * completion key.
+     */
+    if (CreateIoCompletionPort((HANDLE)udp->sock, loop->backend.iocp, (ULONG_PTR)udp->sock, 0) == NULL)
+    {
+        ret = GetLastError();
+        goto err;
+    }
+
+    /*
+     * All known Windows that support SetFileCompletionNotificationModes have a
+     * bug that makes it impossible to use this function in conjunction with
+     * datagram sockets. We can work around that but only if the user is using
+     * the default UDP driver (AFD) and has no other. LSPs stacked on top. Here
+     * we check whether that is the case.
+     */
+    opt_len = sizeof(info);
+    if (getsockopt(udp->sock, SOL_SOCKET, SO_PROTOCOL_INFOW, (char*)&info, &opt_len) == SOCKET_ERROR)
+    {
+        ret = GetLastError();
+        goto err;
+    }
+    if (info.ProtocolChain.ChainLen == 1)
+    {
+        if (SetFileCompletionNotificationModes((HANDLE)udp->sock,
+            FILE_SKIP_SET_EVENT_ON_HANDLE | FILE_SKIP_COMPLETION_PORT_ON_SUCCESS))
+        {
+            udp->base.data.flags |= EV_HANDLE_UDP_BYPASS_IOCP;
+            udp->backend.fn_wsarecv = ev__wsa_recv_workaround;
+            udp->backend.fn_wsarecvfrom = ev__wsa_recvfrom_workaround;
+        }
+        else if ((ret = GetLastError()) != ERROR_INVALID_FUNCTION)
+        {
+            goto err;
+        }
+    }
+
+    if (family == AF_INET6)
+    {
+        udp->base.data.flags |= EV_HANDLE_UDP_IPV6;
+    }
+    else
+    {
+        assert(!(udp->base.data.flags & EV_HANDLE_UDP_IPV6));
+    }
+
+    return 0;
+
+err:
+    return ev__translate_sys_error(ret);
+}
+
+static void _ev_udp_on_close_win(ev_handle_t* handle)
+{
+    ev_udp_t* udp = EV_CONTAINER_OF(handle, ev_udp_t, base);
+    ev_udp_cb close_cb = udp->close_cb;
+    void     *close_arg = udp->close_arg;
+
+    ev_free(udp);
+    if (close_cb != NULL)
+    {
+        close_cb(udp, close_arg);
+    }
+}
+
+static int _ev_udp_is_bound_win(ev_udp_t* udp)
+{
+    struct sockaddr_storage addr;
+    size_t addrlen = sizeof(addr);
+
+    int ret = ev_udp_getsockname(udp, (struct sockaddr*)&addr, &addrlen);
+    return ret == 0 && addrlen > 0;
+}
+
+static int _ev_udp_is_connected_win(ev_udp_t* udp)
+{
+    struct sockaddr_storage addr;
+    size_t addrlen = sizeof(addr);
+
+    int ret = ev_udp_getpeername(udp, (struct sockaddr*)&addr, &addrlen);
+    return ret == 0 && addrlen > 0;
+}
+
+static int _ev_udp_maybe_deferred_socket_win(ev_udp_t* udp, int domain)
+{
+    int ret;
+    if (udp->sock != EV_OS_SOCKET_INVALID)
+    {
+        return 0;
+    }
+
+    if ((udp->sock = socket(domain, SOCK_DGRAM, 0)) == INVALID_SOCKET)
+    {
+        ret = WSAGetLastError();
+        return ev__translate_sys_error(ret);
+    }
+
+    if ((ret = _ev_udp_setup_socket_attribute_win(udp->base.loop, udp, domain)) != 0)
+    {
+        closesocket(udp->sock);
+        udp->sock = EV_OS_SOCKET_INVALID;
+        return ret;
+    }
+
+    return 0;
+}
+
+static void _ev_udp_close_socket_win(ev_udp_t* udp)
+{
+    if (udp->sock != EV_OS_SOCKET_INVALID)
+    {
+        closesocket(udp->sock);
+        udp->sock = EV_OS_SOCKET_INVALID;
+    }
+}
+
+static int _ev_udp_disconnect_win(ev_udp_t* udp)
+{
+    struct sockaddr addr;
+    memset(&addr, 0, sizeof(addr));
+
+    int ret = connect(udp->sock, (struct sockaddr*)&addr, sizeof(addr));
+    if (ret != 0)
+    {
+        ret = WSAGetLastError();
+        return ev__translate_sys_error(ret);
+    }
+
+    udp->base.data.flags &= ~EV_HANDLE_UDP_CONNECTED;
+    return 0;
+}
+
+static int _ev_udp_maybe_deferred_bind_win(ev_udp_t* udp, int domain)
+{
+    if (udp->base.data.flags & EV_HANDLE_UDP_BOUND)
+    {
+        return 0;
+    }
+
+    struct sockaddr* bind_addr;
+    if (domain == AF_INET)
+    {
+        bind_addr = (struct sockaddr*)&ev_addr_ip4_any_;
+    }
+    else if (domain == AF_INET6)
+    {
+        bind_addr = (struct sockaddr*)&ev_addr_ip6_any_;
+    }
+    else
+    {
+        return EV_EINVAL;
+    }
+
+    return ev_udp_bind(udp, bind_addr, 0);
+}
+
+static int _ev_udp_set_membership_ipv4_win(ev_udp_t* udp,
+    const struct sockaddr_in* multicast_addr, const char* interface_addr,
+    ev_udp_membership_t membership)
+{
+    int ret;
+    struct ip_mreq mreq;
+    memset(&mreq, 0, sizeof(mreq));
+
+    if (interface_addr)
+    {
+        if (inet_pton(AF_INET, interface_addr, &mreq.imr_interface.s_addr) != 1)
+        {
+            ret = WSAGetLastError();
+            return ev__translate_sys_error(ret);
+        }
+    }
+    else
+    {
+        mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+    }
+
+    mreq.imr_multiaddr.s_addr = multicast_addr->sin_addr.s_addr;
+
+    int optname = membership == EV_UDP_ENTER_GROUP ? IP_ADD_MEMBERSHIP : IP_DROP_MEMBERSHIP;
+    if (setsockopt(udp->sock, IPPROTO_IP, optname, (char*)&mreq, sizeof(mreq)) != 0)
+    {
+        ret = WSAGetLastError();
+        return ev__translate_sys_error(ret);
+    }
+
+    return 0;
+}
+
+static int _ev_udp_set_membership_ipv6_win(ev_udp_t* udp,
+    const struct sockaddr_in6* multicast_addr, const char* interface_addr,
+    ev_udp_membership_t membership)
+{
+    int ret;
+    struct ipv6_mreq mreq;
+    struct sockaddr_in6 addr6;
+
+    memset(&mreq, 0, sizeof(mreq));
+
+    if (interface_addr)
+    {
+        if (ev_ipv6_addr(interface_addr, 0, &addr6))
+        {
+            return EV_EINVAL;
+        }
+        mreq.ipv6mr_interface = addr6.sin6_scope_id;
+    }
+    else
+    {
+        mreq.ipv6mr_interface = 0;
+    }
+    mreq.ipv6mr_multiaddr = multicast_addr->sin6_addr;
+
+    int optname = membership == EV_UDP_ENTER_GROUP ? IPV6_ADD_MEMBERSHIP : IPV6_DROP_MEMBERSHIP;
+    if (setsockopt(udp->sock, IPPROTO_IPV6, optname, (char*)&mreq, sizeof(mreq)) != 0)
+    {
+        ret = WSAGetLastError();
+        return ev__translate_sys_error(ret);
+    }
+
+    return 0;
+}
+
+static int _ev_udp_set_source_membership_ipv4(ev_udp_t* udp,
+    const struct sockaddr_in* multicast_addr, const char* interface_addr,
+    const struct sockaddr_in* source_addr, ev_udp_membership_t membership)
+{
+    int err;
+    struct ip_mreq_source mreq;
+    memset(&mreq, 0, sizeof(mreq));
+
+    if (interface_addr != NULL)
+    {
+        if (inet_pton(AF_INET, interface_addr, &mreq.imr_interface.s_addr) != 1)
+        {
+            err = WSAGetLastError();
+            return ev__translate_sys_error(err);
+        }
+    }
+    else
+    {
+        mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+    }
+
+    mreq.imr_multiaddr.s_addr = multicast_addr->sin_addr.s_addr;
+    mreq.imr_sourceaddr.s_addr = source_addr->sin_addr.s_addr;
+
+    int optname = membership == EV_UDP_ENTER_GROUP ? IP_ADD_SOURCE_MEMBERSHIP : IP_DROP_SOURCE_MEMBERSHIP;
+
+    if (setsockopt(udp->sock, IPPROTO_IP, optname, (char*)&mreq, sizeof(mreq)) != 0)
+    {
+        err = WSAGetLastError();
+        return ev__translate_sys_error(err);
+    }
+
+    return 0;
+}
+
+static int _ev_udp_set_source_membership_ipv6(ev_udp_t* udp,
+    const struct sockaddr_in6* multicast_addr, const char* interface_addr,
+    const struct sockaddr_in6* source_addr, ev_udp_membership_t membership)
+{
+    int ret;
+    struct group_source_req mreq;
+    struct sockaddr_in6 addr6;
+
+    memset(&mreq, 0, sizeof(mreq));
+
+    if (interface_addr != NULL)
+    {
+        if ((ret = ev_ipv6_addr(interface_addr, 0, &addr6)) != 0)
+        {
+            return ret;
+        }
+        mreq.gsr_interface = addr6.sin6_scope_id;
+    }
+    else
+    {
+        mreq.gsr_interface = 0;
+    }
+
+    memcpy(&mreq.gsr_group, multicast_addr, sizeof(*multicast_addr));
+    memcpy(&mreq.gsr_source, source_addr, sizeof(*source_addr));
+
+    int optname = membership == EV_UDP_ENTER_GROUP ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP;
+    if (setsockopt(udp->sock, IPPROTO_IPV6, optname, (char*)&mreq, sizeof(mreq)) != 0)
+    {
+        ret = WSAGetLastError();
+        return ev__translate_sys_error(ret);
+    }
+
+    return 0;
+}
+
+static void _ev_udp_smart_deactive(ev_udp_t* udp)
+{
+    size_t io_sz = 0;
+
+    io_sz += ev_list_size(&udp->send_list);
+    io_sz += ev_list_size(&udp->recv_list);
+
+    if (io_sz == 0)
+    {
+        ev__handle_deactive(&udp->base);
+    }
+}
+
+static void _ev_udp_w_user_callback_win(ev_udp_write_t* req, ssize_t size)
+{
+    ev_udp_t* udp = req->backend.owner;
+    _ev_udp_smart_deactive(udp);
+
+    ev__write_exit(&req->base);
+    ev__handle_exit(&req->handle, NULL);
+
+    req->usr_cb(udp, size, req->usr_cb_arg);
+    ev_free(req);
+}
+
+static void _ev_udp_r_user_callback_win(ev_udp_read_t* req, const struct sockaddr* addr, ssize_t size)
+{
+    ev_udp_t* udp = req->backend.owner;
+    _ev_udp_smart_deactive(udp);
+
+    ev__read_exit(&req->base);
+    ev__handle_exit(&req->handle, NULL);
+
+    req->usr_cb(udp, addr, size, req->usr_cb_arg);
+    ev_free(req);
+}
+
+static void _ev_udp_on_send_complete_win(ev_udp_t* udp, ev_udp_write_t* req)
+{
+    ev_list_erase(&udp->send_list, &req->base.node);
+
+    ssize_t result = req->backend.stat;
+    if (result >= 0)
+    {
+        result = req->base.size;
+    }
+    _ev_udp_w_user_callback_win(req, result);
+}
+
+static void _ev_udp_on_send_bypass_iocp(ev_handle_t* handle)
+{
+    ev_udp_write_t* req = EV_CONTAINER_OF(handle, ev_udp_write_t, handle);
+    ev_udp_t* udp = req->backend.owner;
+
+    _ev_udp_on_send_complete_win(udp, req);
+}
+
+static void _ev_udp_on_send_iocp_win(ev_iocp_t* iocp, size_t transferred, void* arg)
+{
+    ev_udp_t* udp = arg;
+    ev_udp_write_t* req = EV_CONTAINER_OF(iocp, ev_udp_write_t, backend.io);
+
+    req->base.size = transferred;
+    req->backend.stat = NT_SUCCESS(iocp->overlapped.Internal) ?
+        0 : ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal));
+
+    _ev_udp_on_send_complete_win(udp, req);
+}
+
+static void _ev_udp_do_recv_win(ev_udp_t* udp, ev_udp_read_t* req)
+{
+    DWORD recv_bytes;
+    DWORD flags = 0;
+    socklen_t peer_addr_len = sizeof(req->addr);
+
+    int ret = WSARecvFrom(udp->sock, (WSABUF*)req->base.data.bufs, (DWORD)req->base.data.nbuf,
+        &recv_bytes, &flags, (struct sockaddr*)&req->addr, &peer_addr_len, NULL, NULL);
+    if (ret != SOCKET_ERROR)
+    {
+        req->base.data.size = recv_bytes;
+        req->backend.stat = 0;
+    }
+    else
+    {
+        ret = WSAGetLastError();
+        req->backend.stat = ev__translate_sys_error(ret);
+    }
+
+    ev_list_erase(&udp->recv_list, &req->base.node);
+
+    ssize_t recv_ret = req->backend.stat;
+    struct sockaddr* peer_addr = NULL;
+
+    if (recv_ret >= 0)
+    {
+        recv_ret = req->base.data.size;
+        peer_addr = (struct sockaddr*)&req->addr;
+    }
+
+    _ev_udp_r_user_callback_win(req, peer_addr, recv_ret);
+}
+
+static void _ev_udp_on_recv_iocp_win(ev_iocp_t* iocp, size_t transferred, void* arg)
+{
+    (void)transferred;
+    ev_udp_t* udp = arg;
+    ev_udp_read_t* req = EV_CONTAINER_OF(iocp, ev_udp_read_t, backend.io);
+
+    _ev_udp_do_recv_win(udp, req);
+}
+
+static void _ev_udp_on_recv_bypass_iocp_win(ev_handle_t* handle)
+{
+    ev_udp_read_t* req = EV_CONTAINER_OF(handle, ev_udp_read_t, handle);
+    ev_udp_t* udp = req->backend.owner;
+
+    _ev_udp_do_recv_win(udp, req);
+}
+
+static int _ev_udp_maybe_bind_win(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags)
+{
+    int ret;
+    if (udp->base.data.flags & EV_HANDLE_UDP_BOUND)
+    {
+        return EV_EALREADY;
+    }
+
+    if ((flags & EV_UDP_IPV6_ONLY) && addr->sa_family != AF_INET6)
+    {
+        return EV_EINVAL;
+    }
+
+    if (udp->sock == EV_OS_SOCKET_INVALID)
+    {
+        if ((udp->sock = socket(addr->sa_family, SOCK_DGRAM, 0)) == EV_OS_SOCKET_INVALID)
+        {
+            ret = WSAGetLastError();
+            return ev__translate_sys_error(ret);
+        }
+
+        ret = _ev_udp_setup_socket_attribute_win(udp->base.loop, udp, addr->sa_family);
+        if (ret != 0)
+        {
+            _ev_udp_close_socket_win(udp);
+            return ret;
+        }
+    }
+
+    if (flags & EV_UDP_REUSEADDR)
+    {
+        if ((ret = ev__reuse_win(udp->sock, 1)) != 0)
+        {
+            return ret;
+        }
+    }
+
+    if (addr->sa_family == AF_INET6)
+    {
+        udp->base.data.flags |= EV_HANDLE_UDP_IPV6;
+        if (flags & EV_UDP_IPV6_ONLY)
+        {
+            if ((ret = ev__ipv6only_win(udp->sock, 1)) != 0)
+            {
+                _ev_udp_close_socket_win(udp);
+                return ret;
+            }
+        }
+    }
+
+    socklen_t addrlen = ev__get_addr_len(addr);
+    if ((ret = bind(udp->sock, addr, addrlen)) == SOCKET_ERROR)
+    {
+        ret = WSAGetLastError();
+        return ev__translate_sys_error(ret);
+    }
+
+    udp->base.data.flags |= EV_HANDLE_UDP_BOUND;
+    return 0;
+}
+
+EV_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
+{
+    WSABUF buf;
+    buf.buf = g_ev_loop_win_ctx.net.zero_;
+    buf.len = 0;
+
+    DWORD bytes = 0;
+    DWORD flags = MSG_PEEK;
+
+    req->backend.owner = udp;
+    req->backend.stat = EV_EINPROGRESS;
+    ev__iocp_init(&req->backend.io, _ev_udp_on_recv_iocp_win, udp);
+
+    ev__handle_active(&udp->base);
+
+    int ret = WSARecv(udp->sock, &buf, 1, &bytes, &flags, &req->backend.io.overlapped, NULL);
+    if (ret == 0 && (udp->base.data.flags & EV_HANDLE_UDP_BYPASS_IOCP))
+    {
+        ev__backlog_submit(&req->handle, _ev_udp_on_recv_bypass_iocp_win);
+        return 0;
+    }
+
+    int err;
+    if (ret == 0 || (err = WSAGetLastError()) == ERROR_IO_PENDING)
+    {
+        return 0;
+    }
+
+    _ev_udp_smart_deactive(udp);
+    return ev__translate_sys_error(err);
+}
+
+EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
+    const struct sockaddr* addr, socklen_t addrlen)
+{
+    int ret, err;
+
+    if (!(udp->base.data.flags & EV_HANDLE_UDP_BOUND))
+    {
+        if (addr == NULL)
+        {
+            return EV_EINVAL;
+        }
+
+        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, addr->sa_family)) != 0)
+        {
+            return ret;
+        }
+    }
+
+    req->backend.owner = udp;
+    req->backend.stat = EV_EINPROGRESS;
+    ev__iocp_init(&req->backend.io, _ev_udp_on_send_iocp_win, udp);
+
+    DWORD send_bytes;
+
+    ev__handle_active(&udp->base);
+    ret = WSASendTo(udp->sock, (WSABUF*)req->base.bufs, (DWORD)req->base.nbuf,
+        &send_bytes, 0, addr, addrlen, &req->backend.io.overlapped, NULL);
+
+    if (ret == 0 && (udp->base.data.flags & EV_HANDLE_UDP_BYPASS_IOCP))
+    {
+        req->base.size += req->base.capacity;
+        req->backend.stat = 0;
+        ev__backlog_submit(&req->handle, _ev_udp_on_send_bypass_iocp);
+        return 0;
+    }
+
+    if (ret == 0 || (err = GetLastError()) == ERROR_IO_PENDING)
+    {
+        req->backend.stat = EV_EINPROGRESS;
+        return 0;
+    }
+
+    _ev_udp_smart_deactive(udp);
+    return ev__translate_sys_error(err);
+}
+
+int ev_udp_init(ev_loop_t* loop, ev_udp_t** udp, int domain)
+{
+    int err;
+    ev_udp_t *new_udp = ev_malloc(sizeof(ev_udp_t));
+    if (new_udp == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    new_udp->sock = EV_OS_SOCKET_INVALID;
+    new_udp->close_cb = NULL;
+    new_udp->close_arg = NULL;
+    ev_list_init(&new_udp->send_list);
+    ev_list_init(&new_udp->recv_list);
+    ev__handle_init(loop, &new_udp->base, EV_ROLE_EV_UDP);
+
+    new_udp->backend.fn_wsarecv = WSARecv;
+    new_udp->backend.fn_wsarecvfrom = WSARecvFrom;
+
+    if (domain != AF_UNSPEC)
+    {
+        if ((err = _ev_udp_maybe_deferred_socket_win(new_udp, domain)) != 0)
+        {
+            ev__handle_exit(&new_udp->base, NULL);
+            ev_free(new_udp);
+            return err;
+        }
+    }
+
+    *udp = new_udp;
+    return 0;
+}
+
+void ev_udp_exit(ev_udp_t *udp, ev_udp_cb close_cb, void *close_arg)
+{
+    udp->close_cb = close_cb;
+    udp->close_arg = close_arg;
+
+    _ev_udp_close_socket_win(udp);
+    ev__handle_exit(&udp->base, _ev_udp_on_close_win);
+}
+
+int ev_udp_open(ev_udp_t* udp, ev_os_socket_t sock)
+{
+    int ret;
+    if (udp->sock != EV_OS_SOCKET_INVALID)
+    {
+        return EV_EBUSY;
+    }
+
+    WSAPROTOCOL_INFOW protocol_info;
+    int opt_len = sizeof(protocol_info);
+    if (getsockopt(sock, SOL_SOCKET, SO_PROTOCOL_INFOW, (char*)&protocol_info, &opt_len) != 0)
+    {
+        int err = WSAGetLastError();
+        return ev__translate_sys_error(err);
+    }
+
+    udp->sock = sock;
+    if ((ret = _ev_udp_setup_socket_attribute_win(udp->base.loop, udp,
+        protocol_info.iAddressFamily)) != 0)
+    {
+        udp->sock = EV_OS_SOCKET_INVALID;
+        return ret;
+    }
+
+    if (_ev_udp_is_bound_win(udp))
+    {
+        udp->base.data.flags |= EV_HANDLE_UDP_BOUND;
+    }
+
+    if (_ev_udp_is_connected_win(udp))
+    {
+        udp->base.data.flags |= EV_HANDLE_UDP_CONNECTED;
+    }
+
+    return 0;
+}
+
+int ev_udp_bind(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags)
+{
+    return _ev_udp_maybe_bind_win(udp, addr, flags);
+}
+
+int ev_udp_connect(ev_udp_t* udp, const struct sockaddr* addr)
+{
+    int ret;
+    if (addr == NULL)
+    {
+        if (!(udp->base.data.flags & EV_HANDLE_UDP_CONNECTED))
+        {
+            return EV_ENOTCONN;
+        }
+
+        return _ev_udp_disconnect_win(udp);
+    }
+
+    if (!(udp->base.data.flags & EV_HANDLE_UDP_BOUND))
+    {
+        struct sockaddr* bind_addr = addr->sa_family == AF_INET ?
+            (struct sockaddr*)&ev_addr_ip4_any_ : (struct sockaddr*)&ev_addr_ip6_any_;
+        if ((ret = _ev_udp_maybe_bind_win(udp, bind_addr, 0)) != 0)
+        {
+            return ret;
+        }
+    }
+
+    socklen_t addrlen = ev__get_addr_len(addr);
+    if (addrlen == (socklen_t)-1)
+    {
+        return EV_EINVAL;
+    }
+
+    if ((ret = connect(udp->sock, addr, addrlen)) != 0)
+    {
+        ret = WSAGetLastError();
+        return ev__translate_sys_error(ret);
+    }
+
+    return 0;
+}
+
+int ev_udp_getsockname(ev_udp_t* udp, struct sockaddr* name, size_t* len)
+{
+    int wrap_len = (int)*len;
+    if (getsockname(udp->sock, name, &wrap_len) != 0)
+    {
+        int err = WSAGetLastError();
+        return ev__translate_sys_error(err);
+    }
+
+    *len = wrap_len;
+    return 0;
+}
+
+int ev_udp_getpeername(ev_udp_t* udp, struct sockaddr* name, size_t* len)
+{
+    int wrap_len = (int)*len;
+    if (getpeername(udp->sock, name, &wrap_len) != 0)
+    {
+        int err = WSAGetLastError();
+        return ev__translate_sys_error(err);
+    }
+
+    *len = wrap_len;
+    return 0;
+}
+
+int ev_udp_set_membership(ev_udp_t* udp, const char* multicast_addr,
+    const char* interface_addr, ev_udp_membership_t membership)
+{
+    int ret;
+    struct sockaddr_storage addr;
+
+    if (membership != EV_UDP_LEAVE_GROUP && membership != EV_UDP_ENTER_GROUP)
+    {
+        return EV_EINVAL;
+    }
+
+    if ((ret = ev_ipv4_addr(multicast_addr, 0, (struct sockaddr_in*)&addr)) == 0)
+    {
+        if (udp->base.data.flags & EV_HANDLE_UDP_IPV6)
+        {
+            return EV_EINVAL;
+        }
+        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, AF_INET)) != 0)
+        {
+            return ret;
+        }
+        return _ev_udp_set_membership_ipv4_win(udp, (struct sockaddr_in*)&addr,
+            interface_addr, membership);
+    }
+
+    if ((ret = ev_ipv6_addr(multicast_addr, 0, (struct sockaddr_in6*)&addr)) == 0)
+    {
+        if ((udp->base.data.flags & EV_HANDLE_UDP_BOUND) && !(udp->base.data.flags & EV_HANDLE_UDP_IPV6))
+        {
+            return EV_EINVAL;
+        }
+        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, AF_INET6)) != 0)
+        {
+            return ret;
+        }
+        return _ev_udp_set_membership_ipv6_win(udp, (struct sockaddr_in6*)&addr,
+            interface_addr, membership);
+    }
+
+    return ret;
+}
+
+int ev_udp_set_source_membership(ev_udp_t* udp, const char* multicast_addr,
+    const char* interface_addr, const char* source_addr, ev_udp_membership_t membership)
+{
+    int ret;
+    struct sockaddr_storage mcast_addr;
+    struct sockaddr_storage src_addr;
+
+    if (membership != EV_UDP_LEAVE_GROUP && membership != EV_UDP_ENTER_GROUP)
+    {
+        return EV_EINVAL;
+    }
+
+    if ((ret = ev_ipv4_addr(multicast_addr, 0, (struct sockaddr_in*)&mcast_addr)) == 0)
+    {
+        if ((ret = ev_ipv4_addr(source_addr, 0, (struct sockaddr_in*)&src_addr)) != 0)
+        {
+            return ret;
+        }
+        if (udp->base.data.flags & EV_HANDLE_UDP_IPV6)
+        {
+            return EV_EINVAL;
+        }
+        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, AF_INET)) != 0)
+        {
+            return ret;
+        }
+        return _ev_udp_set_source_membership_ipv4(udp, (struct sockaddr_in*)&mcast_addr,
+            interface_addr, (struct sockaddr_in*)&src_addr, membership);
+    }
+
+    if ((ret = ev_ipv6_addr(multicast_addr, 0, (struct sockaddr_in6*)&mcast_addr)) == 0)
+    {
+        if ((ret = ev_ipv6_addr(source_addr, 0, (struct sockaddr_in6*)&src_addr)) != 0)
+        {
+            return ret;
+        }
+        if ((udp->base.data.flags & EV_HANDLE_UDP_BOUND) && !(udp->base.data.flags & EV_HANDLE_UDP_IPV6))
+        {
+            return EV_EINVAL;
+        }
+        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, AF_INET6)) != 0)
+        {
+            return ret;
+        }
+        return _ev_udp_set_source_membership_ipv6(udp, (struct sockaddr_in6*)&mcast_addr,
+            interface_addr, (struct sockaddr_in6*)&src_addr, membership);
+    }
+
+    return ret;
+}
+
+int ev_udp_set_multicast_loop(ev_udp_t* udp, int on)
+{
+    DWORD optval = on;
+    if (udp->sock == EV_OS_SOCKET_INVALID)
+    {
+        return EV_EBADF;
+    }
+
+    int level = IPPROTO_IP;
+    int optname = IP_MULTICAST_LOOP;
+    if (udp->base.data.flags & EV_HANDLE_UDP_IPV6)
+    {
+        level = IPPROTO_IPV6;
+        optname = IPV6_MULTICAST_LOOP;
+    }
+
+    if (setsockopt(udp->sock, level, optname, (char*)&optval, sizeof(optval)) != 0)
+    {
+        int ret = WSAGetLastError();
+        return ev__translate_sys_error(ret);
+    }
+
+    return 0;
+}
+
+int ev_udp_set_multicast_ttl(ev_udp_t* udp, int ttl)
+{
+    DWORD optval = (DWORD)ttl;
+    if (ttl < -1 || ttl > 255)
+    {
+        return EV_EINVAL;
+    }
+    if (udp->sock == EV_OS_SOCKET_INVALID)
+    {
+        return EV_EBADF;
+    }
+
+    int level = IPPROTO_IP;
+    int optname = IP_MULTICAST_TTL;
+    if (udp->base.data.flags & EV_HANDLE_UDP_IPV6)
+    {
+        level = IPPROTO_IPV6;
+        optname = IPV6_MULTICAST_HOPS;
+    }
+
+    if (setsockopt(udp->sock, level, optname, (char*)&optval, sizeof(optval)) != 0)
+    {
+        int ret = WSAGetLastError();
+        return ev__translate_sys_error(ret);
+    }
+
+    return 0;
+}
+
+int ev_udp_set_multicast_interface(ev_udp_t* udp, const char* interface_addr)
+{
+    int ret;
+    struct sockaddr_storage addr_st;
+    struct sockaddr_in* addr_4 = (struct sockaddr_in*)&addr_st;
+    struct sockaddr_in6* addr_6 = (struct sockaddr_in6*)&addr_st;
+
+    if (udp->sock == EV_OS_SOCKET_INVALID)
+    {
+        return EV_EBADF;
+    }
+
+    int is_ipv6 = udp->base.data.flags & EV_HANDLE_UDP_IPV6;
+    if ((ret = ev__udp_interface_addr_to_sockaddr(&addr_st, interface_addr, is_ipv6)) != 0)
+    {
+        return ret;
+    }
+
+    int level = IPPROTO_IP;
+    int optname = IP_MULTICAST_IF;
+    char* optval = (char*)&addr_4->sin_addr;
+    int optlen = sizeof(addr_4->sin_addr);
+    if (addr_st.ss_family == AF_INET6)
+    {
+        optval = (char*)&addr_6->sin6_scope_id;
+        optlen = sizeof(addr_6->sin6_scope_id);
+    }
+
+    if (setsockopt(udp->sock, level, optname, optval, optlen) != 0)
+    {
+        ret = WSAGetLastError();
+        return ev__translate_sys_error(ret);
+    }
+
+    return 0;
+}
+
+int ev_udp_set_broadcast(ev_udp_t* udp, int on)
+{
+    BOOL optval = !!on;
+
+    if (udp->sock == EV_OS_SOCKET_INVALID)
+    {
+        return EV_EBADF;
+    }
+
+    if (setsockopt(udp->sock, SOL_SOCKET, SO_BROADCAST, (char*)&optval, sizeof(optval)) != 0)
+    {
+        int err = WSAGetLastError();
+        return ev__translate_sys_error(err);
+    }
+
+    return 0;
+}
+
+int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
+{
+    DWORD optval = ttl;
+    if (optval < 1 || optval > 255)
+    {
+        return EV_EINVAL;
+    }
+    if (udp->sock == EV_OS_SOCKET_INVALID)
+    {
+        return EV_EBADF;
+    }
+
+    int level = IPPROTO_IP;
+    int optname = IP_TTL;
+    if (udp->base.data.flags & EV_HANDLE_UDP_IPV6)
+    {
+        level = IPPROTO_IPV6;
+        optname = IPV6_HOPLIMIT;
+    }
+
+    if (setsockopt(udp->sock, level, optname, (char*)&optval, sizeof(optval)) != 0)
+    {
+        int err = WSAGetLastError();
+        return ev__translate_sys_error(err);
+    }
+
+    return 0;
+}
+
+// #line 53 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/winapi.c
+// SIZE:    594
+// SHA-256: 60242db16813d1f3a443e560447e5151fdf17dea28c0f25538897831e2abd8b0
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/winapi.c"
+#include <assert.h>
+
+ev_winapi_t ev_winapi = {
+    NULL,
+    NULL,
+    NULL,
+};
+
+EV_LOCAL void ev__winapi_init(void)
+{
+#define GET_NTDLL_FUNC(name)  \
+    do {\
+        ev_winapi.name = (fn_##name)GetProcAddress(ntdll_modeule, #name);\
+        assert(ev_winapi.name != NULL);\
+    } while (0)
+
+    HMODULE ntdll_modeule = GetModuleHandleA("ntdll.dll");
+    assert(ntdll_modeule != NULL);
+
+    GET_NTDLL_FUNC(NtQueryInformationFile);
+    GET_NTDLL_FUNC(RtlNtStatusToDosError);
+    GET_NTDLL_FUNC(NtQueryVolumeInformationFile);
+    GET_NTDLL_FUNC(NtDeviceIoControlFile);
+
+#undef GET_NTDLL_FUNC
+}
+
+// #line 54 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/winsock.c
+// SIZE:    9169
+// SHA-256: 98aa2d8a3b47e1d675ae820e72af6991599bc57c8f379236b1954b12d587cce9
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/winsock.c"
+
+int ev_tcp_non_ifs_lsp_ipv4;
+int ev_tcp_non_ifs_lsp_ipv6;
+
+struct sockaddr_in ev_addr_ip4_any_;
+struct sockaddr_in6 ev_addr_ip6_any_;
+
+EV_LOCAL void ev__winsock_init(void)
+{
+#define DETECT_IFS_LSP(AF, flag)    \
+    do {\
+        flag = 1;\
+        SOCKET dummy = socket(AF, SOCK_STREAM, IPPROTO_IP);\
+        if (dummy != INVALID_SOCKET) {\
+            break;\
+        }\
+        WSAPROTOCOL_INFOW protocol_info;\
+        int opt_len = sizeof(protocol_info);\
+        if (getsockopt(dummy, SOL_SOCKET, SO_PROTOCOL_INFOW, (char*)&protocol_info, &opt_len) == 0) {\
+            if (protocol_info.dwServiceFlags1 & XP1_IFS_HANDLES) {\
+                flag = 0;\
+            }\
+        }\
+        closesocket(dummy);\
+    } while (0)
+
+    int ret; (void)ret;
+
+    /* Set implicit binding address used by connectEx */
+    if ((ret = ev_ipv4_addr("0.0.0.0", 0, &ev_addr_ip4_any_)) != 0)
+    {
+        abort();
+    }
+    if ((ret = ev_ipv6_addr("::", 0, &ev_addr_ip6_any_)) != 0)
+    {
+        abort();
+    }
+
+    /* Skip initialization in safe mode without network support */
+    if (GetSystemMetrics(SM_CLEANBOOT) == 1)
+    {
+        return;
+    }
+
+    /* Initialize winsock */
+    {
+        WSADATA wsa_data;
+        if ((ret = WSAStartup(MAKEWORD(2, 2), &wsa_data)) != 0)
+        {
+            EV_FATAL_SYSCALL(ret, "WSAStartup");
+        }
+    }
+    
+    /* Try to detect non-IFS LSPs */
+    DETECT_IFS_LSP(AF_INET, ev_tcp_non_ifs_lsp_ipv4);
+    /* Try to detect IPV6 support and non-IFS LSPs */
+    DETECT_IFS_LSP(AF_INET6, ev_tcp_non_ifs_lsp_ipv6);
+
+#undef DETECT_IFS_LSP
+}
+
+EV_LOCAL int WSAAPI ev__wsa_recv_workaround(SOCKET socket, WSABUF* buffers,
+    DWORD buffer_count, DWORD* bytes, DWORD* flags, WSAOVERLAPPED* overlapped,
+    LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine)
+{
+    NTSTATUS status;
+    void* apc_context;
+    IO_STATUS_BLOCK* iosb = (IO_STATUS_BLOCK*)&overlapped->Internal;
+    AFD_RECV_INFO info;
+    DWORD error;
+
+    if (overlapped == NULL || completion_routine != NULL) {
+        WSASetLastError(WSAEINVAL);
+        return SOCKET_ERROR;
+    }
+
+    info.BufferArray = buffers;
+    info.BufferCount = buffer_count;
+    info.AfdFlags = AFD_OVERLAPPED;
+    info.TdiFlags = TDI_RECEIVE_NORMAL;
+
+    if (*flags & MSG_PEEK) {
+        info.TdiFlags |= TDI_RECEIVE_PEEK;
+    }
+
+    if (*flags & MSG_PARTIAL) {
+        info.TdiFlags |= TDI_RECEIVE_PARTIAL;
+    }
+
+    if (!((intptr_t)overlapped->hEvent & 1)) {
+        apc_context = (void*)overlapped;
+    }
+    else {
+        apc_context = NULL;
+    }
+
+    iosb->Status = STATUS_PENDING;
+    iosb->Pointer = 0;
+
+    status = ev_winapi.NtDeviceIoControlFile((HANDLE)socket,
+        overlapped->hEvent,
+        NULL,
+        apc_context,
+        iosb,
+        IOCTL_AFD_RECEIVE,
+        &info,
+        sizeof(info),
+        NULL,
+        0);
+
+    *flags = 0;
+    *bytes = (DWORD)iosb->Information;
+
+    switch (status) {
+    case STATUS_SUCCESS:
+        error = ERROR_SUCCESS;
+        break;
+
+    case STATUS_PENDING:
+        error = WSA_IO_PENDING;
+        break;
+
+    case STATUS_BUFFER_OVERFLOW:
+        error = WSAEMSGSIZE;
+        break;
+
+    case STATUS_RECEIVE_EXPEDITED:
+        error = ERROR_SUCCESS;
+        *flags = MSG_OOB;
+        break;
+
+    case STATUS_RECEIVE_PARTIAL_EXPEDITED:
+        error = ERROR_SUCCESS;
+        *flags = MSG_PARTIAL | MSG_OOB;
+        break;
+
+    case STATUS_RECEIVE_PARTIAL:
+        error = ERROR_SUCCESS;
+        *flags = MSG_PARTIAL;
+        break;
+
+    default:
+        error = ev__ntstatus_to_winsock_error(status);
+        break;
+    }
+
+    WSASetLastError(error);
+
+    if (error == ERROR_SUCCESS)
+    {
+        return 0;
+    }
+
+    return SOCKET_ERROR;
+}
+
+EV_LOCAL int WSAAPI ev__wsa_recvfrom_workaround(SOCKET socket, WSABUF* buffers,
+    DWORD buffer_count, DWORD* bytes, DWORD* flags, struct sockaddr* addr,
+    int* addr_len, WSAOVERLAPPED* overlapped,
+    LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine)
+{
+    NTSTATUS status;
+    void* apc_context;
+    IO_STATUS_BLOCK* iosb = (IO_STATUS_BLOCK*)&overlapped->Internal;
+    AFD_RECV_DATAGRAM_INFO info;
+    DWORD error;
+
+    if (overlapped == NULL || addr == NULL || addr_len == NULL ||
+        completion_routine != NULL)
+    {
+        WSASetLastError(WSAEINVAL);
+        return SOCKET_ERROR;
+    }
+
+    info.BufferArray = buffers;
+    info.BufferCount = buffer_count;
+    info.AfdFlags = AFD_OVERLAPPED;
+    info.TdiFlags = TDI_RECEIVE_NORMAL;
+    info.Address = addr;
+    info.AddressLength = addr_len;
+
+    if (*flags & MSG_PEEK) {
+        info.TdiFlags |= TDI_RECEIVE_PEEK;
+    }
+
+    if (*flags & MSG_PARTIAL) {
+        info.TdiFlags |= TDI_RECEIVE_PARTIAL;
+    }
+
+    if (!((intptr_t)overlapped->hEvent & 1)) {
+        apc_context = (void*)overlapped;
+    }
+    else {
+        apc_context = NULL;
+    }
+
+    iosb->Status = STATUS_PENDING;
+    iosb->Pointer = 0;
+
+    status = ev_winapi.NtDeviceIoControlFile((HANDLE)socket,
+        overlapped->hEvent,
+        NULL,
+        apc_context,
+        iosb,
+        IOCTL_AFD_RECEIVE_DATAGRAM,
+        &info,
+        sizeof(info),
+        NULL,
+        0);
+
+    *flags = 0;
+    *bytes = (DWORD)iosb->Information;
+
+    switch (status)
+    {
+    case STATUS_SUCCESS:
+        error = ERROR_SUCCESS;
+        break;
+
+    case STATUS_PENDING:
+        error = WSA_IO_PENDING;
+        break;
+
+    case STATUS_BUFFER_OVERFLOW:
+        error = WSAEMSGSIZE;
+        break;
+
+    case STATUS_RECEIVE_EXPEDITED:
+        error = ERROR_SUCCESS;
+        *flags = MSG_OOB;
+        break;
+
+    case STATUS_RECEIVE_PARTIAL_EXPEDITED:
+        error = ERROR_SUCCESS;
+        *flags = MSG_PARTIAL | MSG_OOB;
+        break;
+
+    case STATUS_RECEIVE_PARTIAL:
+        error = ERROR_SUCCESS;
+        *flags = MSG_PARTIAL;
+        break;
+
+    default:
+        error = ev__ntstatus_to_winsock_error(status);
+        break;
+    }
+
+    WSASetLastError(error);
+
+    if (error == ERROR_SUCCESS) {
+        return 0;
+    }
+
+    return SOCKET_ERROR;
+}
+
+EV_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status)
+{
+    switch (status)
+    {
+    case STATUS_SUCCESS:
+        return ERROR_SUCCESS;
+
+    case STATUS_PENDING:
+        return ERROR_IO_PENDING;
+
+    case STATUS_INVALID_HANDLE:
+    case STATUS_OBJECT_TYPE_MISMATCH:
+        return WSAENOTSOCK;
+
+    case STATUS_INSUFFICIENT_RESOURCES:
+    case STATUS_PAGEFILE_QUOTA:
+    case STATUS_COMMITMENT_LIMIT:
+    case STATUS_WORKING_SET_QUOTA:
+    case STATUS_NO_MEMORY:
+    case STATUS_QUOTA_EXCEEDED:
+    case STATUS_TOO_MANY_PAGING_FILES:
+    case STATUS_REMOTE_RESOURCES:
+        return WSAENOBUFS;
+
+    case STATUS_TOO_MANY_ADDRESSES:
+    case STATUS_SHARING_VIOLATION:
+    case STATUS_ADDRESS_ALREADY_EXISTS:
+        return WSAEADDRINUSE;
+
+    case STATUS_LINK_TIMEOUT:
+    case STATUS_IO_TIMEOUT:
+    case STATUS_TIMEOUT:
+        return WSAETIMEDOUT;
+
+    case STATUS_GRACEFUL_DISCONNECT:
+        return WSAEDISCON;
+
+    case STATUS_REMOTE_DISCONNECT:
+    case STATUS_CONNECTION_RESET:
+    case STATUS_LINK_FAILED:
+    case STATUS_CONNECTION_DISCONNECTED:
+    case STATUS_PORT_UNREACHABLE:
+    case STATUS_HOPLIMIT_EXCEEDED:
+        return WSAECONNRESET;
+
+    case STATUS_LOCAL_DISCONNECT:
+    case STATUS_TRANSACTION_ABORTED:
+    case STATUS_CONNECTION_ABORTED:
+        return WSAECONNABORTED;
+
+    case STATUS_BAD_NETWORK_PATH:
+    case STATUS_NETWORK_UNREACHABLE:
+    case STATUS_PROTOCOL_UNREACHABLE:
+        return WSAENETUNREACH;
+
+    case STATUS_HOST_UNREACHABLE:
+        return WSAEHOSTUNREACH;
+
+    case STATUS_CANCELLED:
+    case STATUS_REQUEST_ABORTED:
+        return WSAEINTR;
+
+    case STATUS_BUFFER_OVERFLOW:
+    case STATUS_INVALID_BUFFER_SIZE:
+        return WSAEMSGSIZE;
+
+    case STATUS_BUFFER_TOO_SMALL:
+    case STATUS_ACCESS_VIOLATION:
+        return WSAEFAULT;
+
+    case STATUS_DEVICE_NOT_READY:
+    case STATUS_REQUEST_NOT_ACCEPTED:
+        return WSAEWOULDBLOCK;
+
+    case STATUS_INVALID_NETWORK_RESPONSE:
+    case STATUS_NETWORK_BUSY:
+    case STATUS_NO_SUCH_DEVICE:
+    case STATUS_NO_SUCH_FILE:
+    case STATUS_OBJECT_PATH_NOT_FOUND:
+    case STATUS_OBJECT_NAME_NOT_FOUND:
+    case STATUS_UNEXPECTED_NETWORK_ERROR:
+        return WSAENETDOWN;
+
+    case STATUS_INVALID_CONNECTION:
+        return WSAENOTCONN;
+
+    case STATUS_REMOTE_NOT_LISTENING:
+    case STATUS_CONNECTION_REFUSED:
+        return WSAECONNREFUSED;
+
+    case STATUS_PIPE_DISCONNECTED:
+        return WSAESHUTDOWN;
+
+    case STATUS_CONFLICTING_ADDRESSES:
+    case STATUS_INVALID_ADDRESS:
+    case STATUS_INVALID_ADDRESS_COMPONENT:
+        return WSAEADDRNOTAVAIL;
+
+    case STATUS_NOT_SUPPORTED:
+    case STATUS_NOT_IMPLEMENTED:
+        return WSAEOPNOTSUPP;
+
+    case STATUS_ACCESS_DENIED:
+        return WSAEACCES;
+
+    default:
+        if ((status & (FACILITY_NTWIN32 << 16)) == (FACILITY_NTWIN32 << 16) &&
+            (status & (ERROR_SEVERITY_ERROR | ERROR_SEVERITY_WARNING)))
+        {
+            /*
+             * It's a windows error that has been previously mapped to an ntstatus
+             * code.
+             */
+            return (DWORD)(status & 0xffff);
+        }
+        else
+        {
+            /* The default fallback for unmappable ntstatus codes. */
+            return WSAEINVAL;
+        }
+    }
+}
+
+// #line 55 "ev.c"
+
+#else
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/async_unix.h
+// SIZE:    491
+// SHA-256: 35d22b0410bc633120906291e828465b21b8e188a572bfe49619d63006cbb572
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/async_unix.h"
+#ifndef __EV_ASYNC_UNIX_INTERNAL_H__
+#define __EV_ASYNC_UNIX_INTERNAL_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Create a pair of eventfd.
+ * Index 0 for read, index 1 for write.
+ */
+EV_LOCAL int ev__asyc_eventfd(int evtfd[2]);
+
+EV_LOCAL void ev__async_eventfd_close(int fd);
+
+/**
+ * @brief Post event to eventfd.
+ */
+EV_LOCAL void ev__async_post(int wfd);
+
+/**
+ * @brief Pend event from eventfd.
+ */
+EV_LOCAL void ev__async_pend(int rfd);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 59 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/io_unix.h
+// SIZE:    2857
+// SHA-256: cdff01bf63730f8c3a8494580da79bd59b744441b8d88a2309823f4f5145d826
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/io_unix.h"
+#ifndef __EV_IO_UNIX_H__
+#define __EV_IO_UNIX_H__
+
+#include <sys/epoll.h>
+#define EV_IO_IN            EPOLLIN     /**< The associated file is available for read(2) operations. */
+#define EV_IO_OUT           EPOLLOUT    /**< The associated file is available for write(2) operations. */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+EV_LOCAL void ev__init_io(ev_loop_t* loop);
+
+EV_LOCAL void ev__exit_io(ev_loop_t* loop);
+
+/**
+ * @brief Initialize io structure
+ * @param[out] io   A pointer to the structure
+ * @param[in] fd    File descriptor
+ * @param[in] cb    IO active callback
+ * @param[in] arg   User data
+ */
+EV_LOCAL void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb, void* arg);
+
+/**
+ * @brief Add events to IO structure
+ * @param[in] loop  Event loop
+ * @param[in] io    IO structure
+ * @param[in] evts  #EV_IO_IN or #EV_IO_OUT
+ */
+EV_LOCAL void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts);
+
+/**
+ * @brief Delete events from IO structure
+ * @param[in] loop  Event loop
+ * @param[in] io    IO structure
+ * @param[in] evts  #EV_IO_IN or #EV_IO_OUT
+ */
+EV_LOCAL void ev__nonblock_io_del(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts);
+
+/**
+ * @brief Add or remove FD_CLOEXEC
+ * @param[in] fd    File descriptor
+ * @param[in] set   bool
+ * @return          #ev_errno_t
+ */
+EV_LOCAL int ev__cloexec(int fd, int set);
+
+/**
+ * @brief Add or remove O_NONBLOCK
+ * @param[in] fd    File descriptor
+ * @param[in] set   bool
+ * @return          #ev_errno_t
+ */
+EV_LOCAL int ev__nonblock(int fd, int set);
+
+/**
+ * @brief Set reuse
+ * @return          #ev_errno_t
+ */
+EV_LOCAL int ev__reuse_unix(int fd);
+
+/**
+ * @brief Return the file access mode and the file status flags
+ */
+EV_LOCAL int ev__fcntl_getfl_unix(int fd);
+
+/**
+ * @brief Return the file descriptor flags.
+ */
+EV_LOCAL int ev__fcntl_getfd_unix(int fd);
+
+/**
+ * @brief readv wrap
+ * @return 0: try again; >0: read size; <0 errno
+ */
+EV_LOCAL ssize_t ev__readv_unix(int fd, ev_buf_t* iov, int iovcnt);
+
+/**
+ * @brief readv wrap
+ * @return 0: try again; >0: write size; <0 errno
+ */
+EV_LOCAL ssize_t ev__writev_unix(int fd, ev_buf_t* iov, int iovcnt);
+
+/**
+ * @brief write
+ * @return 0: try again; >0: write size; <0 errno
+ */
+EV_LOCAL ssize_t ev__write_unix(int fd, void* buffer, size_t size);
+
+/**
+ * @brief Write \p req to \p fd
+ * @param[in] fd    File to write
+ * @param[in] req   Write request
+ * @param[in] do_write  Write function
+ * @param[in] arg       User defined data
+ * @return              + #EV_SUCCESS: \p req send finish
+ *                      + #EV_EAGAIN: \p req not send finish, need to try again
+ *                      + other value: error
+ */
+EV_LOCAL int ev__send_unix(int fd, ev_write_t* req,
+    ssize_t(*do_write)(int fd, struct iovec* iov, int iovcnt, void* arg), void* arg);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 60 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/process_unix.h
+// SIZE:    417
+// SHA-256: da95020dc882f252d9e3053f674a5d6b80dbb9fe2c6eeca7c82d5a729ced50a9
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/process_unix.h"
+#ifndef __EV_PROCESS_UNIX_H__
+#define __EV_PROCESS_UNIX_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct ev_process_ctx_s
+{
+    ev_list_t       wait_queue;         /**< #ev_process_t::node */
+    ev_mutex_t      wait_queue_mutex;   /**< Mutex for wait_queue */
+} ev_process_ctx_t;
+
+/**
+ * @brief Initialize process context.
+ */
+EV_LOCAL void ev__init_process_unix(void);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 61 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/tcp_unix.h
+// SIZE:    1506
+// SHA-256: 3f0502e9b1d41f5b999de14a542a26130b4ac9ea91644738c1af6fffad18a054
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/tcp_unix.h"
+#ifndef __EV_TCP_UNIX_H__
+#define __EV_TCP_UNIX_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Unix backend for #ev_tcp_t.
+ */
+typedef struct ev_tcp_backend
+{
+    union {
+        struct
+        {
+            ev_nonblock_io_t io;           /**< IO object */
+            ev_list_t        accept_queue; /**< Accept queue */
+        } listen;
+        struct
+        {
+            ev_tcp_accept_cb cb;          /**< Accept callback */
+            void            *arg;         /**< User defined argument. */
+            ev_list_node_t   accept_node; /**< Accept queue node */
+        } accept;
+        ev_nonblock_stream_t stream; /**< IO component */
+        struct
+        {
+            ev_nonblock_io_t  io;   /**< IO object */
+            ev_tcp_connect_cb cb;   /**< Connect callback */
+            void             *arg;  /**< User defined argument */
+            int               stat; /**< Connect result */
+        } client;
+    } u;
+} ev_tcp_backend_t;
+
+struct ev_tcp
+{
+    ev_handle_t      base;      /**< Base object */
+    ev_tcp_close_cb  close_cb;  /**< User close callback */
+    void            *close_arg; /**< User defined argument. */
+    ev_os_socket_t   sock;      /**< Socket handle */
+    ev_tcp_backend_t backend;   /**< Platform related implementation */
+};
+
+/**
+ * @brief Open fd for read/write.
+ * @param[in] tcp   TCP handle
+ * @param[in] fd    fd
+ * @return          #ev_errno_t
+ */
+EV_LOCAL int ev__tcp_open(ev_tcp_t *tcp, int fd);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 62 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/loop_unix.h
+// SIZE:    568
+// SHA-256: 3d8ece467c0c09f516a565097adcd81230ae09136633f83058415949b932fc45
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/loop_unix.h"
+#ifndef __EV_LOOP_UNIX_H__
+#define __EV_LOOP_UNIX_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct ev_loop_unix_ctx
+{
+    clockid_t           hwtime_clock_id;    /**< Clock id */
+    int                 iovmax;             /**< The limits instead of readv/writev */
+    ev_process_ctx_t    process;            /**< Process context */
+}ev_loop_unix_ctx_t;
+
+/**
+ * @brief Global runtime
+ */
+extern ev_loop_unix_ctx_t g_ev_loop_unix_ctx;
+
+/**
+ * @brief Initialize windows context.
+ */
+EV_LOCAL void ev__init_once_unix(void);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 63 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/stream_unix.h
+// SIZE:    1796
+// SHA-256: 9b706c88ae8e57a461ee12ee041bf7c37ffec9dfe4d567408a62f9908c7ba6fe
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/stream_unix.h"
+#ifndef __EV_STREAM_UNIX_H__
+#define __EV_STREAM_UNIX_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Initialize stream.
+ * @param[in] loop      Event loop
+ * @param[out] stream   Stream handler
+ * @param[in] fd        File descriptor
+ * @param[in] wcb       Write callback
+ * @param[in] rcb       Read callback
+ */
+EV_LOCAL void ev__nonblock_stream_init(ev_loop_t* loop, ev_nonblock_stream_t* stream,
+    int fd, ev_stream_write_cb wcb, ev_stream_read_cb rcb);
+
+/**
+ * @brief Cleanup and exit stream
+ * @param[in] stream    Stream handler
+ */
+EV_LOCAL void ev__nonblock_stream_exit(ev_nonblock_stream_t* stream);
+
+/**
+ * @brief Do stream write
+ * @param[in] stream    Stream handle
+ * @param[in] req       Write request
+ * @return              #ev_errno_t
+ */
+EV_LOCAL int ev__nonblock_stream_write(ev_nonblock_stream_t* stream, ev_write_t* req);
+
+/**
+ * @brief Do stream read
+ * @param[in] stream    Stream handle
+ * @param[in] req       Read request
+ * @return              #ev_errno_t
+ */
+EV_LOCAL int ev__nonblock_stream_read(ev_nonblock_stream_t* stream, ev_read_t* req);
+
+/**
+ * @brief Get pending action count.
+ * @param[in] stream    Stream handle
+ * @param[in] evts      #EV_IO_IN or #EV_IO_OUT
+ * @return              Action count
+ */
+EV_LOCAL size_t ev__nonblock_stream_size(ev_nonblock_stream_t* stream, unsigned evts);
+
+/**
+ * @brief Abort pending requests
+ * @param[in] stream    Stream handle
+ * @param[in] evts      #EV_IO_IN or #EV_IO_OUT
+ */
+EV_LOCAL void ev__nonblock_stream_abort(ev_nonblock_stream_t* stream);
+
+/**
+ * @brief Cleanup pending requests
+ * @param[in] stream    Stream handle
+ * @param[in] evts      #EV_IO_IN or #EV_IO_OUT
+ */
+EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned evts);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 64 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/work.h
+// SIZE:    231
+// SHA-256: 55f148e626b082262c2d61bdecb715d4ec5cd25b6caaa3ad21c676a4e6bf53b4
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/work.h"
+#ifndef __EV_WORK_INTERNAL_H__
+#define __EV_WORK_INTERNAL_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+EV_LOCAL void ev__init_work(ev_loop_t* loop);
+
+EV_LOCAL void ev__exit_work(ev_loop_t* loop);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 65 "ev.c"
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/async_unix.c
+// SIZE:    4059
+// SHA-256: 300622294d822a10fbbcdbced3e884ebe9dc0a29f5fdc06323ddc5f62bcabe19
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/async_unix.c"
+#include <unistd.h>
+#include <assert.h>
+#include <sys/eventfd.h>
+
+static void _async_on_wakeup_unix(ev_nonblock_io_t *io, unsigned evts,
+                                  void *arg)
+{
+    (void)evts;
+    (void)arg;
+    ev_async_t *handle = EV_CONTAINER_OF(io, ev_async_t, backend.io);
+
+    ev__async_pend(handle->backend.pipfd[0]);
+    handle->activate_cb(handle, handle->activate_arg);
+}
+
+static void _ev_async_on_close(ev_handle_t *handle)
+{
+    ev_async_t *async = EV_CONTAINER_OF(handle, ev_async_t, base);
+
+    ev_async_cb close_cb = async->close_cb;
+    void       *close_arg = async->close_arg;
+    ev_free(async);
+
+    if (close_cb != NULL)
+    {
+        close_cb(async, close_arg);
+    }
+}
+
+static void _async_close_pipe(ev_async_t *handle)
+{
+    if (handle->backend.pipfd[0] != -1)
+    {
+        close(handle->backend.pipfd[0]);
+        handle->backend.pipfd[0] = -1;
+    }
+    if (handle->backend.pipfd[1] != -1)
+    {
+        close(handle->backend.pipfd[1]);
+        handle->backend.pipfd[1] = -1;
+    }
+}
+
+static void _ev_async_exit(ev_async_t *handle, ev_async_cb close_cb,
+                           void *close_arg)
+{
+    assert(!ev__handle_is_closing(&handle->base));
+
+    handle->close_cb = close_cb;
+    handle->close_arg = close_arg;
+    _async_close_pipe(handle);
+
+    ev__handle_deactive(&handle->base);
+
+    if (close_cb != NULL)
+    {
+        ev__handle_exit(&handle->base, _ev_async_on_close);
+    }
+    else
+    {
+        ev__handle_exit(&handle->base, NULL);
+        ev_free(handle);
+    }
+}
+
+EV_LOCAL void ev__async_exit_force(ev_async_t *handle)
+{
+    _ev_async_exit(handle, NULL, NULL);
+}
+
+EV_LOCAL int ev__asyc_eventfd(int evtfd[2])
+{
+    int errcode;
+
+#if defined(__linux__)
+    if ((evtfd[0] = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK)) < 0)
+    {
+        errcode = errno;
+        return ev__translate_sys_error(errcode);
+    }
+
+    if ((evtfd[1] = dup(evtfd[0])) < 0)
+    {
+        errcode = errno;
+        close(evtfd[0]);
+        return ev__translate_sys_error(errcode);
+    }
+#else
+    errcode = ev_pipe_make(evtfd, EV_PIPE_NONBLOCK, EV_PIPE_NONBLOCK);
+    if (errcode != 0)
+    {
+        return errcode;
+    }
+#endif
+
+    return 0;
+}
+
+EV_LOCAL void ev__async_eventfd_close(int fd)
+{
+    close(fd);
+}
+
+EV_LOCAL void ev__async_post(int wfd)
+{
+    uint64_t val = 1;
+
+    ssize_t write_size;
+    int     errcode;
+
+    do
+    {
+        write_size = write(wfd, &val, sizeof(val));
+    } while (write_size == -1 && (errcode = errno) == EINTR);
+
+    if (write_size < 0)
+    {
+        EV_ABORT();
+    }
+}
+
+EV_LOCAL void ev__async_pend(int rfd)
+{
+    uint64_t val;
+    int      errcode;
+    ssize_t  read_size;
+
+    do
+    {
+        read_size = read(rfd, &val, sizeof(val));
+    } while (read_size == -1 && (errcode = errno) == EINTR);
+
+    if (read_size < 0)
+    {
+        EV_ABORT();
+    }
+}
+
+int ev_async_init(ev_loop_t *loop, ev_async_t **handle, ev_async_cb activate_cb,
+                  void *activate_arg)
+{
+    int         errcode;
+    ev_async_t *new_handle = ev_malloc(sizeof(ev_async_t));
+    if (new_handle == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    new_handle->activate_cb = activate_cb;
+    new_handle->activate_arg = activate_arg;
+    new_handle->close_cb = NULL;
+    ev__handle_init(loop, &new_handle->base, EV_ROLE_EV_ASYNC);
+
+    errcode = ev__asyc_eventfd(new_handle->backend.pipfd);
+    if (errcode != 0)
+    {
+        goto err_close_handle;
+    }
+
+    ev__nonblock_io_init(&new_handle->backend.io, new_handle->backend.pipfd[0],
+                         _async_on_wakeup_unix, NULL);
+    ev__nonblock_io_add(loop, &new_handle->backend.io, EV_IO_IN);
+    ev__handle_active(&new_handle->base);
+
+    *handle = new_handle;
+    return 0;
+
+err_close_handle:
+    _async_close_pipe(new_handle);
+    ev__handle_exit(&new_handle->base, NULL);
+    ev_free(new_handle);
+    return errcode;
+}
+
+void ev_async_exit(ev_async_t *handle, ev_async_cb close_cb, void *close_arg)
+{
+    _ev_async_exit(handle, close_cb, close_arg);
+}
+
+void ev_async_wakeup(ev_async_t *handle)
+{
+    ev__async_post(handle->backend.pipfd[1]);
+}
+
+// #line 67 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/fs_unix.c
+// SIZE:    11029
+// SHA-256: 6f59d9af229fa0353c639b421c6d27c4a75e19d092cab36d079f9f535bce19fc
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/fs_unix.c"
+#define _GNU_SOURCE
+#include <assert.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <sys/uio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/sysmacros.h>
+#include <sys/mman.h>
+
+static ev_dirent_type_t _ev_fs_get_dirent_type(struct dirent* dent)
+{
+    ev_dirent_type_t type;
+
+    switch (dent->d_type)
+    {
+    case DT_DIR:
+        type = EV_DIRENT_DIR;
+        break;
+    case DT_REG:
+        type = EV_DIRENT_FILE;
+        break;
+    case DT_LNK:
+        type = EV_DIRENT_LINK;
+        break;
+    case DT_FIFO:
+        type = EV_DIRENT_FIFO;
+        break;
+    case DT_SOCK:
+        type = EV_DIRENT_SOCKET;
+        break;
+    case DT_CHR:
+        type = EV_DIRENT_CHR;
+        break;
+    case DT_BLK:
+        type = EV_DIRENT_BLOCK;
+        break;
+    default:
+        type = EV_DIRENT_UNKNOWN;
+        break;
+    }
+
+    return type;
+}
+
+static int _ev_fs_mkpath(char* file_path, int mode)
+{
+    char* p;
+    int errcode;
+    assert(file_path && *file_path);
+
+    for (p = strchr(file_path + 1, '/'); p != NULL; p = strchr(p + 1, '/'))
+    {
+        *p = '\0';
+        if (mkdir(file_path, mode) == -1)
+        {
+            errcode = errno;
+            if (errcode != EEXIST)
+            {
+                *p = '/';
+                return ev__translate_sys_error(errcode);
+            }
+        }
+        *p = '/';
+    }
+
+    if (mkdir(file_path, mode) == -1)
+    {
+        errcode = errno;
+        if (errcode != EEXIST)
+        {
+            return ev__translate_sys_error(errcode);
+        }
+    }
+
+    return 0;
+}
+
+static int _ev_file_mmap_to_native_prot_unix(int flags)
+{
+    int prot = 0;
+    if (flags & EV_FS_S_IRUSR)
+    {
+        prot |= PROT_READ;
+    }
+    if (flags & EV_FS_S_IWUSR)
+    {
+        prot |= PROT_WRITE;
+    }
+    if (flags & EV_FS_S_IXUSR)
+    {
+        prot |= PROT_EXEC;
+    }
+    return prot;
+}
+
+EV_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
+{
+    int ret;
+    int errcode;
+
+#if defined(__GLIBC_PREREQ) && __GLIBC_PREREQ(2, 28)
+    struct statx statxbuf;
+    ret = statx(file, "", AT_EMPTY_PATH, STATX_ALL, &statxbuf);
+    if (ret != 0)
+    {
+        goto err_errno;
+    }
+
+    statbuf->st_dev                 = makedev(statxbuf.stx_dev_major, statxbuf.stx_dev_minor);
+    statbuf->st_mode                = statxbuf.stx_mode;
+    statbuf->st_nlink               = statxbuf.stx_nlink;
+    statbuf->st_uid                 = statxbuf.stx_uid;
+    statbuf->st_gid                 = statxbuf.stx_gid;
+    statbuf->st_rdev                = makedev(statxbuf.stx_rdev_major, statxbuf.stx_rdev_minor);
+    statbuf->st_ino                 = statxbuf.stx_ino;
+    statbuf->st_size                = statxbuf.stx_size;
+    statbuf->st_blksize             = statxbuf.stx_blksize;
+    statbuf->st_blocks              = statxbuf.stx_blocks;
+    statbuf->st_atim.tv_sec         = statxbuf.stx_atime.tv_sec;
+    statbuf->st_atim.tv_nsec        = statxbuf.stx_atime.tv_nsec;
+    statbuf->st_mtim.tv_sec         = statxbuf.stx_mtime.tv_sec;
+    statbuf->st_mtim.tv_nsec        = statxbuf.stx_mtime.tv_nsec;
+    statbuf->st_ctim.tv_sec         = statxbuf.stx_ctime.tv_sec;
+    statbuf->st_ctim.tv_nsec        = statxbuf.stx_ctime.tv_nsec;
+    statbuf->st_birthtim.tv_sec     = statxbuf.stx_btime.tv_sec;
+    statbuf->st_birthtim.tv_nsec    = statxbuf.stx_btime.tv_nsec;
+    statbuf->st_flags               = 0;
+    statbuf->st_gen                 = 0;
+#else
+    struct stat pbuf;
+    ret = fstat(file, &pbuf);
+    if (ret != 0)
+    {
+        goto err_errno;
+    }
+    statbuf->st_dev                 = pbuf.st_dev;
+    statbuf->st_mode                = pbuf.st_mode;
+    statbuf->st_nlink               = pbuf.st_nlink;
+    statbuf->st_uid                 = pbuf.st_uid;
+    statbuf->st_gid                 = pbuf.st_gid;
+    statbuf->st_rdev                = pbuf.st_rdev;
+    statbuf->st_ino                 = pbuf.st_ino;
+    statbuf->st_size                = pbuf.st_size;
+    statbuf->st_blksize             = pbuf.st_blksize;
+    statbuf->st_blocks              = pbuf.st_blocks;
+
+#   if defined(__APPLE__)
+    statbuf->st_atim.tv_sec         = pbuf.st_atimespec.tv_sec;
+    statbuf->st_atim.tv_nsec        = pbuf.st_atimespec.tv_nsec;
+    statbuf->st_mtim.tv_sec         = pbuf.st_mtimespec.tv_sec;
+    statbuf->st_mtim.tv_nsec        = pbuf.st_mtimespec.tv_nsec;
+    statbuf->st_ctim.tv_sec         = pbuf.st_ctimespec.tv_sec;
+    statbuf->st_ctim.tv_nsec        = pbuf.st_ctimespec.tv_nsec;
+    statbuf->st_birthtim.tv_sec     = pbuf.st_birthtimespec.tv_sec;
+    statbuf->st_birthtim.tv_nsec    = pbuf.st_birthtimespec.tv_nsec;
+    statbuf->st_flags               = pbuf.st_flags;
+    statbuf->st_gen                 = pbuf.st_gen;
+#   elif defined(__ANDROID__)
+    statbuf->st_atim.tv_sec         = pbuf.st_atime;
+    statbuf->st_atim.tv_nsec        = pbuf.st_atimensec;
+    statbuf->st_mtim.tv_sec         = pbuf.st_mtime;
+    statbuf->st_mtim.tv_nsec        = pbuf.st_mtimensec;
+    statbuf->st_ctim.tv_sec         = pbuf.st_ctime;
+    statbuf->st_ctim.tv_nsec        = pbuf.st_ctimensec;
+    statbuf->st_birthtim.tv_sec     = pbuf.st_ctime;
+    statbuf->st_birthtim.tv_nsec    = pbuf.st_ctimensec;
+    statbuf->st_flags               = 0;
+    statbuf->st_gen                 = 0;
+#   elif !defined(_AIX) && !defined(__MVS__) && \
+        (\
+            defined(__DragonFly__)   || \
+            defined(__FreeBSD__)     || \
+            defined(__OpenBSD__)     || \
+            defined(__NetBSD__)      || \
+            defined(_GNU_SOURCE)     || \
+            defined(_BSD_SOURCE)     || \
+            defined(_SVID_SOURCE)    || \
+            defined(_XOPEN_SOURCE)   || \
+            defined(_DEFAULT_SOURCE)\
+        )
+    statbuf->st_atim.tv_sec         = pbuf.st_atim.tv_sec;
+    statbuf->st_atim.tv_nsec        = pbuf.st_atim.tv_nsec;
+    statbuf->st_mtim.tv_sec         = pbuf.st_mtim.tv_sec;
+    statbuf->st_mtim.tv_nsec        = pbuf.st_mtim.tv_nsec;
+    statbuf->st_ctim.tv_sec         = pbuf.st_ctim.tv_sec;
+    statbuf->st_ctim.tv_nsec        = pbuf.st_ctim.tv_nsec;
+#       if defined(__FreeBSD__) || defined(__NetBSD__)
+    statbuf->st_birthtim.tv_sec     = pbuf.st_birthtim.tv_sec;
+    statbuf->st_birthtim.tv_nsec    = pbuf.st_birthtim.tv_nsec;
+    statbuf->st_flags               = pbuf.st_flags;
+    statbuf->st_gen                 = pbuf.st_gen;
+#       else
+    statbuf->st_birthtim.tv_sec     = pbuf.st_ctim.tv_sec;
+    statbuf->st_birthtim.tv_nsec    = pbuf.st_ctim.tv_nsec;
+    statbuf->st_flags               = 0;
+    statbuf->st_gen                 = 0;
+#       endif
+#   else
+    statbuf->st_atim.tv_sec         = pbuf.st_atime;
+    statbuf->st_atim.tv_nsec        = 0;
+    statbuf->st_mtim.tv_sec         = pbuf.st_mtime;
+    statbuf->st_mtim.tv_nsec        = 0;
+    statbuf->st_ctim.tv_sec         = pbuf.st_ctime;
+    statbuf->st_ctim.tv_nsec        = 0;
+    statbuf->st_birthtim.tv_sec     = pbuf.st_ctime;
+    statbuf->st_birthtim.tv_nsec    = 0;
+    statbuf->st_flags               = 0;
+    statbuf->st_gen                 = 0;
+#   endif
+#endif
+
+    return 0;
+
+err_errno:
+    errcode = errno;
+    return ev__translate_sys_error(errcode);
+}
+
+EV_LOCAL int ev__fs_close(ev_os_file_t file)
+{
+    int errcode;
+    if (close(file) != 0)
+    {
+        errcode = errno;
+        return ev__translate_sys_error(errcode);
+    }
+    return 0;
+}
+
+EV_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mode)
+{
+    int errcode;
+
+#if defined(O_CLOEXEC)
+    flags |= O_CLOEXEC;
+#endif
+
+    int fd = open(path, flags, mode);
+    if (fd < 0)
+    {
+        errcode = errno;
+        return ev__translate_sys_error(errcode);
+    }
+
+#if defined(O_CLOEXEC)
+    if ((errcode = ev__cloexec(fd, 1)) != 0)
+    {
+        close(fd);
+        return errcode;
+    }
+#endif
+
+    *file = fd;
+    return 0;
+}
+
+EV_LOCAL int64_t ev__fs_seek(ev_os_file_t file, int whence, int64_t offset)
+{
+    off_t ret = lseek(file, offset, whence);
+    if (ret == (off_t)-1)
+    {
+        int errcode = errno;
+        return ev__translate_sys_error(errcode);
+    }
+    return ret;
+}
+
+EV_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
+{
+    ssize_t read_size = readv(file, (struct iovec*)bufs, nbuf);
+    if (read_size >= 0)
+    {
+        return read_size;
+    }
+
+    int errcode = errno;
+    return ev__translate_sys_error(errcode);
+}
+
+EV_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, int64_t offset)
+{
+    ssize_t read_size = preadv(file, (struct iovec*)bufs, nbuf, offset);
+    if (read_size >= 0)
+    {
+        return read_size;
+    }
+
+    int errcode = errno;
+    return ev__translate_sys_error(errcode);
+}
+
+EV_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
+{
+    ssize_t write_size = writev(file, (struct iovec*)bufs, nbuf);
+    if (write_size >= 0)
+    {
+        return write_size;
+    }
+
+    int errcode = errno;
+    return ev__translate_sys_error(errcode);
+}
+
+EV_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
+    int64_t offset)
+{
+    ssize_t write_size = pwritev(file, (struct iovec*)bufs, nbuf, offset);
+    if (write_size >= 0)
+    {
+        return write_size;
+    }
+
+    int errcode = errno;
+    return ev__translate_sys_error(errcode);
+}
+
+EV_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
+{
+    int ret = 0;
+    DIR* dir = opendir(path);
+
+    if (dir == NULL)
+    {
+        ret = errno;
+        return ev__translate_sys_error(ret);
+    }
+
+    struct dirent* res;
+    ev_dirent_t info;
+
+    while ((res = readdir(dir)) != NULL)
+    {
+        if (strcmp(res->d_name, ".") == 0 || strcmp(res->d_name, "..") == 0)
+        {
+            continue;
+        }
+
+        info.name = res->d_name;
+        info.type = _ev_fs_get_dirent_type(res);
+
+        if (cb(&info, arg) != 0)
+        {
+            break;
+        }
+    }
+
+    closedir(dir);
+
+    return ret;
+}
+
+EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
+{
+    char* dup_path = ev__strdup(path);
+    if (dup_path == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    int ret = _ev_fs_mkpath(dup_path, mode);
+    ev_free(dup_path);
+
+    return ret;
+}
+
+int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t offset,
+    size_t size, int flags)
+{
+    int ret;
+    const int prot = _ev_file_mmap_to_native_prot_unix(flags);
+
+    ev_fs_stat_t stat = EV_FS_STAT_INVALID;
+    if ((ret = ev__fs_fstat(file->file, &stat)) != 0)
+    {
+        return ret;
+    }
+
+    if (offset >= stat.st_size)
+    {
+        EV_ASSERT(size > 0);
+    }
+    else if (size == 0)
+    {
+        size = stat.st_size - offset;
+    }
+
+    view->addr = mmap(NULL, size, prot, MAP_SHARED, file->file, offset);
+    if (view->addr == NULL)
+    {
+        ret = errno;
+        return ev__translate_posix_sys_error(ret);
+    }
+    view->size = size;
+
+    return 0;
+}
+
+void ev_file_munmap(ev_file_map_t* view)
+{
+    if (view->addr != NULL)
+    {
+        munmap(view->addr, view->size);
+        view->addr = NULL;
+    }
+    view->size = 0;
+}
+
+// #line 68 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/io_unix.c
+// SIZE:    8754
+// SHA-256: 8878dae3342ae9e1c25e2efe760a4b14377439d35a6a14b854f769b0bae6d211
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/io_unix.c"
+#include <assert.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/uio.h>
+
+static int _ev_io_finalize_send_req_unix(ev_write_t* req, size_t write_size)
+{
+    req->size += write_size;
+
+    /* All data is sent */
+    if (req->size == req->capacity)
+    {
+        req->nbuf = 0;
+        return 0;
+    }
+    assert(req->size < req->capacity);
+
+    /* maintenance iovec */
+    size_t idx;
+    for (idx = 0; write_size > 0 && idx < req->nbuf; idx++)
+    {
+        if (write_size < req->bufs[idx].size)
+        {
+            req->bufs[idx].size -= write_size;
+            req->bufs[idx].data = (uint8_t*)req->bufs[idx].data + write_size;
+            break;
+        }
+        else
+        {
+            write_size -= req->bufs[idx].size;
+        }
+    }
+
+    assert(idx < req->nbuf);
+
+    memmove(&req->bufs[0], &req->bufs[idx], sizeof(req->bufs[0]) * (req->nbuf - idx));
+    req->nbuf -= idx;
+
+    return EV_EAGAIN;
+}
+
+static int _ev_cmp_io_unix(const ev_map_node_t* key1, const ev_map_node_t* key2, void* arg)
+{
+    (void)arg;
+    ev_nonblock_io_t* io1 = EV_CONTAINER_OF(key1, ev_nonblock_io_t, node);
+    ev_nonblock_io_t* io2 = EV_CONTAINER_OF(key2, ev_nonblock_io_t, node);
+    return io1->data.fd - io2->data.fd;
+}
+
+EV_LOCAL void ev__init_io(ev_loop_t* loop)
+{
+    int err;
+    ev_map_init(&loop->backend.io, _ev_cmp_io_unix, NULL);
+
+    if ((loop->backend.pollfd = epoll_create(256)) == -1)
+    {
+        err = errno;
+        EV_ABORT("errno:%d", err);
+    }
+    if ((err = ev__cloexec(loop->backend.pollfd, 1)) != 0)
+    {
+        err = errno;
+        EV_ABORT("errno:%d", err);
+    }
+}
+
+EV_LOCAL void ev__exit_io(ev_loop_t* loop)
+{
+    if (loop->backend.pollfd != -1)
+    {
+        close(loop->backend.pollfd);
+        loop->backend.pollfd = -1;
+    }
+}
+
+EV_LOCAL void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb, void* arg)
+{
+    io->data.fd = fd;
+    io->data.c_events = 0;
+    io->data.n_events = 0;
+    io->data.cb = cb;
+    io->data.arg = arg;
+}
+
+EV_LOCAL void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
+{
+    int errcode;
+    struct epoll_event poll_event;
+
+    io->data.n_events |= evts;
+    if (io->data.n_events == io->data.c_events)
+    {
+        return;
+    }
+
+    memset(&poll_event, 0, sizeof(poll_event));
+    poll_event.events = io->data.n_events;
+    poll_event.data.fd = io->data.fd;
+
+    int op = io->data.c_events == 0 ? EPOLL_CTL_ADD : EPOLL_CTL_MOD;
+
+    if (epoll_ctl(loop->backend.pollfd, op, io->data.fd, &poll_event) != 0)
+    {
+        errcode = errno;
+        EV_ABORT("errno:%d", errcode);
+    }
+
+    io->data.c_events = io->data.n_events;
+    if (op == EPOLL_CTL_ADD)
+    {
+        ev_map_insert(&loop->backend.io, &io->node);
+    }
+}
+
+EV_LOCAL void ev__nonblock_io_del(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
+{
+    int errcode;
+    struct epoll_event poll_event;
+    io->data.n_events &= ~evts;
+    if (io->data.n_events == io->data.c_events)
+    {
+        return;
+    }
+
+    memset(&poll_event, 0, sizeof(poll_event));
+    poll_event.events = io->data.n_events;
+    poll_event.data.fd = io->data.fd;
+
+    int op = io->data.n_events == 0 ? EPOLL_CTL_DEL : EPOLL_CTL_MOD;
+    if (epoll_ctl(loop->backend.pollfd, op, io->data.fd, &poll_event) != 0)
+    {
+        errcode = errno;
+        EV_ABORT("errno:%d", errcode);
+    }
+
+    io->data.c_events = io->data.n_events;
+    if (op == EPOLL_CTL_DEL)
+    {
+        ev_map_erase(&loop->backend.io, &io->node);
+    }
+}
+
+EV_LOCAL int ev__cloexec(int fd, int set)
+{
+#if defined(_AIX) || \
+    defined(__APPLE__) || \
+    defined(__DragonFly__) || \
+    defined(__FreeBSD__) || \
+    defined(__FreeBSD_kernel__) || \
+    defined(__linux__) || \
+    defined(__OpenBSD__) || \
+    defined(__NetBSD__)
+    int r;
+
+    do
+    {
+        r = ioctl(fd, set ? FIOCLEX : FIONCLEX);
+    } while (r == -1 && errno == EINTR);
+
+    if (r)
+    {
+        return ev__translate_sys_error(errno);
+    }
+
+    return 0;
+#else
+    int flags;
+
+    int r = ev__fcntl_getfd_unix(fd);
+    if (r == -1)
+    {
+        return errno;
+    }
+
+    /* Bail out now if already set/clear. */
+    if (!!(r & FD_CLOEXEC) == !!set)
+    {
+        return 0;
+    }
+
+    if (set)
+    {
+        flags = r | FD_CLOEXEC;
+    }
+    else
+    {
+        flags = r & ~FD_CLOEXEC;
+    }
+
+    do
+    {
+        r = fcntl(fd, F_SETFD, flags);
+    } while (r == -1 && errno == EINTR);
+
+    if (r)
+    {
+        return ev__translate_sys_error(errno);
+    }
+
+    return 0;
+#endif
+}
+
+EV_LOCAL int ev__nonblock(int fd, int set)
+{
+#if defined(_AIX) || \
+    defined(__APPLE__) || \
+    defined(__DragonFly__) || \
+    defined(__FreeBSD__) || \
+    defined(__FreeBSD_kernel__) || \
+    defined(__linux__) || \
+    defined(__OpenBSD__) || \
+    defined(__NetBSD__)
+    int r;
+
+    do
+    {
+        r = ioctl(fd, FIONBIO, &set);
+    } while (r == -1 && errno == EINTR);
+
+    if (r)
+    {
+        return ev__translate_sys_error(errno);
+    }
+
+    return 0;
+#else
+    int flags;
+
+    int r = ev__fcntl_getfl_unix(fd);
+    if (r == -1)
+    {
+        return ev__translate_sys_error(errno);
+    }
+
+    /* Bail out now if already set/clear. */
+    if (!!(r & O_NONBLOCK) == !!set)
+    {
+        return 0;
+    }
+
+    if (set)
+    {
+        flags = r | O_NONBLOCK;
+    }
+    else
+    {
+        flags = r & ~O_NONBLOCK;
+    }
+
+    do
+    {
+        r = fcntl(fd, F_SETFL, flags);
+    } while (r == -1 && errno == EINTR);
+
+    if (r)
+    {
+        return ev__translate_sys_error(errno);
+    }
+
+    return 0;
+#endif
+}
+
+EV_LOCAL int ev__reuse_unix(int fd)
+{
+    int yes;
+    yes = 1;
+
+#if defined(SO_REUSEPORT) && defined(__MVS__)
+    struct sockaddr_in sockfd;
+    unsigned int sockfd_len = sizeof(sockfd);
+    if (getsockname(fd, (struct sockaddr*)&sockfd, &sockfd_len) == -1)
+    {
+        goto err;
+    }
+    if (sockfd.sin_family == AF_UNIX)
+    {
+        if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)))
+        {
+            goto err;
+        }
+    }
+    else
+    {
+        if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes)))
+        {
+            goto err;
+        }
+    }
+#elif defined(SO_REUSEPORT) && !defined(__linux__)
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes)))
+    {
+        goto err;
+    }
+#else
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)))
+    {
+        goto err;
+    }
+#endif
+
+    return 0;
+
+err:
+    yes = errno;
+    return ev__translate_sys_error(yes);
+}
+
+EV_LOCAL int ev__fcntl_getfl_unix(int fd)
+{
+    int mode;
+    do
+    {
+        mode = fcntl(fd, F_GETFL);
+    } while (mode == -1 && errno == EINTR);
+    return mode;
+}
+
+EV_LOCAL int ev__fcntl_getfd_unix(int fd)
+{
+    int flags;
+
+    do
+    {
+        flags = fcntl(fd, F_GETFD);
+    } while (flags == -1 && errno == EINTR);
+
+    return flags;
+}
+
+EV_LOCAL ssize_t ev__readv_unix(int fd, ev_buf_t* iov, int iovcnt)
+{
+    ssize_t read_size;
+    do
+    {
+        read_size = readv(fd, (struct iovec*)iov, iovcnt);
+    } while (read_size == -1 && errno == EINTR);
+
+    if (read_size > 0)
+    {
+        return read_size;
+    }
+    else if (read_size == 0)
+    {
+        return EV_EOF;
+    }
+
+    int err = errno;
+    if (err == EAGAIN || err == EWOULDBLOCK)
+    {
+        return 0;
+    }
+
+    return ev__translate_sys_error(err);
+}
+
+EV_LOCAL ssize_t ev__writev_unix(int fd, ev_buf_t* iov, int iovcnt)
+{
+    ssize_t write_size;
+    do
+    {
+        write_size = writev(fd, (struct iovec*)iov, iovcnt);
+    } while (write_size == -1 && errno == EINTR);
+
+    if (write_size >= 0)
+    {
+        return write_size;
+    }
+
+    int err = errno;
+    if (err == EAGAIN || err == EWOULDBLOCK)
+    {
+        return 0;
+    }
+
+    return ev__translate_sys_error(err);
+}
+
+EV_LOCAL ssize_t ev__write_unix(int fd, void* buffer, size_t size)
+{
+    ssize_t send_size;
+    do
+    {
+        send_size = write(fd, buffer, size);
+    } while (send_size == -1 && errno == EINTR);
+
+    if (send_size >= 0)
+    {
+        return send_size;
+    }
+
+    int err = errno;
+    if (err == EAGAIN || err == EWOULDBLOCK)
+    {
+        return 0;
+    }
+
+    return ev__translate_sys_error(err);
+}
+
+EV_LOCAL int ev__send_unix(int fd, ev_write_t* req,
+    ssize_t(*do_write)(int fd, struct iovec* iov, int iovcnt, void* arg), void* arg)
+{
+    ev_buf_t* iov = req->bufs;
+    int iovcnt = req->nbuf;
+    if (iovcnt > g_ev_loop_unix_ctx.iovmax)
+    {
+        iovcnt = g_ev_loop_unix_ctx.iovmax;
+    }
+
+    ssize_t write_size = do_write(fd, (struct iovec*)iov, iovcnt, arg);
+
+    /* Check send result */
+    if (write_size < 0)
+    {
+        if (write_size == EV_ENOBUFS)
+        {
+            write_size = EV_EAGAIN;
+        }
+        return write_size;
+    }
+
+    return _ev_io_finalize_send_req_unix(req, (size_t)write_size);
+}
+
+// #line 69 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/loop_unix.c
+// SIZE:    4177
+// SHA-256: 331beb7e207b61cc9699b689b8ed3bfb01612064d435cd3e8c752e2a5494ac21
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/loop_unix.c"
+#include <assert.h>
+#include <unistd.h>
+#include <errno.h>
+#include <limits.h>
+#include <sys/eventfd.h>
+
+#if defined(__PASE__)
+/* on IBMi PASE the control message length can not exceed 256. */
+#   define EV__CMSG_FD_COUNT 60
+#else
+#   define EV__CMSG_FD_COUNT 64
+#endif
+#define EV__CMSG_FD_SIZE (EV__CMSG_FD_COUNT * sizeof(int))
+
+ev_loop_unix_ctx_t g_ev_loop_unix_ctx;
+
+static void _ev_init_hwtime(void)
+{
+    struct timespec t;
+    if (clock_getres(CLOCK_MONOTONIC_COARSE, &t) != 0)
+    {
+        goto err;
+    }
+    if (t.tv_nsec > 1 * 1000 * 1000)
+    {
+        goto err;
+    }
+    g_ev_loop_unix_ctx.hwtime_clock_id = CLOCK_MONOTONIC_COARSE;
+    return;
+
+err:
+    g_ev_loop_unix_ctx.hwtime_clock_id = CLOCK_MONOTONIC;
+}
+
+static ev_nonblock_io_t* _ev_find_io(ev_loop_t* loop, int fd)
+{
+    ev_nonblock_io_t tmp;
+    tmp.data.fd = fd;
+
+    ev_map_node_t* it = ev_map_find(&loop->backend.io, &tmp.node);
+    return it != NULL ? EV_CONTAINER_OF(it, ev_nonblock_io_t, node) : NULL;
+}
+
+static int _ev_poll_once(ev_loop_t* loop, struct epoll_event* events, int maxevents, int timeout)
+{
+    int nfds = epoll_wait(loop->backend.pollfd, events, maxevents, timeout);
+    if (nfds < 0)
+    {
+        return nfds;
+    }
+
+    int i;
+    for (i = 0; i < nfds; i++)
+    {
+        ev_nonblock_io_t* io = _ev_find_io(loop, events[i].data.fd);
+        io->data.cb(io, events[i].events, io->data.arg);
+    }
+
+    return nfds;
+}
+
+static void _ev_init_iovmax(void)
+{
+#if defined(IOV_MAX)
+    g_ev_loop_unix_ctx.iovmax = IOV_MAX;
+#elif defined(__IOV_MAX)
+    g_ev_loop_unix_ctx.iovmax = __IOV_MAX;
+#elif defined(_SC_IOV_MAX)
+    g_ev_loop_unix_ctx.iovmax = sysconf(_SC_IOV_MAX);
+    if (g_ev_loop_unix_ctx.iovmax == -1)
+    {
+        g_ev_loop_unix_ctx.iovmax = 1;
+    }
+#else
+    g_ev_loop_unix_ctx.iovmax = EV_IOV_MAX;
+#endif
+}
+
+static void _ev_check_layout_unix(void)
+{
+    ENSURE_LAYOUT(ev_buf_t, data, size, struct iovec, iov_base, iov_len);
+}
+
+static void _ev_init_once_unix(void)
+{
+    _ev_check_layout_unix();
+    _ev_init_hwtime();
+    _ev_init_iovmax();
+    ev__init_process_unix();
+}
+
+EV_LOCAL void ev__init_once_unix(void)
+{
+    static ev_once_t once = EV_ONCE_INIT;
+    ev_once_execute(&once, _ev_init_once_unix);
+}
+
+EV_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
+{
+    ev__init_once_unix();
+    ev__init_io(loop);
+    ev__init_work(loop);
+
+    return 0;
+}
+
+EV_LOCAL void ev__loop_exit_backend(ev_loop_t* loop)
+{
+    ev__exit_work(loop);
+    ev__exit_io(loop);
+}
+
+EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
+{
+    int nevts;
+    int errcode;
+    struct epoll_event events[128];
+
+    /**
+     * A bug in kernels < 2.6.37 makes timeouts larger than ~30 minutes
+     * effectively infinite on 32 bits architectures.  To avoid blocking
+     * indefinitely, we cap the timeout and poll again if necessary.
+     *
+     * Note that "30 minutes" is a simplification because it depends on
+     * the value of CONFIG_HZ.  The magic constant assumes CONFIG_HZ=1200,
+     * that being the largest value I have seen in the wild (and only once.)
+     */
+    const uint32_t max_safe_timeout = 1789569;
+
+    /**
+     * from libuv, this value gives the best throughput.
+     */
+    int max_performance_events = 49152;
+
+    const uint64_t base_time = loop->hwtime;
+    const uint32_t user_timeout = timeout;
+    for (; max_performance_events != 0; max_performance_events--)
+    {
+        if (timeout > max_safe_timeout)
+        {
+            timeout = max_safe_timeout;
+        }
+
+        nevts = _ev_poll_once(loop, events, ARRAY_SIZE(events), timeout);
+
+        if (nevts == ARRAY_SIZE(events))
+        {/* Poll for more events but don't block this time. */
+            timeout = 0;
+            continue;
+        }
+
+        if (nevts >= 0)
+        {
+            break;
+        }
+
+        /* If errno is not EINTR, something must wrong in the program */
+        if ((errcode = errno) != EINTR)
+        {
+            EV_ABORT("errno:%d", errcode);
+        }
+
+        ev__loop_update_time(loop);
+        uint64_t pass_time = loop->hwtime - base_time;
+        if (pass_time >= user_timeout)
+        {
+            break;
+        }
+
+        timeout = user_timeout - pass_time;
+    }
+}
+
+// #line 70 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/misc_unix.c
+// SIZE:    290
+// SHA-256: ef5ea84a17556676433ac6add4ad05896431bdb8111b1da636198ac411014bee
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/misc_unix.c"
+#include <errno.h>
+#include <unistd.h>
+
+EV_LOCAL int ev__translate_sys_error(int syserr)
+{
+    return ev__translate_posix_sys_error(syserr);
+}
+
+size_t ev_os_page_size(void)
+{
+    return sysconf(_SC_PAGE_SIZE);
+}
+
+size_t ev_os_mmap_offset_granularity(void)
+{
+    return ev_os_page_size();
+}
+
+// #line 71 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/misc_random_unix.c
+// SIZE:    7547
+// SHA-256: 72ea67ec0e77792f56debfc9260c01a6e6563e2a4bb5c7044dc4bfa04d27628b
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/misc_random_unix.c"
+#include <dlfcn.h>
+
+#if defined(__NetBSD__)
+
+static int _ev_random_sysctl_netbsd(void* buf, size_t len)
+{
+    static int name[] = { CTL_KERN, KERN_ARND };
+    size_t count, req;
+    unsigned char* p;
+
+    p = buf;
+    while (len)
+    {
+        req = len < 32 ? len : 32;
+        count = req;
+
+        if (sysctl(name, ARRAY_SIZE(name), p, &count, NULL, 0) == -1)
+        {
+            return ev__translate_posix_sys_error(errno);
+        }
+
+        if (count != req)
+        {
+            return EV_EIO;  /* Can't happen. */
+        }
+
+        p += count;
+        len -= count;
+    }
+
+    return 0;
+}
+
+EV_LOCAL int ev__random(void* buf, size_t len)
+{
+    return _ev_random_sysctl_netbsd(buf, len);
+}
+
+#elif defined(__FreeBSD__) || defined(__linux__)
+
+typedef struct ev__sysctl_args
+{
+  int* name;
+  int nlen;
+  void* oldval;
+  size_t* oldlenp;
+  void* newval;
+  size_t newlen;
+  unsigned long unused[4];
+} ev__sysctl_args_t;
+
+/**
+ * @brief getrandom() protocol type.
+ */
+typedef ssize_t (*ev__getrandom_fn)(void *, size_t, unsigned);
+
+static ev__getrandom_fn ev__getrandom = NULL;
+
+static void _ev_random_getrandom_init(void)
+{
+    ev__getrandom = (ev__getrandom_fn)dlsym(RTLD_DEFAULT, "getrandom");
+}
+
+static int _ev_random_getrandom(void* buf, size_t len)
+{
+    static ev_once_t token = EV_ONCE_INIT;
+    ev_once_execute(&token, _ev_random_getrandom_init);
+
+    if (ev__getrandom == NULL)
+    {
+        return EV_ENOSYS;
+    }
+
+    size_t pos; ssize_t n;
+    for (pos = 0; pos < len; pos += n)
+    {
+        n = len - pos;
+        if (n > 256)
+        {
+            n = 256;
+        }
+
+        do
+        {
+            n = ev__getrandom((char*)buf + pos, n, 0);
+        } while (n == -1 && errno == EINTR);
+        
+        if (n < 0)
+        {
+            return ev__translate_posix_sys_error(errno);
+        }
+        else if (n == 0)
+        {
+            return EV_EIO;
+        }
+    }
+
+    return 0;
+}
+
+static int _ev_random_sysctl_linux(void* buf, size_t len)
+{
+    static int name[] = {1 /*CTL_KERN*/, 40 /*KERN_RANDOM*/, 6 /*RANDOM_UUID*/};
+    ev__sysctl_args_t args;
+    char uuid[16];
+    char* p;
+    char* pe;
+    size_t n;
+
+    p = buf;
+    pe = p + len;
+
+    while (p < pe)
+    {
+        memset(&args, 0, sizeof(args));
+
+        args.name = name;
+        args.nlen = ARRAY_SIZE(name);
+        args.oldval = uuid;
+        args.oldlenp = &n;
+        n = sizeof(uuid);
+
+        /* Emits a deprecation warning with some kernels but that seems like
+        * an okay trade-off for the fallback of the fallback: this function is
+        * only called when neither getrandom(2) nor /dev/urandom are available.
+        * Fails with ENOSYS on kernels configured without CONFIG_SYSCTL_SYSCALL.
+        * At least arm64 never had a _sysctl system call and therefore doesn't
+        * have a SYS__sysctl define either.
+        */
+    #ifdef SYS__sysctl
+        if (syscall(SYS__sysctl, &args) == -1)
+        {
+            return UV__ERR(errno);
+        }
+    #else
+        {
+            (void) &args;
+            return EV_ENOSYS;
+        }
+    #endif
+
+        if (n != sizeof(uuid))
+        {
+            return EV_EIO;  /* Can't happen. */
+        }
+
+        /* uuid[] is now a type 4 UUID. Bytes 6 and 8 (counting from zero) contain
+        * 4 and 5 bits of entropy, respectively. For ease of use, we skip those
+        * and only use 14 of the 16 bytes.
+        */
+        uuid[6] = uuid[14];
+        uuid[8] = uuid[15];
+
+        n = pe - p;
+        if (n > 14)
+        {
+            n = 14;
+        }
+
+        memcpy(p, uuid, n);
+        p += n;
+    }
+
+    return 0;
+}
+
+EV_LOCAL int ev__random(void* buf, size_t len)
+{
+    int rc = _ev_random_getrandom(buf, len);
+#if defined(__linux__)
+    switch (rc)
+    {
+    case EV_EACCES:
+    case EV_EIO:
+    case EV_ELOOP:
+    case EV_EMFILE:
+    case EV_ENFILE:
+    case EV_ENOENT:
+    case EV_EPERM:
+        rc = _ev_random_sysctl_linux(buf, len);
+        break;
+    }
+#endif
+    return rc;
+}
+
+#else
+
+static int _ev_open_cloexec(const char* path, int flags)
+{
+#if defined(O_CLOEXEC)
+    int fd = open(path, flags | O_CLOEXEC);
+    if (fd < 0)
+    {
+        int errcode = errno;
+        return ev__translate_posix_sys_error(errcode);
+    }
+    return fd;
+#else
+    int fd = open(path, flags);
+    if (fd < 0)
+    {
+        int errcode = errno;
+        return ev__translate_posix_sys_error(errcode);
+    }
+    int err = ev__cloexec(fd, 1);
+    if (err != 0)
+    {
+        close(fd);
+        return err;
+    }
+    return fd;
+#endif
+}
+
+static int _ev_random_readpath(const char* path, void* buf, size_t len)
+{
+    int fd = _ev_open_cloexec(path, O_RDONLY);
+    if (fd < 0)
+    {
+        return fd;
+    }
+
+    size_t pos;
+    ssize_t read_sz;
+    for (pos = 0; pos < len; pos += read_sz)
+    {
+        do
+        {
+            read_sz = read(fd, (char*)buf + pos, len - pos);
+        } while (read_sz == -1 && errno == EINTR);
+
+        if (read_sz < 0)
+        {
+            int errcode = errno;
+            close(fd);
+            return ev__translate_posix_sys_error(errcode);
+        }
+
+        if (read_sz == 0)
+        {
+            close(fd);
+            return EV_EIO;
+        }
+    }
+
+    close(fd);
+    return 0;
+}
+
+#if defined(__PASE__)
+
+EV_LOCAL int ev__random(void* buf, size_t len)
+{
+    return _ev_random_readpath("/dev/urandom", buf, len);
+}
+
+#elif defined(_AIX) || defined(__QNX__)
+
+EV_LOCAL int ev__random(void* buf, size_t len)
+{
+    return _ev_random_readpath("/dev/random", buf, len);
+}
+
+#else
+
+static int _ev_random_dev_urandom_status = 0;
+
+static void _ev_random_dev_urandom_init(void)
+{
+    char c;
+
+    /*
+     * Linux's random(4) man page suggests applications should read at least
+     * once from /dev/random before switching to /dev/urandom in order to seed
+     * the system RNG. Reads from /dev/random can of course block indefinitely
+     * until entropy is available but that's the point.
+     */
+    _ev_random_dev_urandom_status = _ev_random_readpath("/dev/random", &c, 1);
+}
+
+static int _ev_random_dev_urandom(void* buf, size_t len)
+{
+    static ev_once_t token = EV_ONCE_INIT;
+    ev_once_execute(&token, _ev_random_dev_urandom_init);
+
+    if (_ev_random_dev_urandom_status != 0)
+    {
+        return _ev_random_dev_urandom_status;
+    }
+
+    return _ev_random_readpath("/dev/urandom", buf, len);
+}
+
+#if defined(__APPLE__) || defined(__OpenBSD__) || \
+     (defined(__ANDROID_API__) && __ANDROID_API__ >= 28)
+
+typedef int (*ev__getentropy_fn)(void*, size_t);
+
+static ev__getentropy_fn ev__getentropy = NULL;
+
+static void _ev_random_getentropy_init(void)
+{
+    ev__getentropy = (ev__getentropy_fn) dlsym(RTLD_DEFAULT, "getentropy");
+}
+
+static int _ev_random_getentropy(void* buf, size_t len)
+{
+    static ev_once_t token = EV_ONCE_INIT;
+    ev_once_execute(&token, _ev_random_getentropy_init);
+
+    if (ev__getentropy == NULL)
+    {
+        return EV_ENOSYS;
+    }
+
+    size_t pos, stride;
+    for (pos = 0, stride = 256; pos + stride < len; pos += stride)
+    {
+        if (ev__getentropy((char*)buf + pos, len - pos))
+        {
+            return ev__translate_posix_sys_error(errno);
+        }
+    }
+    if (ev__getentropy((char*)buf + pos, len - pos))
+    {
+        return ev__translate_posix_sys_error(errno);
+    }
+
+    return 0;
+}
+
+EV_LOCAL int ev__random(void* buf, size_t len)
+{
+    int rc = _ev_random_getentropy(buf, len);
+    if (rc == EV_ENOSYS)
+    {
+        rc = _ev_random_dev_urandom(buf, len);
+    }
+    return rc;
+}
+
+#else
+
+EV_LOCAL int ev__random(void* buf, size_t len)
+{
+    return _ev_random_dev_urandom(buf, len);
+}
+
+#endif
+
+#endif
+
+#endif
+
+// #line 72 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/mutex_unix.c
+// SIZE:    1802
+// SHA-256: a1f1459e5d2dff7318a6580f205592a6f447715f34a44192f8de57c53331d9f9
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/mutex_unix.c"
+
+static void _ev_mutex_init_unix(ev_os_mutex_t* handle)
+{
+#if defined(NDEBUG) || !defined(PTHREAD_MUTEX_ERRORCHECK)
+    if (pthread_mutex_init(handle, NULL) != 0)
+    {
+        EV_ABORT();
+    }
+#else
+    pthread_mutexattr_t attr;
+
+    if (pthread_mutexattr_init(&attr))
+    {
+        EV_ABORT();
+    }
+
+    if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK))
+    {
+        EV_ABORT();
+    }
+
+    if (pthread_mutex_init(handle, &attr) != 0)
+    {
+        EV_ABORT();
+    }
+
+    if (pthread_mutexattr_destroy(&attr))
+    {
+        EV_ABORT();
+    }
+#endif
+}
+
+static void _ev_mutex_init_recursive_unix(ev_os_mutex_t* handle)
+{
+    pthread_mutexattr_t attr;
+
+    if (pthread_mutexattr_init(&attr))
+    {
+        EV_ABORT();
+    }
+
+    if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE))
+    {
+        EV_ABORT();
+    }
+
+    if (pthread_mutex_init(handle, &attr) != 0)
+    {
+        EV_ABORT();
+    }
+
+    if (pthread_mutexattr_destroy(&attr))
+    {
+        EV_ABORT();
+    }
+}
+
+void ev_mutex_init(ev_mutex_t* handle, int recursive)
+{
+    if (recursive)
+    {
+        _ev_mutex_init_recursive_unix(&handle->u.r);
+    }
+    else
+    {
+        _ev_mutex_init_unix(&handle->u.r);
+    }
+}
+
+void ev_mutex_exit(ev_mutex_t* handle)
+{
+    if (pthread_mutex_destroy(&handle->u.r))
+    {
+        EV_ABORT();
+    }
+}
+
+void ev_mutex_enter(ev_mutex_t* handle)
+{
+    if (pthread_mutex_lock(&handle->u.r))
+    {
+        EV_ABORT();
+    }
+}
+
+void ev_mutex_leave(ev_mutex_t* handle)
+{
+    if (pthread_mutex_unlock(&handle->u.r))
+    {
+        EV_ABORT();
+    }
+}
+
+int ev_mutex_try_enter(ev_mutex_t* handle)
+{
+    int err = pthread_mutex_trylock(&handle->u.r);
+    if (!err)
+    {
+        return 0;
+    }
+
+    if (err != EBUSY && err != EAGAIN)
+    {
+        EV_ABORT();
+    }
+
+    return EV_EBUSY;
+}
+
+// #line 73 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/once_unix.c
+// SIZE:    157
+// SHA-256: 6b15ddc16ee6acfdb4dc4722eb30eea83501c89d86d36de69d7fbadd25315e24
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/once_unix.c"
+#include <stdlib.h>
+
+void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
+{
+    if (pthread_once(&guard->guard, cb) != 0)
+    {
+        EV_ABORT();
+    }
+}
+
+// #line 74 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/pipe_unix.c
+// SIZE:    27150
+// SHA-256: f2af1d59aca28df700ab52daf931921f6325b4feb88366da5dafe1e715ed0784
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/pipe_unix.c"
+#define _GNU_SOURCE
+#include <assert.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+
+typedef char ev_ipc_msghdr[CMSG_SPACE(sizeof(int))];
+
+static void _ev_pipe_close_unix(ev_pipe_t *pipe)
+{
+    if (pipe->pipfd != EV_OS_PIPE_INVALID)
+    {
+        close(pipe->pipfd);
+        pipe->pipfd = EV_OS_PIPE_INVALID;
+    }
+}
+
+static void _ev_pipe_on_close_unix(ev_handle_t *handle)
+{
+    ev_pipe_t *pipe_handle = EV_CONTAINER_OF(handle, ev_pipe_t, base);
+    ev_pipe_cb close_cb = pipe_handle->close_cb;
+    void      *close_arg = pipe_handle->close_arg;
+    ev_free(pipe_handle);
+
+    if (close_cb != NULL)
+    {
+        close_cb(pipe_handle, close_arg);
+    }
+}
+
+static void _ev_pipe_smart_deactive(ev_pipe_t *pipe)
+{
+    size_t io_sz = 0;
+
+    if (!ev__handle_is_active(&pipe->base))
+    {
+        return;
+    }
+
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
+    {
+        io_sz += ev_list_size(&pipe->backend.ipc_mode.rio.rqueue);
+        io_sz += pipe->backend.ipc_mode.rio.curr.reading != NULL ? 1 : 0;
+        io_sz += ev_list_size(&pipe->backend.ipc_mode.wio.wqueue);
+        io_sz += pipe->backend.ipc_mode.wio.curr.writing != NULL ? 1 : 0;
+    }
+    else
+    {
+        io_sz = ev__nonblock_stream_size(&pipe->backend.data_mode.stream,
+                                         EV_IO_IN | EV_IO_OUT);
+    }
+
+    if (io_sz == 0)
+    {
+        ev__handle_deactive(&pipe->base);
+    }
+}
+
+static void _ev_pipe_w_user_callback_unix(ev_pipe_t           *pipe,
+                                          ev_pipe_write_req_t *req,
+                                          ssize_t              size)
+{
+    _ev_pipe_smart_deactive(pipe);
+    ev__write_exit(&req->base);
+    req->ucb(pipe, size, req->ucb_arg);
+}
+
+static void _ev_pipe_r_user_callback_unix(ev_pipe_t          *pipe,
+                                          ev_pipe_read_req_t *req, ssize_t size)
+{
+    _ev_pipe_smart_deactive(pipe);
+    ev__read_exit(&req->base);
+    req->ucb(req, size);
+}
+
+static void _ev_pipe_on_data_mode_write_unix(ev_nonblock_stream_t *stream,
+                                             ev_write_t *req, ssize_t size)
+{
+    ev_pipe_t *pipe_handle =
+        EV_CONTAINER_OF(stream, ev_pipe_t, backend.data_mode.stream);
+    ev_pipe_write_req_t *w_req =
+        EV_CONTAINER_OF(req, ev_pipe_write_req_t, base);
+    _ev_pipe_w_user_callback_unix(pipe_handle, w_req, size);
+}
+
+static void _ev_pipe_on_data_mode_read_unix(ev_nonblock_stream_t *stream,
+                                            ev_read_t *req, ssize_t size)
+{
+    ev_pipe_t *pipe_handle =
+        EV_CONTAINER_OF(stream, ev_pipe_t, backend.data_mode.stream);
+
+    ev_pipe_read_req_t *r_req = EV_CONTAINER_OF(req, ev_pipe_read_req_t, base);
+    _ev_pipe_r_user_callback_unix(pipe_handle, r_req, size);
+}
+
+static int _ev_pipe_on_ipc_mode_io_read_remain(ev_pipe_t *pipe)
+{
+    assert(pipe->backend.ipc_mode.rio.curr.reading != NULL);
+
+    ev_buf_t bufs[EV_IOV_MAX];
+    size_t   target_size = pipe->backend.ipc_mode.rio.curr.data_remain_size;
+    ev_pipe_read_req_t *req = pipe->backend.ipc_mode.rio.curr.reading;
+
+    size_t buf_idx = pipe->backend.ipc_mode.rio.curr.buf_idx;
+    size_t buf_pos = pipe->backend.ipc_mode.rio.curr.buf_pos;
+
+    size_t idx;
+    for (idx = 0; idx < ARRAY_SIZE(bufs) && target_size > 0 &&
+                  buf_idx < req->base.data.nbuf;
+         idx++, buf_idx++)
+    {
+        bufs[idx].data = (uint8_t *)req->base.data.bufs[buf_idx].data + buf_pos;
+        bufs[idx].size = req->base.data.bufs[buf_idx].size - buf_pos;
+
+        bufs[idx].size = EV_MIN(bufs[idx].size, target_size);
+        target_size -= bufs[idx].size;
+
+        buf_pos = 0;
+    }
+
+    ssize_t read_size = ev__readv_unix(pipe->pipfd, bufs, idx);
+    if (read_size < 0)
+    {
+        return read_size;
+    }
+
+    pipe->backend.ipc_mode.rio.curr.data_remain_size -= read_size;
+    req->base.data.size += read_size;
+
+    /* no data remain */
+    if (pipe->backend.ipc_mode.rio.curr.data_remain_size == 0)
+    {
+        goto callback;
+    }
+
+    /* move cursor */
+    while (read_size > 0 &&
+           pipe->backend.ipc_mode.rio.curr.buf_idx < req->base.data.nbuf)
+    {
+        size_t left_size =
+            req->base.data.bufs[pipe->backend.ipc_mode.rio.curr.buf_idx].size -
+            pipe->backend.ipc_mode.rio.curr.buf_pos;
+
+        if (left_size > (size_t)read_size)
+        {
+            pipe->backend.ipc_mode.rio.curr.buf_pos += read_size;
+            break;
+        }
+
+        read_size -= left_size;
+        pipe->backend.ipc_mode.rio.curr.buf_idx++;
+        pipe->backend.ipc_mode.rio.curr.buf_pos = 0;
+        continue;
+    }
+
+    /* Buffer is full */
+    if (pipe->backend.ipc_mode.rio.curr.buf_idx >= req->base.data.nbuf)
+    {
+        goto callback;
+    }
+
+    return 0;
+
+callback:
+    pipe->backend.ipc_mode.rio.curr.reading = NULL;
+    _ev_pipe_r_user_callback_unix(pipe, req, req->base.data.size);
+    return 0;
+}
+
+static ssize_t _ev_pipe_recvmsg_unix(ev_pipe_t *pipe, struct msghdr *msg)
+{
+    struct cmsghdr *cmsg;
+    ssize_t         rc;
+    int            *pfd;
+    int            *end;
+    int             fd = pipe->pipfd;
+#if defined(__linux__)
+    if (!pipe->backend.ipc_mode.mask.no_cmsg_cloexec)
+    {
+        rc = recvmsg(fd, msg, MSG_CMSG_CLOEXEC);
+        if (rc != -1)
+        {
+            return rc;
+        }
+        if ((rc = errno) != EINVAL)
+        {
+            return ev__translate_sys_error(errno);
+        }
+        rc = recvmsg(fd, msg, 0);
+        if (rc == -1)
+        {
+            return ev__translate_sys_error(errno);
+        }
+        pipe->backend.ipc_mode.mask.no_cmsg_cloexec = 1;
+    }
+    else
+    {
+        rc = recvmsg(fd, msg, 0);
+    }
+#else
+    rc = recvmsg(fd, msg, 0);
+#endif
+    if (rc == -1)
+    {
+        return ev__translate_sys_error(errno);
+    }
+    if (msg->msg_controllen == 0)
+    {
+        return rc;
+    }
+    for (cmsg = CMSG_FIRSTHDR(msg); cmsg != NULL; cmsg = CMSG_NXTHDR(msg, cmsg))
+    {
+        if (cmsg->cmsg_type == SCM_RIGHTS)
+        {
+            for (pfd = (int *)CMSG_DATA(cmsg),
+                end = (int *)((char *)cmsg + cmsg->cmsg_len);
+                 pfd < end; pfd += 1)
+            {
+                ev__cloexec(*pfd, 1);
+            }
+        }
+    }
+    return rc;
+}
+
+static void _ev_stream_do_read_parser_msghdr(ev_pipe_read_req_t *req,
+                                             struct msghdr      *msg)
+{
+    struct cmsghdr *cmsg = CMSG_FIRSTHDR(msg);
+    if (cmsg == NULL)
+    {
+        return;
+    }
+
+    void *pv = CMSG_DATA(cmsg);
+    int  *pi = pv;
+    req->handle.os_socket = *pi;
+
+    assert(CMSG_NXTHDR(msg, cmsg) == NULL);
+}
+
+static int _ev_pipe_on_ipc_mode_io_read_first(ev_pipe_t *pipe)
+{
+    void *buffer = (uint8_t *)pipe->backend.ipc_mode.rio.buffer +
+                   pipe->backend.ipc_mode.rio.curr.head_read_size;
+    size_t buffer_size = sizeof(pipe->backend.ipc_mode.rio.buffer) -
+                         pipe->backend.ipc_mode.rio.curr.head_read_size;
+
+    if (pipe->backend.ipc_mode.rio.curr.head_read_size == 0)
+    {
+        struct msghdr msg;
+        ev_ipc_msghdr cmsg_space;
+        struct iovec  iov = { buffer, buffer_size };
+
+        /* ipc uses recvmsg */
+        msg.msg_flags = 0;
+        msg.msg_iov = &iov;
+        msg.msg_iovlen = 1;
+        msg.msg_name = NULL;
+        msg.msg_namelen = 0;
+        /* Set up to receive a descriptor even if one isn't in the message */
+        msg.msg_controllen = sizeof(cmsg_space);
+        msg.msg_control = cmsg_space;
+
+        ssize_t read_size = _ev_pipe_recvmsg_unix(pipe, &msg);
+        if (read_size <= 0)
+        { /* Error or EOF */
+            return read_size;
+        }
+        assert(read_size <= (ssize_t)sizeof(pipe->backend.ipc_mode.rio.buffer));
+
+        _ev_stream_do_read_parser_msghdr(
+            pipe->backend.ipc_mode.rio.curr.reading, &msg);
+        pipe->backend.ipc_mode.rio.curr.head_read_size += read_size;
+    }
+    else
+    {
+        ssize_t read_size = read(pipe->pipfd, buffer, buffer_size);
+        if (read_size == 0)
+        {
+            return EV_EOF;
+        }
+        if (read_size < 0)
+        {
+            int err = errno;
+            if (err == EAGAIN)
+            { /* try again */
+                return 0;
+            }
+            return ev__translate_sys_error(err);
+        }
+        pipe->backend.ipc_mode.rio.curr.head_read_size += read_size;
+    }
+
+    /* If frame header not read complete, try again */
+    if (pipe->backend.ipc_mode.rio.curr.head_read_size <
+        sizeof(ev_ipc_frame_hdr_t))
+    {
+        return 0;
+    }
+
+    /* A invalid frame header means something wrong in the transmission link */
+    if (!ev__ipc_check_frame_hdr(pipe->backend.ipc_mode.rio.buffer,
+                                 sizeof(ev_ipc_frame_hdr_t)))
+    {
+        return EV_EPIPE;
+    }
+
+    ev_ipc_frame_hdr_t *hdr =
+        (ev_ipc_frame_hdr_t *)pipe->backend.ipc_mode.rio.buffer;
+    pipe->backend.ipc_mode.rio.curr.data_remain_size = hdr->hdr_dtsz;
+
+    /* No data remain to read means peer send a empty package */
+    if (pipe->backend.ipc_mode.rio.curr.data_remain_size == 0)
+    {
+        ev_pipe_read_req_t *req = pipe->backend.ipc_mode.rio.curr.reading;
+        pipe->backend.ipc_mode.rio.curr.reading = NULL;
+        _ev_pipe_r_user_callback_unix(pipe, req, req->base.data.size);
+    }
+
+    /* Process to read body */
+    return _ev_pipe_on_ipc_mode_io_read_remain(pipe);
+}
+
+static int _ev_pipe_on_ipc_mode_io_read_unix(ev_pipe_t *pipe)
+{
+    if (pipe->backend.ipc_mode.rio.curr.data_remain_size != 0)
+    {
+        return _ev_pipe_on_ipc_mode_io_read_remain(pipe);
+    }
+
+    assert(pipe->backend.ipc_mode.rio.curr.reading == NULL);
+
+    ev_list_node_t *it = ev_list_pop_front(&pipe->backend.ipc_mode.rio.rqueue);
+    assert(it != NULL);
+
+    pipe->backend.ipc_mode.rio.curr.reading =
+        EV_CONTAINER_OF(it, ev_pipe_read_req_t, base.node);
+    pipe->backend.ipc_mode.rio.curr.head_read_size = 0;
+    pipe->backend.ipc_mode.rio.curr.buf_idx = 0;
+    pipe->backend.ipc_mode.rio.curr.buf_pos = 0;
+
+    return _ev_pipe_on_ipc_mode_io_read_first(pipe);
+}
+
+static ssize_t _ev_pipe_sendmsg_unix(int fd, int fd_to_send, struct iovec *iov,
+                                     int iovcnt)
+{
+    struct msghdr   msg;
+    struct cmsghdr *cmsg;
+
+    ev_ipc_msghdr msg_ctrl_hdr;
+    memset(&msg_ctrl_hdr, 0, sizeof(msg_ctrl_hdr));
+
+    msg.msg_name = NULL;
+    msg.msg_namelen = 0;
+    msg.msg_iov = iov;
+    msg.msg_iovlen = iovcnt;
+    msg.msg_flags = 0;
+
+    msg.msg_control = msg_ctrl_hdr;
+    msg.msg_controllen = sizeof(msg_ctrl_hdr);
+
+    cmsg = CMSG_FIRSTHDR(&msg);
+    cmsg->cmsg_level = SOL_SOCKET;
+    cmsg->cmsg_type = SCM_RIGHTS;
+    cmsg->cmsg_len = CMSG_LEN(sizeof(fd_to_send));
+
+    /* silence aliasing warning */
+    {
+        void *pv = CMSG_DATA(cmsg);
+        int  *pi = pv;
+        *pi = fd_to_send;
+    }
+
+    ssize_t n;
+    do
+    {
+        n = sendmsg(fd, &msg, 0);
+    } while (n == -1 && errno == EINTR);
+
+    if (n >= 0)
+    {
+        return n;
+    }
+
+    int err = errno;
+    if (err == EAGAIN || err == EWOULDBLOCK)
+    {
+        return 0;
+    }
+    return ev__translate_sys_error(err);
+}
+
+static int _ev_pipe_on_ipc_mode_io_write_remain_body_unix(ev_pipe_t *pipe)
+{
+    ev_buf_t             bufs[EV_IOV_MAX];
+    ev_pipe_write_req_t *req = pipe->backend.ipc_mode.wio.curr.writing;
+    assert(req != NULL);
+
+    size_t buf_idx = pipe->backend.ipc_mode.wio.curr.buf_idx;
+    size_t buf_pos = pipe->backend.ipc_mode.wio.curr.buf_pos;
+
+    size_t idx;
+    for (idx = 0; idx < ARRAY_SIZE(bufs) && buf_idx < req->base.nbuf;
+         idx++, buf_idx++)
+    {
+        bufs[idx].data = (uint8_t *)req->base.bufs[buf_idx].data + buf_pos;
+        bufs[idx].size = req->base.bufs[buf_idx].size - buf_pos;
+        buf_pos = 0;
+    }
+
+    ssize_t write_size = ev__writev_unix(pipe->pipfd, bufs, idx);
+    if (write_size < 0)
+    {
+        return write_size;
+    }
+
+    req->base.size += write_size;
+    while (write_size > 0)
+    {
+        size_t left_size =
+            req->base.bufs[pipe->backend.ipc_mode.wio.curr.buf_idx].size -
+            pipe->backend.ipc_mode.wio.curr.buf_pos;
+        if (left_size > (size_t)write_size)
+        {
+            pipe->backend.ipc_mode.wio.curr.buf_pos += write_size;
+            write_size = 0;
+            break;
+        }
+
+        write_size -= left_size;
+        pipe->backend.ipc_mode.wio.curr.buf_idx++;
+        pipe->backend.ipc_mode.wio.curr.buf_pos = 0;
+    }
+
+    /* send finish */
+    if (pipe->backend.ipc_mode.wio.curr.buf_idx >= req->base.nbuf)
+    {
+        pipe->backend.ipc_mode.wio.curr.writing = NULL;
+        _ev_pipe_w_user_callback_unix(pipe, req, req->base.size);
+    }
+
+    return 0;
+}
+
+static int _ev_pipe_on_ipc_mode_io_write_remain_head_unix(ev_pipe_t *pipe)
+{
+    EV_LOG_TRACE("pipe(%p) send remain header", pipe);
+
+    const size_t buffer_pos = pipe->backend.ipc_mode.wio.curr.head_send_size;
+    void        *buffer = pipe->backend.ipc_mode.wio.buffer + buffer_pos;
+    size_t       buffer_size =
+        pipe->backend.ipc_mode.wio.curr.head_send_capacity - buffer_pos;
+
+    ssize_t send_size = ev__write_unix(pipe->pipfd, buffer, buffer_size);
+    if (send_size < 0)
+    {
+        return send_size;
+    }
+    pipe->backend.ipc_mode.wio.curr.head_send_size += send_size;
+
+    /* try again */
+    if ((size_t)send_size < buffer_size)
+    {
+        return 0;
+    }
+
+    /* Write body */
+    return _ev_pipe_on_ipc_mode_io_write_remain_body_unix(pipe);
+}
+
+static int _ev_pipe_on_ipc_mode_io_write_remain_unix(ev_pipe_t *pipe)
+{
+    if (pipe->backend.ipc_mode.wio.curr.head_send_size <
+        pipe->backend.ipc_mode.wio.curr.head_send_capacity)
+    {
+        return _ev_pipe_on_ipc_mode_io_write_remain_head_unix(pipe);
+    }
+
+    return _ev_pipe_on_ipc_mode_io_write_remain_body_unix(pipe);
+}
+
+static int _ev_pipe_ipc_mode_write_new_frame_unix(ev_pipe_t *pipe)
+{
+    ev_pipe_write_req_t *req = pipe->backend.ipc_mode.wio.curr.writing;
+
+    ev_ipc_frame_hdr_t frame_hdr;
+    ev__ipc_init_frame_hdr(&frame_hdr, 0, 0, req->base.capacity);
+    memcpy(pipe->backend.ipc_mode.wio.buffer, &frame_hdr, sizeof(frame_hdr));
+    pipe->backend.ipc_mode.wio.curr.head_send_capacity = sizeof(frame_hdr);
+
+    ssize_t send_size;
+    if (req->handle.role == EV_ROLE_EV_TCP)
+    {
+        struct iovec iov = {
+            pipe->backend.ipc_mode.wio.buffer,
+            pipe->backend.ipc_mode.wio.curr.head_send_capacity
+        };
+
+        send_size = _ev_pipe_sendmsg_unix(pipe->pipfd, req->handle.u.os_socket,
+                                          &iov, 1);
+        if (send_size >= 0)
+        {
+            req->handle.role = EV_ROLE_UNKNOWN;
+            req->handle.u.os_socket = EV_OS_SOCKET_INVALID;
+        }
+    }
+    else
+    {
+        send_size =
+            ev__write_unix(pipe->pipfd, pipe->backend.ipc_mode.wio.buffer,
+                           pipe->backend.ipc_mode.wio.curr.head_send_capacity);
+    }
+
+    if (send_size == 0)
+    { /* If data not send, try again */
+        EV_LOG_TRACE("pipe(%p) data not send, try again", pipe);
+        ev_list_push_front(&pipe->backend.ipc_mode.wio.wqueue, &req->base.node);
+        pipe->backend.ipc_mode.wio.curr.writing = NULL;
+        return 0;
+    }
+    else if (send_size < 0)
+    { /* send_size is error code */
+        EV_LOG_ERROR("pipe(%p) data send failed, err:%d", pipe, send_size);
+        return send_size;
+    }
+
+    pipe->backend.ipc_mode.wio.curr.head_send_size = send_size;
+
+    /* try again to send frame header */
+    if ((size_t)send_size < pipe->backend.ipc_mode.wio.curr.head_send_capacity)
+    {
+        EV_LOG_TRACE("pipe(%p) frame header remain %zu bytes", pipe,
+                     pipe->backend.ipc_mode.wio.curr.head_send_capacity -
+                         send_size);
+        return 0;
+    }
+
+    return _ev_pipe_on_ipc_mode_io_write_remain_unix(pipe);
+}
+
+static void _ev_pipe_ipc_mode_reset_wio_curr_cnt(ev_pipe_t *pipe)
+{
+    pipe->backend.ipc_mode.wio.curr.head_send_size = 0;
+    pipe->backend.ipc_mode.wio.curr.head_send_capacity = 0;
+    pipe->backend.ipc_mode.wio.curr.buf_idx = 0;
+    pipe->backend.ipc_mode.wio.curr.buf_pos = 0;
+}
+
+static void _ev_pipe_ipc_mode_reset_rio_curr_cnt(ev_pipe_t *pipe)
+{
+    pipe->backend.ipc_mode.rio.curr.head_read_size = 0;
+    pipe->backend.ipc_mode.rio.curr.data_remain_size = 0;
+    pipe->backend.ipc_mode.rio.curr.buf_idx = 0;
+    pipe->backend.ipc_mode.rio.curr.buf_pos = 0;
+}
+
+static int _ev_pipe_on_ipc_mode_io_write_unix(ev_pipe_t *pipe)
+{
+    if (pipe->backend.ipc_mode.wio.curr.writing != NULL)
+    {
+        return _ev_pipe_on_ipc_mode_io_write_remain_unix(pipe);
+    }
+
+    ev_list_node_t *it = ev_list_pop_front(&pipe->backend.ipc_mode.wio.wqueue);
+    assert(it != NULL);
+    pipe->backend.ipc_mode.wio.curr.writing =
+        EV_CONTAINER_OF(it, ev_pipe_write_req_t, base.node);
+    _ev_pipe_ipc_mode_reset_wio_curr_cnt(pipe);
+
+    return _ev_pipe_ipc_mode_write_new_frame_unix(pipe);
+}
+
+static void _ev_pipe_ipc_mode_cancel_all_rio_unix(ev_pipe_t *pipe, int stat)
+{
+    ev_list_node_t *it;
+    while ((it = ev_list_pop_front(&pipe->backend.ipc_mode.rio.rqueue)) != NULL)
+    {
+        ev_pipe_read_req_t *req =
+            EV_CONTAINER_OF(it, ev_pipe_read_req_t, base.node);
+        _ev_pipe_r_user_callback_unix(pipe, req, stat);
+    }
+}
+
+static void _ev_pipe_ipc_mode_cancel_all_wio_unix(ev_pipe_t *pipe, int stat)
+{
+    ev_list_node_t *it;
+    while ((it = ev_list_pop_front(&pipe->backend.ipc_mode.wio.wqueue)) != NULL)
+    {
+        ev_pipe_write_req_t *req =
+            EV_CONTAINER_OF(it, ev_pipe_write_req_t, base.node);
+        _ev_pipe_w_user_callback_unix(pipe, req, stat);
+    }
+}
+
+static void _ev_pipe_abort_unix(ev_pipe_t *pipe, int stat)
+{
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
+    {
+        ev__nonblock_io_del(pipe->base.loop, &pipe->backend.ipc_mode.io,
+                            EV_IO_IN | EV_IO_OUT);
+        _ev_pipe_close_unix(pipe);
+
+        _ev_pipe_ipc_mode_cancel_all_rio_unix(pipe, stat);
+        _ev_pipe_ipc_mode_cancel_all_wio_unix(pipe, stat);
+    }
+    else
+    {
+        if (pipe->base.data.flags & EV_HANDLE_PIPE_STREAMING)
+        {
+            ev__nonblock_stream_exit(&pipe->backend.data_mode.stream);
+            pipe->base.data.flags &= ~EV_HANDLE_PIPE_STREAMING;
+        }
+        _ev_pipe_close_unix(pipe);
+    }
+}
+
+static void _ev_pipe_on_ipc_mode_io_unix(ev_nonblock_io_t *io, unsigned evts,
+                                         void *arg)
+{
+    (void)arg;
+
+    int        ret = 0;
+    ev_pipe_t *pipe = EV_CONTAINER_OF(io, ev_pipe_t, backend.ipc_mode.io);
+
+    if (evts & (EPOLLIN | EPOLLHUP))
+    {
+        if ((ret = _ev_pipe_on_ipc_mode_io_read_unix(pipe)) != 0)
+        {
+            goto err;
+        }
+        if (ev_list_size(&pipe->backend.ipc_mode.rio.rqueue) == 0 &&
+            pipe->backend.ipc_mode.rio.curr.reading == NULL)
+        {
+            pipe->backend.ipc_mode.mask.rio_pending = 0;
+            ev__nonblock_io_del(pipe->base.loop, &pipe->backend.ipc_mode.io,
+                                EPOLLIN);
+        }
+    }
+    if (evts & (EPOLLOUT | EPOLLERR))
+    {
+        if ((ret = _ev_pipe_on_ipc_mode_io_write_unix(pipe)) != 0)
+        {
+            goto err;
+        }
+        if (ev_list_size(&pipe->backend.ipc_mode.wio.wqueue) == 0 &&
+            pipe->backend.ipc_mode.wio.curr.writing == NULL)
+        {
+            pipe->backend.ipc_mode.mask.wio_pending = 0;
+            ev__nonblock_io_del(pipe->base.loop, &pipe->backend.ipc_mode.io,
+                                EPOLLOUT);
+        }
+    }
+
+    return;
+
+err:
+    _ev_pipe_abort_unix(pipe, ret);
+}
+
+static void _ev_pipe_init_as_ipc_mode_unix(ev_pipe_t *pipe)
+{
+    ev__nonblock_io_init(&pipe->backend.ipc_mode.io, pipe->pipfd,
+                         _ev_pipe_on_ipc_mode_io_unix, NULL);
+    memset(&pipe->backend.ipc_mode.mask, 0,
+           sizeof(pipe->backend.ipc_mode.mask));
+
+    _ev_pipe_ipc_mode_reset_rio_curr_cnt(pipe);
+    pipe->backend.ipc_mode.rio.curr.reading = NULL;
+    ev_list_init(&pipe->backend.ipc_mode.rio.rqueue);
+
+    _ev_pipe_ipc_mode_reset_wio_curr_cnt(pipe);
+    pipe->backend.ipc_mode.wio.curr.writing = NULL;
+    ev_list_init(&pipe->backend.ipc_mode.wio.wqueue);
+}
+
+static void _ev_pipe_ipc_mode_want_write_unix(ev_pipe_t *pipe)
+{
+    if (pipe->backend.ipc_mode.mask.wio_pending)
+    {
+        return;
+    }
+
+    ev__nonblock_io_add(pipe->base.loop, &pipe->backend.ipc_mode.io, EV_IO_OUT);
+    pipe->backend.ipc_mode.mask.wio_pending = 1;
+}
+
+static void _ev_pipe_ipc_mode_want_read_unix(ev_pipe_t *pipe)
+{
+    if (pipe->backend.ipc_mode.mask.rio_pending)
+    {
+        return;
+    }
+
+    ev__nonblock_io_add(pipe->base.loop, &pipe->backend.ipc_mode.io, EV_IO_IN);
+    pipe->backend.ipc_mode.mask.rio_pending = 1;
+}
+
+static int _ev_pipe_write_ipc_mode_unix(ev_pipe_t           *pipe,
+                                        ev_pipe_write_req_t *req)
+{
+    if (req->base.capacity > UINT32_MAX)
+    {
+        return EV_E2BIG;
+    }
+
+    ev_list_push_back(&pipe->backend.ipc_mode.wio.wqueue, &req->base.node);
+    _ev_pipe_ipc_mode_want_write_unix(pipe);
+
+    return 0;
+}
+
+static int _ev_pipe_read_ipc_mode_unix(ev_pipe_t *pipe, ev_pipe_read_req_t *req)
+{
+    ev_list_push_back(&pipe->backend.ipc_mode.rio.rqueue, &req->base.node);
+    _ev_pipe_ipc_mode_want_read_unix(pipe);
+    return 0;
+}
+
+static int _ev_pipe_make_pipe(ev_os_pipe_t fds[2], int rflags, int wflags)
+{
+    int errcode;
+    fds[0] = EV_OS_PIPE_INVALID;
+    fds[1] = EV_OS_PIPE_INVALID;
+
+    if (pipe(fds) < 0)
+    {
+        errcode = errno;
+        errcode = ev__translate_sys_error(errcode);
+        goto err;
+    }
+
+    if ((errcode = ev__cloexec(fds[0], 1)) != 0)
+    {
+        goto err;
+    }
+    if ((errcode = ev__cloexec(fds[1], 1)) != 0)
+    {
+        goto err;
+    }
+
+    if (rflags & EV_PIPE_NONBLOCK)
+    {
+        if ((errcode = ev__nonblock(fds[0], 1)) != 0)
+        {
+            goto err;
+        }
+    }
+
+    if (wflags & EV_PIPE_NONBLOCK)
+    {
+        if ((errcode = ev__nonblock(fds[1], 1)) != 0)
+        {
+            goto err;
+        }
+    }
+
+    return 0;
+
+err:
+    if (fds[0] != EV_OS_PIPE_INVALID)
+    {
+        close(fds[0]);
+        fds[0] = EV_OS_PIPE_INVALID;
+    }
+    if (fds[1] != EV_OS_PIPE_INVALID)
+    {
+        close(fds[1]);
+        fds[1] = EV_OS_PIPE_INVALID;
+    }
+    return errcode;
+}
+
+static int _ev_pipe_make_socketpair(ev_os_pipe_t fds[2], int rflags, int wflags)
+{
+    int errcode;
+    if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, fds) != 0)
+    {
+        errcode = errno;
+        return ev__translate_sys_error(errcode);
+    }
+
+    if (rflags & EV_PIPE_NONBLOCK)
+    {
+        if ((errcode = ev__nonblock(fds[0], 1)) != 0)
+        {
+            goto err;
+        }
+    }
+
+    if (wflags & EV_PIPE_NONBLOCK)
+    {
+        if ((errcode = ev__nonblock(fds[1], 1)) != 0)
+        {
+            goto err;
+        }
+    }
+
+    return 0;
+
+err:
+    close(fds[0]);
+    close(fds[1]);
+    return errcode;
+}
+
+int ev_pipe_make(ev_os_pipe_t fds[2], int rflags, int wflags)
+{
+    if ((rflags & EV_PIPE_IPC) != (wflags & EV_PIPE_IPC))
+    {
+        return EV_EINVAL;
+    }
+
+    int is_ipc = rflags & EV_PIPE_IPC;
+
+    if (is_ipc)
+    {
+        return _ev_pipe_make_socketpair(fds, rflags, wflags);
+    }
+
+    return _ev_pipe_make_pipe(fds, rflags, wflags);
+}
+
+int ev_pipe_init(ev_loop_t *loop, ev_pipe_t **pipe, int ipc)
+{
+    ev_pipe_t *new_pipe = ev_malloc(sizeof(ev_pipe_t));
+    if (new_pipe == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    ev__handle_init(loop, &new_pipe->base, EV_ROLE_EV_PIPE);
+    new_pipe->close_cb = NULL;
+    new_pipe->pipfd = EV_OS_PIPE_INVALID;
+    new_pipe->base.data.flags |= ipc ? EV_HANDLE_PIPE_IPC : 0;
+
+    *pipe = new_pipe;
+    return 0;
+}
+
+void ev_pipe_exit(ev_pipe_t *pipe, ev_pipe_cb close_cb, void *close_arg)
+{
+    pipe->close_cb = close_cb;
+    pipe->close_arg = close_arg;
+    _ev_pipe_abort_unix(pipe, EV_ECANCELED);
+    ev__handle_exit(&pipe->base, _ev_pipe_on_close_unix);
+}
+
+int ev_pipe_open(ev_pipe_t *pipe, ev_os_pipe_t handle)
+{
+    if (pipe->pipfd != EV_OS_PIPE_INVALID)
+    {
+        return EV_EEXIST;
+    }
+
+    int mode = ev__fcntl_getfl_unix(handle);
+    if (mode == -1)
+    {
+        return ev__translate_sys_error(errno);
+    }
+
+    int ret;
+    if ((ret = ev__nonblock(handle, 1)) != 0)
+    {
+        return ret;
+    }
+
+    pipe->pipfd = handle;
+    pipe->base.data.flags |= EV_HANDLE_PIPE_STREAMING;
+
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
+    {
+        _ev_pipe_init_as_ipc_mode_unix(pipe);
+    }
+    else
+    {
+        ev__nonblock_stream_init(
+            pipe->base.loop, &pipe->backend.data_mode.stream, handle,
+            _ev_pipe_on_data_mode_write_unix, _ev_pipe_on_data_mode_read_unix);
+    }
+
+    return 0;
+}
+
+int ev_pipe_write_ex(ev_pipe_t *pipe, ev_buf_t *bufs, size_t nbuf,
+                     ev_role_t handle_role, void *handle_addr,
+                     ev_pipe_write_cb cb, void *arg)
+{
+    if (pipe->pipfd == EV_OS_PIPE_INVALID)
+    {
+        return EV_EBADF;
+    }
+
+    ev_pipe_write_req_t *req = malloc(sizeof(ev_pipe_write_req_t));
+    if (req == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    int ret = ev__pipe_write_init_ext(req, cb, arg, bufs, nbuf, handle_role,
+                                      handle_addr);
+    if (ret != 0)
+    {
+        ev_free(req);
+        return ret;
+    }
+
+    ev__handle_active(&pipe->base);
+
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
+    {
+        ret = _ev_pipe_write_ipc_mode_unix(pipe, req);
+    }
+    else
+    {
+        ret = ev__nonblock_stream_write(&pipe->backend.data_mode.stream,
+                                        &req->base);
+    }
+
+    if (ret != 0)
+    {
+        _ev_pipe_abort_unix(pipe, ret);
+
+        /* The final state must be non-active. */
+        ev__handle_deactive(&pipe->base);
+
+        ev_free(req);
+    }
+
+    return ret;
+}
+
+int ev_pipe_read(ev_pipe_t *pipe, ev_pipe_read_req_t *req, ev_buf_t *bufs,
+                 size_t nbuf, ev_pipe_read_cb cb)
+{
+    if (pipe->pipfd == EV_OS_PIPE_INVALID)
+    {
+        return EV_EBADF;
+    }
+
+    int ret = ev__pipe_read_init(req, bufs, nbuf, cb);
+    if (ret != 0)
+    {
+        return ret;
+    }
+
+    ev__handle_active(&pipe->base);
+
+    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
+    {
+        ret = _ev_pipe_read_ipc_mode_unix(pipe, req);
+    }
+    else
+    {
+        ret = ev__nonblock_stream_read(&pipe->backend.data_mode.stream,
+                                       &req->base);
+    }
+
+    if (ret != 0)
+    {
+        _ev_pipe_abort_unix(pipe, ret);
+
+        /* The final state must be non-active. */
+        ev__handle_deactive(&pipe->base);
+    }
+
+    return ret;
+}
+
+int ev_pipe_accept(ev_pipe_t *pipe, ev_pipe_read_req_t *req,
+                   ev_role_t handle_role, void *handle_addr)
+{
+    if (!(pipe->base.data.flags & EV_HANDLE_PIPE_IPC) ||
+        handle_role != EV_ROLE_EV_TCP || handle_addr == NULL)
+    {
+        return EV_EINVAL;
+    }
+    if (req->handle.os_socket == EV_OS_SOCKET_INVALID)
+    {
+        return EV_ENOENT;
+    }
+
+    ev_tcp_t *tcp = handle_addr;
+    return ev__tcp_open(tcp, req->handle.os_socket);
+}
+
+void ev_pipe_close(ev_os_pipe_t fd)
+{
+    if (fd != EV_OS_PIPE_INVALID)
+    {
+        close(fd);
+    }
+}
+
+// #line 75 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/process_unix.c
+// SIZE:    16440
+// SHA-256: 72b4a0fcb3c347b7e851e55ba286a9d1d5fb7dc451edc2b12bffcdca727de77a
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/process_unix.c"
+#define _GNU_SOURCE
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <limits.h>
+#include <stdio.h>
+
+typedef struct dup_pair_s
+{
+    int *src;
+    int  dst;
+} dup_pair_t;
+
+typedef struct spawn_helper_s
+{
+    /**
+     * Channel for internal IPC.
+     *
+     * pipefd[0] refers to the read end of the pipe. pipefd[1] refers to the
+     * write end of the pipe.
+     *
+     * The data always system errno.
+     */
+    int pipefd[2];
+
+    /**
+     * The file descriptor always need close after fork().
+     */
+    struct
+    {
+        int fd_stdin;
+        int fd_stdout;
+        int fd_stderr;
+    } child;
+} spawn_helper_t;
+
+static void _ev_spawn_write_errno_and_exit(spawn_helper_t *helper, int value)
+{
+    ssize_t n;
+    do
+    {
+        n = write(helper->pipefd[1], &value, sizeof(value));
+    } while (n == -1 && errno == EINTR);
+
+    exit(EXIT_FAILURE);
+}
+
+static int _ev_process_setup_child_fd(int fd)
+{
+    int ret;
+
+    /* must in block mode */
+    if ((ret = ev__nonblock(fd, 0)) != 0)
+    {
+        return ret;
+    }
+
+    /* cannot have FD_CLOEXEC */
+    if ((ret = ev__cloexec(fd, 0)) != 0)
+    {
+        return ret;
+    }
+
+    return 0;
+}
+
+static int _ev_spawn_setup_stdio_as_fd(int *handle, int fd)
+{
+    int dup_fd = dup(fd);
+    if (dup_fd < 0)
+    {
+        int errcode = errno;
+        return ev__translate_sys_error(errcode);
+    }
+
+    int ret = _ev_process_setup_child_fd(dup_fd);
+    if (ret != 0)
+    {
+        close(dup_fd);
+        return ret;
+    }
+
+    *handle = dup_fd;
+    return 0;
+}
+
+static int _ev_spawn_setup_stdio_as_null(int *handle, int mode)
+{
+    int null_fd = open("/dev/null", mode);
+    if (null_fd < 0)
+    {
+        int errcode = errno;
+        return ev__translate_sys_error(errcode);
+    }
+
+    int ret = _ev_process_setup_child_fd(null_fd);
+    if (ret != 0)
+    {
+        close(null_fd);
+        return ret;
+    }
+
+    *handle = null_fd;
+    return 0;
+}
+
+static int _ev_spawn_setup_stdio_as_pipe(ev_pipe_t *pipe, int *handle,
+                                         int is_pipe_read)
+{
+    int          errcode;
+    ev_os_pipe_t pipfd[2] = { EV_OS_PIPE_INVALID, EV_OS_PIPE_INVALID };
+
+    /* fd for #ev_pipe_t should open in nonblock mode */
+    int rflags = is_pipe_read ? EV_PIPE_NONBLOCK : 0;
+    int wflags = is_pipe_read ? 0 : EV_PIPE_NONBLOCK;
+
+    errcode = ev_pipe_make(pipfd, rflags, wflags);
+    if (errcode != 0)
+    {
+        return errcode;
+    }
+
+    errcode = _ev_process_setup_child_fd(is_pipe_read ? pipfd[1] : pipfd[0]);
+    if (errcode != 0)
+    {
+        goto err_exit;
+    }
+
+    errcode = ev_pipe_open(pipe, is_pipe_read ? pipfd[0] : pipfd[1]);
+    if (errcode != 0)
+    {
+        goto err_exit;
+    }
+
+    *handle = is_pipe_read ? pipfd[1] : pipfd[0];
+    return 0;
+
+err_exit:
+    ev_pipe_close(pipfd[0]);
+    ev_pipe_close(pipfd[1]);
+    return errcode;
+}
+
+static void _ev_spawn_dup_stdio(spawn_helper_t *helper)
+{
+    int        ret = 0;
+    dup_pair_t dup_list[] = {
+        { &helper->child.fd_stdin,  STDIN_FILENO  },
+        { &helper->child.fd_stdout, STDOUT_FILENO },
+        { &helper->child.fd_stderr, STDERR_FILENO },
+    };
+
+    size_t i;
+    for (i = 0; i < ARRAY_SIZE(dup_list); i++)
+    {
+        if (*dup_list[i].src == EV_OS_PIPE_INVALID)
+        {
+            continue;
+        }
+
+        ret = dup2(*dup_list[i].src, dup_list[i].dst);
+        if (ret < 0)
+        {
+            ret = errno;
+            goto err_dup;
+        }
+
+        close(*dup_list[i].src);
+        *dup_list[i].src = EV_OS_PIPE_INVALID;
+    }
+
+    return;
+
+err_dup:
+    _ev_spawn_write_errno_and_exit(helper, ret);
+}
+
+static void _ev_spawn_child(spawn_helper_t             *helper,
+                            const ev_process_options_t *opt)
+{
+    int errcode;
+    _ev_spawn_dup_stdio(helper);
+
+    if (opt->cwd != NULL && chdir(opt->cwd))
+    {
+        errcode = errno;
+        _ev_spawn_write_errno_and_exit(helper, errcode);
+    }
+
+    const char *file = opt->file != NULL ? opt->file : opt->argv[0];
+
+    if (opt->envp == NULL)
+    {
+        (void)execvp(file, opt->argv);
+    }
+    else
+    {
+        (void)execvpe(file, opt->argv, opt->envp);
+    }
+
+    /* Error */
+    errcode = errno;
+    _ev_spawn_write_errno_and_exit(helper, errcode);
+}
+
+static int _ev_spawn_parent(ev_process_t *handle, spawn_helper_t *spawn_helper)
+{
+    int     status;
+    pid_t   pid_ret;
+    int     child_errno = 0;
+    ssize_t r;
+
+    do
+    {
+        r = read(spawn_helper->pipefd[0], &child_errno, sizeof(child_errno));
+    } while (r == -1 && errno == EINTR);
+
+    /* EOF, child exec success */
+    if (r == 0)
+    {
+        return 0;
+    }
+
+    if (r == sizeof(child_errno))
+    {
+        do
+        {
+            pid_ret = waitpid(handle->pid, &status, 0); /* okay, got EPIPE */
+        } while (pid_ret == -1 && errno == EINTR);
+        assert(pid_ret == handle->pid);
+
+        return ev__translate_sys_error(child_errno);
+    }
+
+    /* Something unknown happened to our child before spawn */
+    if (r == -1 && errno == EPIPE)
+    {
+        do
+        {
+            pid_ret = waitpid(handle->pid, &status, 0); /* okay, got EPIPE */
+        } while (pid_ret == -1 && errno == EINTR);
+        assert(pid_ret == handle->pid);
+
+        return EV_EPIPE;
+    }
+
+    /* unknown error */
+    EV_ABORT();
+
+    return EV_EPIPE;
+}
+
+EV_LOCAL void ev__init_process_unix(void)
+{
+    ev_list_init(&g_ev_loop_unix_ctx.process.wait_queue);
+    ev_mutex_init(&g_ev_loop_unix_ctx.process.wait_queue_mutex, 0);
+
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+
+    if (sigfillset(&sa.sa_mask) != 0)
+    {
+        EV_ABORT();
+    }
+
+    sa.sa_handler = ev_process_sigchld;
+
+    if (sigaction(SIGCHLD, &sa, NULL) != 0)
+    {
+        EV_ABORT();
+    }
+}
+
+static void _ev_process_on_async_close(ev_async_t *async, void *arg)
+{
+    (void)async;
+    ev_process_t *handle = (ev_process_t *)arg;
+
+    if (handle->exit_cb != NULL)
+    {
+        handle->exit_cb(handle);
+    }
+}
+
+static void _ev_process_on_sigchild_unix(ev_async_t *async, void *arg)
+{
+    (void)async;
+    ev_process_t *handle = (ev_process_t *)arg;
+    if (handle->backend.flags.waitpid)
+    {
+        return;
+    }
+
+    int   wstatus;
+    pid_t pid_ret;
+    do
+    {
+        pid_ret = waitpid(handle->pid, &wstatus, WNOHANG);
+    } while (pid_ret == -1 && errno == EINTR);
+
+    if (pid_ret == 0)
+    {
+        return;
+    }
+    if (pid_ret == -1)
+    {
+        int errcode = errno;
+
+        /**
+         * The child died, and we missed it. This probably means someone else
+         * stole the waitpid().
+         */
+        if (errcode == ECHILD)
+        {
+            handle->exit_status = EV_PROCESS_EXIT_UNKNOWN;
+            goto fin;
+        }
+    }
+
+    assert(pid_ret == handle->pid);
+
+    if (WIFEXITED(wstatus))
+    {
+        handle->exit_status = EV_PROCESS_EXIT_NORMAL;
+        handle->exit_code = WEXITSTATUS(wstatus);
+    }
+
+    if (WIFSIGNALED(wstatus))
+    {
+        handle->exit_status = EV_PROCESS_EXIT_SIGNAL;
+        handle->exit_code = WTERMSIG(wstatus);
+    }
+
+fin:
+    handle->backend.flags.waitpid = 1;
+
+    if (handle->sigchild_cb != NULL)
+    {
+        handle->sigchild_cb(handle, handle->exit_status, handle->exit_code);
+    }
+}
+
+static int _ev_process_init_process(ev_loop_t *loop, ev_process_t *handle,
+                                    const ev_process_options_t *opt)
+{
+    int ret;
+
+    handle->sigchild_cb = opt->on_exit;
+    handle->exit_cb = NULL;
+    handle->pid = EV_OS_PID_INVALID;
+    handle->exit_status = EV_PROCESS_EXIT_UNKNOWN;
+    handle->exit_code = 0;
+    memset(&handle->backend.flags, 0, sizeof(handle->backend.flags));
+
+    ret = ev_async_init(loop, &handle->sigchld, _ev_process_on_sigchild_unix,
+                        handle);
+    if (ret != 0)
+    {
+        return ret;
+    }
+
+    ev_mutex_enter(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
+    {
+        ev_list_push_back(&g_ev_loop_unix_ctx.process.wait_queue,
+                          &handle->node);
+    }
+    ev_mutex_leave(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
+
+    return 0;
+}
+
+static int _ev_process_setup_child_stdin(
+    spawn_helper_t *helper, const ev_process_stdio_container_t *container)
+{
+    if (container->flag == EV_PROCESS_STDIO_IGNORE)
+    {
+        return 0;
+    }
+
+    if (container->flag & EV_PROCESS_STDIO_REDIRECT_NULL)
+    {
+        return _ev_spawn_setup_stdio_as_null(&helper->child.fd_stdin, O_RDONLY);
+    }
+
+    if (container->flag & EV_PROCESS_STDIO_REDIRECT_FD)
+    {
+        return _ev_spawn_setup_stdio_as_fd(&helper->child.fd_stdin,
+                                           container->data.fd);
+    }
+
+    if (container->flag & EV_PROCESS_STDIO_REDIRECT_PIPE)
+    {
+        return _ev_spawn_setup_stdio_as_pipe(container->data.pipe,
+                                             &helper->child.fd_stdin, 0);
+    }
+
+    return 0;
+}
+
+static int _ev_process_setup_child_stdout(
+    spawn_helper_t *helper, const ev_process_stdio_container_t *container)
+{
+    if (container->flag == EV_PROCESS_STDIO_IGNORE)
+    {
+        return 0;
+    }
+
+    if (container->flag & EV_PROCESS_STDIO_REDIRECT_NULL)
+    {
+        return _ev_spawn_setup_stdio_as_null(&helper->child.fd_stdout,
+                                             O_WRONLY);
+    }
+
+    if (container->flag & EV_PROCESS_STDIO_REDIRECT_FD)
+    {
+        return _ev_spawn_setup_stdio_as_fd(&helper->child.fd_stdout,
+                                           container->data.fd);
+    }
+
+    if (container->flag & EV_PROCESS_STDIO_REDIRECT_PIPE)
+    {
+        return _ev_spawn_setup_stdio_as_pipe(container->data.pipe,
+                                             &helper->child.fd_stdout, 1);
+    }
+
+    return 0;
+}
+
+static int _ev_process_setup_child_stderr(
+    spawn_helper_t *helper, const ev_process_stdio_container_t *container)
+{
+    if (container->flag == EV_PROCESS_STDIO_IGNORE)
+    {
+        return 0;
+    }
+
+    if (container->flag & EV_PROCESS_STDIO_REDIRECT_NULL)
+    {
+        return _ev_spawn_setup_stdio_as_null(&helper->child.fd_stderr,
+                                             O_WRONLY);
+    }
+
+    if (container->flag & EV_PROCESS_STDIO_REDIRECT_FD)
+    {
+        return _ev_spawn_setup_stdio_as_fd(&helper->child.fd_stderr,
+                                           container->data.fd);
+    }
+
+    if (container->flag & EV_PROCESS_STDIO_REDIRECT_PIPE)
+    {
+        return _ev_spawn_setup_stdio_as_pipe(container->data.pipe,
+                                             &helper->child.fd_stderr, 1);
+    }
+
+    return 0;
+}
+
+static void _ev_process_close_read_end(spawn_helper_t *helper)
+{
+    if (helper->pipefd[0] != EV_OS_PIPE_INVALID)
+    {
+        close(helper->pipefd[0]);
+        helper->pipefd[0] = EV_OS_PIPE_INVALID;
+    }
+}
+
+static void _ev_process_close_write_end(spawn_helper_t *helper)
+{
+    if (helper->pipefd[1] != EV_OS_PIPE_INVALID)
+    {
+        close(helper->pipefd[1]);
+        helper->pipefd[1] = EV_OS_PIPE_INVALID;
+    }
+}
+
+static void _ev_process_close_stdin(spawn_helper_t *helper)
+{
+    if (helper->child.fd_stdin != EV_OS_PIPE_INVALID)
+    {
+        close(helper->child.fd_stdin);
+        helper->child.fd_stdin = EV_OS_PIPE_INVALID;
+    }
+}
+
+static void _ev_process_close_stdout(spawn_helper_t *helper)
+{
+    if (helper->child.fd_stdout != EV_OS_PIPE_INVALID)
+    {
+        close(helper->child.fd_stdout);
+        helper->child.fd_stdout = EV_OS_PIPE_INVALID;
+    }
+}
+
+static void _ev_process_close_stderr(spawn_helper_t *helper)
+{
+    if (helper->child.fd_stderr != EV_OS_PIPE_INVALID)
+    {
+        close(helper->child.fd_stderr);
+        helper->child.fd_stderr = EV_OS_PIPE_INVALID;
+    }
+}
+
+static int _ev_process_init_spawn_helper(spawn_helper_t             *helper,
+                                         const ev_process_options_t *opt)
+{
+    int ret;
+    memset(helper, 0, sizeof(*helper));
+    helper->child.fd_stdin = EV_OS_PIPE_INVALID;
+    helper->child.fd_stdout = EV_OS_PIPE_INVALID;
+    helper->child.fd_stderr = EV_OS_PIPE_INVALID;
+
+    if ((ret = pipe2(helper->pipefd, O_CLOEXEC)) != 0)
+    {
+        ret = errno;
+        return ev__translate_sys_error(ret);
+    }
+
+    if ((ret = _ev_process_setup_child_stdin(helper, &opt->stdios[0])) != 0)
+    {
+        goto err_close_pipe;
+    }
+
+    if ((ret = _ev_process_setup_child_stdout(helper, &opt->stdios[1])) != 0)
+    {
+        goto err_close_stdin;
+    }
+
+    if ((ret = _ev_process_setup_child_stderr(helper, &opt->stdios[2])) != 0)
+    {
+        goto err_close_stdout;
+    }
+
+    return 0;
+
+err_close_stdout:
+    _ev_process_close_stdout(helper);
+err_close_stdin:
+    _ev_process_close_stdin(helper);
+err_close_pipe:
+    _ev_process_close_read_end(helper);
+    _ev_process_close_write_end(helper);
+    return ret;
+}
+
+static void _ev_process_exit_spawn_helper(spawn_helper_t *helper)
+{
+    _ev_process_close_read_end(helper);
+    _ev_process_close_write_end(helper);
+    _ev_process_close_stdin(helper);
+    _ev_process_close_stdout(helper);
+    _ev_process_close_stderr(helper);
+}
+
+int ev_process_spawn(ev_loop_t *loop, ev_process_t *handle,
+                     const ev_process_options_t *opt)
+{
+    int ret;
+
+    spawn_helper_t spawn_helper;
+    if ((ret = _ev_process_init_spawn_helper(&spawn_helper, opt)) != 0)
+    {
+        return ret;
+    }
+
+    if ((ret = _ev_process_init_process(loop, handle, opt)) != 0)
+    {
+        goto finish;
+    }
+
+    handle->pid = fork();
+    switch (handle->pid)
+    {
+    case -1: /* fork failed */
+        ret = errno;
+        ret = ev__translate_sys_error(ret);
+        goto finish;
+
+    case 0: /* Child process */
+        _ev_process_close_read_end(&spawn_helper);
+        _ev_spawn_child(&spawn_helper, opt);
+        break;
+
+    default: /* parent process */
+        _ev_process_close_write_end(&spawn_helper);
+        ret = _ev_spawn_parent(handle, &spawn_helper);
+        goto finish;
+    }
+
+    /* should not reach here. */
+    EV_ABORT();
+    return EV_EPIPE;
+
+finish:
+    _ev_process_exit_spawn_helper(&spawn_helper);
+    return ret;
+}
+
+void ev_process_exit(ev_process_t *handle, ev_process_exit_cb cb)
+{
+    if (handle->pid != EV_OS_PID_INVALID)
+    {
+        handle->pid = EV_OS_PID_INVALID;
+    }
+
+    ev_mutex_enter(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
+    {
+        ev_list_erase(&g_ev_loop_unix_ctx.process.wait_queue, &handle->node);
+    }
+    ev_mutex_leave(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
+
+    handle->exit_cb = cb;
+    ev_async_exit(handle->sigchld, _ev_process_on_async_close, handle);
+}
+
+void ev_process_sigchld(int signum)
+{
+    assert(signum == SIGCHLD);
+    (void)signum;
+
+    ev_list_node_t *it = ev_list_begin(&g_ev_loop_unix_ctx.process.wait_queue);
+    for (; it != NULL; it = ev_list_next(it))
+    {
+        ev_process_t *handle = EV_CONTAINER_OF(it, ev_process_t, node);
+        ev_async_wakeup(handle->sigchld);
+    }
+}
+
+ssize_t ev_getcwd(char *buffer, size_t size)
+{
+    size_t str_len;
+    int    errcode;
+
+    if (buffer != NULL && getcwd(buffer, size) != NULL)
+    {
+        str_len = strlen(buffer);
+        if (buffer[str_len - 1] == '/')
+        {
+            buffer[str_len - 1] = '\0';
+            str_len -= 1;
+        }
+
+        return str_len;
+    }
+
+    const size_t max_path_size = PATH_MAX + 1;
+    char        *tmp_buf = ev_malloc(max_path_size);
+    if (tmp_buf == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    if (getcwd(tmp_buf, max_path_size) == NULL)
+    {
+        errcode = errno;
+        ev_free(tmp_buf);
+        return ev__translate_sys_error(errcode);
+    }
+
+    str_len = strlen(tmp_buf);
+    if (tmp_buf[str_len - 1] == '/')
+    {
+        tmp_buf[str_len - 1] = '\0';
+        str_len -= 1;
+    }
+
+    if (buffer != NULL)
+    {
+        snprintf(buffer, size, "%s", tmp_buf);
+    }
+
+    ev_free(tmp_buf);
+    return str_len;
+}
+
+ssize_t ev_exepath(char *buffer, size_t size)
+{
+    int errcode;
+
+    size_t tmp_size = PATH_MAX;
+    char  *tmp_buffer = ev_malloc(tmp_size);
+    if (tmp_buffer == NULL)
+    {
+        errcode = EV_ENOMEM;
+        goto error;
+    }
+
+    ssize_t ret = readlink("/proc/self/exe", tmp_buffer, tmp_size - 1);
+    if (ret < 0)
+    {
+        errcode = ev__translate_sys_error(errno);
+        goto error;
+    }
+    tmp_buffer[ret] = '\0';
+
+    if (buffer != NULL)
+    {
+        ret = snprintf(buffer, size, "%s", tmp_buffer);
+    }
+    ev_free(tmp_buffer);
+
+    return ret;
+
+error:
+    if (buffer != NULL && size > 0)
+    {
+        buffer[0] = '\0';
+    }
+    ev_free(tmp_buffer);
+    return errcode;
+}
+
+// #line 76 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/sem_unix.c
+// SIZE:    782
+// SHA-256: 73e0c3a42e346fb929e6d6733e67c7f5840337f9830d521ef1e573c505e72cdf
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/sem_unix.c"
+
+void ev_sem_init(ev_sem_t* sem, unsigned value)
+{
+    if (sem_init(&sem->u.r, 0, value))
+    {
+        EV_ABORT();
+    }
+}
+
+void ev_sem_exit(ev_sem_t* sem)
+{
+    if (sem_destroy(&sem->u.r))
+    {
+        EV_ABORT();
+    }
+}
+
+void ev_sem_post(ev_sem_t* sem)
+{
+    if (sem_post(&sem->u.r))
+    {
+        EV_ABORT();
+    }
+}
+
+void ev_sem_wait(ev_sem_t* sem)
+{
+    int r;
+    do
+    {
+        r = sem_wait(&sem->u.r);
+    } while (r == -1 && errno == EINTR);
+
+    if (r)
+    {
+        EV_ABORT();
+    }
+}
+
+int ev_sem_try_wait(ev_sem_t* sem)
+{
+    int r;
+
+    do
+    {
+        r = sem_trywait(&sem->u.r);
+    } while (r == -1 && errno == EINTR);
+
+    if (r)
+    {
+        if (errno == EAGAIN)
+        {
+            return EV_EAGAIN;
+        }
+        EV_ABORT();
+    }
+
+    return 0;
+}
+
+// #line 77 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/shdlib_unix.c
+// SIZE:    963
+// SHA-256: 0be8dd1686ad775ecaf7fb6e02234c8eba0787b3ff3a9f2d2187a9c0294b4361
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/shdlib_unix.c"
+#include <dlfcn.h>
+
+int ev_dlopen(ev_shdlib_t* lib, const char* filename, char** errmsg)
+{
+    /* Reset error status. */
+    dlerror();
+
+    if ((lib->handle = dlopen(filename, RTLD_LAZY)) != NULL)
+    {
+        return 0;
+    }
+
+    const char* dlerrmsg = dlerror();
+    if (dlerrmsg == NULL)
+    {
+        return 0;
+    }
+
+    if (errmsg != NULL)
+    {
+        *errmsg = ev__strdup(dlerrmsg);
+    }
+
+    return EV_EINVAL;
+}
+
+void ev_dlclose(ev_shdlib_t* lib)
+{
+    if (lib->handle != EV_OS_SHDLIB_INVALID)
+    {
+        dlclose(lib->handle);
+        lib->handle = EV_OS_SHDLIB_INVALID;
+    }
+}
+
+int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr)
+{
+    /* Reset error status. */
+    dlerror();
+
+    /* Resolve symbol. */
+    if ((*ptr = dlsym(lib->handle, name)) != NULL)
+    {
+        return 0;
+    }
+
+    /* Check for error message. */
+    const char* errmsg = dlerror();
+    if (errmsg == NULL)
+    {
+        return 0;
+    }
+
+    return EV_ENOENT;
+}
+
+// #line 78 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/shmem_unix.c
+// SIZE:    2334
+// SHA-256: 560380ad3b2ea591fe64178ae8936a7a49a38a947852229cd1d616f6ec7e72e1
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/shmem_unix.c"
+#include <assert.h>
+#include <sys/mman.h>
+#include <sys/stat.h>        /* For mode constants */
+#include <fcntl.h>           /* For O_* constants */
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+
+int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
+{
+    int err;
+    shm->size = size;
+
+    int ret = snprintf(shm->backend.name, sizeof(shm->backend.name), "%s", key);
+    if (ret >= (int)sizeof(shm->backend.name))
+    {
+        return EV_ENOMEM;
+    }
+    memset(&shm->backend.mask, 0, sizeof(shm->backend.mask));
+
+    shm->backend.map_file = shm_open(key, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
+    if (shm->backend.map_file == -1)
+    {
+        err = errno;
+        goto err_shm_open;
+    }
+
+    if (ftruncate(shm->backend.map_file, size) != 0)
+    {
+        err = errno;
+        goto err_ftruncate;
+    }
+
+    shm->addr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, shm->backend.map_file, 0);
+    if (shm->addr == NULL)
+    {
+        err = errno;
+        goto err_ftruncate;
+    }
+
+    return 0;
+
+err_ftruncate:
+    close(shm->backend.map_file);
+err_shm_open:
+    return ev__translate_sys_error(err);
+}
+
+int ev_shm_open(ev_shm_t* shm, const char* key)
+{
+    int err;
+    int ret = snprintf(shm->backend.name, sizeof(shm->backend.name), "%s", key);
+    if (ret >= (int)sizeof(shm->backend.name))
+    {
+        return EV_ENOMEM;
+    }
+    memset(&shm->backend.mask, 0, sizeof(shm->backend.mask));
+
+    shm->backend.mask.is_open = 1;
+    shm->backend.map_file = shm_open(key, O_RDWR, 0);
+    if (shm->backend.map_file == -1)
+    {
+        err = errno;
+        goto err_shm_open;
+    }
+
+    struct stat statbuf;
+    if (fstat(shm->backend.map_file, &statbuf) != 0)
+    {
+        err = errno;
+        goto err_fstat;
+    }
+    shm->size = statbuf.st_size;
+
+    shm->addr = mmap(NULL, shm->size, PROT_READ | PROT_WRITE, MAP_SHARED, shm->backend.map_file, 0);
+    if (shm->addr == NULL)
+    {
+        err = errno;
+        goto err_fstat;
+    }
+
+    return 0;
+
+err_fstat:
+    close(shm->backend.map_file);
+err_shm_open:
+    return ev__translate_sys_error(err);
+}
+
+void ev_shm_exit(ev_shm_t* shm)
+{
+    if (!shm->backend.mask.is_open)
+    {
+        shm_unlink(shm->backend.name);
+    }
+
+    int ret = munmap(shm->addr, shm->size);
+    assert(ret == 0); (void)ret;
+
+    close(shm->backend.map_file);
+}
+
+// #line 79 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/stream_unix.c
+// SIZE:    6160
+// SHA-256: f671a1c513eede33d980a7b1547d8d85eafa337fdd58de40e494003593a35c1d
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/stream_unix.c"
+
+static ssize_t _ev_stream_do_write_writev_unix(int fd, struct iovec* iov, int iovcnt, void* arg)
+{
+    (void)arg;
+    return ev__writev_unix(fd, (ev_buf_t*)iov, iovcnt);
+}
+
+static int _ev_stream_do_write_once(ev_nonblock_stream_t* stream, ev_write_t* req)
+{
+    return ev__send_unix(stream->io.data.fd, req, _ev_stream_do_write_writev_unix, NULL);
+}
+
+static int _ev_stream_do_read_once(ev_nonblock_stream_t* stream, ev_read_t* req, size_t* size)
+{
+    int iovcnt = req->data.nbuf;
+    if (iovcnt > g_ev_loop_unix_ctx.iovmax)
+    {
+        iovcnt = g_ev_loop_unix_ctx.iovmax;
+    }
+
+    ssize_t read_size;
+    read_size = ev__readv_unix(stream->io.data.fd, req->data.bufs, iovcnt);
+    if (read_size >= 0)
+    {
+        *size = read_size;
+        return 0;
+    }
+    return read_size;
+}
+
+static void _ev_stream_do_write(ev_nonblock_stream_t* stream)
+{
+    ssize_t ret;
+    ev_list_node_t* it;
+    ev_write_t* req;
+
+    while ((it = ev_list_pop_front(&stream->pending.w_queue)) != NULL)
+    {
+        req = EV_CONTAINER_OF(it, ev_write_t, node);
+        if ((ret = _ev_stream_do_write_once(stream, req)) == 0)
+        {
+            stream->callbacks.w_cb(stream, req, req->size);
+            continue;
+        }
+
+        /* Unsuccess operation should restore list */
+        ev_list_push_front(&stream->pending.w_queue, it);
+
+        if (ret == EV_EAGAIN)
+        {
+            break;
+        }
+        goto err;
+    }
+
+    return;
+
+err:
+    while ((it = ev_list_pop_front(&stream->pending.w_queue)) != NULL)
+    {
+        req = EV_CONTAINER_OF(it, ev_write_t, node);
+        ret = ret < 0 ? ret : (ssize_t)req->size;
+        stream->callbacks.w_cb(stream, req, ret);
+    }
+}
+
+static void _ev_stream_do_read(ev_nonblock_stream_t* stream)
+{
+    int ret;
+    ev_list_node_t* it = ev_list_pop_front(&stream->pending.r_queue);
+    ev_read_t* req = EV_CONTAINER_OF(it, ev_read_t, node);
+
+    size_t r_size = 0;
+    ret = _ev_stream_do_read_once(stream, req, &r_size);
+    req->data.size += r_size;
+
+    if (ret == 0)
+    {
+        stream->callbacks.r_cb(stream, req, req->data.size);
+        return;
+    }
+
+    ev_list_push_front(&stream->pending.r_queue, it);
+
+    if (ret == EV_EAGAIN)
+    {
+        return;
+    }
+
+    /* If error, cleanup all pending read requests */
+    while ((it = ev_list_pop_front(&stream->pending.r_queue)) != NULL)
+    {
+        req = EV_CONTAINER_OF(it, ev_read_t, node);
+        stream->callbacks.r_cb(stream, req, ret);
+    }
+}
+
+static void _ev_stream_cleanup_r(ev_nonblock_stream_t* stream, int errcode)
+{
+    ev_list_node_t* it;
+    while ((it = ev_list_pop_front(&stream->pending.r_queue)) != NULL)
+    {
+        ev_read_t* req = EV_CONTAINER_OF(it, ev_read_t, node);
+        stream->callbacks.r_cb(stream, req, errcode);
+    }
+}
+
+static void _ev_stream_cleanup_w(ev_nonblock_stream_t* stream, int errcode)
+{
+    ev_list_node_t* it;
+    while ((it = ev_list_pop_front(&stream->pending.w_queue)) != NULL)
+    {
+        ev_write_t* req = EV_CONTAINER_OF(it, ev_write_t, node);
+        stream->callbacks.w_cb(stream, req, errcode);
+    }
+}
+
+static void _ev_nonblock_stream_on_io(ev_nonblock_io_t* io, unsigned evts, void* arg)
+{
+    (void)arg;
+    ev_nonblock_stream_t* stream = EV_CONTAINER_OF(io, ev_nonblock_stream_t, io);
+
+    if (evts & EPOLLOUT)
+    {
+        _ev_stream_do_write(stream);
+        if (ev_list_size(&stream->pending.w_queue) == 0)
+        {
+            ev__nonblock_io_del(stream->loop, &stream->io, EV_IO_OUT);
+            stream->flags.io_reg_w = 0;
+        }
+    }
+
+    else if (evts & (EPOLLIN | EPOLLHUP))
+    {
+        _ev_stream_do_read(stream);
+        if (ev_list_size(&stream->pending.r_queue) == 0)
+        {
+            ev__nonblock_io_del(stream->loop, &stream->io, EV_IO_IN);
+            stream->flags.io_reg_r = 0;
+        }
+    }
+}
+
+EV_LOCAL void ev__nonblock_stream_init(ev_loop_t* loop,
+    ev_nonblock_stream_t* stream, int fd, ev_stream_write_cb wcb,
+    ev_stream_read_cb rcb)
+{
+    stream->loop = loop;
+
+    stream->flags.io_abort = 0;
+    stream->flags.io_reg_r = 0;
+    stream->flags.io_reg_w = 0;
+
+    ev__nonblock_io_init(&stream->io, fd, _ev_nonblock_stream_on_io, NULL);
+
+    ev_list_init(&stream->pending.w_queue);
+    ev_list_init(&stream->pending.r_queue);
+
+    stream->callbacks.w_cb = wcb;
+    stream->callbacks.r_cb = rcb;
+}
+
+EV_LOCAL void ev__nonblock_stream_exit(ev_nonblock_stream_t* stream)
+{
+    ev__nonblock_stream_abort(stream);
+    ev__nonblock_stream_cleanup(stream, EV_IO_IN | EV_IO_OUT);
+    stream->loop = NULL;
+    stream->callbacks.w_cb = NULL;
+    stream->callbacks.r_cb = NULL;
+}
+
+EV_LOCAL int ev__nonblock_stream_write(ev_nonblock_stream_t* stream, ev_write_t* req)
+{
+    if (stream->flags.io_abort)
+    {
+        return EV_EBADF;
+    }
+
+    if (!stream->flags.io_reg_w)
+    {
+        ev__nonblock_io_add(stream->loop, &stream->io, EV_IO_OUT);
+        stream->flags.io_reg_w = 1;
+    }
+
+    ev_list_push_back(&stream->pending.w_queue, &req->node);
+    return 0;
+}
+
+EV_LOCAL int ev__nonblock_stream_read(ev_nonblock_stream_t* stream, ev_read_t* req)
+{
+    if (stream->flags.io_abort)
+    {
+        return EV_EBADF;
+    }
+
+    if (!stream->flags.io_reg_r)
+    {
+        ev__nonblock_io_add(stream->loop, &stream->io, EV_IO_IN);
+        stream->flags.io_reg_r = 1;
+    }
+
+    ev_list_push_back(&stream->pending.r_queue, &req->node);
+    return 0;
+}
+
+EV_LOCAL size_t ev__nonblock_stream_size(ev_nonblock_stream_t* stream, unsigned evts)
+{
+    size_t ret = 0;
+    if (evts & EV_IO_IN)
+    {
+        ret += ev_list_size(&stream->pending.r_queue);
+    }
+    if (evts & EV_IO_OUT)
+    {
+        ret += ev_list_size(&stream->pending.w_queue);
+    }
+    return ret;
+}
+
+EV_LOCAL void ev__nonblock_stream_abort(ev_nonblock_stream_t* stream)
+{
+    if (!stream->flags.io_abort)
+    {
+        ev__nonblock_io_del(stream->loop, &stream->io, EV_IO_IN | EV_IO_OUT);
+        stream->flags.io_abort = 1;
+    }
+}
+
+EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned evts)
+{
+    if (evts & EV_IO_OUT)
+    {
+        _ev_stream_cleanup_w(stream, EV_ECANCELED);
+    }
+
+    if (evts & EV_IO_IN)
+    {
+        _ev_stream_cleanup_r(stream, EV_ECANCELED);
+    }
+}
+
+// #line 80 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/tcp_unix.c
+// SIZE:    14602
+// SHA-256: 5a9f6cf03d34ff58ee8c700c3c0e112ccb7942258cc7bbe64f67c032584f7d0f
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/tcp_unix.c"
+#include <sys/uio.h>
+#include <assert.h>
+#include <unistd.h>
+
+static void _ev_tcp_close_fd(ev_tcp_t *sock)
+{
+    if (sock->sock != EV_OS_SOCKET_INVALID)
+    {
+        close(sock->sock);
+        sock->sock = EV_OS_SOCKET_INVALID;
+    }
+}
+
+static void _ev_tcp_cleanup_listen_queue(ev_tcp_t *s_sock, int stat)
+{
+    ev_list_node_t *it;
+    while ((it = ev_list_pop_front(&s_sock->backend.u.listen.accept_queue)) !=
+           NULL)
+    {
+        ev_tcp_t *c_sock =
+            EV_CONTAINER_OF(it, ev_tcp_t, backend.u.accept.accept_node);
+        c_sock->backend.u.accept.cb(s_sock, c_sock, stat,
+                                    c_sock->backend.u.accept.arg);
+    }
+}
+
+static void _ev_tcp_connect_callback_once(ev_tcp_t *sock, int stat)
+{
+    ev_tcp_connect_cb bak_cb = sock->backend.u.client.cb;
+    void             *cb_arg = sock->backend.u.client.arg;
+    sock->backend.u.client.cb = NULL;
+    sock->backend.u.client.arg = NULL;
+    bak_cb(sock, stat, cb_arg);
+}
+
+static void _ev_tcp_on_close(ev_handle_t *handle)
+{
+    ev_tcp_t *sock = EV_CONTAINER_OF(handle, ev_tcp_t, base);
+
+    if (sock->base.data.flags & EV_HANDLE_TCP_STREAMING)
+    {
+        ev__nonblock_stream_exit(&sock->backend.u.stream);
+        sock->base.data.flags &= ~EV_HANDLE_TCP_STREAMING;
+    }
+
+    if (sock->base.data.flags & EV_HANDLE_TCP_LISTING)
+    {
+        _ev_tcp_cleanup_listen_queue(sock, EV_ECANCELED);
+        sock->base.data.flags &= ~EV_HANDLE_TCP_LISTING;
+    }
+
+    if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
+    {
+        _ev_tcp_connect_callback_once(sock, EV_ECANCELED);
+        sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
+    }
+
+    if (sock->close_cb != NULL)
+    {
+        sock->close_cb(sock, sock->close_arg);
+    }
+    ev_free(sock);
+}
+
+static void _ev_tcp_smart_deactive(ev_tcp_t *sock)
+{
+    if (sock->base.data.flags & EV_HANDLE_TCP_LISTING)
+    {
+        size_t size = ev_list_size(&sock->backend.u.listen.accept_queue);
+        if (size != 0)
+        {
+            return;
+        }
+    }
+    else if (sock->base.data.flags & EV_HANDLE_TCP_ACCEPTING)
+    {
+        if (sock->backend.u.accept.cb != NULL)
+        {
+            return;
+        }
+    }
+    else if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
+    {
+        if (sock->backend.u.client.cb != NULL)
+        {
+            return;
+        }
+    }
+    else if (sock->base.data.flags & EV_HANDLE_TCP_STREAMING)
+    {
+        size_t io_sz = ev__nonblock_stream_size(&sock->backend.u.stream,
+                                                EV_IO_IN | EV_IO_OUT);
+        if (io_sz != 0)
+        {
+            return;
+        }
+    }
+
+    ev__handle_deactive(&sock->base);
+}
+
+static void _ev_tcp_on_connect(ev_tcp_t *sock)
+{
+    int       ret;
+    socklen_t result_len = sizeof(ret);
+
+    ev__nonblock_io_del(sock->base.loop, &sock->backend.u.client.io, EV_IO_OUT);
+
+    /* Get connect result */
+    if (getsockopt(sock->sock, SOL_SOCKET, SO_ERROR, &ret, &result_len) < 0)
+    {
+        sock->backend.u.client.stat = ev__translate_sys_error(errno);
+        goto fin;
+    }
+
+    /* Result is in `result` */
+    sock->backend.u.client.stat = ev__translate_sys_error(ret);
+
+fin:
+    sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
+    _ev_tcp_connect_callback_once(sock, sock->backend.u.client.stat);
+    _ev_tcp_smart_deactive(sock);
+}
+
+static void _ev_tcp_w_user_callback_unix(ev_tcp_t           *sock,
+                                         ev_tcp_write_req_t *req, ssize_t size)
+{
+    _ev_tcp_smart_deactive(sock);
+    ev__write_exit(&req->base);
+    req->user_callback(req, size);
+}
+
+static void _ev_tcp_r_user_callback_unix(ev_tcp_t *sock, ev_tcp_read_req_t *req,
+                                         ssize_t size)
+{
+    _ev_tcp_smart_deactive(sock);
+    ev__read_exit(&req->base);
+    req->user_callback(req, size);
+}
+
+static void _on_tcp_write_done(ev_nonblock_stream_t *stream, ev_write_t *req,
+                               ssize_t size)
+{
+    ev_tcp_t *sock = EV_CONTAINER_OF(stream, ev_tcp_t, backend.u.stream);
+    ev_tcp_write_req_t *w_req = EV_CONTAINER_OF(req, ev_tcp_write_req_t, base);
+    _ev_tcp_w_user_callback_unix(sock, w_req, size);
+}
+
+static void _on_tcp_read_done(ev_nonblock_stream_t *stream, ev_read_t *req,
+                              ssize_t size)
+{
+    ev_tcp_t *sock = EV_CONTAINER_OF(stream, ev_tcp_t, backend.u.stream);
+
+    ev_tcp_read_req_t *r_req = EV_CONTAINER_OF(req, ev_tcp_read_req_t, base);
+    _ev_tcp_r_user_callback_unix(sock, r_req, size);
+}
+
+static void _ev_tcp_accept_user_callback_unix(ev_tcp_t *acpt, ev_tcp_t *conn,
+                                              int ret)
+{
+    conn->base.data.flags &= ~EV_HANDLE_TCP_ACCEPTING;
+    _ev_tcp_smart_deactive(conn);
+    _ev_tcp_smart_deactive(acpt);
+
+    ev_tcp_accept_cb bak_cb = conn->backend.u.accept.cb;
+    void            *cb_arg = conn->backend.u.accept.arg;
+    conn->backend.u.accept.cb = NULL;
+    conn->backend.u.accept.arg = NULL;
+    bak_cb(acpt, conn, ret, cb_arg);
+}
+
+static void _ev_tcp_on_accept(ev_tcp_t *acpt)
+{
+    ev_list_node_t *it =
+        ev_list_pop_front(&acpt->backend.u.listen.accept_queue);
+    if (it == NULL)
+    {
+        EV_ABORT("empty accept queue");
+    }
+
+    ev_tcp_t *conn =
+        EV_CONTAINER_OF(it, ev_tcp_t, backend.u.accept.accept_node);
+    _ev_tcp_close_fd(conn);
+
+    do
+    {
+        conn->sock = accept(acpt->sock, NULL, NULL);
+    } while (conn->sock == -1 && errno == EINTR);
+
+    int ret = conn->sock >= 0 ? 0 : ev__translate_sys_error(errno);
+    if (ret == 0)
+    { /* Set non-block mode */
+        if ((ret = ev__nonblock(conn->sock, 1)) != 0)
+        {
+            _ev_tcp_close_fd(conn);
+        }
+    }
+
+    _ev_tcp_accept_user_callback_unix(acpt, conn, ret);
+
+    /* might be close in callback */
+    if (ev__handle_is_closing(&acpt->base))
+    {
+        return;
+    }
+    if (ev_list_size(&acpt->backend.u.listen.accept_queue) == 0)
+    {
+        ev__nonblock_io_del(acpt->base.loop, &acpt->backend.u.listen.io,
+                            EV_IO_IN);
+    }
+}
+
+static void _ev_tcp_on_server_event(ev_nonblock_io_t *io, unsigned evts,
+                                    void *arg)
+{
+    (void)evts;
+    (void)arg;
+    ev_tcp_t *sock = EV_CONTAINER_OF(io, ev_tcp_t, backend.u.listen.io);
+
+    _ev_tcp_on_accept(sock);
+}
+
+static void _ev_tcp_on_client_event(ev_nonblock_io_t *io, unsigned evts,
+                                    void *arg)
+{
+    (void)evts;
+    (void)arg;
+    ev_tcp_t *sock = EV_CONTAINER_OF(io, ev_tcp_t, backend.u.client.io);
+
+    _ev_tcp_on_connect(sock);
+}
+
+/**
+ * @return #ev_errno_t
+ */
+static int _ev_tcp_setup_fd(ev_tcp_t *sock, int domain, int is_server,
+                            int *new_fd)
+{
+    int ret = 0;
+    int tmp_new_fd = 0;
+    if (sock->sock != EV_OS_SOCKET_INVALID)
+    {
+        goto fin;
+    }
+
+    if ((sock->sock = socket(domain, SOCK_STREAM, 0)) == EV_OS_SOCKET_INVALID)
+    {
+        ret = ev__translate_sys_error(errno);
+        goto fin;
+    }
+
+    if ((ret = ev__nonblock(sock->sock, 1)) != 0)
+    {
+        goto err_nonblock;
+    }
+
+    tmp_new_fd = 1;
+    if (is_server)
+    {
+        ev__nonblock_io_init(&sock->backend.u.listen.io, sock->sock,
+                             _ev_tcp_on_server_event, NULL);
+    }
+    else
+    {
+        ev__nonblock_io_init(&sock->backend.u.client.io, sock->sock,
+                             _ev_tcp_on_client_event, NULL);
+    }
+
+    goto fin;
+
+err_nonblock:
+    _ev_tcp_close_fd(sock);
+fin:
+    if (new_fd != NULL)
+    {
+        *new_fd = tmp_new_fd;
+    }
+    return ret;
+}
+
+static int _ev_tcp_is_listening(ev_tcp_t *sock)
+{
+    return sock->base.data.flags & EV_HANDLE_TCP_LISTING;
+}
+
+static void _ev_tcp_to_connect(ev_handle_t *handle)
+{
+    ev_tcp_t *sock = EV_CONTAINER_OF(handle, ev_tcp_t, base);
+
+    sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
+    _ev_tcp_connect_callback_once(sock, 0);
+}
+
+static void _ev_tcp_setup_stream_once(ev_tcp_t *sock)
+{
+    if (sock->base.data.flags & EV_HANDLE_TCP_STREAMING)
+    {
+        return;
+    }
+    ev__nonblock_stream_init(sock->base.loop, &sock->backend.u.stream,
+                             sock->sock, _on_tcp_write_done, _on_tcp_read_done);
+    sock->base.data.flags |= EV_HANDLE_TCP_STREAMING;
+}
+
+int ev_tcp_init(ev_loop_t *loop, ev_tcp_t **sock)
+{
+    ev_tcp_t *new_sock = ev_malloc(sizeof(ev_tcp_t));
+    if (new_sock == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    ev__handle_init(loop, &new_sock->base, EV_ROLE_EV_TCP);
+    new_sock->close_cb = NULL;
+    new_sock->close_arg = NULL;
+    new_sock->sock = EV_OS_SOCKET_INVALID;
+
+    *sock = new_sock;
+    return 0;
+}
+
+void ev_tcp_exit(ev_tcp_t *sock, ev_tcp_close_cb close_cb, void *close_arg)
+{
+    /* Stop all pending IO actions */
+    if (sock->base.data.flags & EV_HANDLE_TCP_STREAMING)
+    {
+        ev__nonblock_stream_abort(&sock->backend.u.stream);
+    }
+    if (sock->base.data.flags & EV_HANDLE_TCP_LISTING)
+    {
+        ev__nonblock_io_del(sock->base.loop, &sock->backend.u.listen.io,
+                            EV_IO_IN);
+    }
+    if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
+    {
+        ev__nonblock_io_del(sock->base.loop, &sock->backend.u.client.io,
+                            EV_IO_OUT);
+    }
+
+    /* Close fd */
+    _ev_tcp_close_fd(sock);
+
+    sock->close_cb = close_cb;
+    sock->close_arg = close_arg;
+    ev__handle_exit(&sock->base, _ev_tcp_on_close);
+}
+
+int ev_tcp_bind(ev_tcp_t *tcp, const struct sockaddr *addr, size_t addrlen)
+{
+    int ret;
+    int flag_new_fd;
+    if ((ret = _ev_tcp_setup_fd(tcp, addr->sa_family, 1, &flag_new_fd)) != 0)
+    {
+        return ret;
+    }
+
+    if ((ret = bind(tcp->sock, addr, addrlen)) != 0)
+    {
+        ret = ev__translate_sys_error(errno);
+        goto err_bind;
+    }
+    tcp->base.data.flags |= EV_HABDLE_TCP_BOUND;
+
+    return 0;
+
+err_bind:
+    if (flag_new_fd)
+    {
+        _ev_tcp_close_fd(tcp);
+    }
+    return ret;
+}
+
+int ev_tcp_listen(ev_tcp_t *tcp, int backlog)
+{
+    if (_ev_tcp_is_listening(tcp))
+    {
+        return EV_EADDRINUSE;
+    }
+
+    int ret;
+    if ((ret = listen(tcp->sock, backlog)) != 0)
+    {
+        return ev__translate_sys_error(errno);
+    }
+
+    ev_list_init(&tcp->backend.u.listen.accept_queue);
+    tcp->base.data.flags |= EV_HANDLE_TCP_LISTING;
+
+    return 0;
+}
+
+int ev_tcp_accept(ev_tcp_t *lisn, ev_tcp_t *conn, ev_tcp_accept_cb accept_cb,
+                  void *accept_arg)
+{
+    if (lisn == NULL || conn == NULL || accept_cb == NULL)
+    {
+        return EV_EINVAL;
+    }
+    if (conn->base.data.flags & EV_HANDLE_TCP_ACCEPTING)
+    {
+        return EV_EINPROGRESS;
+    }
+
+    conn->base.data.flags |= EV_HANDLE_TCP_ACCEPTING;
+    conn->backend.u.accept.cb = accept_cb;
+    conn->backend.u.accept.arg = accept_arg;
+    ev_list_push_back(&lisn->backend.u.listen.accept_queue,
+                      &conn->backend.u.accept.accept_node);
+    ev__nonblock_io_add(lisn->base.loop, &lisn->backend.u.listen.io, EV_IO_IN);
+
+    ev__handle_active(&lisn->base);
+    ev__handle_active(&conn->base);
+
+    return 0;
+}
+
+int ev_tcp_write(ev_tcp_t *sock, ev_tcp_write_req_t *req, ev_buf_t *bufs,
+                 size_t nbuf, ev_tcp_write_cb cb)
+{
+    req->user_callback = cb;
+    int ret = ev__write_init(&req->base, bufs, nbuf);
+    if (ret != 0)
+    {
+        return ret;
+    }
+
+    if (sock->base.data.flags &
+        (EV_HANDLE_TCP_LISTING | EV_HANDLE_TCP_ACCEPTING |
+         EV_HANDLE_TCP_CONNECTING))
+    {
+        return EV_EINVAL;
+    }
+
+    _ev_tcp_setup_stream_once(sock);
+
+    ev__handle_active(&sock->base);
+    ret = ev__nonblock_stream_write(&sock->backend.u.stream, &req->base);
+
+    if (ret != 0)
+    {
+        _ev_tcp_smart_deactive(sock);
+        return ret;
+    }
+    return 0;
+}
+
+int ev_tcp_read(ev_tcp_t *sock, ev_tcp_read_req_t *req, ev_buf_t *bufs,
+                size_t nbuf, ev_tcp_read_cb cb)
+{
+    if (sock->base.data.flags &
+        (EV_HANDLE_TCP_LISTING | EV_HANDLE_TCP_ACCEPTING |
+         EV_HANDLE_TCP_CONNECTING))
+    {
+        return EV_EINVAL;
+    }
+
+    req->user_callback = cb;
+    int ret = ev__read_init(&req->base, bufs, nbuf);
+    if (ret != 0)
+    {
+        return ret;
+    }
+
+    _ev_tcp_setup_stream_once(sock);
+
+    ev__handle_active(&sock->base);
+    ret = ev__nonblock_stream_read(&sock->backend.u.stream, &req->base);
+
+    if (ret != 0)
+    {
+        _ev_tcp_smart_deactive(sock);
+        return ret;
+    }
+    return 0;
+}
+
+int ev_tcp_getsockname(ev_tcp_t *sock, struct sockaddr *name, size_t *len)
+{
+    socklen_t socklen = *len;
+    if (getsockname(sock->sock, name, &socklen) != 0)
+    {
+        return ev__translate_sys_error(errno);
+    }
+
+    *len = (size_t)socklen;
+    return 0;
+}
+
+int ev_tcp_getpeername(ev_tcp_t *sock, struct sockaddr *name, size_t *len)
+{
+    int       ret;
+    socklen_t socklen = *len;
+
+    if ((ret = getpeername(sock->sock, name, &socklen)) != 0)
+    {
+        return ev__translate_sys_error(errno);
+    }
+
+    *len = socklen;
+    return 0;
+}
+
+int ev_tcp_connect(ev_tcp_t *sock, struct sockaddr *addr, size_t size,
+                   ev_tcp_connect_cb connect_cb, void *connect_arg)
+{
+    int        ret;
+    ev_loop_t *loop = sock->base.loop;
+
+    if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
+    {
+        return EV_EINPROGRESS;
+    }
+    if (sock->base.data.flags &
+        (EV_HANDLE_TCP_LISTING | EV_HANDLE_TCP_ACCEPTING |
+         EV_HANDLE_TCP_STREAMING))
+    {
+        return EV_EINVAL;
+    }
+
+    if ((ret = _ev_tcp_setup_fd(sock, addr->sa_family, 0, NULL)) != 0)
+    {
+        return ret;
+    }
+
+    sock->backend.u.client.cb = connect_cb;
+    sock->backend.u.client.arg = connect_arg;
+    sock->base.data.flags |= EV_HANDLE_TCP_CONNECTING;
+
+    if ((ret = connect(sock->sock, addr, size)) == 0)
+    { /* Connect success immediately */
+        sock->backend.u.client.stat = 0;
+        ev__backlog_submit(&sock->base, _ev_tcp_to_connect);
+        return 0;
+    }
+
+    if (errno != EINPROGRESS)
+    {
+        sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
+        ret = ev__translate_sys_error(errno);
+        goto err;
+    }
+
+    ev__handle_active(&sock->base);
+    ev__nonblock_io_add(loop, &sock->backend.u.client.io, EV_IO_OUT);
+
+    return 0;
+
+err:
+    _ev_tcp_close_fd(sock);
+    ev__handle_deactive(&sock->base);
+    return ret;
+}
+
+EV_LOCAL int ev__tcp_open(ev_tcp_t *tcp, int fd)
+{
+    int busy_flags = EV_HANDLE_TCP_LISTING | EV_HANDLE_TCP_ACCEPTING |
+                     EV_HANDLE_TCP_STREAMING | EV_HANDLE_TCP_CONNECTING |
+                     EV_HABDLE_TCP_BOUND;
+    if (tcp->base.data.flags & busy_flags)
+    {
+        return EV_EBUSY;
+    }
+
+    tcp->sock = fd;
+    _ev_tcp_setup_stream_once(tcp);
+
+    return 0;
+}
+
+// #line 81 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/thread_unix.c
+// SIZE:    3650
+// SHA-256: c9657f65b8d8414261c6026f3c68d1b38f5e7b9ab17da1a67bd0ee46da5df176
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/thread_unix.c"
+#define _GNU_SOURCE
+#include <semaphore.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <sys/syscall.h>
+
+typedef struct ev_thread_helper_unix
+{
+    ev_thread_cb    cb;
+    void*           arg;
+    sem_t           sem;
+}ev_thread_helper_unix_t;
+
+static void* _ev_thread_proxy_unix(void* arg)
+{
+    ev_thread_helper_unix_t* p_helper = arg;
+    ev_thread_helper_unix_t helper = *p_helper;
+
+    if (sem_post(&p_helper->sem) != 0)
+    {
+        EV_ABORT();
+    }
+
+    helper.cb(helper.arg);
+    return NULL;
+}
+
+int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
+    ev_thread_cb cb, void* arg)
+{
+    int err = 0;
+
+    pthread_attr_t* attr = NULL;
+    pthread_attr_t attr_storage;
+
+    if (opt != NULL && opt->flags.have_stack_size)
+    {
+        if (pthread_attr_init(&attr_storage) != 0)
+        {
+            err = errno;
+            return ev__translate_sys_error(err);
+        }
+
+        if (pthread_attr_setstacksize(&attr_storage, opt->stack_size) != 0)
+        {
+            err = errno;
+            goto err_fin;
+        }
+
+        attr = &attr_storage;
+    }
+
+    ev_thread_helper_unix_t helper;
+    helper.cb = cb;
+    helper.arg = arg;
+    if (sem_init(&helper.sem, 0, 0) != 0)
+    {
+        err = errno;
+        goto err_fin;
+    }
+
+    if ((err = pthread_create(thr, attr, _ev_thread_proxy_unix, &helper)) != 0)
+    {
+        goto release_sem;
+    }
+
+    do 
+    {
+        err = sem_wait(&helper.sem);
+    } while (err == -1 && errno == EINTR);
+
+    err = err != 0 ? errno : 0;
+
+release_sem:
+    sem_destroy(&helper.sem);
+err_fin:
+    if (attr != NULL)
+    {
+        pthread_attr_destroy(attr);
+    }
+    return ev__translate_sys_error(err);
+}
+
+int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
+{
+    int ret = EBUSY;
+    if (timeout == EV_INFINITE_TIMEOUT)
+    {
+        int err = pthread_join(*thr, NULL);
+        return ev__translate_sys_error(err);
+    }
+
+    const uint64_t t_start = ev_hrtime() / 1000000;
+    const uint64_t t_end = t_start + timeout;
+
+    uint64_t t_now;
+    while ((t_now = ev_hrtime() / 1000000) < t_end)
+    {
+        if ((ret = pthread_tryjoin_np(*thr, NULL)) == 0)
+        {
+            break;
+        }
+
+        uint64_t t_diff = t_end - t_now;
+        unsigned sleep_time = t_diff < 10 ? t_diff : 10;
+        ev_thread_sleep(sleep_time);
+    }
+
+    /* try last time */
+    if (ret == EBUSY)
+    {
+        ret = pthread_tryjoin_np(*thr, NULL);
+    }
+
+    return ret == EBUSY ? EV_ETIMEDOUT : ev__translate_sys_error(ret);
+}
+
+ev_os_thread_t ev_thread_self(void)
+{
+    return pthread_self();
+}
+
+ev_os_tid_t ev_thread_id(void)
+{
+    return syscall(__NR_gettid);
+}
+
+int ev_thread_equal(const ev_os_thread_t* t1, const ev_os_thread_t* t2)
+{
+    return pthread_equal(*t1, *t2);
+}
+
+void ev_thread_sleep(uint32_t timeout)
+{
+    struct timespec t_req, t_rem;
+    t_req.tv_sec = timeout / 1000;
+    t_req.tv_nsec = (timeout - t_req.tv_sec * 1000) * 1000 * 1000;
+
+    int ret;
+    while((ret = nanosleep(&t_req, &t_rem)) != 0)
+    {
+        ret = errno;
+        if (ret != EINTR)
+        {
+            EV_ABORT();
+        }
+        t_req = t_rem;
+    }
+}
+
+int ev_tls_init(ev_tls_t* tls)
+{
+    int ret = pthread_key_create(&tls->tls, NULL);
+    if (ret == 0)
+    {
+        return 0;
+    }
+    return ev__translate_sys_error(ret);
+}
+
+void ev_tls_exit(ev_tls_t* tls)
+{
+    int ret = pthread_key_delete(tls->tls);
+    if (ret != 0)
+    {
+        EV_ABORT();
+    }
+}
+
+void ev_tls_set(ev_tls_t* tls, void* val)
+{
+    int ret = pthread_setspecific(tls->tls, val);
+    if (ret != 0)
+    {
+        EV_ABORT();
+    }
+}
+
+void* ev_tls_get(ev_tls_t* tls)
+{
+    return pthread_getspecific(tls->tls);
+}
+
+// #line 82 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/threadpool_unix.c
+// SIZE:    942
+// SHA-256: 10487ad39897977af6e2f63e4ac09366f191adc87e314b98c5ef22b3b7567044
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/threadpool_unix.c"
+
+static void _on_work_unix(ev_nonblock_io_t* io, unsigned evts, void* arg)
+{
+    (void)evts; (void)arg;
+
+    ev_loop_t* loop = EV_CONTAINER_OF(io, ev_loop_t, backend.threadpool.io);
+    ev__async_pend(loop->backend.threadpool.evtfd[0]);
+
+    ev__threadpool_process(loop);
+}
+
+EV_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop)
+{
+    ev__async_post(loop->backend.threadpool.evtfd[1]);
+}
+
+EV_LOCAL void ev__init_work(ev_loop_t* loop)
+{
+    ev__asyc_eventfd(loop->backend.threadpool.evtfd);
+
+    ev__nonblock_io_init(&loop->backend.threadpool.io, loop->backend.threadpool.evtfd[0], _on_work_unix, NULL);
+    ev__nonblock_io_add(loop, &loop->backend.threadpool.io, EV_IO_IN);
+}
+
+EV_LOCAL void ev__exit_work(ev_loop_t* loop)
+{
+    ev__async_eventfd_close(loop->backend.threadpool.evtfd[0]);
+    loop->backend.threadpool.evtfd[0] = -1;
+
+    ev__async_eventfd_close(loop->backend.threadpool.evtfd[1]);
+    loop->backend.threadpool.evtfd[1] = -1;
+}
+
+// #line 83 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/time_unix.c
+// SIZE:    284
+// SHA-256: 29005a6567d68fb9b141f64f08c5fb3e9d407a6e7e0727d9a850028c69a7a79c
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/time_unix.c"
+#include <time.h>
+
+uint64_t ev_hrtime(void)
+{
+    int errcode;
+    struct timespec t;
+
+    if (clock_gettime(g_ev_loop_unix_ctx.hwtime_clock_id, &t) != 0)
+    {
+        errcode = errno;
+        EV_ABORT("errno:%d", errcode);
+    }
+
+    return t.tv_sec * (uint64_t) 1e9 + t.tv_nsec;
+}
+
+// #line 84 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/udp_unix.c
+// SIZE:    25305
+// SHA-256: 298ea14cda1db0fb3a256067c1c5a2da2af0f08d6c49ae3f17087f23c9f4bbb4
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/udp_unix.c"
+#include <unistd.h>
+#include <string.h>
+
+static void _ev_udp_close_unix(ev_udp_t *udp)
+{
+    if (udp->sock != EV_OS_SOCKET_INVALID)
+    {
+        ev__nonblock_io_del(udp->base.loop, &udp->backend.io,
+                            EPOLLIN | EPOLLOUT);
+        close(udp->sock);
+        udp->sock = EV_OS_SOCKET_INVALID;
+    }
+}
+
+static void _ev_udp_smart_deactive(ev_udp_t *udp)
+{
+    size_t io_sz = 0;
+
+    io_sz += ev_list_size(&udp->send_list);
+    io_sz += ev_list_size(&udp->recv_list);
+
+    if (io_sz == 0)
+    {
+        ev__handle_deactive(&udp->base);
+    }
+}
+
+static void _ev_udp_w_user_callback_unix(ev_udp_t *udp, ev_udp_write_t *req,
+                                         ssize_t size)
+{
+    _ev_udp_smart_deactive(udp);
+    ev__write_exit(&req->base);
+    ev__handle_exit(&req->handle, NULL);
+
+    req->usr_cb(udp, size, req->usr_cb_arg);
+    ev_free(req);
+}
+
+static void _ev_udp_r_user_callback_unix(ev_udp_t *udp, ev_udp_read_t *req,
+                                         const struct sockaddr *addr,
+                                         ssize_t                size)
+{
+    _ev_udp_smart_deactive(udp);
+    ev__read_exit(&req->base);
+    ev__handle_exit(&req->handle, NULL);
+
+    req->usr_cb(udp, addr, size, req->usr_cb_arg);
+    ev_free(req);
+}
+
+static void _ev_udp_cancel_all_w_unix(ev_udp_t *udp, int err)
+{
+    ev_list_node_t *it;
+    while ((it = ev_list_pop_front(&udp->send_list)) != NULL)
+    {
+        ev_udp_write_t *req = EV_CONTAINER_OF(it, ev_udp_write_t, base.node);
+        _ev_udp_w_user_callback_unix(udp, req, err);
+    }
+}
+
+static void _ev_udp_cancel_all_r_unix(ev_udp_t *udp, int err)
+{
+    ev_list_node_t *it;
+    while ((it = ev_list_pop_front(&udp->recv_list)) != NULL)
+    {
+        ev_udp_read_t *req = EV_CONTAINER_OF(it, ev_udp_read_t, base.node);
+        _ev_udp_r_user_callback_unix(udp, req, NULL, err);
+    }
+}
+
+static void _ev_udp_abort_unix(ev_udp_t *udp, int err)
+{
+    _ev_udp_close_unix(udp);
+    _ev_udp_cancel_all_w_unix(udp, err);
+    _ev_udp_cancel_all_r_unix(udp, err);
+}
+
+static void _ev_udp_on_close_unix(ev_handle_t *handle)
+{
+    ev_udp_t *udp = EV_CONTAINER_OF(handle, ev_udp_t, base);
+    ev_udp_cb close_cb = udp->close_cb;
+    void     *close_arg = udp->close_arg;
+
+    _ev_udp_abort_unix(udp, EV_ECANCELED);
+    ev_free(udp);
+
+    if (close_cb != NULL)
+    {
+        close_cb(udp, close_arg);
+    }
+}
+
+/**
+ * @return bool
+ */
+static int _ev_udp_is_connected_unix(ev_os_socket_t sock)
+{
+    struct sockaddr_storage addr;
+    socklen_t               addrlen = sizeof(addr);
+
+    if (getpeername(sock, (struct sockaddr *)&addr, &addrlen) != 0)
+    {
+        return 0;
+    }
+    return addrlen > 0;
+}
+
+static int _ev_udp_set_flags_unix(ev_udp_t *udp, unsigned flags)
+{
+    int err;
+    if (flags & EV_UDP_IPV6_ONLY)
+    {
+        int yes = 1;
+        if (setsockopt(udp->sock, IPPROTO_IPV6, IPV6_V6ONLY, &yes,
+                       sizeof(yes)) == -1)
+        {
+            err = errno;
+            return ev__translate_sys_error(err);
+        }
+    }
+
+    if (flags & EV_UDP_REUSEADDR)
+    {
+        if ((err = ev__reuse_unix(udp->sock)) != 0)
+        {
+            return err;
+        }
+    }
+
+    return 0;
+}
+
+static int _ev_udp_disconnect_unix(ev_udp_t *udp)
+{
+    struct sockaddr addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sa_family = AF_UNSPEC;
+
+    int r;
+    do
+    {
+        r = connect(udp->sock, &addr, sizeof(addr));
+    } while (r == -1 && errno == EINTR);
+
+    if (r == -1 && errno != EAFNOSUPPORT)
+    {
+        r = errno;
+        return ev__translate_sys_error(r);
+    }
+
+    udp->base.data.flags &= ~EV_HANDLE_UDP_CONNECTED;
+    return 0;
+}
+
+static ssize_t _ev_udp_sendmsg_unix(int fd, struct iovec *iov, int iovcnt,
+                                    void *arg)
+{
+    struct msghdr *p_hdr = arg;
+    p_hdr->msg_iov = iov;
+    p_hdr->msg_iovlen = iovcnt;
+
+    ssize_t write_size;
+    do
+    {
+        write_size = sendmsg(fd, p_hdr, 0);
+    } while (write_size < 0 && errno == EINTR);
+
+    if (write_size < 0)
+    {
+        int err = errno;
+        return ev__translate_sys_error(err);
+    }
+
+    return write_size;
+}
+
+static int _ev_udp_do_sendmsg_unix(ev_udp_t *udp, ev_udp_write_t *req)
+{
+    struct msghdr hdr;
+    memset(&hdr, 0, sizeof(hdr));
+
+    if (req->backend.peer_addr.ss_family == AF_UNSPEC)
+    {
+        hdr.msg_name = NULL;
+        hdr.msg_namelen = 0;
+    }
+    else
+    {
+        hdr.msg_name = &req->backend.peer_addr;
+        hdr.msg_namelen =
+            ev__get_addr_len((struct sockaddr *)&req->backend.peer_addr);
+    }
+
+    return ev__send_unix(udp->sock, &req->base, _ev_udp_sendmsg_unix, &hdr);
+}
+
+static int _ev_udp_on_io_write_unix(ev_udp_t *udp)
+{
+    int             ret = 0;
+    ev_list_node_t *it;
+    while ((it = ev_list_begin(&udp->send_list)) != NULL)
+    {
+        ev_udp_write_t *req = EV_CONTAINER_OF(it, ev_udp_write_t, base.node);
+
+        if ((ret = _ev_udp_do_sendmsg_unix(udp, req)) != 0)
+        {
+            break;
+        }
+
+        ev_list_erase(&udp->send_list, it);
+        _ev_udp_w_user_callback_unix(udp, req, req->base.size);
+    }
+
+    if (ret == EV_EAGAIN)
+    {
+        ret = 0;
+    }
+    return ret;
+}
+
+static int _ev_udp_do_recvmsg_unix(ev_udp_t *udp, ev_udp_read_t *req)
+{
+    struct msghdr hdr;
+    memset(&hdr, 0, sizeof(hdr));
+    memset(&req->addr, 0, sizeof(req->addr));
+
+    hdr.msg_name = &req->addr;
+    hdr.msg_namelen = sizeof(req->addr);
+    hdr.msg_iov = (struct iovec *)req->base.data.bufs;
+    hdr.msg_iovlen = req->base.data.nbuf;
+
+    ssize_t read_size;
+    do
+    {
+        read_size = recvmsg(udp->sock, &hdr, 0);
+    } while (read_size < 0 && errno == EINTR);
+
+    if (read_size < 0)
+    {
+        int err = errno;
+        if (err == EAGAIN || err == EWOULDBLOCK)
+        {
+            return EV_EAGAIN;
+        }
+        return ev__translate_sys_error(err);
+    }
+
+    req->base.data.size += read_size;
+    return 0;
+}
+
+static int _ev_udp_on_io_read_unix(ev_udp_t *udp)
+{
+    int             ret = 0;
+    ev_list_node_t *it;
+    while ((it = ev_list_begin(&udp->recv_list)) != NULL)
+    {
+        ev_udp_read_t *req = EV_CONTAINER_OF(it, ev_udp_read_t, base.node);
+
+        if ((ret = _ev_udp_do_recvmsg_unix(udp, req)) != 0)
+        {
+            break;
+        }
+
+        ev_list_erase(&udp->recv_list, it);
+        _ev_udp_r_user_callback_unix(udp, req, (struct sockaddr *)&req->addr,
+                                     req->base.data.size);
+    }
+
+    if (ret == EV_EAGAIN)
+    {
+        ret = 0;
+    }
+    return ret;
+}
+
+static void _ev_udp_on_io_unix(ev_nonblock_io_t *io, unsigned evts, void *arg)
+{
+    (void)arg;
+    int       ret;
+    ev_udp_t *udp = EV_CONTAINER_OF(io, ev_udp_t, backend.io);
+
+    if (evts & EPOLLOUT)
+    {
+        if ((ret = _ev_udp_on_io_write_unix(udp)) != 0)
+        {
+            goto err;
+        }
+
+        if (ev_list_size(&udp->send_list) == 0)
+        {
+            ev__nonblock_io_del(udp->base.loop, &udp->backend.io, EPOLLOUT);
+        }
+    }
+
+    if (evts & EPOLLIN)
+    {
+        if ((ret = _ev_udp_on_io_read_unix(udp)) != 0)
+        {
+            goto err;
+        }
+
+        if (ev_list_size(&udp->recv_list) == 0)
+        {
+            ev__nonblock_io_del(udp->base.loop, &udp->backend.io, EPOLLIN);
+        }
+    }
+
+    return;
+
+err:
+    _ev_udp_abort_unix(udp, ret);
+}
+
+static int _ev_udp_maybe_deferred_socket_unix(ev_udp_t *udp, int domain)
+{
+    if (udp->sock != EV_OS_SOCKET_INVALID)
+    {
+        return 0;
+    }
+
+    if ((udp->sock = socket(domain, SOCK_DGRAM, 0)) < 0)
+    {
+        int ret = errno;
+        return ev__translate_sys_error(ret);
+    }
+
+    ev__nonblock_io_init(&udp->backend.io, udp->sock, _ev_udp_on_io_unix, NULL);
+
+    return 0;
+}
+
+static int _ev_udp_do_connect_unix(ev_udp_t *udp, const struct sockaddr *addr)
+{
+    int       ret;
+    socklen_t addrlen = ev__get_addr_len(addr);
+    if (addrlen == (socklen_t)-1)
+    {
+        return EV_EINVAL;
+    }
+
+    if ((ret = _ev_udp_maybe_deferred_socket_unix(udp, addr->sa_family)) != 0)
+    {
+        return ret;
+    }
+
+    do
+    {
+        ret = connect(udp->sock, addr, addrlen);
+    } while (ret == -1 && errno == EINTR);
+
+    if (ret != 0)
+    {
+        ret = errno;
+        return ev__translate_sys_error(ret);
+    }
+
+    udp->base.data.flags |= EV_HANDLE_UDP_CONNECTED;
+    return 0;
+}
+
+static int _ev_udp_maybe_deferred_bind_unix(ev_udp_t *udp, int domain,
+                                            int flags)
+{
+    int ret = _ev_udp_maybe_deferred_socket_unix(udp, domain);
+    if (ret != 0)
+    {
+        return ret;
+    }
+
+    if (udp->base.data.flags & EV_HANDLE_UDP_BOUND)
+    {
+        return 0;
+    }
+
+    struct sockaddr_storage addr;
+    struct sockaddr_in     *addr4 = (struct sockaddr_in *)&addr;
+    struct sockaddr_in6    *addr6 = (struct sockaddr_in6 *)&addr;
+
+    switch (domain)
+    {
+    case AF_INET: {
+        memset(addr4, 0, sizeof(*addr4));
+        addr4->sin_family = AF_INET;
+        addr4->sin_addr.s_addr = INADDR_ANY;
+        return ev_udp_bind(udp, (struct sockaddr *)addr4, flags);
+    }
+
+    case AF_INET6: {
+        memset(addr6, 0, sizeof(*addr6));
+        addr6->sin6_family = AF_INET6;
+        addr6->sin6_addr = in6addr_any;
+        return ev_udp_bind(udp, (struct sockaddr *)addr6, flags);
+    }
+
+    default:
+        break;
+    }
+
+    EV_ABORT();
+}
+
+static int _ev_udp_convert_interface_addr4_unix(
+    struct ip_mreq *dst, const struct sockaddr_in *multicast_addr,
+    const char *interface_addr)
+{
+    int ret;
+    memset(dst, 0, sizeof(*dst));
+
+    if (interface_addr != NULL)
+    {
+        if ((ret = inet_pton(AF_INET, interface_addr,
+                             &dst->imr_interface.s_addr)) != 1)
+        {
+            int ret = errno;
+            return ev__translate_sys_error(ret);
+        }
+    }
+    else
+    {
+        dst->imr_interface.s_addr = htonl(INADDR_ANY);
+    }
+
+    dst->imr_multiaddr.s_addr = multicast_addr->sin_addr.s_addr;
+
+    return 0;
+}
+
+static int _ev_udp_setmembership4_unix(ev_udp_t           *udp,
+                                       struct sockaddr_in *multicast_addr,
+                                       const char         *interface_addr,
+                                       ev_udp_membership_t membership)
+{
+    int ret;
+
+    struct ip_mreq mreq;
+    if ((ret = _ev_udp_convert_interface_addr4_unix(&mreq, multicast_addr,
+                                                    interface_addr)) != 0)
+    {
+        return ret;
+    }
+
+    int optname = membership == EV_UDP_ENTER_GROUP ? IP_ADD_MEMBERSHIP
+                                                   : IP_DROP_MEMBERSHIP;
+    if (setsockopt(udp->sock, IPPROTO_IP, optname, &mreq, sizeof(mreq)) != 0)
+    {
+        ret = errno;
+        return ev__translate_sys_error(ret);
+    }
+
+    return 0;
+}
+
+static void _ev_udp_convert_interface_addr6_unix(
+    struct ipv6_mreq *dst, struct sockaddr_in6 *multicast_addr,
+    const char *interface_addr)
+{
+    memset(dst, 0, sizeof(*dst));
+
+    if (interface_addr != 0)
+    {
+        struct sockaddr_in6 addr6;
+        ev_ipv6_addr(interface_addr, 0, &addr6);
+
+        dst->ipv6mr_interface = addr6.sin6_scope_id;
+    }
+    else
+    {
+        dst->ipv6mr_interface = 0;
+    }
+    dst->ipv6mr_multiaddr = multicast_addr->sin6_addr;
+}
+
+static int _ev_udp_setmembership6_unix(ev_udp_t            *udp,
+                                       struct sockaddr_in6 *multicast_addr,
+                                       const char          *interface_addr,
+                                       ev_udp_membership_t  membership)
+{
+    int              ret;
+    struct ipv6_mreq mreq;
+    _ev_udp_convert_interface_addr6_unix(&mreq, multicast_addr, interface_addr);
+
+    int optname = membership == EV_UDP_ENTER_GROUP ? IPV6_ADD_MEMBERSHIP
+                                                   : IPV6_DROP_MEMBERSHIP;
+    if (setsockopt(udp->sock, IPPROTO_IPV6, optname, &mreq, sizeof(mreq)) != 0)
+    {
+        ret = errno;
+        return ev__translate_sys_error(ret);
+    }
+
+    return 0;
+}
+
+static int _ev_udp_convert_source_interface_addr4_unix(
+    struct ip_mreq_source *dst, const char *interface_addr,
+    const struct sockaddr_in *multicast_addr,
+    const struct sockaddr_in *source_addr)
+{
+    int ret;
+    memset(dst, 0, sizeof(*dst));
+
+    if (interface_addr != NULL)
+    {
+        if ((ret = inet_pton(AF_INET, interface_addr,
+                             &dst->imr_interface.s_addr)) != 1)
+        {
+            ret = errno;
+            return ev__translate_sys_error(ret);
+        }
+    }
+    else
+    {
+        dst->imr_interface.s_addr = htonl(INADDR_ANY);
+    }
+
+    dst->imr_multiaddr.s_addr = multicast_addr->sin_addr.s_addr;
+    dst->imr_sourceaddr.s_addr = source_addr->sin_addr.s_addr;
+
+    return 0;
+}
+
+static int _ev_udp_set_source_membership4_unix(
+    ev_udp_t *udp, const struct sockaddr_in *multicast_addr,
+    const char *interface_addr, const struct sockaddr_in *source_addr,
+    ev_udp_membership_t membership)
+{
+    int ret = _ev_udp_maybe_deferred_bind_unix(udp, AF_INET, EV_UDP_REUSEADDR);
+    if (ret != 0)
+    {
+        return ret;
+    }
+
+    struct ip_mreq_source mreq;
+    if ((ret = _ev_udp_convert_source_interface_addr4_unix(
+             &mreq, interface_addr, multicast_addr, source_addr)) != 0)
+    {
+        return ret;
+    }
+
+    int optname = membership == EV_UDP_ENTER_GROUP ? IP_ADD_SOURCE_MEMBERSHIP
+                                                   : IP_DROP_SOURCE_MEMBERSHIP;
+    if (setsockopt(udp->sock, IPPROTO_IP, optname, &mreq, sizeof(mreq)) != 0)
+    {
+        ret = errno;
+        return ev__translate_sys_error(ret);
+    }
+
+    return 0;
+}
+
+static int _ev_udp_convert_source_interface_addr6_unix(
+    struct group_source_req *dst, const char *interface_addr,
+    const struct sockaddr_in6 *multicast_addr,
+    const struct sockaddr_in6 *source_addr)
+{
+    int                 ret;
+    struct sockaddr_in6 addr_6;
+
+    memset(dst, 0, sizeof(*dst));
+
+    if (interface_addr != NULL)
+    {
+        if ((ret = ev_ipv6_addr(interface_addr, 0, &addr_6)) != 0)
+        {
+            return ret;
+        }
+        dst->gsr_interface = addr_6.sin6_scope_id;
+    }
+    else
+    {
+        dst->gsr_interface = 0;
+    }
+
+    memcpy(&dst->gsr_group, multicast_addr, sizeof(*multicast_addr));
+    memcpy(&dst->gsr_source, source_addr, sizeof(*source_addr));
+
+    return 0;
+}
+
+static int _ev_udp_set_source_membership6_unix(
+    ev_udp_t *udp, const struct sockaddr_in6 *multicast_addr,
+    const char *interface_addr, const struct sockaddr_in6 *source_addr,
+    ev_udp_membership_t membership)
+{
+    int ret = _ev_udp_maybe_deferred_bind_unix(udp, AF_INET6, EV_UDP_REUSEADDR);
+    if (ret != 0)
+    {
+        return ret;
+    }
+
+    struct group_source_req mreq;
+    if ((ret = _ev_udp_convert_source_interface_addr6_unix(
+             &mreq, interface_addr, multicast_addr, source_addr)) != 0)
+    {
+        return ret;
+    }
+
+    int optname = membership == EV_UDP_ENTER_GROUP ? MCAST_JOIN_SOURCE_GROUP
+                                                   : MCAST_LEAVE_SOURCE_GROUP;
+    if (setsockopt(udp->sock, IPPROTO_IPV6, optname, &mreq, sizeof(mreq)) != 0)
+    {
+        ret = errno;
+        return ev__translate_sys_error(ret);
+    }
+
+    return 0;
+}
+
+static int _ev_udp_set_ttl_unix(ev_udp_t *udp, int ttl, int option4,
+                                int option6)
+{
+    int level;
+    int option;
+    if (udp->base.data.flags & EV_HANDLE_UDP_IPV6)
+    {
+        level = IPPROTO_IPV6;
+        option = option6;
+    }
+    else
+    {
+        level = IPPROTO_IP;
+        option = option4;
+    }
+
+    void     *optval = &ttl;
+    socklen_t optlen = sizeof(ttl);
+
+    /**
+     * On Solaris and derivatives such as SmartOS, the length of socket options
+     * is sizeof(int) for IPV6_MULTICAST_LOOP and sizeof(char) for
+     * IP_MULTICAST_LOOP, so hardcode the size of the option in the IPv6 case,
+     * and use the general uv__setsockopt_maybe_char call otherwise.
+     */
+#if defined(__sun) || defined(_AIX) || defined(__OpenBSD__) ||                 \
+    defined(__MVS__) || defined(__QNX__)
+    char char_val = ttl;
+    if (!(udp->base.data.flags & EV_HANDLE_UDP_IPV6))
+    {
+        optval = &char_val;
+        optlen = sizeof(char_val);
+    }
+#endif
+
+    if (setsockopt(udp->sock, level, option, optval, optlen) != 0)
+    {
+        int ret = errno;
+        return ev__translate_sys_error(ret);
+    }
+
+    return 0;
+}
+
+EV_LOCAL int ev__udp_recv(ev_udp_t *udp, ev_udp_read_t *req)
+{
+    (void)req;
+    if (ev_list_size(&udp->recv_list) == 1)
+    {
+        ev__nonblock_io_add(udp->base.loop, &udp->backend.io, EPOLLIN);
+    }
+
+    ev__handle_active(&udp->base);
+
+    return 0;
+}
+
+EV_LOCAL int ev__udp_send(ev_udp_t *udp, ev_udp_write_t *req,
+                          const struct sockaddr *addr, socklen_t addrlen)
+{
+    int ret;
+
+    if (addr == NULL)
+    {
+        req->backend.peer_addr.ss_family = AF_UNSPEC;
+    }
+    else
+    {
+        if ((ret = _ev_udp_maybe_deferred_bind_unix(udp, addr->sa_family, 0)) !=
+            0)
+        {
+            return ret;
+        }
+
+        if (addrlen == (socklen_t)-1)
+        {
+            return EV_EINVAL;
+        }
+
+        memcpy(&req->backend.peer_addr, addr, addrlen);
+    }
+
+    if (ev_list_size(&udp->send_list) == 1)
+    {
+        ev__nonblock_io_add(udp->base.loop, &udp->backend.io, EPOLLOUT);
+    }
+
+    ev__handle_active(&udp->base);
+
+    return 0;
+}
+
+int ev_udp_init(ev_loop_t *loop, ev_udp_t **udp, int domain)
+{
+    int err;
+    if (domain != AF_INET && domain != AF_INET6 && domain != AF_UNSPEC)
+    {
+        return EV_EINVAL;
+    }
+
+    ev_udp_t *new_udp = ev_malloc(sizeof(ev_udp_t));
+    if (new_udp == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    new_udp->sock = EV_OS_SOCKET_INVALID;
+    if (domain != AF_UNSPEC)
+    {
+        if ((err = _ev_udp_maybe_deferred_socket_unix(new_udp, domain)) != 0)
+        {
+            ev_free(new_udp);
+            return err;
+        }
+    }
+
+    ev__handle_init(loop, &new_udp->base, EV_ROLE_EV_UDP);
+    ev_list_init(&new_udp->send_list);
+    ev_list_init(&new_udp->recv_list);
+
+    *udp = new_udp;
+    return 0;
+}
+
+int ev_udp_open(ev_udp_t *udp, ev_os_socket_t sock)
+{
+    int err;
+    if (udp->sock != EV_OS_SOCKET_INVALID)
+    {
+        return EV_EBUSY;
+    }
+
+    if ((err = ev__nonblock(sock, 1)) != 0)
+    {
+        return err;
+    }
+
+    if (_ev_udp_is_connected_unix(sock))
+    {
+        udp->base.data.flags |= EV_HANDLE_UDP_CONNECTED;
+    }
+
+    return 0;
+}
+
+void ev_udp_exit(ev_udp_t *udp, ev_udp_cb close_cb, void *close_arg)
+{
+    _ev_udp_close_unix(udp);
+    udp->close_cb = close_cb;
+    udp->close_arg = close_arg;
+    ev__handle_exit(&udp->base, _ev_udp_on_close_unix);
+}
+
+int ev_udp_bind(ev_udp_t *udp, const struct sockaddr *addr, unsigned flags)
+{
+    int       ret;
+    socklen_t addrlen = ev__get_addr_len(addr);
+    if (addrlen == (socklen_t)-1)
+    {
+        return EV_EINVAL;
+    }
+
+    if ((ret = _ev_udp_maybe_deferred_socket_unix(udp, addr->sa_family)) != 0)
+    {
+        return ret;
+    }
+
+    if ((ret = _ev_udp_set_flags_unix(udp, flags)) != 0)
+    {
+        return ret;
+    }
+
+    if (bind(udp->sock, addr, addrlen) < 0)
+    {
+        ret = errno;
+        if (ret == EAFNOSUPPORT)
+        {
+            return EV_EINVAL;
+        }
+        return ev__translate_sys_error(ret);
+    }
+
+    if (addr->sa_family == AF_INET6)
+    {
+        udp->base.data.flags |= EV_HANDLE_UDP_IPV6;
+    }
+
+    udp->base.data.flags |= EV_HANDLE_UDP_BOUND;
+    return 0;
+}
+
+int ev_udp_connect(ev_udp_t *udp, const struct sockaddr *addr)
+{
+    if (addr == NULL)
+    {
+        if (!(udp->base.data.flags & EV_HANDLE_UDP_CONNECTED))
+        {
+            return EV_ENOTCONN;
+        }
+        return _ev_udp_disconnect_unix(udp);
+    }
+
+    return _ev_udp_do_connect_unix(udp, addr);
+}
+
+int ev_udp_getsockname(ev_udp_t *udp, struct sockaddr *name, size_t *len)
+{
+    socklen_t wrap_len = *len;
+    if (getsockname(udp->sock, name, &wrap_len) != 0)
+    {
+        int err = errno;
+        return ev__translate_sys_error(err);
+    }
+
+    *len = wrap_len;
+    return 0;
+}
+
+int ev_udp_getpeername(ev_udp_t *udp, struct sockaddr *name, size_t *len)
+{
+    socklen_t wrap_len = *len;
+    if (getpeername(udp->sock, name, &wrap_len) != 0)
+    {
+        int err = errno;
+        return ev__translate_sys_error(err);
+    }
+
+    *len = wrap_len;
+    return 0;
+}
+
+int ev_udp_set_membership(ev_udp_t *udp, const char *multicast_addr,
+                          const char         *interface_addr,
+                          ev_udp_membership_t membership)
+{
+    int                     ret;
+    struct sockaddr_storage addr;
+
+    if (membership != EV_UDP_LEAVE_GROUP && membership != EV_UDP_ENTER_GROUP)
+    {
+        return EV_EINVAL;
+    }
+
+    struct sockaddr_in *addr_4 = (struct sockaddr_in *)&addr;
+    memset(addr_4, 0, sizeof(*addr_4));
+
+    if (ev_ipv4_addr(multicast_addr, 0, addr_4) == 0)
+    {
+        if ((ret = _ev_udp_maybe_deferred_bind_unix(udp, AF_INET,
+                                                    EV_UDP_REUSEADDR)) != 0)
+        {
+            return ret;
+        }
+
+        return _ev_udp_setmembership4_unix(udp, addr_4, interface_addr,
+                                           membership);
+    }
+
+    struct sockaddr_in6 *addr_6 = (struct sockaddr_in6 *)&addr;
+    memset(addr_6, 0, sizeof(*addr_6));
+
+    if (ev_ipv6_addr(multicast_addr, 0, addr_6) == 0)
+    {
+        if ((ret = _ev_udp_maybe_deferred_bind_unix(udp, AF_INET6,
+                                                    EV_UDP_REUSEADDR)) != 0)
+        {
+            return ret;
+        }
+
+        return _ev_udp_setmembership6_unix(udp, addr_6, interface_addr,
+                                           membership);
+    }
+
+    return EV_EINVAL;
+}
+
+int ev_udp_set_source_membership(ev_udp_t *udp, const char *multicast_addr,
+                                 const char         *interface_addr,
+                                 const char         *source_addr,
+                                 ev_udp_membership_t membership)
+{
+    int                     ret;
+    struct sockaddr_storage mcast_addr;
+    struct sockaddr_storage src_addr;
+
+    if (membership != EV_UDP_LEAVE_GROUP && membership != EV_UDP_ENTER_GROUP)
+    {
+        return EV_EINVAL;
+    }
+
+    struct sockaddr_in *mcast_addr_4 = (struct sockaddr_in *)&mcast_addr;
+    if ((ret = ev_ipv4_addr(multicast_addr, 0, mcast_addr_4)) == 0)
+    {
+        struct sockaddr_in *src_addr_4 = (struct sockaddr_in *)&src_addr;
+        if ((ret = ev_ipv4_addr(source_addr, 0, src_addr_4)) != 0)
+        {
+            return ret;
+        }
+
+        return _ev_udp_set_source_membership4_unix(
+            udp, mcast_addr_4, interface_addr, src_addr_4, membership);
+    }
+
+    struct sockaddr_in6 *mcast_addr_6 = (struct sockaddr_in6 *)&mcast_addr;
+    if ((ret = ev_ipv6_addr(multicast_addr, 0, mcast_addr_6)) == 0)
+    {
+        struct sockaddr_in6 *src_addr_6 = (struct sockaddr_in6 *)&src_addr;
+        if ((ret = ev_ipv6_addr(source_addr, 0, src_addr_6)) != 0)
+        {
+            return ret;
+        }
+
+        return _ev_udp_set_source_membership6_unix(
+            udp, mcast_addr_6, interface_addr, src_addr_6, membership);
+    }
+
+    return ret;
+}
+
+int ev_udp_set_multicast_loop(ev_udp_t *udp, int on)
+{
+    return _ev_udp_set_ttl_unix(udp, on, IP_MULTICAST_LOOP,
+                                IPV6_MULTICAST_LOOP);
+}
+
+int ev_udp_set_multicast_ttl(ev_udp_t *udp, int ttl)
+{
+    return _ev_udp_set_ttl_unix(udp, ttl, IP_MULTICAST_TTL,
+                                IPV6_MULTICAST_HOPS);
+}
+
+int ev_udp_set_multicast_interface(ev_udp_t *udp, const char *interface_addr)
+{
+    int                     ret;
+    struct sockaddr_storage addr_st;
+    struct sockaddr_in     *addr_4 = (struct sockaddr_in *)&addr_st;
+    struct sockaddr_in6    *addr_6 = (struct sockaddr_in6 *)&addr_st;
+
+    int is_ipv6 = udp->base.data.flags & EV_HANDLE_UDP_IPV6;
+    if ((ret = ev__udp_interface_addr_to_sockaddr(&addr_st, interface_addr,
+                                                  is_ipv6)) != 0)
+    {
+        return ret;
+    }
+
+    int       level;
+    int       optname;
+    void     *optval;
+    socklen_t optlen;
+
+    if (addr_st.ss_family == AF_INET)
+    {
+        level = IPPROTO_IP;
+        optname = IP_MULTICAST_IF;
+        optval = &addr_4->sin_addr;
+        optlen = sizeof(addr_4->sin_addr);
+    }
+    else if (addr_st.ss_family == AF_INET6)
+    {
+        level = IPPROTO_IPV6;
+        optname = IPV6_MULTICAST_IF;
+        optval = &addr_6->sin6_scope_id;
+        optlen = sizeof(addr_6->sin6_scope_id);
+    }
+    else
+    {
+        EV_ABORT();
+    }
+
+    if (setsockopt(udp->sock, level, optname, optval, optlen) != 0)
+    {
+        ret = errno;
+        return ev__translate_sys_error(ret);
+    }
+
+    return 0;
+}
+
+int ev_udp_set_broadcast(ev_udp_t *udp, int on)
+{
+    int err;
+    if (setsockopt(udp->sock, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on)) != 0)
+    {
+        err = errno;
+        return ev__translate_sys_error(err);
+    }
+
+    return 0;
+}
+
+int ev_udp_set_ttl(ev_udp_t *udp, int ttl)
+{
+    if (ttl < 1 || ttl > 255)
+    {
+        return EV_EINVAL;
+    }
+
+#if defined(__MVS__)
+    /* zOS does not support setting ttl for IPv4 */
+    if (!(udp->base.data.flags & EV_HANDLE_UDP_IPV6))
+    {
+        return EV_ENOTSUP;
+    }
+#endif
+
+    return _ev_udp_set_ttl_unix(udp, ttl, IP_TTL, IPV6_UNICAST_HOPS);
+}
+
+// #line 85 "ev.c"
+
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/assert.c
@@ -1342,7 +15119,7 @@ EV_LOCAL void ev__assertion_failure(const char* exp, const char* file, int line,
     abort();
 }
 
-// #line 22 "ev.c"
+// #line 89 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/allocator.c
 // SIZE:    1763
@@ -1434,7 +15211,7 @@ char* ev__strdup(const char* s)
     return memcpy(m, s, len);
 }
 
-// #line 23 "ev.c"
+// #line 90 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/atomic.c
 // SIZE:    5881
@@ -1755,7 +15532,7 @@ EV_LOCAL void ev__atomic_exit(void)
 
 #endif
 
-// #line 24 "ev.c"
+// #line 91 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/errno.c
 // SIZE:    438
@@ -1781,7 +15558,7 @@ const char* ev_strerror(int err)
 #undef EV_EXPAND_ERRMAP
 }
 
-// #line 25 "ev.c"
+// #line 92 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs.c
 // SIZE:    25615
@@ -2841,7 +16618,7 @@ finish:
     return _ev_fs_remove(path);
 }
 
-// #line 26 "ev.c"
+// #line 93 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/handle.c
 // SIZE:    3642
@@ -2992,7 +16769,7 @@ EV_LOCAL size_t ev__process_endgame(ev_loop_t* loop)
     return active_count;
 }
 
-// #line 27 "ev.c"
+// #line 94 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/list.c
 // SIZE:    3572
@@ -3182,7 +16959,7 @@ void ev_list_migrate(ev_list_t* dst, ev_list_t* src)
     src->size = 0;
 }
 
-// #line 28 "ev.c"
+// #line 95 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/log.c
 // SIZE:    1941
@@ -3278,11 +17055,11 @@ EV_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width)
 
 }
 
-// #line 29 "ev.c"
+// #line 96 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/loop.c
-// SIZE:    8503
-// SHA-256: ae0c08003f33b00011da3c32267a786d291395b8f50673f104e456c496954b70
+// SIZE:    8738
+// SHA-256: 7181bff087adedfc0ce3933e41565fad595aed8f18356100e05ef1ddd8f58db3
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/loop.c"
 #include <stdio.h>
@@ -3299,7 +17076,7 @@ typedef struct ev_strerror_pair
 {
     int             errn;           /**< Error number */
     const char*     info;           /**< Error string */
-}ev_strerror_pair_t;
+} ev_strerror_pair_t;
 
 static int _ev_loop_init(ev_loop_t* loop)
 {
@@ -3442,21 +17219,31 @@ EV_LOCAL ev_loop_t* ev__handle_loop(ev_handle_t* handle)
     return handle->loop;
 }
 
-int ev_loop_init(ev_loop_t* loop)
+int ev_loop_init(ev_loop_t** loop)
 {
     int ret;
-    if ((ret = _ev_loop_init(loop)) != 0)
+    ev_loop_t* new_loop = ev_malloc(sizeof(ev_loop_t));
+    if (new_loop == NULL)
     {
+        return EV_ENOMEM;
+    }
+
+    if ((ret = _ev_loop_init(new_loop)) != 0)
+    {
+        ev_free(new_loop);
         return ret;
     }
 
-    if ((ret = ev__loop_init_backend(loop)) != 0)
+    if ((ret = ev__loop_init_backend(new_loop)) != 0)
     {
-        _ev_loop_exit(loop);
+        _ev_loop_exit(new_loop);
+        ev_free(new_loop);
         return ret;
     }
 
-    ev__loop_update_time(loop);
+    ev__loop_update_time(new_loop);
+    *loop = new_loop;
+
     return 0;
 }
 
@@ -3470,6 +17257,7 @@ int ev_loop_exit(ev_loop_t* loop)
 
     ev__loop_exit_backend(loop);
     _ev_loop_exit(loop);
+    ev_free(loop);
 
     return 0;
 }
@@ -3664,7 +17452,7 @@ void ev_loop_walk(ev_loop_t* loop, ev_walk_cb cb, void* arg)
     }
 }
 
-// #line 30 "ev.c"
+// #line 97 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/map.c
 // SIZE:    23122
@@ -4444,7 +18232,7 @@ ev_map_node_t* ev_map_prev(const ev_map_node_t* node)
     return _ev_map_low_prev(node);
 }
 
-// #line 31 "ev.c"
+// #line 98 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/misc.c
 // SIZE:    4647
@@ -4658,21 +18446,22 @@ EV_API int ev_random(ev_loop_t* loop, ev_random_req_t* req, void* buf,
     return ev_loop_queue_work(loop, &req->work, _ev_random_on_work, _ev_random_on_done);
 }
 
-// #line 32 "ev.c"
+// #line 99 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/pipe.c
-// SIZE:    1470
-// SHA-256: 68067a30161049734c3d3e7dc91085ee11adc3db71fdf9d012e0e34789f55227
+// SIZE:    1714
+// SHA-256: 4a84bdd0058fc74e4ab519b0fe65b4017bb04b733daa5e99233e9c3c8e012dbd
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/pipe.c"
 
-int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req, ev_buf_t* bufs,
-    size_t nbuf, ev_pipe_write_cb cb)
+int ev_pipe_write(ev_pipe_t *pipe, ev_buf_t *bufs, size_t nbuf,
+                  ev_pipe_write_cb cb, void *arg)
 {
-    return ev_pipe_write_ex(pipe, req, bufs, nbuf, EV_ROLE_UNKNOWN, NULL, 0, cb);
+    return ev_pipe_write_ex(pipe, bufs, nbuf, EV_ROLE_UNKNOWN, NULL, cb, arg);
 }
 
-EV_LOCAL int ev__pipe_read_init(ev_pipe_read_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_pipe_read_cb cb)
+EV_LOCAL int ev__pipe_read_init(ev_pipe_read_req_t *req, ev_buf_t *bufs,
+                                size_t nbuf, ev_pipe_read_cb cb)
 {
     int ret;
     if ((ret = ev__read_init(&req->base, bufs, nbuf)) != 0)
@@ -4685,21 +18474,25 @@ EV_LOCAL int ev__pipe_read_init(ev_pipe_read_req_t* req, ev_buf_t* bufs, size_t 
     return 0;
 }
 
-EV_LOCAL int ev__pipe_write_init(ev_pipe_write_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_pipe_write_cb cb)
+EV_LOCAL int ev__pipe_write_init(ev_pipe_write_req_t *req, ev_buf_t *bufs,
+                                 size_t nbuf, ev_pipe_write_cb cb, void *arg)
 {
-    return ev__pipe_write_init_ext(req, cb, bufs, nbuf, EV_ROLE_UNKNOWN, NULL, 0);
+    return ev__pipe_write_init_ext(req, cb, arg, bufs, nbuf, EV_ROLE_UNKNOWN,
+                                   NULL);
 }
 
-EV_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t* req, ev_pipe_write_cb callback,
-    ev_buf_t* bufs, size_t nbuf,
-    ev_role_t handle_role, void* handle_addr, size_t handle_size)
+EV_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t *req,
+                                     ev_pipe_write_cb cb, void *arg,
+                                     ev_buf_t *bufs, size_t nbuf,
+                                     ev_role_t handle_role, void *handle_addr)
 {
     int ret;
     if ((ret = ev__write_init(&req->base, bufs, nbuf)) != 0)
     {
         return ret;
     }
-    req->ucb = callback;
+    req->ucb = cb;
+    req->ucb_arg = arg;
 
     req->handle.role = handle_role;
     switch (handle_role)
@@ -4709,11 +18502,11 @@ EV_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t* req, ev_pipe_write_cb 
         break;
 
     case EV_ROLE_EV_TCP:
-        if (handle_size != sizeof(ev_tcp_t))
+        if (((ev_tcp_t *)handle_addr)->base.data.role != EV_ROLE_EV_TCP)
         {
             return EV_EINVAL;
         }
-        req->handle.u.os_socket = ((ev_tcp_t*)handle_addr)->sock;
+        req->handle.u.os_socket = ((ev_tcp_t *)handle_addr)->sock;
         break;
 
         /* not support other type */
@@ -4724,7 +18517,7 @@ EV_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t* req, ev_pipe_write_cb 
     return 0;
 }
 
-// #line 33 "ev.c"
+// #line 100 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/queue.c
 // SIZE:    1816
@@ -4807,7 +18600,7 @@ int ev_queue_empty(const ev_queue_node_t* node)
     return EV_QUEUE_NEXT(node) == node;
 }
 
-// #line 34 "ev.c"
+// #line 101 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/ringbuffer.c
 // SIZE:    17440
@@ -5362,7 +19155,7 @@ EV_LOCAL ring_buffer_token_t* ring_buffer_next(const ring_buffer_t* handler, con
     return &(node->token);
 }
 
-// #line 35 "ev.c"
+// #line 102 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/shmem.c
 // SIZE:    121
@@ -5380,7 +19173,7 @@ size_t ev_shm_size(ev_shm_t* shm)
     return shm->size;
 }
 
-// #line 36 "ev.c"
+// #line 103 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/threadpool.c
 // SIZE:    8840
@@ -5768,7 +19561,7 @@ EV_LOCAL void ev__threadpool_process(ev_loop_t* loop)
     }
 }
 
-// #line 37 "ev.c"
+// #line 104 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/timer.c
 // SIZE:    2469
@@ -5883,20 +19676,21 @@ void ev_timer_stop(ev_timer_t* handle)
     ev_map_erase(&handle->base.loop->timer.heap, &handle->node);
 }
 
-// #line 38 "ev.c"
+// #line 105 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/udp.c
-// SIZE:    2612
-// SHA-256: 784af8f07893904dffff93a9dcde89948d1aa30c3470083d154db53a7d0c17df
+// SIZE:    3071
+// SHA-256: 97441e353af7ca95b04b4d2cca7dbd02336b5bf0effa0885a0ad2780f4d5a9f6
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/udp.c"
 #include <string.h>
 
-EV_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
-    const char* interface_addr, int is_ipv6)
+EV_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage *dst,
+                                                const char *interface_addr,
+                                                int         is_ipv6)
 {
-    struct sockaddr_in* addr_4 = (struct sockaddr_in*)dst;
-    struct sockaddr_in6* addr_6 = (struct sockaddr_in6*)dst;
+    struct sockaddr_in  *addr_4 = (struct sockaddr_in *)dst;
+    struct sockaddr_in6 *addr_6 = (struct sockaddr_in6 *)dst;
 
     if (interface_addr == NULL)
     {
@@ -5928,18 +19722,19 @@ EV_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
     return 0;
 }
 
-int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
-    const struct sockaddr* addr, ev_udp_write_cb cb)
+int ev_udp_try_send(ev_udp_t *udp, ev_buf_t *bufs, size_t nbuf,
+                    const struct sockaddr *addr, ev_udp_write_cb cb, void *arg)
 {
     if (ev_list_size(&udp->send_list) != 0)
     {
         return EV_EAGAIN;
     }
 
-    return ev_udp_send(udp, req, bufs, nbuf, addr, cb);
+    return ev_udp_send(udp, bufs, nbuf, addr, cb, arg);
 }
 
-int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_udp_recv_cb cb)
+int ev_udp_recv(ev_udp_t *udp, ev_buf_t *bufs, size_t nbuf, ev_udp_recv_cb cb,
+                void *arg)
 {
     int ret;
     if (udp->sock == EV_OS_SOCKET_INVALID)
@@ -5947,7 +19742,14 @@ int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf, 
         return EV_EPIPE;
     }
 
+    ev_udp_read_t *req = ev_malloc(sizeof(ev_udp_read_t));
+    if (req == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
     req->usr_cb = cb;
+    req->usr_cb_arg = arg;
     ev__handle_init(udp->base.loop, &req->handle, EV_ROLE_EV_REQ_UDP_R);
 
     if ((ret = ev__read_init(&req->base, bufs, nbuf)) != 0)
@@ -5967,15 +19769,22 @@ int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf, 
 
 err:
     ev__handle_exit(&req->handle, NULL);
+    ev_free(req);
     return ret;
 }
 
-int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
-    const struct sockaddr* addr, ev_udp_write_cb cb)
+int ev_udp_send(ev_udp_t *udp, ev_buf_t *bufs, size_t nbuf,
+                const struct sockaddr *addr, ev_udp_write_cb cb, void *arg)
 {
-    int ret;
+    int             ret;
+    ev_udp_write_t *req = ev_malloc(sizeof(ev_udp_write_t));
+    if (req == NULL)
+    {
+        return EV_ENOMEM;
+    }
 
     req->usr_cb = cb;
+    req->usr_cb_arg = arg;
     ev__handle_init(udp->base.loop, &req->handle, EV_ROLE_EV_REQ_UDP_W);
 
     if ((ret = ev__write_init(&req->base, bufs, nbuf)) != 0)
@@ -5997,10 +19806,11 @@ err_cleanup_write:
     ev__write_exit(&req->base);
 err:
     ev__handle_exit(&req->handle, NULL);
+    ev_free(req);
     return ret;
 }
 
-// #line 39 "ev.c"
+// #line 106 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.c
 // SIZE:    303
@@ -6024,13158 +19834,5 @@ unsigned ev_version_code(void)
     return EV_VERSION_CODE;
 }
 
-// #line 40 "ev.c"
-
-#if defined(_WIN32)
-
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/winapi.h
-// SIZE:    14830
-// SHA-256: 20fbc56305ae60bd2d38585915aa872c4e8870ec46d4093d680f7aa3d768cfaa
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/winapi.h"
-#ifndef __EV_WINAPI_INTERNAL_H__
-#define __EV_WINAPI_INTERNAL_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <windows.h>
-
-#ifndef _NTDEF_
-typedef _Return_type_success_(return >= 0)  LONG NTSTATUS;
-#endif
-
-#ifndef FACILITY_NTWIN32
-#   define FACILITY_NTWIN32                 0x7
-#endif
-
-#ifndef NT_SUCCESS
-#   define NT_SUCCESS(Status)               (((NTSTATUS)(Status)) >= 0)
-#endif
-
-#ifndef NT_INFORMATION
-# define NT_INFORMATION(status) ((((ULONG) (status)) >> 30) == 1)
-#endif
-
-#ifndef NT_WARNING
-# define NT_WARNING(status) ((((ULONG) (status)) >> 30) == 2)
-#endif
-
-#ifndef NT_ERROR
-#   define NT_ERROR(status) ((((ULONG) (status)) >> 30) == 3)
-#endif
-
-#ifndef STATUS_SUCCESS
-#   define STATUS_SUCCESS                   ((NTSTATUS)0x00000000L)
-#endif
-
-#ifndef STATUS_RECEIVE_PARTIAL
-#   define STATUS_RECEIVE_PARTIAL           ((NTSTATUS)0x4000000FL)
-#endif
-
-#ifndef STATUS_RECEIVE_EXPEDITED
-#   define STATUS_RECEIVE_EXPEDITED         ((NTSTATUS)0x40000010L)
-#endif
-
-#ifndef STATUS_RECEIVE_PARTIAL_EXPEDITED
-#   define STATUS_RECEIVE_PARTIAL_EXPEDITED ((NTSTATUS)0x40000011L)
-#endif
-
-#ifndef STATUS_BUFFER_OVERFLOW
-#   define STATUS_BUFFER_OVERFLOW           ((NTSTATUS)0x80000005L)
-#endif
-
-#ifndef STATUS_NOT_IMPLEMENTED
-#   define STATUS_NOT_IMPLEMENTED           ((NTSTATUS)0xC0000002L)
-#endif
-
-#ifndef STATUS_PAGEFILE_QUOTA
-#   define STATUS_PAGEFILE_QUOTA            ((NTSTATUS)0xC0000007L)
-#endif
-
-#ifndef STATUS_NO_SUCH_DEVICE
-#   define STATUS_NO_SUCH_DEVICE            ((NTSTATUS)0xC000000EL)
-#endif
-
-#ifndef STATUS_NO_SUCH_FILE
-#   define STATUS_NO_SUCH_FILE              ((NTSTATUS)0xC000000FL)
-#endif
-
-#ifndef STATUS_CONFLICTING_ADDRESSES
-#   define STATUS_CONFLICTING_ADDRESSES     ((NTSTATUS)0xC0000018L)
-#endif
-
-#ifndef STATUS_ACCESS_DENIED
-#   define STATUS_ACCESS_DENIED             ((NTSTATUS)0xC0000022L)
-#endif
-
-#ifndef STATUS_BUFFER_TOO_SMALL
-#   define STATUS_BUFFER_TOO_SMALL          ((NTSTATUS)0xC0000023L)
-#endif
-
-#ifndef STATUS_OBJECT_TYPE_MISMATCH
-#   define STATUS_OBJECT_TYPE_MISMATCH      ((NTSTATUS)0xC0000024L)
-#endif
-
-#ifndef STATUS_OBJECT_NAME_NOT_FOUND
-#   define STATUS_OBJECT_NAME_NOT_FOUND     ((NTSTATUS)0xC0000034L)
-#endif
-
-#ifndef STATUS_OBJECT_PATH_NOT_FOUND
-#   define STATUS_OBJECT_PATH_NOT_FOUND     ((NTSTATUS)0xC000003AL)
-#endif
-
-#ifndef STATUS_SHARING_VIOLATION
-#   define STATUS_SHARING_VIOLATION         ((NTSTATUS)0xC0000043L)
-#endif
-
-#ifndef STATUS_QUOTA_EXCEEDED
-#   define STATUS_QUOTA_EXCEEDED            ((NTSTATUS)0xC0000044L)
-#endif
-
-#ifndef STATUS_TOO_MANY_PAGING_FILES
-#   define STATUS_TOO_MANY_PAGING_FILES     ((NTSTATUS)0xC0000097L)
-#endif
-
-#ifndef STATUS_INSUFFICIENT_RESOURCES
-#   define STATUS_INSUFFICIENT_RESOURCES    ((NTSTATUS)0xC000009AL)
-#endif
-
-#ifndef STATUS_WORKING_SET_QUOTA
-#   define STATUS_WORKING_SET_QUOTA         ((NTSTATUS)0xC00000A1L)
-#endif
-
-#ifndef STATUS_DEVICE_NOT_READY
-#   define STATUS_DEVICE_NOT_READY          ((NTSTATUS)0xC00000A3L)
-#endif
-
-#ifndef STATUS_PIPE_DISCONNECTED
-#   define STATUS_PIPE_DISCONNECTED         ((NTSTATUS)0xC00000B0L)
-#endif
-
-#ifndef STATUS_IO_TIMEOUT
-#   define STATUS_IO_TIMEOUT                ((NTSTATUS)0xC00000B5L)
-#endif
-
-#ifndef STATUS_NOT_SUPPORTED
-#   define STATUS_NOT_SUPPORTED             ((NTSTATUS)0xC00000BBL)
-#endif
-
-#ifndef STATUS_REMOTE_NOT_LISTENING
-#   define STATUS_REMOTE_NOT_LISTENING      ((NTSTATUS)0xC00000BCL)
-#endif
-
-#ifndef STATUS_BAD_NETWORK_PATH
-#   define STATUS_BAD_NETWORK_PATH          ((NTSTATUS)0xC00000BEL)
-#endif
-
-#ifndef STATUS_NETWORK_BUSY
-#   define STATUS_NETWORK_BUSY              ((NTSTATUS)0xC00000BFL)
-#endif
-
-#ifndef STATUS_INVALID_NETWORK_RESPONSE
-#   define STATUS_INVALID_NETWORK_RESPONSE  ((NTSTATUS)0xC00000C3L)
-#endif
-
-#ifndef STATUS_UNEXPECTED_NETWORK_ERROR
-#   define STATUS_UNEXPECTED_NETWORK_ERROR  ((NTSTATUS)0xC00000C4L)
-#endif
-
-#ifndef STATUS_REQUEST_NOT_ACCEPTED
-#   define STATUS_REQUEST_NOT_ACCEPTED      ((NTSTATUS)0xC00000D0L)
-#endif
-
-#ifndef STATUS_CANCELLED
-#   define STATUS_CANCELLED                 ((NTSTATUS)0xC0000120L)
-#endif
-
-#ifndef STATUS_COMMITMENT_LIMIT
-#   define STATUS_COMMITMENT_LIMIT          ((NTSTATUS)0xC000012DL)
-#endif
-
-#ifndef STATUS_LOCAL_DISCONNECT
-#   define STATUS_LOCAL_DISCONNECT          ((NTSTATUS)0xC000013BL)
-#endif
-
-#ifndef STATUS_REMOTE_DISCONNECT
-#   define STATUS_REMOTE_DISCONNECT         ((NTSTATUS)0xC000013CL)
-#endif
-
-#ifndef STATUS_REMOTE_RESOURCES
-#   define STATUS_REMOTE_RESOURCES          ((NTSTATUS)0xC000013DL)
-#endif
-
-#ifndef STATUS_LINK_FAILED
-#   define STATUS_LINK_FAILED               ((NTSTATUS)0xC000013EL)
-#endif
-
-#ifndef STATUS_LINK_TIMEOUT
-#   define STATUS_LINK_TIMEOUT              ((NTSTATUS)0xC000013FL)
-#endif
-
-#ifndef STATUS_INVALID_CONNECTION
-#   define STATUS_INVALID_CONNECTION        ((NTSTATUS)0xC0000140L)
-#endif
-
-#ifndef STATUS_INVALID_ADDRESS
-#   define STATUS_INVALID_ADDRESS           ((NTSTATUS)0xC0000141L)
-#endif
-
-#ifndef STATUS_INVALID_BUFFER_SIZE
-#   define STATUS_INVALID_BUFFER_SIZE       ((NTSTATUS)0xC0000206L)
-#endif
-
-#ifndef STATUS_INVALID_ADDRESS_COMPONENT
-#   define STATUS_INVALID_ADDRESS_COMPONENT ((NTSTATUS)0xC0000207L)
-#endif
-
-#ifndef STATUS_TOO_MANY_ADDRESSES
-#   define STATUS_TOO_MANY_ADDRESSES        ((NTSTATUS)0xC0000209L)
-#endif
-
-#ifndef STATUS_ADDRESS_ALREADY_EXISTS
-#   define STATUS_ADDRESS_ALREADY_EXISTS    ((NTSTATUS)0xC000020AL)
-#endif
-
-#ifndef STATUS_CONNECTION_DISCONNECTED
-#   define STATUS_CONNECTION_DISCONNECTED   ((NTSTATUS)0xC000020CL)
-#endif
-
-#ifndef STATUS_CONNECTION_RESET
-#   define STATUS_CONNECTION_RESET          ((NTSTATUS)0xC000020DL)
-#endif
-
-#ifndef STATUS_TRANSACTION_ABORTED
-#   define STATUS_TRANSACTION_ABORTED       ((NTSTATUS)0xC000020FL)
-#endif
-
-#ifndef STATUS_CONNECTION_REFUSED
-#   define STATUS_CONNECTION_REFUSED        ((NTSTATUS)0xC0000236L)
-#endif
-
-#ifndef STATUS_GRACEFUL_DISCONNECT
-#   define STATUS_GRACEFUL_DISCONNECT       ((NTSTATUS)0xC0000237L)
-#endif
-
-#ifndef STATUS_NETWORK_UNREACHABLE
-#   define STATUS_NETWORK_UNREACHABLE       ((NTSTATUS)0xC000023CL)
-#endif
-
-#ifndef STATUS_HOST_UNREACHABLE
-#   define STATUS_HOST_UNREACHABLE          ((NTSTATUS)0xC000023DL)
-#endif
-
-#ifndef STATUS_PROTOCOL_UNREACHABLE
-#   define STATUS_PROTOCOL_UNREACHABLE      ((NTSTATUS)0xC000023EL)
-#endif
-
-#ifndef STATUS_PORT_UNREACHABLE
-#   define STATUS_PORT_UNREACHABLE          ((NTSTATUS)0xC000023FL)
-#endif
-
-#ifndef STATUS_REQUEST_ABORTED
-#   define STATUS_REQUEST_ABORTED           ((NTSTATUS)0xC0000240L)
-#endif
-
-#ifndef STATUS_CONNECTION_ABORTED
-#   define STATUS_CONNECTION_ABORTED        ((NTSTATUS)0xC0000241L)
-#endif
-
-#ifndef STATUS_HOPLIMIT_EXCEEDED
-#   define STATUS_HOPLIMIT_EXCEEDED         ((NTSTATUS)0xC000A012L)
-#endif
-
-typedef enum _FILE_INFORMATION_CLASS {
-    FileDirectoryInformation = 1,
-    FileFullDirectoryInformation,
-    FileBothDirectoryInformation,
-    FileBasicInformation,
-    FileStandardInformation,
-    FileInternalInformation,
-    FileEaInformation,
-    FileAccessInformation,
-    FileNameInformation,
-    FileRenameInformation,
-    FileLinkInformation,
-    FileNamesInformation,
-    FileDispositionInformation,
-    FilePositionInformation,
-    FileFullEaInformation,
-    FileModeInformation,
-    FileAlignmentInformation,
-    FileAllInformation,
-    FileAllocationInformation,
-    FileEndOfFileInformation,
-    FileAlternateNameInformation,
-    FileStreamInformation,
-    FilePipeInformation,
-    FilePipeLocalInformation,
-    FilePipeRemoteInformation,
-    FileMailslotQueryInformation,
-    FileMailslotSetInformation,
-    FileCompressionInformation,
-    FileObjectIdInformation,
-    FileCompletionInformation,
-    FileMoveClusterInformation,
-    FileQuotaInformation,
-    FileReparsePointInformation,
-    FileNetworkOpenInformation,
-    FileAttributeTagInformation,
-    FileTrackingInformation,
-    FileIdBothDirectoryInformation,
-    FileIdFullDirectoryInformation,
-    FileValidDataLengthInformation,
-    FileShortNameInformation,
-    FileIoCompletionNotificationInformation,
-    FileIoStatusBlockRangeInformation,
-    FileIoPriorityHintInformation,
-    FileSfioReserveInformation,
-    FileSfioVolumeInformation,
-    FileHardLinkInformation,
-    FileProcessIdsUsingFileInformation,
-    FileNormalizedNameInformation,
-    FileNetworkPhysicalNameInformation,
-    FileIdGlobalTxDirectoryInformation,
-    FileIsRemoteDeviceInformation,
-    FileAttributeCacheInformation,
-    FileNumaNodeInformation,
-    FileStandardLinkInformation,
-    FileRemoteProtocolInformation,
-    FileMaximumInformation
-} FILE_INFORMATION_CLASS, * PFILE_INFORMATION_CLASS;
-
-typedef enum _FS_INFORMATION_CLASS {
-    FileFsVolumeInformation = 1,
-    FileFsLabelInformation = 2,
-    FileFsSizeInformation = 3,
-    FileFsDeviceInformation = 4,
-    FileFsAttributeInformation = 5,
-    FileFsControlInformation = 6,
-    FileFsFullSizeInformation = 7,
-    FileFsObjectIdInformation = 8,
-    FileFsDriverPathInformation = 9,
-    FileFsVolumeFlagsInformation = 10,
-    FileFsSectorSizeInformation = 11
-} FS_INFORMATION_CLASS, * PFS_INFORMATION_CLASS;
-
-typedef struct _IO_STATUS_BLOCK {
-#pragma warning(push)
-#pragma warning(disable: 4201) // we'll always use the Microsoft compiler
-    union {
-        NTSTATUS Status;
-        PVOID Pointer;
-    } DUMMYUNIONNAME;
-#pragma warning(pop)
-
-    ULONG_PTR Information;
-} IO_STATUS_BLOCK, * PIO_STATUS_BLOCK;
-
-typedef struct _FILE_BASIC_INFORMATION {
-    LARGE_INTEGER CreationTime;
-    LARGE_INTEGER LastAccessTime;
-    LARGE_INTEGER LastWriteTime;
-    LARGE_INTEGER ChangeTime;
-    DWORD FileAttributes;
-} FILE_BASIC_INFORMATION, * PFILE_BASIC_INFORMATION;
-
-typedef struct _FILE_STANDARD_INFORMATION {
-    LARGE_INTEGER AllocationSize;
-    LARGE_INTEGER EndOfFile;
-    ULONG         NumberOfLinks;
-    BOOLEAN       DeletePending;
-    BOOLEAN       Directory;
-} FILE_STANDARD_INFORMATION, * PFILE_STANDARD_INFORMATION;
-
-typedef struct _FILE_INTERNAL_INFORMATION {
-    LARGE_INTEGER IndexNumber;
-} FILE_INTERNAL_INFORMATION, * PFILE_INTERNAL_INFORMATION;
-
-typedef struct _FILE_EA_INFORMATION {
-    ULONG EaSize;
-} FILE_EA_INFORMATION, * PFILE_EA_INFORMATION;
-
-typedef struct _FILE_ACCESS_INFORMATION {
-    ACCESS_MASK AccessFlags;
-} FILE_ACCESS_INFORMATION, * PFILE_ACCESS_INFORMATION;
-
-typedef struct _FILE_POSITION_INFORMATION {
-    LARGE_INTEGER CurrentByteOffset;
-} FILE_POSITION_INFORMATION, * PFILE_POSITION_INFORMATION;
-
-typedef struct _FILE_MODE_INFORMATION {
-    ULONG Mode;
-} FILE_MODE_INFORMATION, * PFILE_MODE_INFORMATION;
-
-typedef struct _FILE_ALIGNMENT_INFORMATION {
-    ULONG AlignmentRequirement;
-} FILE_ALIGNMENT_INFORMATION, * PFILE_ALIGNMENT_INFORMATION;
-
-typedef struct _FILE_NAME_INFORMATION {
-    ULONG FileNameLength;
-    WCHAR FileName[1];
-} FILE_NAME_INFORMATION, * PFILE_NAME_INFORMATION;
-
-typedef struct _FILE_ALL_INFORMATION {
-    FILE_BASIC_INFORMATION     BasicInformation;
-    FILE_STANDARD_INFORMATION  StandardInformation;
-    FILE_INTERNAL_INFORMATION  InternalInformation;
-    FILE_EA_INFORMATION        EaInformation;
-    FILE_ACCESS_INFORMATION    AccessInformation;
-    FILE_POSITION_INFORMATION  PositionInformation;
-    FILE_MODE_INFORMATION      ModeInformation;
-    FILE_ALIGNMENT_INFORMATION AlignmentInformation;
-    FILE_NAME_INFORMATION      NameInformation;
-} FILE_ALL_INFORMATION, * PFILE_ALL_INFORMATION;
-
-typedef struct _FILE_FS_VOLUME_INFORMATION {
-    LARGE_INTEGER VolumeCreationTime;
-    ULONG         VolumeSerialNumber;
-    ULONG         VolumeLabelLength;
-    BOOLEAN       SupportsObjects;
-    WCHAR         VolumeLabel[1];
-} FILE_FS_VOLUME_INFORMATION, * PFILE_FS_VOLUME_INFORMATION;
-
-/**
- * MinGW already has a definition for REPARSE_DATA_BUFFER, but mingw-w64 does
- * not.
- */
-#if defined(_MSC_VER) || defined(__MINGW64_VERSION_MAJOR)
-typedef struct _REPARSE_DATA_BUFFER {
-    ULONG  ReparseTag;
-    USHORT ReparseDataLength;
-    USHORT Reserved;
-#pragma warning(push)
-#pragma warning(disable : 4201)
-    union {
-        struct {
-            USHORT SubstituteNameOffset;
-            USHORT SubstituteNameLength;
-            USHORT PrintNameOffset;
-            USHORT PrintNameLength;
-            ULONG Flags;
-            WCHAR PathBuffer[1];
-        } SymbolicLinkReparseBuffer;
-        struct {
-            USHORT SubstituteNameOffset;
-            USHORT SubstituteNameLength;
-            USHORT PrintNameOffset;
-            USHORT PrintNameLength;
-            WCHAR PathBuffer[1];
-        } MountPointReparseBuffer;
-        struct {
-            UCHAR  DataBuffer[1];
-        } GenericReparseBuffer;
-        struct {
-            ULONG StringCount;
-            WCHAR StringList[1];
-        } AppExecLinkReparseBuffer;
-    };
-#pragma warning(pop)
-} REPARSE_DATA_BUFFER, * PREPARSE_DATA_BUFFER;
-#endif
-
-/**
- * @brief The NtQueryInformationFile routine returns various kinds of information about a file object.
- * @see https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntqueryinformationfile
- */
-typedef NTSTATUS (NTAPI* fn_NtQueryInformationFile)(HANDLE FileHandle, PIO_STATUS_BLOCK IoStatusBlock,
-    PVOID FileInformation,ULONG Length,FILE_INFORMATION_CLASS FileInformationClass);
-
-/**
- * @brief Converts the specified NTSTATUS code to its equivalent system error code.
- * @see https://docs.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-rtlntstatustodoserror
- */
-typedef ULONG (NTAPI* fn_RtlNtStatusToDosError)(NTSTATUS Status);
-
-/**
- * @brief Retrieves information about the volume associated with a given file, directory, storage device, or volume.
- * @see https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntqueryvolumeinformationfile
- */
-typedef NTSTATUS(NTAPI* fn_NtQueryVolumeInformationFile)(HANDLE FileHandle,
-    PIO_STATUS_BLOCK IoStatusBlock, PVOID FsInformation, ULONG Length,
-    FS_INFORMATION_CLASS FsInformationClass);
-
-/**
- * @see https://learn.microsoft.com/en-us/windows/win32/api/icmpapi/nf-icmpapi-icmpsendecho2
- */
-typedef VOID(NTAPI* PIO_APC_ROUTINE)(PVOID ApcContext,
-    PIO_STATUS_BLOCK IoStatusBlock,
-    ULONG Reserved);
-
-/**
- * @see https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntdeviceiocontrolfile
- */
-typedef NTSTATUS(NTAPI* fn_NtDeviceIoControlFile)(HANDLE FileHandle,
-    HANDLE Event,
-    PIO_APC_ROUTINE ApcRoutine,
-    PVOID ApcContext,
-    PIO_STATUS_BLOCK IoStatusBlock,
-    ULONG IoControlCode,
-    PVOID InputBuffer,
-    ULONG InputBufferLength,
-    PVOID OutputBuffer,
-    ULONG OutputBufferLength);
-
-typedef struct ev_winapi_s
-{
-    fn_NtQueryInformationFile       NtQueryInformationFile;
-    fn_RtlNtStatusToDosError        RtlNtStatusToDosError;
-    fn_NtQueryVolumeInformationFile NtQueryVolumeInformationFile;
-    fn_NtDeviceIoControlFile        NtDeviceIoControlFile;
-}ev_winapi_t;
-
-/**
- * @brief Windows API.
- */
-extern ev_winapi_t ev_winapi;
-
-/**
- * @brief Initialize WinAPI
- */
-EV_LOCAL void ev__winapi_init(void);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 44 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/winsock.h
-// SIZE:    2168
-// SHA-256: e720c93759b6343b5a149e2efd7c5d9e6f34c4ded58e3743d89a7105b90128bf
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/winsock.h"
-#ifndef __EV_WINSOCK_INTERNAL_H__
-#define __EV_WINSOCK_INTERNAL_H__
-
-#define AFD_OVERLAPPED                      0x00000002
-#define AFD_RECEIVE                         5
-#define AFD_RECEIVE_DATAGRAM                6
-
-#ifndef TDI_RECEIVE_NORMAL
-#   define TDI_RECEIVE_PARTIAL              0x00000010
-#   define TDI_RECEIVE_NORMAL               0x00000020
-#   define TDI_RECEIVE_PEEK                 0x00000080
-#endif
-
-#define FSCTL_AFD_BASE                      FILE_DEVICE_NETWORK
-
-#define _AFD_CONTROL_CODE(operation, method) \
-    ((FSCTL_AFD_BASE) << 12 | (operation << 2) | method)
-
-#define IOCTL_AFD_RECEIVE \
-    _AFD_CONTROL_CODE(AFD_RECEIVE, METHOD_NEITHER)
-
-#define IOCTL_AFD_RECEIVE_DATAGRAM \
-    _AFD_CONTROL_CODE(AFD_RECEIVE_DATAGRAM, METHOD_NEITHER)
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct _AFD_RECV_DATAGRAM_INFO {
-    LPWSABUF BufferArray;
-    ULONG BufferCount;
-    ULONG AfdFlags;
-    ULONG TdiFlags;
-    struct sockaddr* Address;
-    int* AddressLength;
-} AFD_RECV_DATAGRAM_INFO, * PAFD_RECV_DATAGRAM_INFO;
-
-typedef struct _AFD_RECV_INFO {
-    LPWSABUF BufferArray;
-    ULONG BufferCount;
-    ULONG AfdFlags;
-    ULONG TdiFlags;
-} AFD_RECV_INFO, * PAFD_RECV_INFO;
-
-extern int ev_tcp_non_ifs_lsp_ipv4;
-extern int ev_tcp_non_ifs_lsp_ipv6;
-
-extern struct sockaddr_in ev_addr_ip4_any_;
-extern struct sockaddr_in6 ev_addr_ip6_any_;
-
-EV_LOCAL int WSAAPI ev__wsa_recv_workaround(SOCKET socket, WSABUF* buffers,
-    DWORD buffer_count, DWORD* bytes, DWORD* flags, WSAOVERLAPPED* overlapped,
-    LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine);
-
-/**
- * @brief 
- */
-EV_LOCAL int WSAAPI ev__wsa_recvfrom_workaround(SOCKET socket, WSABUF* buffers,
-    DWORD buffer_count, DWORD* bytes, DWORD* flags, struct sockaddr* addr,
-    int* addr_len, WSAOVERLAPPED* overlapped,
-    LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine);
-
-/**
- * @brief Initialize winsock.
- */
-EV_LOCAL void ev__winsock_init(void);
-
-/**
- * @brief Convert typeof NTSTATUS error to typeof WinSock error
- * @param[in] status  NTSTATUS error
- * @return WinSock error
- */
-EV_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 45 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/async_win.h
-// SIZE:    147
-// SHA-256: 3d23b3abb07d0ea794094e1cc94a3ba69a8f3c56ae8c4667b1f85f44b35a0637
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/async_win.h"
-#ifndef __EV_ASYNC_WIN_INTERNAL_H__
-#define __EV_ASYNC_WIN_INTERNAL_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 46 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/fs_win.h
-// SIZE:    914
-// SHA-256: 9a0f9e48a320872421edeb883011aa336b319c9d79c9a95177918eb228c0e5c1
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/fs_win.h"
-#ifndef __EV_FS_WIN_INTERNAL_H__
-#define __EV_FS_WIN_INTERNAL_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct ev_dirent_w_s
-{
-    WCHAR*              name;           /**< Entry name */
-    ev_dirent_type_t    type;           /**< Entry type */
-}ev_dirent_w_t;
-
-/**
- * @brief Directory information callback.
- * @param[in] info  Directory information.
- * @param[in] arg   User defined argument.
- * @return  non-zero to stop.
- */
-typedef int (*ev_readdir_w_cb)(ev_dirent_w_t* info, void* arg);
-
-/**
- * @brief Same as [readdir(3)](https://man7.org/linux/man-pages/man3/readdir.3.html)
- * @param[in] path      Directory path. The path can be end with or without '/'.
- * @param[in] cb        Dirent callback.
- * @param[in] arg       User defined data.
- * @return              #ev_errno_t
- */
-EV_LOCAL int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 47 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/time_win.h
-// SIZE:    219
-// SHA-256: 423739e03114d41cd8bc1d4587561928ba5534de38d089c593e782bc03b310cc
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/time_win.h"
-#ifndef __EV_WIN_TIME_INTERNAL_H__
-#define __EV_WIN_TIME_INTERNAL_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * @brief Initialize time context.
- */
-void ev__time_init_win(void);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 48 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/udp_win.h
-// SIZE:    143
-// SHA-256: fc4f27c8fb979b9dd836a968e4458273a351f73dbdd6908561d91d8fb60778d6
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/udp_win.h"
-#ifndef __EV_UDP_WIN_INTERNAL_H__
-#define __EV_UDP_WIN_INTERNAL_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 49 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/loop_win.h
-// SIZE:    1604
-// SHA-256: 4c4b65599419899d8cd57cf2a647a3b7dafbc3b742a1faa9481a17452291b858
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/loop_win.h"
-#ifndef __EV_LOOP_WIN_INTERNAL_H__
-#define __EV_LOOP_WIN_INTERNAL_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#define EV_INVALID_PID_WIN  0
-
-typedef struct ev_loop_win_ctx
-{
-    struct
-    {
-        char                    zero_[1];                   /**< A zero length buffer */
-    } net;
-
-    struct
-    {
-        ev_tls_t                thread_key;                 /**< Thread handle */
-    }thread;
-} ev_loop_win_ctx_t;
-
-extern ev_loop_win_ctx_t        g_ev_loop_win_ctx;          /**< Global runtime for Windows */
-
-/**
- * @brief Initialize windows context.
- */
-EV_LOCAL void ev__init_once_win(void);
-
-/**
- * @brief Initialize IOCP request
- * @param[out] req      A pointer to the IOCP request
- * @param[in] callback  A callback when the request is finish
- * @param[in] arg       User defined argument passed to callback
- */
-EV_LOCAL void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg);
-
-/**
- * @brief Post to specific IOCP request.
- * @param[in] loop      Event loop
- * @param[in] req       IOCP request
- */
-EV_LOCAL void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req);
-
-/**
- * @brief Set \p sock as reusable address.
- * @param[in] sock  Socket to set reusable.
- * @param[in] opt   0 if not reusable, otherwise reusable.
- * @return          #ev_errnot_t
- */
-EV_LOCAL int ev__reuse_win(SOCKET sock, int opt);
-
-/**
- * @brief Set \p sock as IPv6 only.
- * @param[in] sock  Socket to set IPv6 only.
- * @param[in] opt   0 if IPv4 available, otherwise IPv6 only.
- * @return          #ev_errnot_t
- */
-EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 50 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/process_win.h
-// SIZE:    151
-// SHA-256: 778fcff8b8c0e17cd74ccf016e6e2fdab1baf00b0fada41fd7e9431c8f51b5e7
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/process_win.h"
-#ifndef __EV_PROCESS_WIN_INTERNAL_H__
-#define __EV_PROCESS_WIN_INTERNAL_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 51 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/pipe_win.h
-// SIZE:    145
-// SHA-256: 11f24f7fd1297af0cdccd6ef1b33564be9f6906ccd53168e19a9b5d9953429a1
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/pipe_win.h"
-#ifndef __EV_PIPE_WIN_INTERNAL_H__
-#define __EV_PIPE_WIN_INTERNAL_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 52 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/misc_win.h
-// SIZE:    1350
-// SHA-256: 97320935a6327cc693cfe92211c4ebe23105ccf9000014021cdc04ecb8ebc9d1
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/misc_win.h"
-#ifndef __EV_MISC_WIN_INTERNAL_H__
-#define __EV_MISC_WIN_INTERNAL_H__
-
-#define EV_FATAL_SYSCALL(errcode, syscall)  \
-    ev__fatal_syscall(__FILE__, __LINE__, errcode, syscall)
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * @brief Maps a character string to a UTF-16 (wide character) string.
- * @param[out] dst  Pointer to store wide string. Use #ev_free() to release it.
- * @param[in] src   Source string.
- * @return          The number of characters (not bytes) of \p dst, or #ev_errno_t if error.
- */
-EV_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src);
-
-/**
- * @brief Maps a UTF-16 (wide character) string to a character string.
- * @param[out] dst  Pointer to store wide string. Use #ev_free() to release it.
- * @param[in] src   Source string.
- * @return          The number of characters (not bytes) of \p dst, or #ev_errno_t if error.
- */
-EV_LOCAL ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src);
-
-/**
- * @brief Show fatal information about syscall and abort().
- * @warning This function does not return.
- * @param[in] file      File path.
- * @param[in] line      The line number.
- * @param[in] errcode   Error code from GetLastError().
- * @param[in] syscall   The name of syscall.
- */
-EV_LOCAL void ev__fatal_syscall(const char* file, int line,
-    DWORD errcode, const char* syscall);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
-
-// #line 53 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/thread_win.h
-// SIZE:    236
-// SHA-256: 3ad3572993454f2f3ba31566a0ef4564730397ef862fb84b3cb82a82c24de8d8
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/thread_win.h"
-#ifndef __EV_THREAD_WIN_INTERNAL_H__
-#define __EV_THREAD_WIN_INTERNAL_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * @brief Initialize thread context.
- */
-EV_LOCAL void ev__thread_init_win(void);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 54 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/threadpool_win.h
-// SIZE:    270
-// SHA-256: 150fac7481e8e3372c59b11704333a9b1fbe20e3a1d1691c370a60a19751c60d
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/threadpool_win.h"
-#ifndef __EV_THREADPOOL_WIN_INTERNAL_H__
-#define __EV_THREADPOOL_WIN_INTERNAL_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-EV_LOCAL void ev__threadpool_init_win(ev_loop_t* loop);
-EV_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 55 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/tcp_win.h
-// SIZE:    329
-// SHA-256: cda092956d2684333f448a521576014fb3dc4aba48333468a986a00cbde43993
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/tcp_win.h"
-#ifndef __EV_TCP_WIN_INTERNAL_H__
-#define __EV_TCP_WIN_INTERNAL_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * @brief Open fd for read/write.
- * @param[in] tcp   TCP handle
- * @param[in] fd    fd
- * @return          #ev_errno_t
- */
-EV_LOCAL int ev__tcp_open_win(ev_tcp_t* tcp, SOCKET fd);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 56 "ev.c"
-
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/async_win.c
-// SIZE:    1450
-// SHA-256: c99c37323c0acd4ba1968842c75745453d0b44d924819e199a8e84effff06020
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/async_win.c"
-#include <assert.h>
-
-static void _async_on_iocp_win(ev_iocp_t* iocp, size_t transferred, void* arg)
-{
-    (void)transferred; (void)arg;
-    ev_async_t* handle = EV_CONTAINER_OF(iocp, ev_async_t, backend.io);
-
-    handle->backend.async_sent = 0;
-    handle->active_cb(handle);
-}
-
-static void _ev_async_on_close_win(ev_handle_t* handle)
-{
-    ev_async_t* async = EV_CONTAINER_OF(handle, ev_async_t, base);
-
-    if (async->close_cb != NULL)
-    {
-        async->close_cb(async);
-    }
-}
-
-static void _ev_asyc_exit_win(ev_async_t* handle, ev_async_cb close_cb)
-{
-    handle->close_cb = close_cb;
-    ev__handle_deactive(&handle->base);
-    ev__handle_exit(&handle->base, close_cb != NULL ? _ev_async_on_close_win : NULL);
-}
-
-EV_LOCAL void ev__async_exit_force(ev_async_t* handle)
-{
-    _ev_asyc_exit_win(handle, NULL);
-}
-
-int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
-{
-    handle->active_cb = cb;
-    handle->close_cb = NULL;
-    handle->backend.async_sent = 0;
-
-    ev__iocp_init(&handle->backend.io, _async_on_iocp_win, NULL);
-    ev__handle_init(loop, &handle->base, EV_ROLE_EV_ASYNC);
-    ev__handle_active(&handle->base);
-
-    return 0;
-}
-
-void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
-{
-    _ev_asyc_exit_win(handle, close_cb);
-}
-
-void ev_async_wakeup(ev_async_t* handle)
-{
-    if (!InterlockedOr(&handle->backend.async_sent, 1))
-    {
-        ev__iocp_post(handle->base.loop, &handle->backend.io);
-    }
-}
-
-// #line 58 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/fs_win.c
-// SIZE:    25863
-// SHA-256: 3627f9c751813937357e4d770f451414c5078bdf6612933e361d20bfff971b4b
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/fs_win.c"
-#include <assert.h>
-#include <stdio.h>
-
-#define MILLION ((int64_t) 1000 * 1000)
-#define BILLION ((int64_t) 1000 * 1000 * 1000)
-#define NSEC_IN_SEC (1 * 1000 * 1000 * 1000)
-
-#ifndef S_IFLNK
-#   define S_IFLNK 0xA000
-#endif
-
-typedef struct file_open_info_win_s
-{
-    DWORD   access;
-    DWORD   share;
-    DWORD   attributes;
-    DWORD   disposition;
-} file_open_info_win_t;
-
-typedef struct fs_readdir_win_helper
-{
-    ev_fs_readdir_cb    cb;
-    void*               arg;
-    int                 errcode;
-} fs_readdir_win_helper_t;
-
-static int _ev_file_get_open_attributes(int flags, int mode, file_open_info_win_t* info)
-{
-    info->access = 0;
-    info->share = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
-    info->attributes = FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS;
-    info->disposition = 0;
-
-    switch (flags & (EV_FS_O_RDONLY | EV_FS_O_WRONLY | EV_FS_O_RDWR))
-    {
-    case EV_FS_O_RDONLY:
-        info->access = FILE_GENERIC_READ;
-        break;
-    case EV_FS_O_WRONLY:
-        info->access = FILE_GENERIC_WRITE;
-        break;
-    case EV_FS_O_RDWR:
-        info->access = FILE_GENERIC_READ | FILE_GENERIC_WRITE;
-        break;
-    default:
-        return EV_EINVAL;
-    }
-
-    if (flags & EV_FS_O_APPEND)
-    {
-        info->access &= ~FILE_WRITE_DATA;
-        info->access |= FILE_APPEND_DATA;
-    }
-
-    switch (flags & (EV_FS_O_CREAT | EV_FS_O_EXCL | EV_FS_O_TRUNC))
-    {
-    case 0:
-    case EV_FS_O_EXCL:
-        info->disposition = OPEN_EXISTING;
-        break;
-    case EV_FS_O_CREAT:
-        info->disposition = OPEN_ALWAYS;
-        break;
-    case EV_FS_O_CREAT | EV_FS_O_EXCL:
-    case EV_FS_O_CREAT | EV_FS_O_TRUNC | EV_FS_O_EXCL:
-        info->disposition = CREATE_NEW;
-        break;
-    case EV_FS_O_TRUNC:
-    case EV_FS_O_TRUNC | EV_FS_O_EXCL:
-        info->disposition = TRUNCATE_EXISTING;
-        break;
-    case EV_FS_O_CREAT | EV_FS_O_TRUNC:
-        info->disposition = CREATE_ALWAYS;
-        break;
-    default:
-        return EV_EINVAL;
-    }
-
-    if ((flags & EV_FS_O_CREAT) && !(mode & _S_IWRITE))
-    {
-        info->attributes |= FILE_ATTRIBUTE_READONLY;
-    }
-
-    switch (flags & (EV_FS_O_DSYNC | EV_FS_O_SYNC))
-    {
-    case 0:
-        break;
-    case EV_FS_O_DSYNC:
-#if EV_FS_O_SYNC != EV_FS_O_DSYNC
-    case EV_FS_O_SYNC:
-#endif
-        info->attributes |= FILE_FLAG_WRITE_THROUGH;
-        break;
-    default:
-        return EV_EINVAL;
-    }
-
-    return 0;
-}
-
-static int _ev_fs_readlink_handle(HANDLE handle, char** target_ptr,
-    uint64_t* target_len_ptr)
-{
-    char buffer[MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
-    REPARSE_DATA_BUFFER* reparse_data = (REPARSE_DATA_BUFFER*)buffer;
-    WCHAR* w_target;
-    DWORD w_target_len;
-    DWORD bytes;
-    size_t i;
-    size_t len;
-
-    if (!DeviceIoControl(handle,
-        FSCTL_GET_REPARSE_POINT,
-        NULL,
-        0,
-        buffer,
-        sizeof buffer,
-        &bytes,
-        NULL)) {
-        return -1;
-    }
-
-    if (reparse_data->ReparseTag == IO_REPARSE_TAG_SYMLINK) {
-        /* Real symlink */
-        w_target = reparse_data->SymbolicLinkReparseBuffer.PathBuffer +
-            (reparse_data->SymbolicLinkReparseBuffer.SubstituteNameOffset /
-                sizeof(WCHAR));
-        w_target_len =
-            reparse_data->SymbolicLinkReparseBuffer.SubstituteNameLength /
-            sizeof(WCHAR);
-
-        /* Real symlinks can contain pretty much everything, but the only thing we
-         * really care about is undoing the implicit conversion to an NT namespaced
-         * path that CreateSymbolicLink will perform on absolute paths. If the path
-         * is win32-namespaced then the user must have explicitly made it so, and
-         * we better just return the unmodified reparse data. */
-        if (w_target_len >= 4 &&
-            w_target[0] == L'\\' &&
-            w_target[1] == L'?' &&
-            w_target[2] == L'?' &&
-            w_target[3] == L'\\') {
-            /* Starts with \??\ */
-            if (w_target_len >= 6 &&
-                ((w_target[4] >= L'A' && w_target[4] <= L'Z') ||
-                    (w_target[4] >= L'a' && w_target[4] <= L'z')) &&
-                w_target[5] == L':' &&
-                (w_target_len == 6 || w_target[6] == L'\\')) {
-                /* \??\<drive>:\ */
-                w_target += 4;
-                w_target_len -= 4;
-
-            }
-            else if (w_target_len >= 8 &&
-                (w_target[4] == L'U' || w_target[4] == L'u') &&
-                (w_target[5] == L'N' || w_target[5] == L'n') &&
-                (w_target[6] == L'C' || w_target[6] == L'c') &&
-                w_target[7] == L'\\') {
-                /* \??\UNC\<server>\<share>\ - make sure the final path looks like
-                 * \\<server>\<share>\ */
-                w_target += 6;
-                w_target[0] = L'\\';
-                w_target_len -= 6;
-            }
-        }
-
-    }
-    else if (reparse_data->ReparseTag == IO_REPARSE_TAG_MOUNT_POINT) {
-        /* Junction. */
-        w_target = reparse_data->MountPointReparseBuffer.PathBuffer +
-            (reparse_data->MountPointReparseBuffer.SubstituteNameOffset /
-                sizeof(WCHAR));
-        w_target_len = reparse_data->MountPointReparseBuffer.SubstituteNameLength /
-            sizeof(WCHAR);
-
-        /* Only treat junctions that look like \??\<drive>:\ as symlink. Junctions
-         * can also be used as mount points, like \??\Volume{<guid>}, but that's
-         * confusing for programs since they wouldn't be able to actually
-         * understand such a path when returned by uv_readlink(). UNC paths are
-         * never valid for junctions so we don't care about them. */
-        if (!(w_target_len >= 6 &&
-            w_target[0] == L'\\' &&
-            w_target[1] == L'?' &&
-            w_target[2] == L'?' &&
-            w_target[3] == L'\\' &&
-            ((w_target[4] >= L'A' && w_target[4] <= L'Z') ||
-                (w_target[4] >= L'a' && w_target[4] <= L'z')) &&
-            w_target[5] == L':' &&
-            (w_target_len == 6 || w_target[6] == L'\\'))) {
-            SetLastError(ERROR_SYMLINK_NOT_SUPPORTED);
-            return -1;
-        }
-
-        /* Remove leading \??\ */
-        w_target += 4;
-        w_target_len -= 4;
-
-    }
-    else if (reparse_data->ReparseTag == IO_REPARSE_TAG_APPEXECLINK) {
-        /* String #3 in the list has the target filename. */
-        if (reparse_data->AppExecLinkReparseBuffer.StringCount < 3) {
-            SetLastError(ERROR_SYMLINK_NOT_SUPPORTED);
-            return -1;
-        }
-        w_target = reparse_data->AppExecLinkReparseBuffer.StringList;
-        /* The StringList buffer contains a list of strings separated by "\0",   */
-        /* with "\0\0" terminating the list. Move to the 3rd string in the list: */
-        for (i = 0; i < 2; ++i) {
-            len = wcslen(w_target);
-            if (len == 0) {
-                SetLastError(ERROR_SYMLINK_NOT_SUPPORTED);
-                return -1;
-            }
-            w_target += len + 1;
-        }
-        w_target_len = (DWORD)wcslen(w_target);
-        if (w_target_len == 0) {
-            SetLastError(ERROR_SYMLINK_NOT_SUPPORTED);
-            return -1;
-        }
-        /* Make sure it is an absolute path. */
-        if (!(w_target_len >= 3 &&
-            ((w_target[0] >= L'a' && w_target[0] <= L'z') ||
-                (w_target[0] >= L'A' && w_target[0] <= L'Z')) &&
-            w_target[1] == L':' &&
-            w_target[2] == L'\\')) {
-            SetLastError(ERROR_SYMLINK_NOT_SUPPORTED);
-            return -1;
-        }
-
-    }
-    else {
-        /* Reparse tag does not indicate a symlink. */
-        SetLastError(ERROR_SYMLINK_NOT_SUPPORTED);
-        return -1;
-    }
-
-    ssize_t utf8_len = ev__wide_to_utf8(target_ptr, w_target);
-    if (utf8_len < 0)
-    {
-        return -1;
-    }
-
-    *target_len_ptr = utf8_len;
-    return 0;
-}
-
-static void _ev_filetime_to_timespec(ev_timespec_t* ts, int64_t filetime)
-{
-    filetime -= 116444736 * BILLION;
-    ts->tv_sec = (long)(filetime / (10 * MILLION));
-    ts->tv_nsec = (long)((filetime - ts->tv_sec * 10 * MILLION) * 100U);
-    if (ts->tv_nsec < 0)
-    {
-        ts->tv_sec -= 1;
-        ts->tv_nsec += NSEC_IN_SEC;
-    }
-}
-
-static int _ev_file_wrap_fstat_win(HANDLE handle, ev_fs_stat_t* statbuf, int do_lstat)
-{
-    FILE_ALL_INFORMATION file_info;
-    FILE_FS_VOLUME_INFORMATION volume_info;
-    NTSTATUS nt_status;
-    IO_STATUS_BLOCK io_status;
-
-    ev__init_once_win();
-
-    nt_status = ev_winapi.NtQueryInformationFile(handle,
-        &io_status,
-        &file_info,
-        sizeof(file_info),
-        FileAllInformation);
-
-    /* Buffer overflow (a warning status code) is expected here. */
-    if (NT_ERROR(nt_status))
-    {
-        SetLastError(ev_winapi.RtlNtStatusToDosError(nt_status));
-        return -1;
-    }
-
-    nt_status = ev_winapi.NtQueryVolumeInformationFile(handle,
-        &io_status,
-        &volume_info,
-        sizeof volume_info,
-        FileFsVolumeInformation);
-
-    /* Buffer overflow (a warning status code) is expected here. */
-    if (io_status.Status == STATUS_NOT_IMPLEMENTED)
-    {
-        statbuf->st_dev = 0;
-    }
-    else if (NT_ERROR(nt_status))
-    {
-        SetLastError(ev_winapi.RtlNtStatusToDosError(nt_status));
-        return -1;
-    }
-    else
-    {
-        statbuf->st_dev = volume_info.VolumeSerialNumber;
-    }
-
-    /* Todo: st_mode should probably always be 0666 for everyone. We might also
-     * want to report 0777 if the file is a .exe or a directory.
-     *
-     * Currently it's based on whether the 'readonly' attribute is set, which
-     * makes little sense because the semantics are so different: the 'read-only'
-     * flag is just a way for a user to protect against accidental deletion, and
-     * serves no security purpose. Windows uses ACLs for that.
-     *
-     * Also people now use uv_fs_chmod() to take away the writable bit for good
-     * reasons. Windows however just makes the file read-only, which makes it
-     * impossible to delete the file afterwards, since read-only files can't be
-     * deleted.
-     *
-     * IOW it's all just a clusterfuck and we should think of something that
-     * makes slightly more sense.
-     *
-     * And uv_fs_chmod should probably just fail on windows or be a total no-op.
-     * There's nothing sensible it can do anyway.
-     */
-    statbuf->st_mode = 0;
-
-    /*
-    * On Windows, FILE_ATTRIBUTE_REPARSE_POINT is a general purpose mechanism
-    * by which filesystem drivers can intercept and alter file system requests.
-    *
-    * The only reparse points we care about are symlinks and mount points, both
-    * of which are treated as POSIX symlinks. Further, we only care when
-    * invoked via lstat, which seeks information about the link instead of its
-    * target. Otherwise, reparse points must be treated as regular files.
-    */
-    if (do_lstat &&
-        (file_info.BasicInformation.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
-    {
-        /*
-         * If reading the link fails, the reparse point is not a symlink and needs
-         * to be treated as a regular file. The higher level lstat function will
-         * detect this failure and retry without do_lstat if appropriate.
-         */
-        if (_ev_fs_readlink_handle(handle, NULL, &statbuf->st_size) != 0)
-            return -1;
-        statbuf->st_mode |= S_IFLNK;
-    }
-
-    if (statbuf->st_mode == 0) {
-        if (file_info.BasicInformation.FileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-            statbuf->st_mode |= _S_IFDIR;
-            statbuf->st_size = 0;
-        }
-        else {
-            statbuf->st_mode |= _S_IFREG;
-            statbuf->st_size = file_info.StandardInformation.EndOfFile.QuadPart;
-        }
-    }
-
-    if (file_info.BasicInformation.FileAttributes & FILE_ATTRIBUTE_READONLY)
-        statbuf->st_mode |= _S_IREAD | (_S_IREAD >> 3) | (_S_IREAD >> 6);
-    else
-        statbuf->st_mode |= (_S_IREAD | _S_IWRITE) | ((_S_IREAD | _S_IWRITE) >> 3) |
-        ((_S_IREAD | _S_IWRITE) >> 6);
-
-    _ev_filetime_to_timespec(&statbuf->st_atim,
-        file_info.BasicInformation.LastAccessTime.QuadPart);
-    _ev_filetime_to_timespec(&statbuf->st_ctim,
-        file_info.BasicInformation.ChangeTime.QuadPart);
-    _ev_filetime_to_timespec(&statbuf->st_mtim,
-        file_info.BasicInformation.LastWriteTime.QuadPart);
-    _ev_filetime_to_timespec(&statbuf->st_birthtim,
-        file_info.BasicInformation.CreationTime.QuadPart);
-
-    statbuf->st_ino = file_info.InternalInformation.IndexNumber.QuadPart;
-
-    /* st_blocks contains the on-disk allocation size in 512-byte units. */
-    statbuf->st_blocks =
-        (uint64_t)file_info.StandardInformation.AllocationSize.QuadPart >> 9;
-
-    statbuf->st_nlink = file_info.StandardInformation.NumberOfLinks;
-
-    /* The st_blksize is supposed to be the 'optimal' number of bytes for reading
-     * and writing to the disk. That is, for any definition of 'optimal' - it's
-     * supposed to at least avoid read-update-write behavior when writing to the
-     * disk.
-     *
-     * However nobody knows this and even fewer people actually use this value,
-     * and in order to fill it out we'd have to make another syscall to query the
-     * volume for FILE_FS_SECTOR_SIZE_INFORMATION.
-     *
-     * Therefore we'll just report a sensible value that's quite commonly okay
-     * on modern hardware.
-     *
-     * 4096 is the minimum required to be compatible with newer Advanced Format
-     * drives (which have 4096 bytes per physical sector), and to be backwards
-     * compatible with older drives (which have 512 bytes per physical sector).
-     */
-    statbuf->st_blksize = 4096;
-
-    /* Todo: set st_flags to something meaningful. Also provide a wrapper for
-     * chattr(2).
-     */
-    statbuf->st_flags = 0;
-
-    /* Windows has nothing sensible to say about these values, so they'll just
-     * remain empty.
-     */
-    statbuf->st_gid = 0;
-    statbuf->st_uid = 0;
-    statbuf->st_rdev = 0;
-    statbuf->st_gen = 0;
-
-    return 0;
-}
-
-static ev_dirent_type_t _ev_fs_get_dirent_type_win(WIN32_FIND_DATAW* info)
-{
-    if (info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-    {
-        return EV_DIRENT_DIR;
-    }
-    if (info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
-    {
-        return EV_DIRENT_LINK;
-    }
-    if (info->dwFileAttributes & FILE_ATTRIBUTE_DEVICE)
-    {
-        return EV_DIRENT_CHR;
-    }
-    return EV_DIRENT_FILE;
-}
-
-static int _ev_fs_wmkdir(WCHAR* path, int mode)
-{
-    (void)mode;
-
-    wchar_t* p;
-    wchar_t backup;
-    DWORD errcode;
-    const wchar_t* path_delim = L"\\/";
-
-    for (p = wcspbrk(path, path_delim); p != NULL; p = wcspbrk(p + 1, path_delim))
-    {
-        backup = *p;
-        *p = L'\0';
-        if (!CreateDirectoryW(path, NULL))
-        {
-            errcode = GetLastError();
-            if (errcode != ERROR_ALREADY_EXISTS)
-            {
-                *p = backup;
-                return ev__translate_sys_error(errcode);
-            }
-        }
-        *p = backup;
-    }
-
-    if (CreateDirectoryW(path, NULL))
-    {
-        return 0;
-    }
-
-    errcode = GetLastError();
-    if (errcode == ERROR_ALREADY_EXISTS)
-    {
-        return 0;
-    }
-
-    if (errcode == ERROR_INVALID_NAME || errcode == ERROR_DIRECTORY)
-    {
-        return EV_EINVAL;
-    }
-
-    return ev__translate_sys_error(errcode);
-}
-
-static int _ev_fs_readdir_w_on_dirent(ev_dirent_w_t* info, void* arg)
-{
-    fs_readdir_win_helper_t* helper = arg;
-
-    ev_dirent_t wrap_info;
-    wrap_info.type = info->type;
-    ssize_t ret = ev__wide_to_utf8(&wrap_info.name, info->name);
-    if (ret < 0)
-    {
-        helper->errcode = (int)ret;
-        return -1;
-    }
-
-    ret = helper->cb(&wrap_info, helper->arg);
-    ev_free(wrap_info.name);
-
-    return (int)ret;
-}
-
-static DWORD _ev_file_mmap_to_native_protect_win32(int flags)
-{
-    if (flags & EV_FS_S_IXUSR)
-    {
-        return (flags & EV_FS_S_IWUSR) ? PAGE_EXECUTE_READWRITE : PAGE_EXECUTE_READ;
-    }
-    return (flags & EV_FS_S_IWUSR) ? PAGE_READWRITE : PAGE_READONLY;
-}
-
-static DWORD _ev_file_mmap_to_native_access(int flags)
-{
-    DWORD dwDesiredAccess = 0;
-    if (flags & EV_FS_S_IXUSR)
-    {
-        dwDesiredAccess |= FILE_MAP_EXECUTE;
-    }
-    if (flags & EV_FS_S_IRUSR)
-    {
-        if (flags & EV_FS_S_IWUSR)
-        {
-            dwDesiredAccess |= FILE_MAP_ALL_ACCESS;
-        }
-        else
-        {
-            dwDesiredAccess |= FILE_MAP_READ;
-        }
-    }
-    else
-    {
-        dwDesiredAccess |= FILE_MAP_WRITE;
-    }
-    return dwDesiredAccess;
-}
-
-EV_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mode)
-{
-    int ret;
-    DWORD errcode;
-
-    file_open_info_win_t info;
-    ret = _ev_file_get_open_attributes(flags, mode, &info);
-    if (ret != 0)
-    {
-        return ret;
-    }
-
-    WCHAR* path_w = NULL;
-    ssize_t path_sz = ev__utf8_to_wide(&path_w, path);
-    if (path_sz < 0)
-    {
-        return (int)path_sz;
-    }
-
-    HANDLE filehandle = CreateFileW(path_w, info.access, info.share, NULL,
-        info.disposition, info.attributes, NULL);
-    ev_free(path_w);
-
-    if (filehandle == INVALID_HANDLE_VALUE)
-    {
-        errcode = GetLastError();
-        if (errcode == ERROR_FILE_EXISTS && (flags & EV_FS_O_CREAT) && !(flags & EV_FS_O_EXCL))
-        {
-            return EV_EISDIR;
-        }
-
-        return ev__translate_sys_error(errcode);
-    }
-
-    *file = filehandle;
-    return 0;
-}
-
-EV_LOCAL int64_t ev__fs_seek(ev_os_file_t file, int whence, int64_t offset)
-{
-    LARGE_INTEGER liDistanceToMove;
-    liDistanceToMove.QuadPart = offset;
-
-    LARGE_INTEGER liNewFilePointer;
-    if (!SetFilePointerEx(file, liDistanceToMove, &liNewFilePointer, whence) == INVALID_SET_FILE_POINTER)
-    {
-        DWORD errcode = GetLastError();
-        return ev__translate_sys_error(errcode);
-    }
-
-    return liNewFilePointer.QuadPart;
-}
-
-EV_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
-{
-    DWORD errcode;
-    DWORD bytes = 0;
-    if (file == INVALID_HANDLE_VALUE)
-    {
-        return ev__translate_sys_error(ERROR_INVALID_HANDLE);
-    }
-
-    size_t idx;
-    for (idx = 0; idx < nbuf; idx++)
-    {
-        DWORD incremental_bytes;
-        BOOL read_ret = ReadFile(file, bufs[idx].data, bufs[idx].size,
-            &incremental_bytes, NULL);
-        if (!read_ret)
-        {
-            goto error;
-        }
-        bytes += incremental_bytes;
-    }
-
-    return bytes;
-
-error:
-    errcode = GetLastError();
-    if (errcode == ERROR_HANDLE_EOF || errcode == ERROR_BROKEN_PIPE)
-    {
-        return bytes;
-    }
-
-    if (errcode == ERROR_ACCESS_DENIED)
-    {
-        errcode = ERROR_INVALID_FLAGS;
-    }
-    return ev__translate_sys_error(errcode);
-}
-
-EV_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, int64_t offset)
-{
-    if (file == INVALID_HANDLE_VALUE)
-    {
-        return ev__translate_sys_error(ERROR_INVALID_HANDLE);
-    }
-
-    OVERLAPPED overlapped;
-    memset(&overlapped, 0, sizeof(overlapped));
-
-    size_t idx;
-    LARGE_INTEGER offset_;
-    DWORD bytes = 0;
-    BOOL read_ret = TRUE;
-    for (idx = 0; read_ret && idx < nbuf; idx++)
-    {
-        offset_.QuadPart = offset + bytes;
-        overlapped.Offset = offset_.LowPart;
-        overlapped.OffsetHigh = offset_.HighPart;
-
-        DWORD incremental_bytes;
-        read_ret = ReadFile(file, bufs[idx].data, bufs[idx].size,
-            &incremental_bytes, &overlapped);
-        bytes += incremental_bytes;
-    }
-
-    if (read_ret || bytes > 0)
-    {
-        return bytes;
-    }
-
-    DWORD err = GetLastError();
-    if (err == ERROR_HANDLE_EOF || err == ERROR_BROKEN_PIPE)
-    {
-        return bytes;
-    }
-
-    if (err == ERROR_ACCESS_DENIED)
-    {
-        err = ERROR_INVALID_FLAGS;
-    }
-    return ev__translate_sys_error(err);
-}
-
-EV_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
-{
-    DWORD errcode;
-    DWORD bytes = 0;
-    if (file == INVALID_HANDLE_VALUE)
-    {
-        return ev__translate_sys_error(ERROR_INVALID_HANDLE);
-    }
-
-    size_t idx;
-    for (idx = 0; idx < nbuf; idx++)
-    {
-        DWORD incremental_bytes;
-        BOOL write_ret = WriteFile(file, bufs[idx].data, bufs[idx].size,
-            &incremental_bytes, NULL);
-        if (!write_ret)
-        {
-            goto error;
-        }
-
-        bytes += incremental_bytes;
-    }
-
-    return bytes;
-
-error:
-    errcode = GetLastError();
-    if (errcode == ERROR_ACCESS_DENIED)
-    {
-        errcode = ERROR_INVALID_FLAGS;
-    }
-    return ev__translate_sys_error(errcode);
-}
-
-EV_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
-    int64_t offset)
-{
-    if (file == INVALID_HANDLE_VALUE)
-    {
-        return ev__translate_sys_error(ERROR_INVALID_HANDLE);
-    }
-
-    OVERLAPPED overlapped;
-    memset(&overlapped, 0, sizeof(overlapped));
-
-    size_t idx;
-    LARGE_INTEGER offset_;
-    DWORD bytes = 0;
-    BOOL write_ret = TRUE;
-    for (idx = 0; write_ret && idx < nbuf; idx++)
-    {
-        offset_.QuadPart = offset + bytes;
-        overlapped.Offset = offset_.LowPart;
-        overlapped.OffsetHigh = offset_.HighPart;
-
-        DWORD incremental_bytes;
-        write_ret = WriteFile(file, bufs[idx].data,
-            bufs[idx].size, &incremental_bytes, &overlapped);
-        bytes += incremental_bytes;
-    }
-
-    if (write_ret || bytes > 0)
-    {
-        return bytes;
-    }
-
-    DWORD err = GetLastError();
-    if (err == ERROR_ACCESS_DENIED)
-    {
-        err = ERROR_INVALID_FLAGS;
-    }
-    return ev__translate_sys_error(err);
-}
-
-EV_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
-{
-    int errcode;
-    if (_ev_file_wrap_fstat_win(file, statbuf, 0) != 0)
-    {
-        errcode = GetLastError();
-        return ev__translate_sys_error(errcode);
-    }
-
-    return 0;
-}
-
-EV_LOCAL int ev__fs_close(ev_os_file_t file)
-{
-    DWORD errcode;
-    if (!CloseHandle(file))
-    {
-        errcode = GetLastError();
-        return ev__translate_sys_error(errcode);
-    }
-    return 0;
-}
-
-EV_LOCAL int ev__fs_readdir_w(const WCHAR* path, ev_readdir_w_cb cb, void* arg)
-{
-    WIN32_FIND_DATAW info;
-    ev_dirent_w_t dirent_info;
-
-    int ret = 0;
-    HANDLE dir_handle = INVALID_HANDLE_VALUE;
-    WCHAR* fixed_path = NULL;
-
-    size_t path_len = wcslen(path);
-    size_t fixed_path_len = path_len + 3;
-    fixed_path = ev_malloc(sizeof(WCHAR) * fixed_path_len);
-    if (fixed_path == NULL)
-    {
-        return EV_ENOMEM;
-    }
-
-    const WCHAR* fmt = L"%s\\*";
-    if (path[path_len - 1] == L'/' || path[path_len - 1] == L'\\')
-    {
-        fmt = L"%s*";
-    }
-    _snwprintf_s(fixed_path, fixed_path_len, _TRUNCATE, fmt, path);
-
-    dir_handle = FindFirstFileW(fixed_path, &info);
-    if (dir_handle == INVALID_HANDLE_VALUE)
-    {
-        ret = ev__translate_sys_error(GetLastError());
-        goto cleanup;
-    }
-
-    do
-    {
-        if (wcscmp(info.cFileName, L".") == 0 || wcscmp(info.cFileName, L"..") == 0)
-        {
-            continue;
-        }
-
-        dirent_info.type = _ev_fs_get_dirent_type_win(&info);
-        dirent_info.name = info.cFileName;
-
-        if (cb(&dirent_info, arg))
-        {
-            break;
-        }
-    } while (FindNextFileW(dir_handle, &info));
-
-cleanup:
-    if (dir_handle != INVALID_HANDLE_VALUE)
-    {
-        FindClose(dir_handle);
-    }
-    if (fixed_path != NULL)
-    {
-        ev_free(fixed_path);
-    }
-    return ret;
-}
-
-EV_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
-{
-    WCHAR* wide_path = NULL;
-    size_t wide_path_len = ev__utf8_to_wide(&wide_path, path);
-    if (wide_path_len < 0)
-    {
-        return (int)wide_path_len;
-    }
-
-    fs_readdir_win_helper_t helper = { cb, arg, 0 };
-    int ret = ev__fs_readdir_w(wide_path, _ev_fs_readdir_w_on_dirent, &helper);
-
-    ev_free(wide_path);
-    return helper.errcode != 0 ? helper.errcode : ret;
-}
-
-EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
-{
-    WCHAR* copy_wpath;
-    ssize_t ret = ev__utf8_to_wide(&copy_wpath, path);
-    if (ret < 0)
-    {
-        return (int)ret;
-    }
-
-    ret = _ev_fs_wmkdir(copy_wpath, mode);
-    ev_free(copy_wpath);
-
-    return (int)ret;
-}
-
-int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t offset,
-    size_t size, int flags)
-{
-    DWORD errcode;
-
-    LARGE_INTEGER file_sz;
-    if (!GetFileSizeEx(file->file, &file_sz))
-    {
-        errcode = GetLastError();
-        return ev__translate_sys_error(errcode);
-    }
-
-    if (offset >= (uint64_t)file_sz.QuadPart)
-    {
-        EV_ASSERT(size > 0);
-    }
-    else if (size == 0)
-    {
-        size = (size_t)(file_sz.QuadPart - offset);
-    }
-    const uint64_t map_sz = offset + size;
-
-    const DWORD dwMaximumSizeHigh = map_sz >> 32;
-    const DWORD dwMaximumSizeLow = (DWORD)map_sz;
-    const DWORD flProtect = _ev_file_mmap_to_native_protect_win32(flags);
-    view->backend.file_map_obj = CreateFileMappingW(file->file, NULL, flProtect,
-        dwMaximumSizeHigh, dwMaximumSizeLow, NULL);
-    if (view->backend.file_map_obj == NULL)
-    {
-        errcode = GetLastError();
-        return ev__translate_sys_error(errcode);
-    }
-
-    const DWORD dwDesiredAccess = _ev_file_mmap_to_native_access(flags);
-    const DWORD dwFileOffsetHigh = offset >> 32;
-    const DWORD dwFileOffsetLow = (DWORD)offset;
-    view->addr = MapViewOfFile(view->backend.file_map_obj, dwDesiredAccess,
-        dwFileOffsetHigh, dwFileOffsetLow, size);
-    if (view->addr == NULL)
-    {
-        CloseHandle(view->backend.file_map_obj);
-        view->backend.file_map_obj = NULL;
-
-        errcode = GetLastError();
-        return ev__translate_sys_error(errcode);
-    }
-    view->size = size;
-
-    return 0;
-}
-
-void ev_file_munmap(ev_file_map_t* view)
-{
-    if (view->addr != NULL)
-    {
-        UnmapViewOfFile(view->addr);
-        view->addr = NULL;
-    }
-    if (view->backend.file_map_obj != NULL)
-    {
-        CloseHandle(view->backend.file_map_obj);
-        view->backend.file_map_obj = NULL;
-    }
-    view->size = 0;
-}
-
-// #line 59 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/loop_win.c
-// SIZE:    3767
-// SHA-256: 28425c1382afb331abc7817bf8bd2dc34f5e51401faff1c847ea1688135e3432
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/loop_win.c"
-#include <assert.h>
-
-ev_loop_win_ctx_t g_ev_loop_win_ctx;
-
-static void _ev_pool_win_handle_req(OVERLAPPED_ENTRY* overlappeds, ULONG count)
-{
-    ULONG i;
-    for (i = 0; i < count; i++)
-    {
-        if (overlappeds[i].lpOverlapped)
-        {
-            ev_iocp_t* req = EV_CONTAINER_OF(overlappeds[i].lpOverlapped, ev_iocp_t, overlapped);
-            req->cb(req, overlappeds[i].dwNumberOfBytesTransferred, req->arg);
-        }
-    }
-}
-
-static void _ev_check_layout_win(void)
-{
-    ENSURE_LAYOUT(ev_buf_t, size, data, WSABUF, len, buf);
-}
-
-static void _ev_init_once_win(void)
-{
-    g_ev_loop_win_ctx.net.zero_[0] = '\0';
-
-    _ev_check_layout_win();
-    ev__winsock_init();
-    ev__winapi_init();
-    ev__time_init_win();
-    ev__thread_init_win();
-}
-
-EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
-{
-    int repeat;
-    BOOL success;
-    ULONG count;
-    DWORD errcode;
-    OVERLAPPED_ENTRY overlappeds[128];
-
-    uint64_t timeout_time = loop->hwtime + timeout;
-
-    for (repeat = 0;; repeat++)
-    {
-        success = GetQueuedCompletionStatusEx(loop->backend.iocp, overlappeds,
-            ARRAY_SIZE(overlappeds), &count, timeout, FALSE);
-
-        /* If success, handle all IOCP request */
-        if (success)
-        {
-            _ev_pool_win_handle_req(overlappeds, count);
-            return;
-        }
-
-        /* Cannot handle any other error */
-        errcode = GetLastError();
-        if (errcode != WAIT_TIMEOUT)
-        {
-            EV_ABORT("GetLastError:%lu", (unsigned long)errcode);
-        }
-
-        if (timeout == 0)
-        {
-            return;
-        }
-
-        /**
-         * GetQueuedCompletionStatusEx() can occasionally return a little early.
-         * Make sure that the desired timeout target time is reached.
-         */
-        ev__loop_update_time(loop);
-
-        if (timeout_time <= loop->hwtime)
-        {
-            break;
-        }
-
-        timeout = (uint32_t)(timeout_time - loop->hwtime);
-        timeout += repeat ? (1U << (repeat - 1)) : 0;
-    }
-}
-
-EV_LOCAL void ev__iocp_init(ev_iocp_t* req, ev_iocp_cb callback, void* arg)
-{
-    req->cb = callback;
-    req->arg = arg;
-    memset(&req->overlapped, 0, sizeof(req->overlapped));
-}
-
-EV_LOCAL void ev__loop_exit_backend(ev_loop_t* loop)
-{
-    ev__threadpool_exit_win(loop);
-
-    if (loop->backend.iocp != NULL)
-    {
-        CloseHandle(loop->backend.iocp);
-        loop->backend.iocp = NULL;
-    }
-}
-
-EV_LOCAL void ev__init_once_win(void)
-{
-    static ev_once_t once = EV_ONCE_INIT;
-    ev_once_execute(&once, _ev_init_once_win);
-}
-
-EV_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
-{
-    ev__init_once_win();
-
-    loop->backend.iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 1);
-    if (loop->backend.iocp == NULL)
-    {
-        int err = GetLastError();
-        return ev__translate_sys_error(err);
-    }
-
-    ev__threadpool_init_win(loop);
-
-    return 0;
-}
-
-EV_LOCAL void ev__iocp_post(ev_loop_t* loop, ev_iocp_t* req)
-{
-    DWORD errcode;
-    if (!PostQueuedCompletionStatus(loop->backend.iocp, 0, 0, &req->overlapped))
-    {
-        errcode = GetLastError();
-        EV_ABORT("GetLastError:%lu", errcode);
-    }
-}
-
-EV_LOCAL int ev__reuse_win(SOCKET sock, int opt)
-{
-    DWORD optval = !!opt;
-    int optlen = sizeof(optval);
-
-    int err;
-    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&optval, optlen) != 0)
-    {
-        err = WSAGetLastError();
-        return ev__translate_sys_error(err);
-    }
-
-    return 0;
-}
-
-EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt)
-{
-    DWORD optval = !!opt;
-    int optlen = sizeof(optval);
-
-    if (setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&optval, optlen) != 0)
-    {
-        int err = WSAGetLastError();
-        return ev__translate_sys_error(err);
-    }
-
-    return 0;
-}
-
-// #line 60 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/misc_win.c
-// SIZE:    8898
-// SHA-256: 1b4f99a5074186ab04cbb91dd5ba21f5c1dd046ba64f01ea76903f9a7001bb0b
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/misc_win.c"
-#include <assert.h>
-
-/* A RtlGenRandom() by any other name... */
-extern BOOLEAN NTAPI SystemFunction036(PVOID Buffer, ULONG BufferLength);
-
-EV_LOCAL ssize_t ev__utf8_to_wide(WCHAR** dst, const char* src)
-{
-    int errcode;
-    int pathw_len = MultiByteToWideChar(CP_UTF8, 0, src, -1, NULL, 0);
-    if (pathw_len == 0)
-    {
-        errcode = GetLastError();
-        return ev__translate_sys_error(errcode);
-    }
-
-    size_t buf_sz = pathw_len * sizeof(WCHAR);
-    WCHAR* buf = ev_malloc(buf_sz);
-    if (buf == NULL)
-    {
-        return EV_ENOMEM;
-    }
-
-    int r = MultiByteToWideChar(CP_UTF8, 0, src, -1, buf, pathw_len);
-    assert(r == pathw_len);
-
-    *dst = buf;
-
-    return r;
-}
-
-EV_LOCAL ssize_t ev__wide_to_utf8(char** dst, const WCHAR* src)
-{
-    int errcode;
-    int target_len = WideCharToMultiByte(CP_UTF8, 0, src, -1, NULL, 0,
-                                         NULL, NULL);
-    if (target_len == 0)
-    {
-        errcode = GetLastError();
-        return ev__translate_sys_error(errcode);
-    }
-
-    char* buf = ev_malloc(target_len);
-    if (buf == NULL)
-    {
-        return EV_ENOMEM;
-    }
-
-    int ret = WideCharToMultiByte(CP_UTF8, 0, src, -1, buf, target_len, NULL,
-                                  NULL);
-    assert(ret == target_len);
-    *dst = buf;
-
-    return (ssize_t)ret;
-}
-
-EV_LOCAL int ev__translate_sys_error(int err)
-{
-    switch (err)
-    {
-    case 0:                                 return 0;
-    case ERROR_NOACCESS:                    return EV_EACCES;
-    case WSAEACCES:                         return EV_EACCES;
-    case ERROR_ELEVATION_REQUIRED:          return EV_EACCES;
-    case ERROR_CANT_ACCESS_FILE:            return EV_EACCES;
-    case ERROR_ADDRESS_ALREADY_ASSOCIATED:  return EV_EADDRINUSE;
-    case WSAEADDRINUSE:                     return EV_EADDRINUSE;
-    case WSAEADDRNOTAVAIL:                  return EV_EADDRNOTAVAIL;
-    case WSAEAFNOSUPPORT:                   return EV_EAFNOSUPPORT;
-    case WSAEWOULDBLOCK:                    return EV_EAGAIN;
-    case WSAEALREADY:                       return EV_EALREADY;
-    case ERROR_INVALID_FLAGS:               return EV_EBADF;
-    case ERROR_INVALID_HANDLE:              return EV_EBADF;
-    case ERROR_LOCK_VIOLATION:              return EV_EBUSY;
-    case ERROR_PIPE_BUSY:                   return EV_EBUSY;
-    case ERROR_SHARING_VIOLATION:           return EV_EBUSY;
-    case ERROR_OPERATION_ABORTED:           return EV_ECANCELED;
-    case WSAEINTR:                          return EV_ECANCELED;
-    case ERROR_CONNECTION_ABORTED:          return EV_ECONNABORTED;
-    case WSAECONNABORTED:                   return EV_ECONNABORTED;
-    case ERROR_CONNECTION_REFUSED:          return EV_ECONNREFUSED;
-    case WSAECONNREFUSED:                   return EV_ECONNREFUSED;
-    case ERROR_NETNAME_DELETED:             return EV_ECONNRESET;
-    case WSAECONNRESET:                     return EV_ECONNRESET;
-    case ERROR_ALREADY_EXISTS:              return EV_EEXIST;
-    case ERROR_FILE_EXISTS:                 return EV_EEXIST;
-    case ERROR_BUFFER_OVERFLOW:             return EV_EFAULT;
-    case WSAEFAULT:                         return EV_EFAULT;
-    case ERROR_HOST_UNREACHABLE:            return EV_EHOSTUNREACH;
-    case WSAEHOSTUNREACH:                   return EV_EHOSTUNREACH;
-    case ERROR_INSUFFICIENT_BUFFER:         return EV_EINVAL;
-    case ERROR_INVALID_DATA:                return EV_EINVAL;
-    case ERROR_INVALID_PARAMETER:           return EV_EINVAL;
-    case ERROR_SYMLINK_NOT_SUPPORTED:       return EV_EINVAL;
-    case WSAEINVAL:                         return EV_EINVAL;
-    case WSAEPFNOSUPPORT:                   return EV_EINVAL;
-    case WSAESOCKTNOSUPPORT:                return EV_EINVAL;
-    case ERROR_BEGINNING_OF_MEDIA:          return EV_EIO;
-    case ERROR_BUS_RESET:                   return EV_EIO;
-    case ERROR_CRC:                         return EV_EIO;
-    case ERROR_DEVICE_DOOR_OPEN:            return EV_EIO;
-    case ERROR_DEVICE_REQUIRES_CLEANING:    return EV_EIO;
-    case ERROR_DISK_CORRUPT:                return EV_EIO;
-    case ERROR_EOM_OVERFLOW:                return EV_EIO;
-    case ERROR_FILEMARK_DETECTED:           return EV_EIO;
-    case ERROR_GEN_FAILURE:                 return EV_EIO;
-    case ERROR_INVALID_BLOCK_LENGTH:        return EV_EIO;
-    case ERROR_IO_DEVICE:                   return EV_EIO;
-    case ERROR_NO_DATA_DETECTED:            return EV_EIO;
-    case ERROR_NO_SIGNAL_SENT:              return EV_EIO;
-    case ERROR_OPEN_FAILED:                 return EV_EIO;
-    case ERROR_SETMARK_DETECTED:            return EV_EIO;
-    case ERROR_SIGNAL_REFUSED:              return EV_EIO;
-    case WSAEISCONN:                        return EV_EISCONN;
-    case ERROR_CANT_RESOLVE_FILENAME:       return EV_ELOOP;
-    case ERROR_TOO_MANY_OPEN_FILES:         return EV_EMFILE;
-    case WSAEMFILE:                         return EV_EMFILE;
-    case WSAEMSGSIZE:                       return EV_EMSGSIZE;
-    case ERROR_FILENAME_EXCED_RANGE:        return EV_ENAMETOOLONG;
-    case ERROR_NETWORK_UNREACHABLE:         return EV_ENETUNREACH;
-    case WSAENETUNREACH:                    return EV_ENETUNREACH;
-    case WSAENOBUFS:                        return EV_ENOBUFS;
-    case ERROR_BAD_PATHNAME:                return EV_ENOENT;
-    case ERROR_DIRECTORY:                   return EV_ENOENT;
-    case ERROR_ENVVAR_NOT_FOUND:            return EV_ENOENT;
-    case ERROR_FILE_NOT_FOUND:              return EV_ENOENT;
-    case ERROR_INVALID_NAME:                return EV_ENOENT;
-    case ERROR_INVALID_DRIVE:               return EV_ENOENT;
-    case ERROR_INVALID_REPARSE_DATA:        return EV_ENOENT;
-    case ERROR_MOD_NOT_FOUND:               return EV_ENOENT;
-    case ERROR_PATH_NOT_FOUND:              return EV_ENOENT;
-    case WSAHOST_NOT_FOUND:                 return EV_ENOENT;
-    case WSANO_DATA:                        return EV_ENOENT;
-    case ERROR_PROC_NOT_FOUND:              return EV_ENOENT;
-    case ERROR_NOT_ENOUGH_MEMORY:           return EV_ENOMEM;
-    case ERROR_OUTOFMEMORY:                 return EV_ENOMEM;
-    case ERROR_CANNOT_MAKE:                 return EV_ENOSPC;
-    case ERROR_DISK_FULL:                   return EV_ENOSPC;
-    case ERROR_EA_TABLE_FULL:               return EV_ENOSPC;
-    case ERROR_END_OF_MEDIA:                return EV_ENOSPC;
-    case ERROR_HANDLE_DISK_FULL:            return EV_ENOSPC;
-    case ERROR_NOT_CONNECTED:               return EV_ENOTCONN;
-    case WSAENOTCONN:                       return EV_ENOTCONN;
-    case ERROR_DIR_NOT_EMPTY:               return EV_ENOTEMPTY;
-    case WSAENOTSOCK:                       return EV_ENOTSOCK;
-    case ERROR_NOT_SUPPORTED:               return EV_ENOTSUP;
-    case ERROR_BROKEN_PIPE:                 return EV_EOF;
-    case ERROR_ACCESS_DENIED:               return EV_EPERM;
-    case ERROR_PRIVILEGE_NOT_HELD:          return EV_EPERM;
-    case ERROR_BAD_PIPE:                    return EV_EPIPE;
-    case ERROR_NO_DATA:                     return EV_EPIPE;
-    case ERROR_PIPE_NOT_CONNECTED:          return EV_EPIPE;
-    case WSAESHUTDOWN:                      return EV_EPIPE;
-    case WSAEPROTONOSUPPORT:                return EV_EPROTONOSUPPORT;
-    case ERROR_WRITE_PROTECT:               return EV_EROFS;
-    case ERROR_SEM_TIMEOUT:                 return EV_ETIMEDOUT;
-    case WSAETIMEDOUT:                      return EV_ETIMEDOUT;
-    case ERROR_NOT_SAME_DEVICE:             return EV_EXDEV;
-    case ERROR_INVALID_FUNCTION:            return EV_EISDIR;
-    case ERROR_META_EXPANSION_TOO_LONG:     return EV_E2BIG;
-    default:                                return ev__translate_posix_sys_error(err);
-    }
-}
-
-EV_LOCAL void ev__fatal_syscall(const char* file, int line,
-    DWORD errcode, const char* syscall)
-{
-    const char* errmsg = "Unknown error";
-    char* buf = NULL;
-    FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-        NULL, errcode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&buf, 0, NULL);
-    if (buf)
-    {
-        errmsg = buf;
-    }
-
-    if (syscall != NULL)
-    {
-        fprintf(stderr, "%s:%d: [%s] %s(%d)\n", file, line, syscall, errmsg, (int)errcode);
-    }
-    else
-    {
-        fprintf(stderr, "%s:%d: %s(%d)\n", file, line, errmsg, (int)errcode);
-    }
-
-    if (buf)
-    {
-        LocalFree(buf);
-        buf = NULL;
-    }
-
-    __debugbreak();
-    abort();
-}
-
-EV_LOCAL int ev__random(void* buf, size_t len)
-{
-    if (SystemFunction036(buf, (ULONG)len) == FALSE)
-    {
-        return EV_EIO;
-    }
-    return 0;
-}
-
-size_t ev_os_page_size(void)
-{
-    SYSTEM_INFO sys_info;
-    GetSystemInfo(&sys_info);
-    return sys_info.dwPageSize;
-}
-
-size_t ev_os_mmap_offset_granularity(void)
-{
-    SYSTEM_INFO sys_info;
-    GetSystemInfo(&sys_info);
-    return sys_info.dwAllocationGranularity;
-}
-
-// #line 61 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/mutex_win.c
-// SIZE:    527
-// SHA-256: bba803aefe10be28a952f9af290bf88ff97957b4db0e03f44950306dadd16aa6
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/mutex_win.c"
-
-void ev_mutex_init(ev_mutex_t* handle, int recursive)
-{
-    (void)recursive;
-    InitializeCriticalSection(&handle->u.r);
-}
-
-void ev_mutex_exit(ev_mutex_t* handle)
-{
-    DeleteCriticalSection(&handle->u.r);
-}
-
-void ev_mutex_enter(ev_mutex_t* handle)
-{
-    EnterCriticalSection(&handle->u.r);
-}
-
-void ev_mutex_leave(ev_mutex_t* handle)
-{
-    LeaveCriticalSection(&handle->u.r);
-}
-
-int ev_mutex_try_enter(ev_mutex_t* handle)
-{
-    if (TryEnterCriticalSection(&handle->u.r))
-    {
-        return 0;
-    }
-
-    return EV_EBUSY;
-}
-
-// #line 62 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/once_win.c
-// SIZE:    445
-// SHA-256: 803aeeffc5aa8681dc3a1f4a799bfb0b2bf191504a40fe73c73f8468177a5b78
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/once_win.c"
-
-static BOOL WINAPI _ev_once_proxy(PINIT_ONCE InitOnce, PVOID Parameter, PVOID *Context)
-{
-    (void)InitOnce; (void)Context;
-
-    ((ev_once_cb)Parameter)();
-    return TRUE;
-}
-
-void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
-{
-    DWORD errcode;
-    if (InitOnceExecuteOnce(&guard->guard, _ev_once_proxy, (PVOID)cb, NULL) == 0)
-    {
-        errcode = GetLastError();
-        EV_ABORT("GetLastError:%lu", (unsigned long)errcode);
-    }
-}
-
-// #line 63 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/pipe_win.c
-// SIZE:    40377
-// SHA-256: d3de802ce7db89dc0bb13318d4f5c430cb44eb278229b63501abf62bd97c5288
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/pipe_win.c"
-#include <stdio.h>
-#include <assert.h>
-
-static char s_ev_zero[] = "";
-
-static int _ev_pipe_make_s(HANDLE* pip_handle, const char* name, int flags)
-{
-    DWORD r_open_mode = WRITE_DAC | FILE_FLAG_FIRST_PIPE_INSTANCE;
-    r_open_mode |= (flags & EV_PIPE_READABLE) ? PIPE_ACCESS_INBOUND : 0;
-    r_open_mode |= (flags & EV_PIPE_WRITABLE) ? PIPE_ACCESS_OUTBOUND : 0;
-    r_open_mode |= (flags & EV_PIPE_NONBLOCK) ? FILE_FLAG_OVERLAPPED : 0;
-
-    HANDLE pip_r = CreateNamedPipeA(name, r_open_mode,
-        PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 65535, 65535, 0, NULL);
-    if (pip_r != INVALID_HANDLE_VALUE)
-    {
-        *pip_handle = pip_r;
-        return 0;
-    }
-
-    DWORD errcode = GetLastError();
-    return ev__translate_sys_error(errcode);
-}
-
-static int _ev_pipe_make_c(HANDLE* pipe_handle, const char* name, int flags)
-{
-    DWORD w_open_mode = WRITE_DAC;
-    w_open_mode |= (flags & EV_PIPE_READABLE) ? GENERIC_READ : FILE_READ_ATTRIBUTES;
-    w_open_mode |= (flags & EV_PIPE_WRITABLE) ? GENERIC_WRITE : FILE_WRITE_ATTRIBUTES;
-
-    SECURITY_ATTRIBUTES sa;
-    sa.nLength = sizeof sa;
-    sa.lpSecurityDescriptor = NULL;
-    sa.bInheritHandle = 0;
-
-    DWORD dwFlagsAndAttributes = (flags & EV_PIPE_NONBLOCK) ? FILE_FLAG_OVERLAPPED : 0;
-    HANDLE pip_w = CreateFileA(name, w_open_mode, 0, &sa, OPEN_EXISTING, dwFlagsAndAttributes, NULL);
-
-    if (pip_w != INVALID_HANDLE_VALUE)
-    {
-        *pipe_handle = pip_w;
-        return 0;
-    }
-
-    DWORD errcode = GetLastError();
-    return ev__translate_sys_error(errcode);
-}
-
-static void _ev_pipe_smart_deactive_win(ev_pipe_t* pipe)
-{
-    size_t io_sz = 0;
-
-    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
-    {
-        io_sz += ev_list_size(&pipe->backend.ipc_mode.rio.pending);
-        io_sz += ev_list_size(&pipe->backend.ipc_mode.wio.pending);
-        io_sz += pipe->backend.ipc_mode.wio.sending.w_req != NULL ? 1 : 0;
-    }
-    else
-    {
-        io_sz += ev_list_size(&pipe->backend.data_mode.rio.r_pending);
-        io_sz += ev_list_size(&pipe->backend.data_mode.wio.w_pending);
-        io_sz += ev_list_size(&pipe->backend.data_mode.wio.w_doing);
-    }
-
-    if (io_sz == 0)
-    {
-        ev__handle_deactive(&pipe->base);
-    }
-}
-
-static void _ev_pipe_r_user_callback_win(ev_pipe_read_req_t* req, ssize_t size)
-{
-    ev_pipe_t* pipe = req->backend.owner;
-    _ev_pipe_smart_deactive_win(pipe);
-
-    ev__read_exit(&req->base);
-    req->ucb(req, size);
-}
-
-static void _ev_pipe_cancel_all_r_ipc_mode(ev_pipe_t* pipe, int stat)
-{
-    ev_pipe_read_req_t* req;
-    if ((req = pipe->backend.ipc_mode.rio.reading.reading) != NULL)
-    {
-        pipe->backend.ipc_mode.rio.reading.reading = NULL;
-        _ev_pipe_r_user_callback_win(req, stat);
-    }
-    pipe->backend.ipc_mode.rio.reading.buf_idx = 0;
-    pipe->backend.ipc_mode.rio.reading.buf_pos = 0;
-
-    ev_list_node_t* it;
-    while ((it = ev_list_pop_front(&pipe->backend.ipc_mode.rio.pending)) != NULL)
-    {
-        req = EV_CONTAINER_OF(it, ev_pipe_read_req_t, base.node);
-        _ev_pipe_r_user_callback_win(req, stat);
-    }
-}
-
-static void _ev_pipe_cancel_all_r_data_mode(ev_pipe_t* pipe, int stat)
-{
-    ev_pipe_read_req_t* req;
-    if ((req = pipe->backend.data_mode.rio.r_doing) != NULL)
-    {
-        pipe->backend.data_mode.rio.r_doing = NULL;
-        _ev_pipe_r_user_callback_win(req, stat);
-    }
-
-    ev_list_node_t* it;
-    while ((it = ev_list_pop_front(&pipe->backend.data_mode.rio.r_pending)) != NULL)
-    {
-        req = EV_CONTAINER_OF(it, ev_pipe_read_req_t, base.node);
-        _ev_pipe_r_user_callback_win(req, stat);
-    }
-}
-
-static void _ev_pipe_cancel_all_r(ev_pipe_t* pipe, int stat)
-{
-    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
-    {
-        _ev_pipe_cancel_all_r_ipc_mode(pipe, stat);
-    }
-    else
-    {
-        _ev_pipe_cancel_all_r_data_mode(pipe, stat);
-    }
-}
-
-static void _ev_pipe_w_user_callback_win(ev_pipe_write_req_t* req, ssize_t size)
-{
-    ev_pipe_t* pipe = req->backend.owner;
-    _ev_pipe_smart_deactive_win(pipe);
-
-    ev__write_exit(&req->base);
-    req->ucb(req, size);
-}
-
-static void _ev_pipe_cancel_all_w_data_mode(ev_pipe_t* pipe, int stat)
-{
-    ev_pipe_write_req_t* req;
-    if ((req = pipe->backend.data_mode.wio.w_half) != NULL)
-    {
-        _ev_pipe_w_user_callback_win(req, stat);
-        pipe->backend.data_mode.wio.w_half = NULL;
-    }
-    pipe->backend.data_mode.wio.w_half_idx = 0;
-
-    ev_list_node_t* it;
-    while ((it = ev_list_pop_front(&pipe->backend.data_mode.wio.w_pending)) != NULL)
-    {
-        req = EV_CONTAINER_OF(it, ev_pipe_write_req_t, base.node);
-        _ev_pipe_w_user_callback_win(req, stat);
-    }
-}
-
-static void _ev_pipe_cancel_all_w_ipc_mode(ev_pipe_t* pipe, int stat)
-{
-    ev_pipe_write_req_t* req;
-    if ((req = pipe->backend.ipc_mode.wio.sending.w_req) != NULL)
-    {
-        pipe->backend.ipc_mode.wio.sending.w_req = NULL;
-        _ev_pipe_w_user_callback_win(req, stat);
-    }
-    pipe->backend.ipc_mode.wio.sending.donecnt = 0;
-
-    ev_list_node_t* it;
-    while ((it = ev_list_pop_front(&pipe->backend.ipc_mode.wio.pending)) != NULL)
-    {
-        req = EV_CONTAINER_OF(it, ev_pipe_write_req_t, base.node);
-        _ev_pipe_w_user_callback_win(req, stat);
-    }
-}
-
-static void _ev_pipe_cancel_all_w(ev_pipe_t* pipe, int stat)
-{
-    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
-    {
-        _ev_pipe_cancel_all_w_ipc_mode(pipe, stat);
-    }
-    else
-    {
-        _ev_pipe_cancel_all_w_data_mode(pipe, stat);
-    }
-}
-
-static void _ev_pipe_close_pipe(ev_pipe_t* pipe)
-{
-    if (pipe->pipfd != EV_OS_PIPE_INVALID)
-    {
-        CloseHandle(pipe->pipfd);
-        pipe->pipfd = EV_OS_PIPE_INVALID;
-    }
-}
-
-/**
- * @brief Abort all pending task and close pipe.
- * The pipe is no longer usable.
- */
-static void _ev_pipe_abort(ev_pipe_t* pipe, int stat)
-{
-    _ev_pipe_close_pipe(pipe);
-
-    _ev_pipe_cancel_all_r(pipe, stat);
-    _ev_pipe_cancel_all_w(pipe, stat);
-}
-
-static void _ev_pipe_on_close_win(ev_handle_t* handle)
-{
-    ev_pipe_t* pipe = EV_CONTAINER_OF(handle, ev_pipe_t, base);
-
-    _ev_pipe_abort(pipe, EV_ECANCELED);
-
-    if (pipe->close_cb != NULL)
-    {
-        pipe->close_cb(pipe);
-    }
-}
-
-static int _ev_pipe_read_into_req(HANDLE file, ev_pipe_read_req_t* req, size_t minimum_size,
-    size_t bufidx, size_t bufpos, size_t* dbufidx, size_t* dbufpos, size_t* total)
-{
-    int ret = 0;
-    size_t total_size = 0;
-
-    while (bufidx < req->base.data.nbuf && total_size < minimum_size)
-    {
-        ev_buf_t* buf = &req->base.data.bufs[bufidx];
-        void* buffer = (uint8_t*)buf->data + bufpos;
-        size_t buffersize = buf->size - bufpos;
-
-        DWORD read_size;
-        if (!ReadFile(file, buffer, (DWORD)buffersize, &read_size, NULL))
-        {
-            int err = GetLastError();
-            ret = ev__translate_sys_error(err);
-            break;
-        }
-
-        total_size += read_size;
-        if (read_size < buffersize)
-        {
-            bufpos += read_size;
-            continue;
-        }
-
-        bufidx++;
-        bufpos = 0;
-    }
-
-    if (dbufidx != NULL)
-    {
-        *dbufidx = bufidx;
-    }
-    if (dbufpos != NULL)
-    {
-        *dbufpos = bufpos;
-    }
-    if (total != NULL)
-    {
-        *total = total_size;
-    }
-    return ret;
-}
-
-static int _ev_pipe_data_mode_want_read(ev_pipe_t* pipe)
-{
-    int ret = ReadFile(pipe->pipfd, s_ev_zero, 0, NULL,
-        &pipe->backend.data_mode.rio.io.overlapped);
-
-    if (!ret)
-    {
-        DWORD err = GetLastError();
-        if (err != ERROR_IO_PENDING)
-        {
-            return ev__translate_sys_error(err);
-        }
-    }
-
-    return 0;
-}
-
-static void _ev_pipe_data_mode_callback_and_mount_next_win(ev_pipe_t* pipe, ev_pipe_read_req_t* req)
-{
-    ev_list_node_t* it = ev_list_pop_front(&pipe->backend.data_mode.rio.r_pending);
-    if (it == NULL)
-    {
-        pipe->backend.data_mode.rio.r_doing = NULL;
-    }
-    else
-    {
-        pipe->backend.data_mode.rio.r_doing = EV_CONTAINER_OF(it, ev_pipe_read_req_t, base.node);
-    }
-
-    _ev_pipe_r_user_callback_win(req, req->base.data.size);
-}
-
-static int _ev_pipe_on_data_mode_read_recv(ev_pipe_t* pipe)
-{
-    int ret = 0;
-
-    ev_pipe_read_req_t* req;
-
-    size_t bufidx = 0;
-    size_t bufpos = 0;
-
-    DWORD avail;
-    while ((req = pipe->backend.data_mode.rio.r_doing) != NULL)
-    {
-        if (!PeekNamedPipe(pipe->pipfd, NULL, 0, NULL, &avail, NULL))
-        {
-            ret = GetLastError();
-            return ev__translate_sys_error(ret);
-        }
-
-        /* no more data to read */
-        if (avail == 0)
-        {
-            _ev_pipe_data_mode_callback_and_mount_next_win(pipe, req);
-            break;
-        }
-
-        size_t total = 0;
-        ret = _ev_pipe_read_into_req(pipe->pipfd, req, avail, bufidx, bufpos,
-            &bufidx, &bufpos, &total);
-        req->base.data.size += total;
-
-        if (ret != 0)
-        {
-            return ret;
-        }
-
-        if (req->base.data.size < req->base.data.capacity)
-        {
-            continue;
-        }
-
-        _ev_pipe_data_mode_callback_and_mount_next_win(pipe, req);
-    }
-
-    return 0;
-}
-
-static int _ev_pipe_is_success_iocp_request(const ev_iocp_t* iocp)
-{
-    NTSTATUS status = (NTSTATUS)(iocp->overlapped.Internal);
-    return NT_SUCCESS(status);
-}
-
-static DWORD _ev_pipe_get_iocp_error(const ev_iocp_t* iocp)
-{
-    NTSTATUS status = (NTSTATUS)(iocp->overlapped.Internal);
-    return ev_winapi.RtlNtStatusToDosError(status);
-}
-
-static void _ev_pipe_on_data_mode_read_win(ev_iocp_t* iocp, size_t transferred, void* arg)
-{
-    (void)transferred;
-
-    int ret;
-    ev_pipe_t* pipe = arg;
-
-    if (!_ev_pipe_is_success_iocp_request(iocp))
-    {
-        int err = _ev_pipe_get_iocp_error(iocp);
-        ret = ev__translate_sys_error(err);
-        _ev_pipe_abort(pipe, ret);
-
-        return;
-    }
-
-    /* Do actual read */
-    ret = _ev_pipe_on_data_mode_read_recv(pipe);
-    if (ret != 0)
-    {
-        _ev_pipe_abort(pipe, ret);
-        return;
-    }
-
-    /* If there are pending read request, we submit another IOCP request */
-    if (pipe->backend.data_mode.rio.r_doing != NULL
-        || ev_list_size(&pipe->backend.data_mode.rio.r_pending) != 0)
-    {
-        _ev_pipe_data_mode_want_read(pipe);
-        return;
-    }
-}
-
-static int _ev_pipe_write_file_iocp(HANDLE file, const void* buffer, size_t size, LPOVERLAPPED iocp)
-{
-    memset(iocp, 0, sizeof(*iocp));
-    int result = WriteFile(file, buffer, (DWORD)size, NULL, iocp);
-    if (result)
-    {
-        return 0;
-    }
-
-    int err = GetLastError();
-    if (err == ERROR_IO_PENDING)
-    {
-        return 0;
-    }
-
-    return ev__translate_sys_error(err);
-}
-
-static int _ev_pipe_io_wio_submit_half(ev_pipe_t* pipe, struct ev_pipe_backend_data_mode_wio* wio)
-{
-    ev_pipe_write_req_t* half_req = pipe->backend.data_mode.wio.w_half;
-    size_t half_idx = pipe->backend.data_mode.wio.w_half_idx;
-
-    wio->w_req = half_req;
-    wio->w_buf_idx = half_idx;
-
-    int result = _ev_pipe_write_file_iocp(pipe->pipfd, half_req->base.bufs[half_idx].data,
-        half_req->base.bufs[half_idx].size, &wio->io.overlapped);
-    pipe->backend.data_mode.wio.w_half_idx++;
-
-    /* move half record to doing list */
-    if (pipe->backend.data_mode.wio.w_half_idx == half_req->base.nbuf)
-    {
-        ev_list_push_back(&pipe->backend.data_mode.wio.w_doing, &half_req->base.node);
-        pipe->backend.data_mode.wio.w_half = NULL;
-        pipe->backend.data_mode.wio.w_half_idx = 0;
-    }
-
-    return result;
-}
-
-/**
- * @return 1: no more buffer need to send
- */
-static int _ev_pipe_io_wio_submit_pending(ev_pipe_t* pipe, struct ev_pipe_backend_data_mode_wio* wio)
-{
-    ev_list_node_t* it = ev_list_pop_front(&pipe->backend.data_mode.wio.w_pending);
-    if (it == NULL)
-    {
-        return 1;
-    }
-    ev_pipe_write_req_t* wreq = EV_CONTAINER_OF(it, ev_pipe_write_req_t, base.node);
-
-    wio->w_req = wreq;
-    wio->w_buf_idx = 0;
-
-    int result = _ev_pipe_write_file_iocp(pipe->pipfd, wreq->base.bufs[0].data,
-        wreq->base.bufs[0].size, &wio->io.overlapped);
-
-    if (wreq->base.nbuf == 1)
-    {
-        ev_list_push_back(&pipe->backend.data_mode.wio.w_doing, &wreq->base.node);
-    }
-    else
-    {
-        pipe->backend.data_mode.wio.w_half = wreq;
-        pipe->backend.data_mode.wio.w_half_idx = 1;
-    }
-
-    return result;
-}
-
-/**
- * @return 0: success, 1: no more buffer need to send, any other value: failure
- */
-static int _ev_pipe_io_wio_submit_next(ev_pipe_t* pipe, struct ev_pipe_backend_data_mode_wio* wio)
-{
-    if (pipe->backend.data_mode.wio.w_half != NULL)
-    {
-        return _ev_pipe_io_wio_submit_half(pipe, wio);
-    }
-
-    return _ev_pipe_io_wio_submit_pending(pipe, wio);
-}
-
-static void _ev_pipe_on_data_mode_write(ev_iocp_t* iocp, size_t transferred, void* arg)
-{
-    ev_pipe_t* pipe = arg;
-    struct ev_pipe_backend_data_mode_wio* wio = EV_CONTAINER_OF(iocp, struct ev_pipe_backend_data_mode_wio, io);
-
-    /* wio will be override, we need to backup value */
-    ev_pipe_write_req_t* curr_req = wio->w_req;
-    size_t curr_buf_idx = wio->w_buf_idx;
-
-    /* update send size */
-    curr_req->base.size += transferred;
-
-    /* override wio with next write request */
-    int submit_ret = _ev_pipe_io_wio_submit_next(pipe, wio);
-    if (submit_ret != 0)
-    {
-        pipe->backend.data_mode.wio.w_io_cnt--;
-    }
-
-    /* The last buffer */
-    if (curr_buf_idx == curr_req->base.nbuf - 1)
-    {
-        ssize_t stat = NT_SUCCESS(iocp->overlapped.Internal) ? 0 :
-            ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal));
-        ev_list_erase(&pipe->backend.data_mode.wio.w_doing, &curr_req->base.node);
-
-        stat = stat < 0 ? stat : curr_req->base.size;
-        _ev_pipe_w_user_callback_win(curr_req, stat);
-    }
-
-    /* If submit error, abort any pending actions */
-    if (submit_ret != 0 && submit_ret != 1)
-    {
-        _ev_pipe_abort(pipe, submit_ret);
-    }
-}
-
-static void _ev_pipe_init_data_mode_r(ev_pipe_t* pipe)
-{
-    ev__iocp_init(&pipe->backend.data_mode.rio.io, _ev_pipe_on_data_mode_read_win, pipe);
-    ev_list_init(&pipe->backend.data_mode.rio.r_pending);
-    pipe->backend.data_mode.rio.r_doing = NULL;
-}
-
-static void _ev_pipe_init_data_mode_w(ev_pipe_t* pipe)
-{
-    size_t i;
-    for (i = 0; i < ARRAY_SIZE(pipe->backend.data_mode.wio.iocp); i++)
-    {
-        ev__iocp_init(&pipe->backend.data_mode.wio.iocp[i].io, _ev_pipe_on_data_mode_write, pipe);
-        pipe->backend.data_mode.wio.iocp[i].idx = i;
-        pipe->backend.data_mode.wio.iocp[i].w_req = NULL;
-        pipe->backend.data_mode.wio.iocp[i].w_buf_idx = 0;
-    }
-    pipe->backend.data_mode.wio.w_io_idx = 0;
-    pipe->backend.data_mode.wio.w_io_cnt = 0;
-
-    ev_list_init(&pipe->backend.data_mode.wio.w_pending);
-    ev_list_init(&pipe->backend.data_mode.wio.w_doing);
-    pipe->backend.data_mode.wio.w_half = NULL;
-    pipe->backend.data_mode.wio.w_half_idx = 0;
-}
-
-static int _ev_pipe_read_exactly(HANDLE file, void* buffer, size_t size)
-{
-    int err;
-    DWORD bytes_read, bytes_read_now;
-
-    bytes_read = 0;
-    while (bytes_read < size)
-    {
-        if (!ReadFile(file, (char*)buffer + bytes_read, (DWORD)size - bytes_read, &bytes_read_now, NULL))
-        {
-            err = GetLastError();
-            return ev__translate_sys_error(err);
-        }
-
-        bytes_read += bytes_read_now;
-    }
-
-    assert(bytes_read == size);
-    return 0;
-}
-
-static ev_pipe_read_req_t* _ev_pipe_on_ipc_mode_read_mount_next(ev_pipe_t* pipe)
-{
-    pipe->backend.ipc_mode.rio.reading.buf_idx = 0;
-    pipe->backend.ipc_mode.rio.reading.buf_pos = 0;
-
-    ev_list_node_t* it = ev_list_pop_front(&pipe->backend.ipc_mode.rio.pending);
-    if (it == NULL)
-    {
-        pipe->backend.ipc_mode.rio.reading.reading = NULL;
-    }
-    else
-    {
-        pipe->backend.ipc_mode.rio.reading.reading =
-            EV_CONTAINER_OF(it, ev_pipe_read_req_t, base.node);
-    }
-
-    return pipe->backend.ipc_mode.rio.reading.reading;
-}
-
-static int _ev_pipe_on_ipc_mode_read_information(ev_pipe_t* pipe, ev_ipc_frame_hdr_t* hdr)
-{
-    if (hdr->hdr_exsz != sizeof(ev_pipe_win_ipc_info_t))
-    {
-        return EV_EPROTO;
-    }
-
-    void* buffer = (uint8_t*)pipe->backend.ipc_mode.rio.buffer + sizeof(ev_ipc_frame_hdr_t);
-    size_t buffer_size = sizeof(pipe->backend.ipc_mode.rio.buffer) - sizeof(ev_ipc_frame_hdr_t);
-    assert(buffer_size >= sizeof(ev_pipe_win_ipc_info_t));
-
-    int ret = _ev_pipe_read_exactly(pipe->pipfd, buffer, buffer_size);
-    assert(ret == 0); (void)ret;
-
-    ev_pipe_read_req_t* req;
-    ev_pipe_win_ipc_info_t* ipc_info = buffer;
-
-    switch (ipc_info->type)
-    {
-    case EV_PIPE_WIN_IPC_INFO_TYPE_STATUS:
-        pipe->backend.ipc_mode.peer_pid = ipc_info->data.as_status.pid;
-        break;
-
-    case EV_PIPE_WIN_IPC_INFO_TYPE_PROTOCOL_INFO:
-        if ((req = pipe->backend.ipc_mode.rio.reading.reading) == NULL)
-        {
-            req = _ev_pipe_on_ipc_mode_read_mount_next(pipe);
-        }
-        assert(req != NULL);
-        req->handle.os_socket = WSASocketW(FROM_PROTOCOL_INFO, FROM_PROTOCOL_INFO,
-            FROM_PROTOCOL_INFO, &ipc_info->data.as_protocol_info, 0, WSA_FLAG_OVERLAPPED);
-        if (req->handle.os_socket == INVALID_SOCKET)
-        {
-            int errcode = WSAGetLastError();
-            return ev__translate_sys_error(errcode);
-        }
-        break;
-
-    default:
-        abort();
-        break;
-    }
-
-    return 0;
-}
-
-static int _ev_pipe_on_ipc_mode_read_remain(ev_pipe_t* pipe)
-{
-    DWORD avail, errcode;
-    while (pipe->backend.ipc_mode.rio.remain_size > 0
-        && PeekNamedPipe(pipe->pipfd, NULL, 0, NULL, &avail, NULL) && avail > 0)
-    {
-        ev_pipe_read_req_t* req = pipe->backend.ipc_mode.rio.reading.reading;
-        if (req == NULL)
-        {
-            req = _ev_pipe_on_ipc_mode_read_mount_next(pipe);
-            if (req == NULL)
-            {
-                return 0;
-            }
-        }
-
-        size_t buf_idx = pipe->backend.ipc_mode.rio.reading.buf_idx;
-        ev_buf_t* buf = &req->base.data.bufs[buf_idx];
-        void* buffer = (uint8_t*)buf->data + pipe->backend.ipc_mode.rio.reading.buf_pos;
-
-        DWORD buffer_size = buf->size - pipe->backend.ipc_mode.rio.reading.buf_pos;
-        buffer_size = EV_MIN(buffer_size, pipe->backend.ipc_mode.rio.remain_size);
-        buffer_size = EV_MIN(buffer_size, avail);
-
-        DWORD read_size;
-        if (!ReadFile(pipe->pipfd, buffer, buffer_size, &read_size, NULL))
-        {
-            errcode = GetLastError();
-            goto err;
-        }
-        pipe->backend.ipc_mode.rio.remain_size -= read_size;
-        pipe->backend.ipc_mode.rio.reading.buf_pos += read_size;
-        req->base.data.size += read_size;
-
-        /* Read the whole frame */
-        if (pipe->backend.ipc_mode.rio.remain_size == 0)
-        {
-            pipe->backend.ipc_mode.rio.reading.reading = NULL;
-            _ev_pipe_r_user_callback_win(req, req->base.data.size);
-            continue;
-        }
-
-        /* Remain data to read */
-        if (pipe->backend.ipc_mode.rio.reading.buf_pos < buf->size)
-        {
-            continue;
-        }
-
-        /* Move to next buffer */
-        pipe->backend.ipc_mode.rio.reading.buf_pos = 0;
-        pipe->backend.ipc_mode.rio.reading.buf_idx++;
-        if (pipe->backend.ipc_mode.rio.reading.buf_idx < req->base.data.nbuf)
-        {
-            continue;
-        }
-
-        /* Buffer is full, need to notify user */
-        pipe->backend.ipc_mode.rio.reading.reading = NULL;
-        _ev_pipe_r_user_callback_win(req, req->base.data.size);
-    }
-
-    return 0;
-
-err:
-    return ev__translate_sys_error(errcode);
-}
-
-static int _ev_pipe_on_ipc_mode_read_first(ev_pipe_t* pipe)
-{
-    /* Read */
-    void* buffer = pipe->backend.ipc_mode.rio.buffer;
-    int ret = _ev_pipe_read_exactly(pipe->pipfd, buffer, sizeof(ev_ipc_frame_hdr_t));
-    if (ret != 0)
-    {
-        return ret;
-    }
-
-    if (!ev__ipc_check_frame_hdr(buffer, sizeof(ev_ipc_frame_hdr_t)))
-    {
-        return EV_EPROTO;
-    }
-
-    ev_ipc_frame_hdr_t* hdr = buffer;
-    if (hdr->hdr_flags & EV_IPC_FRAME_FLAG_INFORMATION)
-    {
-        if ((ret = _ev_pipe_on_ipc_mode_read_information(pipe, hdr)) != 0)
-        {
-            return ret;
-        }
-    }
-
-    pipe->backend.ipc_mode.rio.remain_size = hdr->hdr_dtsz;
-    return _ev_pipe_on_ipc_mode_read_remain(pipe);
-}
-
-static int _ev_pipe_ipc_mode_want_read(ev_pipe_t* pipe)
-{
-    if (pipe->backend.ipc_mode.rio.mask.rio_pending)
-    {
-        return 0;
-    }
-
-    int result = ReadFile(pipe->pipfd, s_ev_zero, 0, NULL, &pipe->backend.ipc_mode.rio.io.overlapped);
-    if (!result)
-    {
-        int err = GetLastError();
-        if (err != ERROR_IO_PENDING)
-        {
-            return ev__translate_sys_error(err);
-        }
-    }
-
-    pipe->backend.ipc_mode.rio.mask.rio_pending = 1;
-    return 0;
-}
-
-static void _ev_pipe_on_ipc_mode_read(ev_iocp_t* iocp, size_t transferred, void* arg)
-{
-    (void)transferred;
-    ev_pipe_t* pipe = arg;
-    /* Clear IOCP pending flag */
-    pipe->backend.ipc_mode.rio.mask.rio_pending = 0;
-
-    /* Check error */
-    if (!NT_SUCCESS(iocp->overlapped.Internal))
-    {
-        int winsock_err = ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal);
-        int ret = ev__translate_sys_error(winsock_err);
-        _ev_pipe_abort(pipe, ret);
-
-        return;
-    }
-
-    int ret;
-    if (pipe->backend.ipc_mode.rio.remain_size != 0)
-    {
-        ret = _ev_pipe_on_ipc_mode_read_remain(pipe);
-    }
-    else
-    {
-        ret = _ev_pipe_on_ipc_mode_read_first(pipe);
-    }
-
-    if (ret != 0)
-    {
-        _ev_pipe_abort(pipe, ret);
-        return;
-    }
-
-    if (pipe->backend.ipc_mode.rio.reading.reading != NULL
-        || ev_list_size(&pipe->backend.ipc_mode.rio.pending))
-    {
-        _ev_pipe_ipc_mode_want_read(pipe);
-        return;
-    }
-}
-
-/**
- * @breif Initialize buffer as #ev_ipc_frame_hdr_t
- *
- * Write sizeof(ev_ipc_frame_hdr_t) bytes
- */
-static void _ev_pipe_init_ipc_frame_hdr(uint8_t* buffer, size_t bufsize, uint8_t flags, uint32_t dtsz)
-{
-    assert(bufsize >= sizeof(ev_ipc_frame_hdr_t)); (void)bufsize;
-
-    uint16_t exsz = 0;
-    if (flags & EV_IPC_FRAME_FLAG_INFORMATION)
-    {
-        exsz = sizeof(ev_pipe_win_ipc_info_t);
-    }
-
-    ev__ipc_init_frame_hdr((ev_ipc_frame_hdr_t*)buffer, flags, exsz, dtsz);
-}
-
-/**
- * @brief Send IPC data
- */
-static int _ev_pipe_ipc_mode_write_data(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
-{
-    uint8_t flags = 0;
-    ev_pipe_win_ipc_info_t ipc_info;
-    size_t hdr_size = 0;
-
-    assert(pipe->backend.ipc_mode.wio.sending.w_req == NULL);
-
-    if (req->handle.role != EV_ROLE_UNKNOWN)
-    {
-        flags |= EV_IPC_FRAME_FLAG_INFORMATION;
-
-        DWORD target_pid = pipe->backend.ipc_mode.peer_pid;
-        if (target_pid == EV_INVALID_PID_WIN)
-        {
-            return EV_EAGAIN;
-        }
-
-        memset(&ipc_info, 0, sizeof(ipc_info));
-        ipc_info.type = EV_PIPE_WIN_IPC_INFO_TYPE_PROTOCOL_INFO;
-
-        if (WSADuplicateSocketW(req->handle.u.os_socket, target_pid, &ipc_info.data.as_protocol_info))
-        {
-            int err = WSAGetLastError();
-            return ev__translate_sys_error(err);
-        }
-
-        void* buffer = (uint8_t*)pipe->backend.ipc_mode.wio.buffer + sizeof(ev_ipc_frame_hdr_t);
-        memcpy(buffer, &ipc_info, sizeof(ipc_info));
-        hdr_size += sizeof(ipc_info);
-    }
-
-    _ev_pipe_init_ipc_frame_hdr(pipe->backend.ipc_mode.wio.buffer,
-        sizeof(pipe->backend.ipc_mode.wio.buffer), flags, (uint32_t)req->base.capacity);
-    hdr_size += sizeof(ev_ipc_frame_hdr_t);
-
-    int ret = _ev_pipe_write_file_iocp(pipe->pipfd, pipe->backend.ipc_mode.wio.buffer,
-        hdr_size, &pipe->backend.ipc_mode.wio.io.overlapped);
-    if (ret != 0)
-    {
-        return ret;
-    }
-
-    pipe->backend.ipc_mode.wio.sending.w_req = req;
-    pipe->backend.ipc_mode.wio.sending.donecnt = 0;
-
-    return 0;
-}
-
-static int _ev_pipe_ipc_mode_send_next(ev_pipe_t* pipe)
-{
-    ev_list_node_t* it = ev_list_pop_front(&pipe->backend.ipc_mode.wio.pending);
-    if (it == NULL)
-    {
-        return 0;
-    }
-
-    ev_pipe_write_req_t* next_req = EV_CONTAINER_OF(it, ev_pipe_write_req_t, base.node);
-    int ret = _ev_pipe_ipc_mode_write_data(pipe, next_req);
-    if (ret != 0)
-    {
-        ev_list_push_front(&pipe->backend.ipc_mode.wio.pending, it);
-    }
-    return ret;
-}
-
-static int _ev_pipe_on_ipc_mode_write_process(ev_pipe_t* pipe, size_t transferred)
-{
-    if (pipe->backend.ipc_mode.wio.sending.w_req == NULL)
-    {/* This is a builtin status notify */
-        return _ev_pipe_ipc_mode_send_next(pipe);
-    }
-
-    pipe->backend.ipc_mode.wio.sending.donecnt++;
-
-    if (pipe->backend.ipc_mode.wio.sending.donecnt == 1)
-    {/* Frame header send success */
-        /* Do nothing */
-    }
-    else
-    {
-        pipe->backend.ipc_mode.wio.sending.w_req->base.size += transferred;
-
-        if (pipe->backend.ipc_mode.wio.sending.donecnt > pipe->backend.ipc_mode.wio.sending.w_req->base.nbuf)
-        {
-            goto finish_request;
-        }
-    }
-
-    size_t send_buf_idx = pipe->backend.ipc_mode.wio.sending.donecnt - 1;
-    ev_pipe_write_req_t* req = pipe->backend.ipc_mode.wio.sending.w_req;
-    ev_buf_t* buf = &req->base.bufs[send_buf_idx];
-
-    int ret = _ev_pipe_write_file_iocp(pipe->pipfd, buf->data, buf->size,
-        &pipe->backend.ipc_mode.wio.io.overlapped);
-    return ret;
-
-finish_request:
-    req = pipe->backend.ipc_mode.wio.sending.w_req;
-    pipe->backend.ipc_mode.wio.sending.w_req = NULL;
-    pipe->backend.ipc_mode.wio.sending.donecnt = 0;
-
-    _ev_pipe_w_user_callback_win(req, req->base.size);
-
-    if ((ret = _ev_pipe_ipc_mode_send_next(pipe)) != 0)
-    {
-        return ret;
-    }
-
-    return 0;
-}
-
-static void _ev_pipe_on_ipc_mode_write(ev_iocp_t* iocp, size_t transferred, void* arg)
-{
-    int ret = 0;
-    ev_pipe_t* pipe = arg;
-    pipe->backend.ipc_mode.wio.mask.iocp_pending = 0;
-
-    /* Check status */
-    if (!NT_SUCCESS(iocp->overlapped.Internal))
-    {
-        int winsock_err = ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal);
-        ret = ev__translate_sys_error(winsock_err);
-        goto err;
-    }
-
-    if ((ret = _ev_pipe_on_ipc_mode_write_process(pipe, transferred)) != 0)
-    {
-        goto err;
-    }
-    return;
-
-err:
-    if (ret != 0)
-    {
-        pipe->backend.ipc_mode.wio.w_err = ret;
-    }
-    _ev_pipe_abort(pipe, ret);
-}
-
-static void _ev_pipe_init_as_ipc(ev_pipe_t* pipe)
-{
-    pipe->backend.ipc_mode.iner_err = 0;
-    pipe->backend.ipc_mode.peer_pid = 0;
-
-    /* rio */
-    memset(&pipe->backend.ipc_mode.rio.mask, 0, sizeof(pipe->backend.ipc_mode.rio.mask));
-    pipe->backend.ipc_mode.rio.reading.reading = NULL;
-    pipe->backend.ipc_mode.rio.reading.buf_idx = 0;
-    pipe->backend.ipc_mode.rio.reading.buf_pos = 0;
-    ev_list_init(&pipe->backend.ipc_mode.rio.pending);
-    pipe->backend.ipc_mode.rio.r_err = 0;
-    pipe->backend.ipc_mode.rio.remain_size = 0;
-    ev__iocp_init(&pipe->backend.ipc_mode.rio.io, _ev_pipe_on_ipc_mode_read, pipe);
-
-    /* wio */
-    memset(&pipe->backend.ipc_mode.wio.mask, 0, sizeof(pipe->backend.ipc_mode.wio.mask));
-    pipe->backend.ipc_mode.wio.sending.w_req = NULL;
-    pipe->backend.ipc_mode.wio.sending.donecnt = 0;
-    ev_list_init(&pipe->backend.ipc_mode.wio.pending);
-    pipe->backend.ipc_mode.wio.w_err = 0;
-    ev__iocp_init(&pipe->backend.ipc_mode.wio.io, _ev_pipe_on_ipc_mode_write, pipe);
-}
-
-static void _ev_pipe_init_as_data(ev_pipe_t* pipe)
-{
-    _ev_pipe_init_data_mode_r(pipe);
-    _ev_pipe_init_data_mode_w(pipe);
-}
-
-static int _ev_pipe_notify_status(ev_pipe_t* pipe)
-{
-    _ev_pipe_init_ipc_frame_hdr(pipe->backend.ipc_mode.wio.buffer,
-        sizeof(pipe->backend.ipc_mode.wio.buffer), EV_IPC_FRAME_FLAG_INFORMATION, 0);
-
-    ev_pipe_win_ipc_info_t ipc_info;
-    memset(&ipc_info, 0, sizeof(ev_pipe_win_ipc_info_t));
-    ipc_info.type = EV_PIPE_WIN_IPC_INFO_TYPE_STATUS;
-    ipc_info.data.as_status.pid = GetCurrentProcessId();
-    memcpy(pipe->backend.ipc_mode.wio.buffer + sizeof(ev_ipc_frame_hdr_t), &ipc_info, sizeof(ipc_info));
-
-    DWORD send_size = sizeof(ev_ipc_frame_hdr_t) + sizeof(ev_pipe_win_ipc_info_t);
-
-    pipe->backend.ipc_mode.wio.mask.iocp_pending = 1;
-    int ret = _ev_pipe_write_file_iocp(pipe->pipfd, pipe->backend.ipc_mode.wio.buffer,
-        send_size, &pipe->backend.ipc_mode.wio.io.overlapped);
-    return ret;
-}
-
-static size_t _ev_pipe_get_and_forward_w_idx(ev_pipe_t* pipe)
-{
-    size_t ret = pipe->backend.data_mode.wio.w_io_idx;
-    if (pipe->backend.data_mode.wio.w_io_idx == ARRAY_SIZE(pipe->backend.data_mode.wio.iocp) - 1)
-    {
-        pipe->backend.data_mode.wio.w_io_idx = 0;
-    }
-    else
-    {
-        pipe->backend.data_mode.wio.w_io_idx++;
-    }
-    pipe->backend.data_mode.wio.w_io_cnt++;
-
-    return ret;
-}
-
-static size_t _ev_pipe_revert_w_idx(ev_pipe_t* pipe)
-{
-    if (pipe->backend.data_mode.wio.w_io_idx == 0)
-    {
-        pipe->backend.data_mode.wio.w_io_idx = ARRAY_SIZE(pipe->backend.data_mode.wio.iocp) - 1;
-    }
-    else
-    {
-        pipe->backend.data_mode.wio.w_io_idx--;
-    }
-    pipe->backend.data_mode.wio.w_io_cnt--;
-
-    return pipe->backend.data_mode.wio.w_io_idx;
-}
-
-/**
- * @brief Write in DATA mode.
- * 
- * In DATA mode, every #ev_pipe_backend_t::w_io::iocp can be used to provide maximum
- * performance.
- */
-static int _ev_pipe_data_mode_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
-{
-    int result;
-    int flag_failure = 0;
-    DWORD err = 0;
-
-    req->backend.owner = pipe;
-    req->backend.stat = EV_EINPROGRESS;
-
-    size_t available_iocp_cnt = ARRAY_SIZE(pipe->backend.data_mode.wio.iocp) -
-        pipe->backend.data_mode.wio.w_io_cnt;
-    if (available_iocp_cnt == 0)
-    {
-        ev_list_push_back(&pipe->backend.data_mode.wio.w_pending, &req->base.node);
-        return 0;
-    }
-
-    size_t idx;
-    size_t nbuf = EV_MIN(available_iocp_cnt, req->base.nbuf);
-    for (idx = 0; idx < nbuf; idx++)
-    {
-        size_t pos = _ev_pipe_get_and_forward_w_idx(pipe);
-        assert(pipe->backend.data_mode.wio.iocp[pos].w_req == NULL);
-        assert(pipe->backend.data_mode.wio.iocp[pos].w_buf_idx == 0);
-
-        pipe->backend.data_mode.wio.iocp[pos].w_req = req;
-        pipe->backend.data_mode.wio.iocp[pos].w_buf_idx = idx;
-
-        result = _ev_pipe_write_file_iocp(pipe->pipfd, req->base.bufs[idx].data,
-            req->base.bufs[idx].size, &pipe->backend.data_mode.wio.iocp[pos].io.overlapped);
-        /* write success */
-        if (result == 0)
-        {
-            continue;
-        }
-
-        flag_failure = 1;
-        break;
-    }
-
-    if (flag_failure)
-    {
-        size_t i;
-        for (i = 0; i <= idx; i++)
-        {
-            size_t pos = _ev_pipe_revert_w_idx(pipe);
-            CancelIoEx(pipe->pipfd, &pipe->backend.data_mode.wio.iocp[pos].io.overlapped);
-            pipe->backend.data_mode.wio.iocp[pos].w_req = NULL;
-            pipe->backend.data_mode.wio.iocp[pos].w_buf_idx = 0;
-        }
-        return ev__translate_sys_error(err);
-    }
-
-    if (nbuf < req->base.nbuf)
-    {
-        pipe->backend.data_mode.wio.w_half = req;
-        pipe->backend.data_mode.wio.w_half_idx = nbuf;
-    }
-    else
-    {
-        ev_list_push_back(&pipe->backend.data_mode.wio.w_doing, &req->base.node);
-    }
-
-    ev__handle_active(&pipe->base);
-    return 0;
-}
-
-/**
- * @brief Write in IPC mode.
- *
- * In IPC mode, we only use #ev_pipe_backend_t::w_io::iocp[0] for simplify implementation.
- */
-static int _ev_pipe_ipc_mode_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
-{
-    if (pipe->backend.ipc_mode.iner_err != 0)
-    {
-        return pipe->backend.ipc_mode.iner_err;
-    }
-
-    /* Check total send size, limited by IPC protocol */
-    if (req->base.capacity > UINT32_MAX)
-    {
-        return EV_E2BIG;
-    }
-
-    /* If we have pending IOCP request, add it to queue */
-    if (pipe->backend.ipc_mode.wio.mask.iocp_pending
-        || pipe->backend.ipc_mode.wio.sending.w_req != NULL)
-    {
-        ev_list_push_back(&pipe->backend.ipc_mode.wio.pending, &req->base.node);
-        return 0;
-    }
-
-    return _ev_pipe_ipc_mode_write_data(pipe, req);
-}
-
-static int _ev_pipe_read_ipc_mode(ev_pipe_t* pipe, ev_pipe_read_req_t* req)
-{
-    int ret;
-    if (pipe->backend.ipc_mode.iner_err != 0)
-    {
-        return pipe->backend.ipc_mode.iner_err;
-    }
-
-    ev_list_push_back(&pipe->backend.ipc_mode.rio.pending, &req->base.node);
-
-    if ((ret = _ev_pipe_ipc_mode_want_read(pipe)) != 0)
-    {
-        ev_list_erase(&pipe->backend.ipc_mode.rio.pending, &req->base.node);
-    }
-
-    return ret;
-}
-
-static int _ev_pipe_read_data_mode(ev_pipe_t* pipe, ev_pipe_read_req_t* req)
-{
-    if (pipe->backend.data_mode.rio.r_doing != NULL)
-    {
-        ev_list_push_back(&pipe->backend.data_mode.rio.r_pending, &req->base.node);
-        return 0;
-    }
-
-    pipe->backend.data_mode.rio.r_doing = req;
-    return _ev_pipe_data_mode_want_read(pipe);
-}
-
-static int _ev_pipe_init_read_token_win(ev_pipe_t* pipe, ev_pipe_read_req_t* req,
-    ev_buf_t* bufs, size_t nbuf, ev_pipe_read_cb cb)
-{
-    int ret;
-
-    if ((ret = ev__pipe_read_init(req, bufs, nbuf, cb)) != 0)
-    {
-        return ret;
-    }
-
-    req->backend.owner = pipe;
-    req->backend.stat = EV_EINPROGRESS;
-
-    return 0;
-}
-
-static int _ev_pipe_make_win(ev_os_pipe_t fds[2], int rflags, int wflags,
-        const char *name)
-{
-    int err;
-    HANDLE pip_r = INVALID_HANDLE_VALUE;
-    HANDLE pip_w = INVALID_HANDLE_VALUE;
-
-    err = _ev_pipe_make_s(&pip_r, name, rflags);
-    if (err != 0)
-    {
-        goto err_close_rw;
-    }
-
-    err = _ev_pipe_make_c(&pip_w, name, wflags);
-    if (pip_w == INVALID_HANDLE_VALUE)
-    {
-        goto err_close_rw;
-    }
-
-    if (!ConnectNamedPipe(pip_r, NULL))
-    {
-        err = GetLastError();
-        if (err != ERROR_PIPE_CONNECTED)
-        {
-            err = ev__translate_sys_error(err);
-            goto err_close_rw;
-        }
-    }
-
-    fds[0] = pip_r;
-    fds[1] = pip_w;
-
-    return 0;
-
-err_close_rw:
-    if (pip_r != INVALID_HANDLE_VALUE)
-    {
-        CloseHandle(pip_r);
-    }
-    if (pip_w != INVALID_HANDLE_VALUE)
-    {
-        CloseHandle(pip_w);
-    }
-    return err;
-}
-
-static int _ev_pipe_open_check_win(ev_pipe_t* pipe, ev_os_pipe_t handle)
-{
-    if (pipe->pipfd != EV_OS_PIPE_INVALID)
-    {
-        return EV_EEXIST;
-    }
-    if (handle == EV_OS_PIPE_INVALID)
-    {
-        return EV_EBADF;
-    }
-
-    IO_STATUS_BLOCK io_status;
-    FILE_ACCESS_INFORMATION access;
-    NTSTATUS nt_status = ev_winapi.NtQueryInformationFile(handle,
-        &io_status, &access, sizeof(access), FileAccessInformation);
-    if (nt_status != STATUS_SUCCESS)
-    {
-        return EV_EINVAL;
-    }
-
-    DWORD mode = PIPE_READMODE_BYTE | PIPE_WAIT;
-    if (!SetNamedPipeHandleState(handle, &mode, NULL, NULL))
-    {
-        DWORD err = GetLastError();
-        if (err != ERROR_ACCESS_DENIED)
-        {
-            return EV_EBADF;
-        }
-
-        DWORD current_mode = 0;
-        if (!GetNamedPipeHandleState(handle, &current_mode, NULL, NULL, NULL, NULL, 0))
-        {
-            return ev__translate_sys_error(GetLastError());
-        }
-        if (current_mode & PIPE_NOWAIT)
-        {
-            return ev__translate_sys_error(ERROR_ACCESS_DENIED);
-        }
-    }
-
-    FILE_MODE_INFORMATION mode_info;
-    nt_status = ev_winapi.NtQueryInformationFile(handle,
-        &io_status, &mode_info, sizeof(mode_info), FileModeInformation);
-    if (nt_status != STATUS_SUCCESS)
-    {
-        return ev__translate_sys_error(GetLastError());
-    }
-
-    return 0;
-}
-
-int ev_pipe_make(ev_os_pipe_t fds[2], int rflags, int wflags)
-{
-    static long volatile s_pipe_serial_no = 0;
-    char buffer[128];
-
-    fds[0] = EV_OS_PIPE_INVALID;
-    fds[1] = EV_OS_PIPE_INVALID;
-    if ((rflags & EV_PIPE_IPC) != (wflags & EV_PIPE_IPC))
-    {
-        return EV_EINVAL;
-    }
-
-    snprintf(buffer, sizeof(buffer), "\\\\.\\pipe\\LOCAL\\libev\\RemoteExeAnon.%08lx.%08lx",
-        (long)GetCurrentProcessId(), InterlockedIncrement(&s_pipe_serial_no));
-
-    rflags |= EV_PIPE_READABLE;
-    wflags |= EV_PIPE_WRITABLE;
-
-    int is_ipc = rflags & EV_PIPE_IPC;
-    if (is_ipc)
-    {
-        rflags |= EV_PIPE_WRITABLE;
-        wflags |= EV_PIPE_READABLE;
-    }
-    else
-    {
-        rflags &= ~EV_PIPE_WRITABLE;
-        wflags &= ~EV_PIPE_READABLE;
-    }
-
-    return _ev_pipe_make_win(fds, rflags, wflags, buffer);
-}
-
-int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe, int ipc)
-{
-    ev__handle_init(loop, &pipe->base, EV_ROLE_EV_PIPE);
-    pipe->close_cb = NULL;
-    pipe->pipfd = EV_OS_PIPE_INVALID;
-    pipe->base.data.flags |= ipc ? EV_HANDLE_PIPE_IPC : 0;
-
-    if (ipc)
-    {
-        _ev_pipe_init_as_ipc(pipe);
-    }
-    else
-    {
-        _ev_pipe_init_as_data(pipe);
-    }
-
-    return 0;
-}
-
-void ev_pipe_exit(ev_pipe_t* pipe, ev_pipe_cb cb)
-{
-    _ev_pipe_close_pipe(pipe);
-
-    pipe->close_cb = cb;
-    ev__handle_exit(&pipe->base, _ev_pipe_on_close_win);
-}
-
-int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
-{
-    int ret;
-
-    if ((ret = _ev_pipe_open_check_win(pipe, handle)) != 0)
-    {
-        return ret;
-    }
-
-    if (CreateIoCompletionPort(handle, pipe->base.loop->backend.iocp, (ULONG_PTR)pipe, 0) == NULL)
-    {
-        return ev__translate_sys_error(GetLastError());
-    }
-    pipe->pipfd = handle;
-    pipe->base.data.flags |= EV_HANDLE_PIPE_STREAMING;
-
-    if (!(pipe->base.data.flags & EV_HANDLE_PIPE_IPC))
-    {
-        return 0;
-    }
-
-    /**
-     * TODO:
-     * In IPC mode, we need to setup communication.
-     * 
-     * Here we may have problem that if the pipe is read-only / write-only, we
-     * cannot unbind IOCP beacuse windows not support that.
-     * 
-     * There are may ways to avoid it:
-     * 1. Avoid handeshake procedure. We need handeshake because we need child
-     *   process information to call DuplicateHandle(). But accroding to
-     *   https://stackoverflow.com/questions/46348163/how-to-transfer-the-duplicated-handle-to-the-child-process
-     *   we can call DuplicateHandle() in child process, as long as we wait for
-     *   peer response.
-     * 2. If handle is not readable, we return success but mark it as error, and
-     *   notify user error in future operation.
-     */
-    if ((ret = _ev_pipe_notify_status(pipe)) != 0)
-    {
-        pipe->backend.ipc_mode.iner_err = ret;
-        return 0;
-    }
-
-    if ((ret = _ev_pipe_ipc_mode_want_read(pipe)) != 0)
-    {
-        pipe->backend.ipc_mode.iner_err = ret;
-        return 0;
-    }
-
-    return 0;
-}
-
-int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
-    ev_buf_t* bufs, size_t nbuf,
-    ev_role_t handle_role, void* handle_addr, size_t handle_size,
-    ev_pipe_write_cb cb)
-{
-    if (pipe->pipfd == EV_OS_PIPE_INVALID)
-    {
-        return EV_EBADF;
-    }
-
-    int ret = ev__pipe_write_init_ext(req, cb, bufs, nbuf, handle_role, handle_addr, handle_size);
-    if (ret != 0)
-    {
-        return ret;
-    }
-
-    req->backend.owner = pipe;
-    ev__handle_active(&pipe->base);
-
-    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
-    {
-        ret = _ev_pipe_ipc_mode_write(pipe, req);
-    }
-    else
-    {
-        ret = _ev_pipe_data_mode_write(pipe, req);
-    }
-
-    if (ret != 0)
-    {
-        ev__write_exit(&req->base);
-        _ev_pipe_smart_deactive_win(pipe);
-    }
-
-    return ret;
-}
-
-int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
-    size_t nbuf, ev_pipe_read_cb cb)
-{
-    if (pipe->pipfd == EV_OS_PIPE_INVALID)
-    {
-        return EV_EBADF;
-    }
-
-    int ret = _ev_pipe_init_read_token_win(pipe, req, bufs, nbuf, cb);
-    if (ret != 0)
-    {
-        return ret;
-    }
-
-    ev__handle_active(&pipe->base);
-
-    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
-    {
-        ret = _ev_pipe_read_ipc_mode(pipe, req);
-    }
-    else
-    {
-        ret = _ev_pipe_read_data_mode(pipe, req);
-    }
-
-    if (ret != 0)
-    {
-        _ev_pipe_smart_deactive_win(pipe);
-        ev__read_exit(&req->base);
-    }
-
-    return ret;
-}
-
-int ev_pipe_accept(ev_pipe_t* pipe, ev_pipe_read_req_t* req,
-    ev_role_t handle_role, void* handle_addr, size_t handle_size)
-{
-    (void)pipe;
-    if (req->handle.os_socket == EV_OS_SOCKET_INVALID)
-    {
-        return EV_ENOENT;
-    }
-
-    if (handle_role != EV_ROLE_EV_TCP
-        || handle_addr == NULL
-        || handle_size != sizeof(ev_tcp_t))
-    {
-        return EV_EINVAL;
-    }
-
-    int ret = ev__tcp_open_win((ev_tcp_t*)handle_addr, req->handle.os_socket);
-    req->handle.os_socket = EV_OS_SOCKET_INVALID;
-
-    return ret;
-}
-
-void ev_pipe_close(ev_os_pipe_t fd)
-{
-    CloseHandle(fd);
-}
-
-// #line 64 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/process_win.c
-// SIZE:    16197
-// SHA-256: ac71545b93c58efcc6119b36cdd6785d9317f97f04125f38b971608caf8baadf
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/process_win.c"
-#include <assert.h>
-
-typedef struct ev_startup_info
-{
-    STARTUPINFOA    start_info;
-    char*           cmdline;
-    char*           envline;
-}ev_startup_info_t;
-
-typedef struct stdio_pair_s
-{
-    HANDLE*     dst;
-    DWORD       type;
-} stdio_pair_t;
-
-static int _dup_cmd(char** buf, char* const argv[])
-{
-    char* cmdline = ev_malloc(MAX_PATH + 1);
-    if (cmdline == NULL)
-    {
-        return EV_ENOMEM;
-    }
-
-    cmdline[0] = '\0';
-
-    strcat_s(cmdline, MAX_PATH, argv[0]);
-    for (int i = 1; argv[i] != NULL; i++)
-    {
-        strcat_s(cmdline, MAX_PATH, " ");
-        strcat_s(cmdline, MAX_PATH, argv[i]);
-    }
-
-    *buf = cmdline;
-    return 0;
-}
-
-static int _dup_envp(char**buf, char* const envp[])
-{
-    if (envp == NULL)
-    {
-        *buf = NULL;
-        return 0;
-    }
-
-    size_t malloc_size = 1;
-    size_t idx = 0;
-
-    for (idx = 0; envp[idx] != NULL; idx++)
-    {
-        malloc_size += strlen(envp[idx]) + 1;
-    }
-
-    char* envline = ev_malloc(malloc_size);
-    if (envline == NULL)
-    {
-        return EV_ENOMEM;
-    }
-
-    envline[malloc_size - 1] = '\0';
-
-    size_t pos = 0;
-    for (idx = 0; envp[idx] != NULL; idx++)
-    {
-        size_t cplen = strlen(envp[idx]) + 1;
-        memcpy(envline + pos, envp[idx], cplen);
-        pos += cplen;
-    }
-
-    *buf = envline;
-    return 0;
-}
-
-static int _ev_process_setup_stdio_as_null(HANDLE* handle, DWORD dwDesiredAccess)
-{
-    DWORD errcode;
-    HANDLE nul_file = CreateFileW(L"NUL:", dwDesiredAccess,
-        FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL, NULL);
-    if (nul_file == INVALID_HANDLE_VALUE)
-    {
-        errcode = GetLastError();
-        return ev__translate_sys_error(errcode);
-    }
-
-    *handle = nul_file;
-    return 0;
-}
-
-static int _ev_process_setup_stdio_as_fd(HANDLE* duph, HANDLE handle)
-{
-    HANDLE current_process = GetCurrentProcess();
-    BOOL ret = DuplicateHandle(current_process, handle, current_process, duph, 0, TRUE, DUPLICATE_SAME_ACCESS);
-    if (!ret)
-    {
-        *duph = INVALID_HANDLE_VALUE;
-        DWORD errcode = GetLastError();
-        return ev__translate_sys_error(errcode);
-    }
-
-    return 0;
-}
-
-static int _ev_process_setup_stdio_as_pipe_win(ev_pipe_t* pipe, HANDLE* handle, int is_pipe_read)
-{
-    int ret;
-    ev_os_pipe_t pipfd[2] = { EV_OS_PIPE_INVALID, EV_OS_PIPE_INVALID };
-
-    /* fd for #ev_pipe_t should open in nonblock mode */
-    int rflags = is_pipe_read ? EV_PIPE_NONBLOCK : 0;
-    int wflags = is_pipe_read ? 0 : EV_PIPE_NONBLOCK;
-
-    if ((ret = ev_pipe_make(pipfd, rflags, wflags)) != 0)
-    {
-        return ret;
-    }
-
-    if ((ret = ev_pipe_open(pipe, is_pipe_read ? pipfd[0] : pipfd[1])) != 0)
-    {
-        goto err;
-    }
-
-    *handle = is_pipe_read ? pipfd[1] : pipfd[0];
-
-    return 0;
-
-err:
-    ev_pipe_close(pipfd[0]);
-    ev_pipe_close(pipfd[1]);
-    return ret;
-}
-
-static int _ev_process_dup_stdin_win(ev_startup_info_t* info,
-    const ev_process_stdio_container_t* container)
-{
-    if (container->flag == EV_PROCESS_STDIO_IGNORE)
-    {
-        return 0;
-    }
-
-    if (container->flag & EV_PROCESS_STDIO_REDIRECT_NULL)
-    {
-        return _ev_process_setup_stdio_as_null(&info->start_info.hStdInput, GENERIC_READ);
-    }
-    if (container->flag & EV_PROCESS_STDIO_REDIRECT_FD)
-    {
-        return _ev_process_setup_stdio_as_fd(&info->start_info.hStdInput, container->data.fd);
-    }
-    if (container->flag & EV_PROCESS_STDIO_REDIRECT_PIPE)
-    {
-        return _ev_process_setup_stdio_as_pipe_win(container->data.pipe, &info->start_info.hStdInput, 0);
-    }
-
-    return 0;
-}
-
-static int _ev_process_dup_stdout_win(ev_startup_info_t* info,
-    const ev_process_stdio_container_t* container)
-{
-    if (container->flag == EV_PROCESS_STDIO_IGNORE)
-    {
-        return 0;
-    }
-
-    if (container->flag & EV_PROCESS_STDIO_REDIRECT_NULL)
-    {
-        return _ev_process_setup_stdio_as_null(&info->start_info.hStdOutput, GENERIC_WRITE);
-    }
-
-    if (container->flag & EV_PROCESS_STDIO_REDIRECT_FD)
-    {
-        return _ev_process_setup_stdio_as_fd(&info->start_info.hStdOutput, container->data.fd);
-    }
-
-    if (container->flag & EV_PROCESS_STDIO_REDIRECT_PIPE)
-    {
-        return _ev_process_setup_stdio_as_pipe_win(container->data.pipe, &info->start_info.hStdOutput, 1);
-    }
-
-    return 0;
-}
-
-static int _ev_process_dup_stderr_win(ev_startup_info_t* info,
-    const ev_process_stdio_container_t* container)
-{
-    if (container->flag == EV_PROCESS_STDIO_IGNORE)
-    {
-        return 0;
-    }
-
-    if (container->flag & EV_PROCESS_STDIO_REDIRECT_NULL)
-    {
-        return _ev_process_setup_stdio_as_null(&info->start_info.hStdError, GENERIC_WRITE);
-    }
-
-    if (container->flag & EV_PROCESS_STDIO_REDIRECT_FD)
-    {
-        return _ev_process_setup_stdio_as_fd(&info->start_info.hStdOutput, container->data.fd);
-    }
-
-    if (container->flag & EV_PROCESS_STDIO_REDIRECT_PIPE)
-    {
-        return _ev_process_setup_stdio_as_pipe_win(container->data.pipe, &info->start_info.hStdError, 1);
-    }
-
-    return 0;
-}
-
-static void _ev_process_close_stdin_win(ev_startup_info_t* info)
-{
-    if (info->start_info.hStdInput != INVALID_HANDLE_VALUE)
-    {
-        CloseHandle(info->start_info.hStdInput);
-        info->start_info.hStdInput = INVALID_HANDLE_VALUE;
-    }
-}
-
-static void _ev_process_close_stdout_win(ev_startup_info_t* info)
-{
-    if (info->start_info.hStdOutput != INVALID_HANDLE_VALUE)
-    {
-        CloseHandle(info->start_info.hStdOutput);
-        info->start_info.hStdOutput = INVALID_HANDLE_VALUE;
-    }
-}
-
-static void _ev_process_close_stderr_win(ev_startup_info_t* info)
-{
-    if (info->start_info.hStdError != INVALID_HANDLE_VALUE)
-    {
-        CloseHandle(info->start_info.hStdError);
-        info->start_info.hStdError = INVALID_HANDLE_VALUE;
-    }
-}
-
-static void _ev_process_cleanup_cmdline(ev_startup_info_t* start_info)
-{
-    if (start_info->cmdline != NULL)
-    {
-        ev_free(start_info->cmdline);
-        start_info->cmdline = NULL;
-    }
-}
-
-static void _ev_process_cleanup_envp(ev_startup_info_t* start_info)
-{
-    if (start_info->envline != NULL)
-    {
-        ev_free(start_info->envline);
-        start_info->envline = NULL;
-    }
-}
-
-static void _ev_process_cleanup_start_info(ev_startup_info_t* start_info)
-{
-    _ev_process_close_stdin_win(start_info);
-    _ev_process_close_stdout_win(start_info);
-    _ev_process_close_stderr_win(start_info);
-    _ev_process_cleanup_cmdline(start_info);
-    _ev_process_cleanup_envp(start_info);
-}
-
-static int _ev_process_inherit_stdio(ev_startup_info_t* info)
-{
-    stdio_pair_t stdio_pair_list[] = {
-        { &info->start_info.hStdInput, STD_INPUT_HANDLE },
-        { &info->start_info.hStdOutput, STD_OUTPUT_HANDLE },
-        { &info->start_info.hStdError, STD_ERROR_HANDLE },
-    };
-
-    BOOL dupret;
-    DWORD errcode;
-    HANDLE current_process = GetCurrentProcess();
-
-    size_t i;
-    for (i = 0; i < ARRAY_SIZE(stdio_pair_list); i++)
-    {
-        if (*(stdio_pair_list[i].dst) != INVALID_HANDLE_VALUE)
-        {
-            /* The stdio handle must be inherited */
-            if (!SetHandleInformation(*(stdio_pair_list[i].dst), HANDLE_FLAG_INHERIT, 1))
-            {
-                errcode = GetLastError();
-                return ev__translate_sys_error(errcode);
-            }
-            continue;
-        }
-
-        dupret = DuplicateHandle(current_process, GetStdHandle(stdio_pair_list[i].type),
-            current_process, stdio_pair_list[i].dst, 0, TRUE, DUPLICATE_SAME_ACCESS);
-        if (!dupret)
-        {
-            errcode = GetLastError();
-            return ev__translate_sys_error(errcode);
-        }
-    }
-
-    return 0;
-}
-
-static int _ev_process_dup_stdio_win(ev_startup_info_t* info, const ev_process_options_t* opt)
-{
-    int ret;
-
-    if ((ret = _ev_process_dup_stdin_win(info, &opt->stdios[0])) != 0)
-    {
-        return ret;
-    }
-
-    if ((ret = _ev_process_dup_stdout_win(info, &opt->stdios[1])) != 0)
-    {
-        goto err;
-    }
-
-    if ((ret = _ev_process_dup_stderr_win(info, &opt->stdios[2])) != 0)
-    {
-        goto err;
-    }
-
-    if (info->start_info.hStdInput == INVALID_HANDLE_VALUE
-        && info->start_info.hStdOutput == INVALID_HANDLE_VALUE
-        && info->start_info.hStdError == INVALID_HANDLE_VALUE)
-    {
-        return 0;
-    }
-
-    info->start_info.dwFlags |= STARTF_USESTDHANDLES;
-    if ((ret = _ev_process_inherit_stdio(info)) != 0)
-    {
-        goto err;
-    }
-
-    return 0;
-
-err:
-    _ev_process_cleanup_start_info(info);
-    return ret;
-}
-
-static void _ev_process_on_async_exit(ev_async_t* async)
-{
-    ev_process_t* process = EV_CONTAINER_OF(async, ev_process_t, sigchld);
-
-    if (process->exit_cb != NULL)
-    {
-        process->exit_cb(process);
-    }
-}
-
-static void _ev_process_unregister_wait_handle(ev_process_t* process)
-{
-    DWORD status;
-    if (process->backend.wait_handle == INVALID_HANDLE_VALUE)
-    {
-        return;
-    }
-
-    if (!UnregisterWait(process->backend.wait_handle))
-    {
-        status = GetLastError();
-
-        /**
-         * https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-unregisterwait
-         * According to remarks, ERROR_IO_PENDING does not means error.
-         */
-        if (status == ERROR_IO_PENDING)
-        {
-            goto fin;
-        }
-        process->exit_code = ev__translate_sys_error(status);
-        EV_ABORT("GetLastError:%lu", (unsigned long)status);
-    }
-
-fin:
-    process->backend.wait_handle = INVALID_HANDLE_VALUE;
-}
-
-static void _ev_process_on_sigchild_win(ev_async_t* async)
-{
-    DWORD status;
-    ev_process_t* process = EV_CONTAINER_OF(async, ev_process_t, sigchld);
-
-    _ev_process_unregister_wait_handle(process);
-
-    process->exit_status = EV_PROCESS_EXIT_NORMAL;
-    if (GetExitCodeProcess(process->pid, &status))
-    {
-        process->exit_code = status;
-    }
-    else
-    {
-        status = GetLastError();
-        process->exit_code = ev__translate_sys_error(status);
-    }
-
-    if (process->sigchild_cb != NULL)
-    {
-        process->sigchild_cb(process, process->exit_status, process->exit_code);
-    }
-}
-
-static int _ev_process_setup_start_info(ev_startup_info_t* start_info,
-    const ev_process_options_t* opt)
-{
-    int ret;
-    ZeroMemory(start_info, sizeof(*start_info));
-    start_info->start_info.cb = sizeof(start_info->start_info);
-    start_info->start_info.hStdError = INVALID_HANDLE_VALUE;
-    start_info->start_info.hStdOutput = INVALID_HANDLE_VALUE;
-    start_info->start_info.hStdInput = INVALID_HANDLE_VALUE;
-
-    ret = _dup_cmd(&start_info->cmdline, opt->argv);
-    if (ret != 0)
-    {
-        return ret;
-    }
-
-    ret = _dup_envp(&start_info->envline, opt->envp);
-    if (ret != 0)
-    {
-        goto err_free_cmdline;
-    }
-
-    ret = _ev_process_dup_stdio_win(start_info, opt);
-    if (ret != 0)
-    {
-        goto err_free_envp;
-    }
-
-    return 0;
-
-err_free_envp:
-    _ev_process_cleanup_envp(start_info);
-err_free_cmdline:
-    _ev_process_cleanup_cmdline(start_info);
-    return ret;
-}
-
-static VOID NTAPI _ev_process_on_object_exit(PVOID data, BOOLEAN didTimeout)
-{
-    ev_process_t* process = data;
-
-    assert(didTimeout == FALSE); (void) didTimeout;
-    assert(process != NULL);
-
-    ev_async_wakeup(&process->sigchld);
-}
-
-static void _ev_process_init_win(ev_process_t* handle, const ev_process_options_t* opt)
-{
-    handle->sigchild_cb = opt->on_exit;
-    handle->exit_cb = NULL;
-    handle->pid = EV_OS_PID_INVALID;
-    handle->exit_status = EV_PROCESS_EXIT_UNKNOWN;
-    handle->exit_code = 0;
-    handle->backend.wait_handle = INVALID_HANDLE_VALUE;
-}
-
-int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_options_t* opt)
-{
-    int ret;
-    DWORD errcode;
-    PROCESS_INFORMATION piProcInfo;
-    ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
-
-    ev_startup_info_t start_info;
-    ret = _ev_process_setup_start_info(&start_info, opt);
-    if (ret != 0)
-    {
-        return ret;
-    }
-
-    _ev_process_init_win(handle, opt);
-
-    ret = ev_async_init(loop, &handle->sigchld, _ev_process_on_sigchild_win);
-    if (ret != 0)
-    {
-        _ev_process_cleanup_start_info(&start_info);
-        return ret;
-    }
-
-    ret = CreateProcessA(opt->file, start_info.cmdline, NULL, NULL, TRUE, 0,
-        start_info.envline, opt->cwd, &start_info.start_info, &piProcInfo);
-
-    handle->pid = piProcInfo.hProcess;
-    _ev_process_cleanup_start_info(&start_info);
-
-    if (!ret)
-    {
-        errcode = GetLastError();
-        ev__async_exit_force(&handle->sigchld);
-        return ev__translate_sys_error(errcode);
-    }
-
-    ret = RegisterWaitForSingleObject(&handle->backend.wait_handle, handle->pid,
-        _ev_process_on_object_exit, handle, INFINITE, WT_EXECUTEINWAITTHREAD | WT_EXECUTEONLYONCE);
-    if (!ret)
-    {
-        errcode = GetLastError();
-        EV_ABORT("GetLastError:%lu", (unsigned long)errcode);
-    }
-
-    CloseHandle(piProcInfo.hThread);
-    piProcInfo.hThread = INVALID_HANDLE_VALUE;
-
-    return 0;
-}
-
-void ev_process_exit(ev_process_t* handle, ev_process_exit_cb cb)
-{
-    DWORD errcode;
-    _ev_process_unregister_wait_handle(handle);
-
-    if (handle->pid != EV_OS_PID_INVALID)
-    {
-        if (CloseHandle(handle->pid) == 0)
-        {
-            errcode = GetLastError();
-            EV_ABORT("errcode: %d", (int)errcode);
-        }
-
-        handle->pid = EV_OS_PID_INVALID;
-    }
-
-    handle->sigchild_cb = NULL;
-    handle->exit_cb = cb;
-    ev_async_exit(&handle->sigchld, _ev_process_on_async_exit);
-}
-
-ssize_t ev_getcwd(char* buffer, size_t size)
-{
-    DWORD errcode;
-    DWORD wide_size = GetCurrentDirectoryW(0, NULL);
-    if (wide_size == 0)
-    {
-        errcode = GetLastError();
-        return ev__translate_sys_error(errcode);
-    }
-
-    WCHAR* tmp_buf = ev_malloc(wide_size * sizeof(WCHAR));
-    if (tmp_buf == NULL)
-    {
-        return EV_ENOMEM;
-    }
-
-    wide_size = GetCurrentDirectoryW(wide_size, tmp_buf);
-    if (wide_size == 0)
-    {
-        errcode = GetLastError();
-        ev_free(tmp_buf);
-        return ev__translate_sys_error(errcode);
-    }
-
-    /* remove trailing slash */
-    if (wide_size == 3 && tmp_buf[2] == L':' && tmp_buf[3] == L'\\')
-    {
-        wide_size = 2;
-        tmp_buf[3] = L'\0';
-    }
-
-    /* check how many  */
-    int required_size = WideCharToMultiByte(CP_UTF8, 0, tmp_buf, -1, NULL, 0,
-        NULL, NULL);
-    if (required_size == 0)
-    {
-        errcode = GetLastError();
-        ev_free(tmp_buf);
-        return ev__translate_sys_error(errcode);
-    }
-
-    int write_size = WideCharToMultiByte(CP_UTF8, 0, tmp_buf, -1, buffer,
-        (int)size, NULL, NULL);
-    ev_free(tmp_buf);
-
-    if (write_size == 0)
-    {
-        errcode = GetLastError();
-        return ev__translate_sys_error(errcode);
-    }
-
-    if (write_size < required_size)
-    {
-        buffer[write_size - 1] = '\0';
-    }
-
-    return (ssize_t)write_size - 1;
-}
-
-ssize_t ev_exepath(char* buffer, size_t size)
-{
-    int utf8_len;
-    int err;
-
-    DWORD utf16_buffer_len = WIN32_UNICODE_PATH_MAX;
-    WCHAR* utf16_buffer = (WCHAR*) ev_malloc(sizeof(WCHAR) * utf16_buffer_len);
-    if (!utf16_buffer)
-    {
-        return EV_ENOMEM;
-    }
-
-    /* Get the path as UTF-16. */
-    DWORD utf16_len = GetModuleFileNameW(NULL, utf16_buffer, utf16_buffer_len);
-    if (utf16_len == 0)
-    {
-        err = GetLastError();
-        goto error;
-    }
-
-    /* utf16_len contains the length, *not* including the terminating null. */
-    utf16_buffer[utf16_len] = L'\0';
-
-    /* Convert to UTF-8 */
-    utf8_len = WideCharToMultiByte(CP_UTF8,
-                                   0,
-                                   utf16_buffer,
-                                   -1,
-                                   buffer,
-                                   (int) size,
-                                   NULL,
-                                   NULL);
-    if (utf8_len == 0)
-    {
-        err = GetLastError();
-        goto error;
-    }
-
-    ev_free(utf16_buffer);
-
-    /* utf8_len *does* include the terminating null at this point, but the
-     * returned size shouldn't. */
-    return utf8_len - 1;
-
-error:
-    if (buffer != NULL && size > 0)
-    {
-        *buffer = '\0';
-    }
-    ev_free(utf16_buffer);
-    return ev__translate_sys_error(err);
-}
-
-// #line 65 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/sem_win.c
-// SIZE:    1155
-// SHA-256: a113b4c52567893a1df6c51747489d3185ef36a96c8ca2723489b865a1bafbaa
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/sem_win.c"
-
-void ev_sem_init(ev_sem_t* sem, unsigned value)
-{
-    DWORD errcode;
-    sem->u.r = CreateSemaphore(NULL, value, INT_MAX, NULL);
-    if (sem->u.r == NULL)
-    {
-        errcode = GetLastError();
-        EV_ABORT("GetLastError:%lu", errcode);
-    }
-}
-
-void ev_sem_exit(ev_sem_t* sem)
-{
-    DWORD errcode;
-    if (!CloseHandle(sem->u.r))
-    {
-        errcode = GetLastError();
-        EV_ABORT("GetLastError:%lu", errcode);
-    }
-}
-
-void ev_sem_post(ev_sem_t* sem)
-{
-    DWORD errcode;
-    if (!ReleaseSemaphore(sem->u.r, 1, NULL))
-    {
-        errcode = GetLastError();
-        EV_ABORT("GetLastError:%lu", errcode);
-    }
-}
-
-void ev_sem_wait(ev_sem_t* sem)
-{
-    DWORD errcode;
-    if (WaitForSingleObject(sem->u.r, INFINITE) != WAIT_OBJECT_0)
-    {
-        errcode = GetLastError();
-        EV_ABORT("GetLastError:%lu", errcode);
-    }
-}
-
-int ev_sem_try_wait(ev_sem_t* sem)
-{
-    DWORD ret = WaitForSingleObject(sem->u.r, 0);
-
-    if (ret == WAIT_OBJECT_0)
-    {
-        return 0;
-    }
-
-    if (ret == WAIT_TIMEOUT)
-    {
-        return EV_EAGAIN;
-    }
-
-    DWORD errcode = GetLastError();
-    EV_ABORT("ret:%lu, GetLastError:%lu", ret, errcode);
-}
-
-// #line 66 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/shdlib_win.c
-// SIZE:    1764
-// SHA-256: b95fb93faad22c63bae5065c13aa1c084b91de60d0aa979b7c4ea2ce86a63366
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/shdlib_win.c"
-
-int ev_dlopen(ev_shdlib_t* lib, const char* filename, char** errmsg)
-{
-    WCHAR* filename_w = NULL;
-    ssize_t wide_sz = ev__utf8_to_wide(&filename_w, filename);
-    if (wide_sz < 0)
-    {
-        return (int)wide_sz;
-    }
-
-    lib->handle = LoadLibraryExW(filename_w, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
-    ev_free(filename_w);
-
-    if (lib->handle != EV_OS_SHDLIB_INVALID)
-    {
-        return 0;
-    }
-
-    DWORD errcode = GetLastError();
-    if (errmsg == NULL)
-    {
-        goto finish;
-    }
-
-    DWORD dwFlags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
-    DWORD dwLanguageId = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
-
-    char* tmp_errmsg = NULL;
-    DWORD res = FormatMessageA(dwFlags, NULL, errcode, dwLanguageId, (LPSTR)&tmp_errmsg, 0, NULL);
-    if (res == 0)
-    {
-        DWORD fmt_errcode = GetLastError();
-        if (fmt_errcode == ERROR_MUI_FILE_NOT_FOUND || fmt_errcode == ERROR_RESOURCE_TYPE_NOT_FOUND)
-        {
-            res = FormatMessageA(dwFlags, NULL, errcode, 0, (LPSTR)&tmp_errmsg, 0, NULL);
-        }
-        if (res == 0)
-        {
-            *errmsg = NULL;
-            goto finish;
-        }
-    }
-
-    *errmsg = ev__strdup(tmp_errmsg);
-    LocalFree(tmp_errmsg);
-
-finish:
-    return ev__translate_sys_error(errcode);
-}
-
-void ev_dlclose(ev_shdlib_t* lib)
-{
-    if (lib->handle != EV_OS_SHDLIB_INVALID)
-    {
-        FreeLibrary(lib->handle);
-        lib->handle = EV_OS_SHDLIB_INVALID;
-    }
-}
-
-int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr)
-{
-    *ptr = (void*)(uintptr_t)GetProcAddress(lib->handle, name);
-    if (*ptr == NULL)
-    {
-        DWORD errcode = GetLastError();
-        return ev__translate_sys_error(errcode);
-    }
-
-    return 0;
-}
-
-// #line 67 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/shmem_win.c
-// SIZE:    1854
-// SHA-256: 5664c4b4e6dfb9e3298c3f9acd07585c961d8a4c017d26dd3f13a2c30908d811
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/shmem_win.c"
-
-int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
-{
-    int err;
-
-    shm->size = size;
-
-    DWORD d_high = 0;
-    DWORD d_low = (DWORD)size;
-#if defined(_WIN64)
-    if (d_low != size)
-    {
-        d_high = size >> 32;
-    }
-#endif
-
-    shm->backend.map_file = CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, d_high, d_low, key);
-    if (shm->backend.map_file == NULL)
-    {
-        err = GetLastError();
-        return ev__translate_sys_error(err);
-    }
-
-    shm->addr = MapViewOfFile(shm->backend.map_file, FILE_MAP_ALL_ACCESS, 0, 0, size);
-    if (shm->addr == NULL)
-    {
-        err = GetLastError();
-        CloseHandle(shm->backend.map_file);
-        return ev__translate_sys_error(err);
-    }
-
-    return 0;
-}
-
-int ev_shm_open(ev_shm_t* shm, const char* key)
-{
-    int err;
-
-    shm->backend.map_file = OpenFileMappingA(FILE_MAP_ALL_ACCESS, FALSE, key);
-    if (shm->backend.map_file == NULL)
-    {
-        err = GetLastError();
-        return ev__translate_sys_error(err);
-    }
-
-    shm->addr = MapViewOfFile(shm->backend.map_file, FILE_MAP_ALL_ACCESS, 0, 0, 0);
-    if (shm->addr == NULL)
-    {
-        err = GetLastError();
-        CloseHandle(shm->backend.map_file);
-        return ev__translate_sys_error(err);
-    }
-
-    MEMORY_BASIC_INFORMATION info;
-    if (VirtualQuery(shm->addr, &info, sizeof(info)) == 0)
-    {
-        err = GetLastError();
-        UnmapViewOfFile(shm->addr);
-        CloseHandle(shm->backend.map_file);
-        return ev__translate_sys_error(err);
-    }
-    shm->size = info.RegionSize;
-
-    return 0;
-}
-
-void ev_shm_exit(ev_shm_t* shm)
-{
-    if (!UnmapViewOfFile(shm->addr))
-    {
-        EV_ABORT("GetLastError:%lu", (unsigned long)GetLastError());
-    }
-
-    if (!CloseHandle(shm->backend.map_file))
-    {
-        EV_ABORT("GetLastError:%lu", (unsigned long)GetLastError());
-    }
-}
-
-// #line 68 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/tcp_win.c
-// SIZE:    21507
-// SHA-256: b1c6a24740b8aa1ce578a271362f1e9c86a8f93135dcec9d6e6a49602c865ac0
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/tcp_win.c"
-#include <WinSock2.h>
-#include <assert.h>
-
-static void _ev_tcp_close_socket(ev_tcp_t* sock)
-{
-    if (sock->sock != EV_OS_SOCKET_INVALID)
-    {
-        closesocket(sock->sock);
-        sock->sock = EV_OS_SOCKET_INVALID;
-    }
-}
-
-static void _ev_tcp_smart_deactive_win(ev_tcp_t* sock)
-{
-    size_t io_sz = 0;
-    if (sock->base.data.flags & EV_HANDLE_TCP_LISTING)
-    {
-        io_sz = ev_list_size(&sock->backend.u.listen.a_queue);
-        if (io_sz != 0)
-        {
-            return;
-        }
-    }
-    else if (sock->base.data.flags & EV_HANDLE_TCP_ACCEPTING)
-    {
-        if (sock->backend.u.accept.cb != NULL)
-        {
-            return;
-        }
-    }
-    else if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
-    {
-        if (sock->backend.u.client.cb != NULL)
-        {
-            return;
-        }
-    }
-    else if (sock->base.data.flags & EV_HANDLE_TCP_STREAMING)
-    {
-        io_sz += ev_list_size(&sock->backend.u.stream.w_queue);
-        io_sz += ev_list_size(&sock->backend.u.stream.r_queue);
-        if (io_sz != 0)
-        {
-            return;
-        }
-    }
-
-    ev__handle_deactive(&sock->base);
-}
-
-static void _ev_tcp_accept_callback_once(ev_tcp_t* lisn, ev_tcp_t* conn, int stat)
-{
-    ev_tcp_accept_cb bak_cb = conn->backend.u.accept.cb;
-    conn->backend.u.accept.cb = NULL;
-    bak_cb(lisn, conn, stat);
-}
-
-static void _ev_tcp_finialize_accept(ev_tcp_t* conn)
-{
-    ev_tcp_t* lisn = conn->backend.u.accept.listen;
-    conn->backend.u.accept.listen = NULL;
-
-    if (conn->backend.u.accept.stat == EV_EINPROGRESS)
-    {
-        conn->backend.u.accept.stat = EV_ECANCELED;
-        ev_list_erase(&lisn->backend.u.listen.a_queue, &conn->backend.u.accept.node);
-    }
-    else
-    {
-        ev_list_erase(&lisn->backend.u.listen.a_queue_done, &conn->backend.u.accept.node);
-    }
-
-    conn->base.data.flags &= ~EV_HANDLE_TCP_ACCEPTING;
-    _ev_tcp_smart_deactive_win(lisn);
-    _ev_tcp_smart_deactive_win(conn);
-
-    _ev_tcp_accept_callback_once(lisn, conn, conn->backend.u.accept.stat);
-}
-
-static void _ev_tcp_cleanup_connection_in_listen(ev_tcp_t* conn)
-{
-    ev_tcp_t* lisn = conn->backend.u.accept.listen;
-
-    conn->base.data.flags &= ~EV_HANDLE_TCP_ACCEPTING;
-    _ev_tcp_smart_deactive_win(lisn);
-    _ev_tcp_smart_deactive_win(conn);
-
-    _ev_tcp_close_socket(conn);
-    _ev_tcp_accept_callback_once(lisn, conn, EV_ECANCELED);
-}
-
-static void _ev_tcp_cleanup_listen(ev_tcp_t* sock)
-{
-    ev_list_node_t* it;
-    while ((it = ev_list_pop_front(&sock->backend.u.listen.a_queue)) != NULL)
-    {
-        ev_tcp_t* conn = EV_CONTAINER_OF(it, ev_tcp_t, backend.u.accept.node);
-        _ev_tcp_cleanup_connection_in_listen(conn);
-    }
-    while ((it = ev_list_pop_front(&sock->backend.u.listen.a_queue_done)) != NULL)
-    {
-        ev_tcp_t* conn = EV_CONTAINER_OF(it, ev_tcp_t, backend.u.accept.node);
-        _ev_tcp_cleanup_connection_in_listen(conn);
-    }
-}
-
-static void _ev_tcp_w_user_callback_win(ev_tcp_t* sock, ev_tcp_write_req_t* req, ssize_t size)
-{
-    _ev_tcp_smart_deactive_win(sock);
-    ev__write_exit(&req->base);
-    req->user_callback(req, size);
-}
-
-static void _ev_tcp_r_user_callbak_win(ev_tcp_t* sock, ev_tcp_read_req_t* req, ssize_t size)
-{
-    _ev_tcp_smart_deactive_win(sock);
-    ev__read_exit(&req->base);
-    req->user_callback(req, size);
-}
-
-static void _ev_tcp_cleanup_stream(ev_tcp_t* sock)
-{
-    ev_list_node_t* it;
-    while ((it = ev_list_pop_front(&sock->backend.u.stream.r_queue_done)) != NULL)
-    {
-        ev_tcp_read_req_t* req = EV_CONTAINER_OF(it, ev_tcp_read_req_t, base.node);
-        _ev_tcp_r_user_callbak_win(sock, req, req->base.data.size);
-    }
-    while ((it = ev_list_pop_front(&sock->backend.u.stream.r_queue)) != NULL)
-    {
-        ev_tcp_read_req_t* req = EV_CONTAINER_OF(it, ev_tcp_read_req_t, base.node);
-        _ev_tcp_r_user_callbak_win(sock, req, EV_ECANCELED);
-    }
-    while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue_done)) != NULL)
-    {
-        ev_tcp_write_req_t* req = EV_CONTAINER_OF(it, ev_tcp_write_req_t, base.node);
-        _ev_tcp_w_user_callback_win(sock, req, req->base.size);
-    }
-    while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue)) != NULL)
-    {
-        ev_tcp_write_req_t* req = EV_CONTAINER_OF(it, ev_tcp_write_req_t, base.node);
-        _ev_tcp_w_user_callback_win(sock, req, EV_ECANCELED);
-    }
-}
-
-static void _ev_tcp_connect_callback_once_win(ev_tcp_t* sock, int stat)
-{
-    ev_tcp_connect_cb bak_cb = sock->backend.u.client.cb;
-    sock->backend.u.client.cb = NULL;
-    bak_cb(sock, stat);
-}
-
-static void _ev_tcp_cleanup_connect(ev_tcp_t* sock)
-{
-    if (sock->backend.u.client.stat == EV_EINPROGRESS)
-    {
-        sock->backend.u.client.stat = EV_ECANCELED;
-    }
-
-    _ev_tcp_connect_callback_once_win(sock, sock->backend.u.client.stat);
-}
-
-static void _ev_tcp_on_close_win(ev_handle_t* handle)
-{
-    ev_tcp_t* sock = EV_CONTAINER_OF(handle, ev_tcp_t, base);
-
-    if (sock->base.data.flags & EV_HANDLE_TCP_LISTING)
-    {
-        sock->base.data.flags &= ~EV_HANDLE_TCP_LISTING;
-        _ev_tcp_cleanup_listen(sock);
-    }
-    if (sock->base.data.flags & EV_HANDLE_TCP_ACCEPTING)
-    {
-        _ev_tcp_finialize_accept(sock);
-    }
-    if (sock->base.data.flags & EV_HANDLE_TCP_STREAMING)
-    {
-        sock->base.data.flags &= ~EV_HANDLE_TCP_STREAMING;
-        _ev_tcp_cleanup_stream(sock);
-    }
-    if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
-    {
-        sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
-        _ev_tcp_cleanup_connect(sock);
-    }
-
-    if (sock->close_cb != NULL)
-    {
-        sock->close_cb(sock);
-    }
-}
-
-static int _ev_tcp_get_connectex(ev_tcp_t* sock, LPFN_CONNECTEX* fn)
-{
-    int ret;
-    DWORD bytes;
-    GUID wsaid = WSAID_CONNECTEX;
-
-    ret = WSAIoctl(sock->sock, SIO_GET_EXTENSION_FUNCTION_POINTER,
-        &wsaid, sizeof(wsaid), fn, sizeof(*fn), &bytes, NULL, NULL);
-    if (ret == 0)
-    {
-        return 0;
-    }
-
-    ret = WSAGetLastError();
-    return ev__translate_sys_error(ret);
-}
-
-static int _ev_tcp_setup_sock(ev_tcp_t* sock, int af, int with_iocp)
-{
-    int ret;
-
-    SOCKET os_sock = socket(af, SOCK_STREAM, 0);
-    if (os_sock == INVALID_SOCKET)
-    {
-        goto err;
-    }
-
-    u_long yes = 1;
-    if (ioctlsocket(os_sock, FIONBIO, &yes) == SOCKET_ERROR)
-    {
-        goto err;
-    }
-
-    if (!SetHandleInformation((HANDLE)os_sock, HANDLE_FLAG_INHERIT, 0))
-    {
-        goto err;
-    }
-
-    HANDLE iocp = sock->base.loop->backend.iocp;
-    if (with_iocp && CreateIoCompletionPort((HANDLE)os_sock, iocp, os_sock, 0) == 0)
-    {
-        goto err;
-    }
-
-    sock->sock = os_sock;
-    sock->backend.af = af;
-
-    return 0;
-
-err:
-    ret = ev__translate_sys_error(WSAGetLastError());
-    if (os_sock != EV_OS_SOCKET_INVALID)
-    {
-        closesocket(os_sock);
-    }
-    return ret;
-}
-
-static void _ev_tcp_setup_listen_win(ev_tcp_t* sock)
-{
-    ev_list_init(&sock->backend.u.listen.a_queue);
-    ev_list_init(&sock->backend.u.listen.a_queue_done);
-    sock->base.data.flags |= EV_HANDLE_TCP_LISTING;
-}
-
-static void _ev_tcp_setup_accept_win(ev_tcp_t* lisn, ev_tcp_t* conn, ev_tcp_accept_cb cb)
-{
-    conn->backend.u.accept.cb = cb;
-    conn->backend.u.accept.listen = lisn;
-    conn->backend.u.accept.stat = EV_EINPROGRESS;
-    conn->base.data.flags |= EV_HANDLE_TCP_ACCEPTING;
-}
-
-static int _ev_tcp_setup_client_win(ev_tcp_t* sock, ev_tcp_connect_cb cb)
-{
-    int ret;
-    if ((ret = _ev_tcp_get_connectex(sock, &sock->backend.u.client.fn_connectex)) != 0)
-    {
-        return ret;
-    }
-
-    sock->backend.u.client.stat = EV_EINPROGRESS;
-    sock->backend.u.client.cb = cb;
-    sock->base.data.flags |= EV_HANDLE_TCP_CONNECTING;
-
-    return 0;
-}
-
-static void _ev_tcp_setup_stream_win(ev_tcp_t* sock)
-{
-    ev_list_init(&sock->backend.u.stream.r_queue);
-    ev_list_init(&sock->backend.u.stream.r_queue_done);
-    ev_list_init(&sock->backend.u.stream.w_queue);
-    ev_list_init(&sock->backend.u.stream.w_queue_done);
-    sock->base.data.flags |= EV_HANDLE_TCP_STREAMING;
-}
-
-static void _ev_tcp_process_stream(ev_tcp_t* sock)
-{
-    ev_list_node_t* it;
-
-    while ((it = ev_list_pop_front(&sock->backend.u.stream.w_queue_done)) != NULL)
-    {
-        ev_tcp_write_req_t* req = EV_CONTAINER_OF(it, ev_tcp_write_req_t, base.node);
-        size_t write_size = req->base.size;
-        int write_stat = req->backend.stat;
-
-        ssize_t ret = write_stat < 0 ? write_stat : write_size;
-        _ev_tcp_w_user_callback_win(sock, req, ret);
-    }
-
-    while ((it = ev_list_pop_front(&sock->backend.u.stream.r_queue_done)) != NULL)
-    {
-        ev_tcp_read_req_t* req = EV_CONTAINER_OF(it, ev_tcp_read_req_t, base.node);
-        size_t read_size = req->base.data.size;
-        int read_stat = req->backend.stat;
-
-        ssize_t ret = read_stat < 0 ? read_stat : read_size;
-        _ev_tcp_r_user_callbak_win(sock, req, ret);
-    }
-}
-
-static void _ev_tcp_process_connect(ev_tcp_t* sock)
-{
-    int ret;
-    if (sock->backend.u.client.stat == 0)
-    {
-        if ((ret = setsockopt(sock->sock, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT, NULL, 0)) == SOCKET_ERROR)
-        {
-            ret = WSAGetLastError();
-            sock->backend.u.client.stat = ev__translate_sys_error(ret);
-        }
-    }
-
-    sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
-    _ev_tcp_smart_deactive_win(sock);
-
-    _ev_tcp_connect_callback_once_win(sock, sock->backend.u.client.stat);
-}
-
-static void _ev_tcp_on_task_done(ev_handle_t* handle)
-{
-    ev_tcp_t* sock = EV_CONTAINER_OF(handle, ev_tcp_t, base);
-    sock->backend.mask.todo_pending = 0;
-
-    if (sock->base.data.flags & EV_HANDLE_TCP_STREAMING)
-    {
-        _ev_tcp_process_stream(sock);
-    }
-    if (sock->base.data.flags & EV_HANDLE_TCP_ACCEPTING)
-    {
-        _ev_tcp_finialize_accept(sock);
-    }
-    if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
-    {
-        _ev_tcp_process_connect(sock);
-    }
-}
-
-static void _ev_tcp_submit_stream_todo(ev_tcp_t* sock)
-{
-    if (sock->backend.mask.todo_pending)
-    {
-        return;
-    }
-
-    ev__backlog_submit(&sock->base, _ev_tcp_on_task_done);
-    sock->backend.mask.todo_pending = 1;
-}
-
-static void _ev_tcp_on_accept_win(ev_tcp_t* conn, size_t transferred)
-{
-    (void)transferred;
-    ev_tcp_t* lisn = conn->backend.u.accept.listen;
-
-    ev_list_erase(&lisn->backend.u.listen.a_queue, &conn->backend.u.accept.node);
-    ev_list_push_back(&lisn->backend.u.listen.a_queue_done, &conn->backend.u.accept.node);
-
-    conn->backend.u.accept.stat = NT_SUCCESS(conn->backend.io.overlapped.Internal) ?
-        0 : ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)conn->backend.io.overlapped.Internal));
-    _ev_tcp_submit_stream_todo(conn);
-}
-
-static void _ev_tcp_on_connect_win(ev_tcp_t* sock, size_t transferred)
-{
-    (void)transferred;
-
-    sock->backend.u.client.stat = NT_SUCCESS(sock->backend.io.overlapped.Internal) ?
-        0 : ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)sock->backend.io.overlapped.Internal));
-    _ev_tcp_submit_stream_todo(sock);
-}
-
-static int _ev_tcp_bind_any_addr(ev_tcp_t* sock, int af)
-{
-    size_t name_len;
-    const struct sockaddr* bind_addr;
-
-    switch (af)
-    {
-    case AF_INET:
-        bind_addr = (struct sockaddr*)&ev_addr_ip4_any_;
-        name_len = sizeof(ev_addr_ip4_any_);
-        break;
-
-    case AF_INET6:
-        bind_addr = (struct sockaddr*)&ev_addr_ip6_any_;
-        name_len = sizeof(ev_addr_ip6_any_);
-        break;
-
-    default:
-        return EV_EINVAL;
-    }
-
-    return ev_tcp_bind(sock, bind_addr, name_len);
-}
-
-static void _ev_tcp_on_stream_write_done(ev_iocp_t* iocp, size_t transferred, void* arg)
-{
-    ev_tcp_write_req_t* req = arg;
-    ev_tcp_t* sock = req->backend.owner;
-
-    req->base.size = transferred;
-    req->backend.stat = NT_SUCCESS(iocp->overlapped.Internal) ?
-        0 : ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal));
-
-    ev_list_erase(&sock->backend.u.stream.w_queue, &req->base.node);
-    ev_list_push_back(&sock->backend.u.stream.w_queue_done, &req->base.node);
-
-    _ev_tcp_submit_stream_todo(sock);
-}
-
-static void _ev_tcp_on_stream_read_done(ev_iocp_t* iocp, size_t transferred, void* arg)
-{
-    ev_tcp_read_req_t* req = arg;
-    ev_tcp_t* sock = req->backend.owner;
-
-    req->base.data.size = transferred;
-    if (transferred == 0)
-    {/* Zero recv means peer close */
-        req->backend.stat = EV_EOF;
-    }
-    else
-    {
-        req->backend.stat = NT_SUCCESS(iocp->overlapped.Internal) ?
-            0 : ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal));
-    }
-
-    ev_list_erase(&sock->backend.u.stream.r_queue, &req->base.node);
-    ev_list_push_back(&sock->backend.u.stream.r_queue_done, &req->base.node);
-
-    _ev_tcp_submit_stream_todo(sock);
-}
-
-static void _ev_tcp_on_iocp(ev_iocp_t* req, size_t transferred, void* arg)
-{
-    (void)req;
-    ev_tcp_t* sock = arg;
-
-    if (sock->base.data.flags & EV_HANDLE_TCP_ACCEPTING)
-    {
-        _ev_tcp_on_accept_win(sock, transferred);
-    }
-    if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
-    {
-        _ev_tcp_on_connect_win(sock, transferred);
-    }
-}
-
-static int _ev_tcp_init_write_req_win(ev_tcp_t* sock, ev_tcp_write_req_t* req,
-    ev_buf_t* bufs, size_t nbuf, ev_tcp_write_cb cb)
-{
-    int ret;
-    if ((ret = ev__write_init(&req->base, bufs, nbuf)) != 0)
-    {
-        return ret;
-    }
-
-    req->user_callback = cb;
-    req->backend.owner = sock;
-    req->backend.stat = EV_EINPROGRESS;
-    ev__iocp_init(&req->backend.io, _ev_tcp_on_stream_write_done, req);
-
-    return 0;
-}
-
-static int _ev_tcp_init_read_req_win(ev_tcp_t* sock, ev_tcp_read_req_t* req,
-    ev_buf_t* bufs, size_t nbuf, ev_tcp_read_cb cb)
-{
-    int ret;
-
-    if ((ret = ev__read_init(&req->base, bufs, nbuf)) != 0)
-    {
-        return ret;
-    }
-
-    req->user_callback = cb;
-    req->backend.owner = sock;
-    req->backend.stat = EV_EINPROGRESS;
-    ev__iocp_init(&req->backend.io, _ev_tcp_on_stream_read_done, req);
-
-    return 0;
-}
-
-int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp)
-{
-    ev__handle_init(loop, &tcp->base, EV_ROLE_EV_TCP);
-    tcp->close_cb = NULL;
-    tcp->sock = EV_OS_SOCKET_INVALID;
-
-    tcp->backend.af = AF_INET6;
-    ev__iocp_init(&tcp->backend.io, _ev_tcp_on_iocp, tcp);
-    memset(&tcp->backend.mask, 0, sizeof(tcp->backend.mask));
-
-    return 0;
-}
-
-void ev_tcp_exit(ev_tcp_t* sock, ev_tcp_close_cb cb)
-{
-    sock->close_cb = cb;
-
-    /* Close socket to avoid IOCP conflict with exiting process */
-    _ev_tcp_close_socket(sock);
-
-    /**
-     * From this point, any complete IOCP operations should be in done_queue,
-     * and any pending IOCP operations is canceled.
-     */
-
-    /* Ready to close socket */
-    ev__handle_exit(&sock->base, _ev_tcp_on_close_win);
-}
-
-int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen)
-{
-    int ret;
-    int flag_new_socket = 0;
-
-    if (tcp->base.data.flags & EV_HABDLE_TCP_BOUND)
-    {
-        return EV_EALREADY;
-    }
-
-    if (tcp->sock == EV_OS_SOCKET_INVALID)
-    {
-        if ((ret = _ev_tcp_setup_sock(tcp, addr->sa_family, 1)) != 0)
-        {
-            return ret;
-        }
-        flag_new_socket = 1;
-    }
-
-    if ((ret = bind(tcp->sock, addr, (int)addrlen)) == SOCKET_ERROR)
-    {
-        ret = ev__translate_sys_error(WSAGetLastError());
-        goto err;
-    }
-    tcp->base.data.flags |= EV_HABDLE_TCP_BOUND;
-
-    return 0;
-
-err:
-    if (flag_new_socket)
-    {
-        _ev_tcp_close_socket(tcp);
-    }
-    return ret;
-}
-
-int ev_tcp_listen(ev_tcp_t* sock, int backlog)
-{
-    if (sock->base.data.flags & EV_HANDLE_TCP_LISTING)
-    {
-        return EV_EADDRINUSE;
-    }
-
-    int ret;
-    if ((ret = listen(sock->sock, backlog)) == SOCKET_ERROR)
-    {
-        return ev__translate_sys_error(WSAGetLastError());
-    }
-    _ev_tcp_setup_listen_win(sock);
-
-    return 0;
-}
-
-int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_tcp_accept_cb cb)
-{
-    int ret;
-    int flag_new_sock = 0;
-
-    if (conn->base.data.flags & EV_HANDLE_TCP_ACCEPTING)
-    {
-        return EV_EINPROGRESS;
-    }
-
-    if (conn->sock == EV_OS_SOCKET_INVALID)
-    {
-        if ((ret = _ev_tcp_setup_sock(conn, lisn->backend.af, 1)) != 0)
-        {
-            goto err;
-        }
-        flag_new_sock = 1;
-    }
-    _ev_tcp_setup_accept_win(lisn, conn, cb);
-
-    ev__handle_active(&lisn->base);
-    ev__handle_active(&conn->base);
-
-    DWORD bytes = 0;
-    ret = AcceptEx(lisn->sock, conn->sock,
-        conn->backend.u.accept.buffer, 0, sizeof(struct sockaddr_storage), sizeof(struct sockaddr_storage),
-        &bytes, &conn->backend.io.overlapped);
-
-    /* Accept success */
-    if (ret)
-    {
-        conn->backend.u.accept.stat = 0;
-        ev_list_push_back(&lisn->backend.u.listen.a_queue_done, &conn->backend.u.accept.node);
-        _ev_tcp_submit_stream_todo(conn);
-        return 0;
-    }
-
-    if ((ret = WSAGetLastError()) != WSA_IO_PENDING)
-    {
-        conn->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
-        _ev_tcp_smart_deactive_win(lisn);
-        _ev_tcp_smart_deactive_win(conn);
-        return ev__translate_sys_error(ret);
-    }
-    conn->base.data.flags |= EV_HANDLE_TCP_ACCEPTING;
-    ev_list_push_back(&lisn->backend.u.listen.a_queue, &conn->backend.u.accept.node);
-
-    return 0;
-
-err:
-    if (flag_new_sock)
-    {
-        _ev_tcp_close_socket(conn);
-    }
-    return ret;
-}
-
-int ev_tcp_getsockname(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
-{
-    int ret;
-    int socklen = (int)*len;
-
-    if ((ret = getsockname(sock->sock, name, &socklen)) == SOCKET_ERROR)
-    {
-        return ev__translate_sys_error(WSAGetLastError());
-    }
-
-    *len = socklen;
-    return 0;
-}
-
-int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
-{
-    int ret;
-    int socklen = (int)*len;
-
-    if ((ret = getpeername(sock->sock, name, &socklen)) == SOCKET_ERROR)
-    {
-        return ev__translate_sys_error(WSAGetLastError());
-    }
-
-    *len = socklen;
-    return 0;
-}
-
-int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_tcp_connect_cb cb)
-{
-    int ret;
-    int flag_new_sock = 0;
-
-    if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
-    {
-        return EV_EINPROGRESS;
-    }
-
-    if (sock->sock == EV_OS_SOCKET_INVALID)
-    {
-        if ((ret = _ev_tcp_setup_sock(sock, addr->sa_family, 1)) != 0)
-        {
-            goto err;
-        }
-        flag_new_sock = 1;
-    }
-
-    if (!(sock->base.data.flags & EV_HABDLE_TCP_BOUND))
-    {
-        if ((ret = _ev_tcp_bind_any_addr(sock, addr->sa_family)) != 0)
-        {
-            goto err;
-        }
-    }
-
-    if ((ret = _ev_tcp_setup_client_win(sock, cb)) != 0)
-    {
-        goto err;
-    }
-    ev__handle_active(&sock->base);
-
-    DWORD bytes;
-    ret = sock->backend.u.client.fn_connectex(sock->sock, addr, (int)size,
-        NULL, 0, &bytes, &sock->backend.io.overlapped);
-    if (ret)
-    {
-        sock->backend.u.client.stat = 0;
-        _ev_tcp_submit_stream_todo(sock);
-        return 0;
-    }
-
-    ret = WSAGetLastError();
-    if (ret != WSA_IO_PENDING)
-    {
-        sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
-        _ev_tcp_smart_deactive_win(sock);
-        ret = ev__translate_sys_error(ret);
-        goto err;
-    }
-
-    return 0;
-
-err:
-    if (flag_new_sock)
-    {
-        _ev_tcp_close_socket(sock);
-    }
-    return ret;
-}
-
-int ev_tcp_write(ev_tcp_t* sock, ev_tcp_write_req_t* req, ev_buf_t* bufs,
-    size_t nbuf, ev_tcp_write_cb cb)
-{
-    int ret;
-    if ((ret = _ev_tcp_init_write_req_win(sock, req, bufs, nbuf, cb)) != 0)
-    {
-        return ret;
-    }
-
-    if (!(sock->base.data.flags & EV_HANDLE_TCP_STREAMING))
-    {
-        _ev_tcp_setup_stream_win(sock);
-    }
-
-    ev_list_push_back(&sock->backend.u.stream.w_queue, &req->base.node);
-    ev__handle_active(&sock->base);
-
-    ret = WSASend(sock->sock, (WSABUF*)req->base.bufs, (DWORD)req->base.nbuf,
-        NULL, 0, &req->backend.io.overlapped, NULL);
-    if (ret == 0)
-    {
-        /*
-         * A result of zero means send successful, but the result will still go
-         * through IOCP callback, so it is necessary to return directly.
-         */
-        return 0;
-    }
-
-    if ((ret = WSAGetLastError()) != WSA_IO_PENDING)
-    {
-        _ev_tcp_smart_deactive_win(sock);
-        return ev__translate_sys_error(ret);
-    }
-
-    return 0;
-}
-
-int ev_tcp_read(ev_tcp_t* sock, ev_tcp_read_req_t* req,
-    ev_buf_t* bufs, size_t nbuf, ev_tcp_read_cb cb)
-{
-    int ret;
-
-    if ((ret = _ev_tcp_init_read_req_win(sock, req, bufs, nbuf, cb)) != 0)
-    {
-        return ret;
-    }
-
-    if (!(sock->base.data.flags & EV_HANDLE_TCP_STREAMING))
-    {
-        _ev_tcp_setup_stream_win(sock);
-    }
-
-    ev_list_push_back(&sock->backend.u.stream.r_queue, &req->base.node);
-    ev__handle_active(&sock->base);
-
-    DWORD flags = 0;
-    ret = WSARecv(sock->sock, (WSABUF*)req->base.data.bufs, (DWORD)req->base.data.nbuf,
-        NULL, &flags, &req->backend.io.overlapped, NULL);
-    if (ret == 0)
-    {
-        /*
-         * A result of zero means recv successful, but the result will still go
-         * through IOCP callback, so it is necessary to return directly.
-         */
-        return 0;
-    }
-
-    if ((ret = WSAGetLastError()) != WSA_IO_PENDING)
-    {
-        _ev_tcp_smart_deactive_win(sock);
-        return ev__translate_sys_error(ret);
-    }
-
-    return 0;
-}
-
-EV_LOCAL int ev__tcp_open_win(ev_tcp_t* tcp, SOCKET fd)
-{
-    tcp->sock = fd;
-    if (!(tcp->base.data.flags & EV_HANDLE_TCP_STREAMING))
-    {
-        _ev_tcp_setup_stream_win(tcp);
-    }
-
-    return 0;
-}
-
-// #line 69 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/thread_win.c
-// SIZE:    4117
-// SHA-256: b80229a5263c71a3b5ef797a46850d7ad92d07c033b569ce1ce3c017acecba3b
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/thread_win.c"
-#include <process.h>
-
-typedef struct ev_thread_helper_win
-{
-    ev_thread_cb    cb;         /**< User thread body */
-    void*           arg;        /**< User thread argument */
-    HANDLE          start_sem;  /**< Start semaphore */
-    HANDLE          thread_id;  /**< Thread handle */
-}ev_thread_helper_win_t;
-
-static size_t _ev_thread_calculate_stack_size_win(const ev_thread_opt_t* opt)
-{
-    if (opt == NULL || !opt->flags.have_stack_size)
-    {
-        return 0;
-    }
-
-    return opt->stack_size;
-}
-
-static unsigned __stdcall _ev_thread_proxy_proc_win(void* lpThreadParameter)
-{
-    DWORD errcode;
-    ev_thread_helper_win_t* p_helper = lpThreadParameter;
-    ev_thread_helper_win_t helper = *p_helper;
-
-    ev_tls_set(&g_ev_loop_win_ctx.thread.thread_key, (void*)p_helper->thread_id);
-    if (!ReleaseSemaphore(p_helper->start_sem, 1, NULL))
-    {
-        errcode = GetLastError();
-        EV_ABORT("GetLastError:%lu", (unsigned long)errcode);
-    }
-
-    helper.cb(helper.arg);
-    return 0;
-}
-
-EV_LOCAL void ev__thread_init_win(void)
-{
-    int ret = ev_tls_init(&g_ev_loop_win_ctx.thread.thread_key);
-    if (ret != 0)
-    {
-        EV_ABORT("ret:%d", ret);
-    }
-}
-
-int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
-    ev_thread_cb cb, void* arg)
-{
-    DWORD err = 0;
-    ev__init_once_win();
-
-    ev_thread_helper_win_t helper;
-    helper.cb = cb;
-    helper.arg = arg;
-    if ((helper.start_sem = CreateSemaphore(NULL, 0, 1, NULL)) == NULL)
-    {
-        err = GetLastError();
-        goto err_fin;
-    }
-
-    size_t stack_size = _ev_thread_calculate_stack_size_win(opt);
-    helper.thread_id = (HANDLE)_beginthreadex(NULL, (unsigned)stack_size,
-        _ev_thread_proxy_proc_win, &helper, CREATE_SUSPENDED, NULL);
-    if (helper.thread_id == NULL)
-    {
-        err = GetLastError();
-        goto err_create_thread;
-    }
-
-    if (ResumeThread(helper.thread_id) == -1)
-    {
-        err = GetLastError();
-        EV_ABORT("GetLastError:%lu", err);
-    }
-
-    int ret = WaitForSingleObject(helper.start_sem, INFINITE);
-    if (ret != WAIT_OBJECT_0)
-    {
-        err = (ret != WAIT_FAILED) ? ERROR_INVALID_PARAMETER : GetLastError();
-        goto err_create_thread;
-    }
-
-    *thr = helper.thread_id;
-
-err_create_thread:
-    CloseHandle(helper.start_sem);
-err_fin:
-    return ev__translate_sys_error(err);
-}
-
-int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
-{
-    int ret = WaitForSingleObject(*thr, timeout);
-    switch (ret)
-    {
-    case WAIT_TIMEOUT:
-        return EV_ETIMEDOUT;
-    case WAIT_ABANDONED:
-        EV_ABORT("WAIT_ABANDONED"); // should not happen
-        break;
-    case WAIT_FAILED:
-        ret = GetLastError();
-        return ret == WAIT_TIMEOUT ? EV_ETIMEDOUT : ev__translate_sys_error(ret);
-    default:
-        break;
-    }
-
-    CloseHandle(*thr);
-    *thr = NULL;
-
-    return 0;
-}
-
-ev_os_thread_t ev_thread_self(void)
-{
-    ev__init_once_win();
-    return ev_tls_get(&g_ev_loop_win_ctx.thread.thread_key);
-}
-
-ev_os_tid_t ev_thread_id(void)
-{
-    return GetCurrentThreadId();
-}
-
-int ev_thread_equal(const ev_os_thread_t* t1, const ev_os_thread_t* t2)
-{
-    return *t1 == *t2;
-}
-
-void ev_thread_sleep(uint32_t timeout)
-{
-    Sleep(timeout);
-}
-
-int ev_tls_init(ev_tls_t* tls)
-{
-    int err;
-    if ((tls->tls = TlsAlloc()) == TLS_OUT_OF_INDEXES)
-    {
-        err = GetLastError();
-        return ev__translate_sys_error(err);
-    }
-
-    return 0;
-}
-
-void ev_tls_exit(ev_tls_t* tls)
-{
-    DWORD errcode;
-    if (TlsFree(tls->tls) == FALSE)
-    {
-        errcode = GetLastError();
-        EV_ABORT("GetLastError:%lu", errcode);
-    }
-    tls->tls = TLS_OUT_OF_INDEXES;
-}
-
-void ev_tls_set(ev_tls_t* tls, void* val)
-{
-    DWORD errcode;
-    if (TlsSetValue(tls->tls, val) == FALSE)
-    {
-        errcode = GetLastError();
-        EV_ABORT("GetLastError:%lu", errcode);
-    }
-}
-
-void* ev_tls_get(ev_tls_t* tls)
-{
-    DWORD errcode;
-    void* val = TlsGetValue(tls->tls);
-    if (val == NULL)
-    {
-        if ((errcode = GetLastError()) != ERROR_SUCCESS)
-        {
-            EV_ABORT("GetLastError:%lu", errcode);
-        }
-    }
-    return val;
-}
-
-// #line 70 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/threadpool_win.c
-// SIZE:    545
-// SHA-256: e9729a6a63f16fa056602b60ebf49481d8c4cd0a0b9f69ee3390a53e985266ce
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/threadpool_win.c"
-
-static void _on_work_win(ev_iocp_t* iocp, size_t transferred, void* arg)
-{
-    (void)transferred; (void)arg;
-
-    ev_loop_t* loop = EV_CONTAINER_OF(iocp, ev_loop_t, backend.threadpool.io);
-
-    ev__threadpool_process(loop);
-}
-
-EV_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop)
-{
-    ev__iocp_post(loop, &loop->backend.threadpool.io);
-}
-
-EV_LOCAL void ev__threadpool_init_win(ev_loop_t* loop)
-{
-    ev__iocp_init(&loop->backend.threadpool.io, _on_work_win, NULL);
-}
-
-EV_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop)
-{
-    (void)loop;
-}
-
-// #line 71 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/time_win.c
-// SIZE:    1385
-// SHA-256: 9246a34372c69801f1b89ce7a4b92b49c9e1a8d2a034ac2ebde0faa536629b2b
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/time_win.c"
-/**
- * Frequency of the high-resolution clock.
- */
-static uint64_t s_hrtime_frequency = 0;
-
-static uint64_t _ev_hrtime_win(unsigned int scale)
-{
-    LARGE_INTEGER counter;
-    double scaled_freq;
-    double result;
-    DWORD errcode;
-
-    assert(s_hrtime_frequency != 0);
-    assert(scale != 0);
-
-    if (!QueryPerformanceCounter(&counter))
-    {
-        errcode = GetLastError();
-        EV_ABORT("GetLastError:%lu", errcode);
-    }
-    assert(counter.QuadPart != 0);
-
-    /*
-     * Because we have no guarantee about the order of magnitude of the
-     * performance counter interval, integer math could cause this computation
-     * to overflow. Therefore we resort to floating point math.
-     */
-    scaled_freq = (double)s_hrtime_frequency / scale;
-    result = (double)counter.QuadPart / scaled_freq;
-    return (uint64_t)result;
-}
-
-void ev__time_init_win(void)
-{
-    DWORD errcode;
-    LARGE_INTEGER perf_frequency;
-
-    /*
-     * Retrieve high-resolution timer frequency and pre-compute its reciprocal.
-     */
-    if (QueryPerformanceFrequency(&perf_frequency))
-    {
-        s_hrtime_frequency = perf_frequency.QuadPart;
-    }
-    else
-    {
-        errcode = GetLastError();
-        EV_ABORT("GetLastError:%lu", errcode);
-    }
-}
-
-uint64_t ev_hrtime(void)
-{
-    ev__init_once_win();
-#define EV__NANOSEC 1000000000
-    return _ev_hrtime_win(EV__NANOSEC);
-#undef EV__NANOSEC
-}
-// #line 72 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/udp_win.c
-// SIZE:    24199
-// SHA-256: 100d590655ea5e23dada582588a7a279c545ad78ffa1de6e3d764802244f4315
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/udp_win.c"
-#include <assert.h>
-
-static int _ev_udp_setup_socket_attribute_win(ev_loop_t* loop, ev_udp_t* udp, int family)
-{
-    DWORD yes = 1;
-    WSAPROTOCOL_INFOW info;
-    int opt_len;
-    int ret;
-
-    assert(udp->sock != EV_OS_SOCKET_INVALID);
-
-    /* Set the socket to nonblocking mode */
-    if (ioctlsocket(udp->sock, FIONBIO, &yes) == SOCKET_ERROR)
-    {
-        ret = WSAGetLastError();
-        goto err;
-    }
-
-    /* Make the socket non-inheritable */
-    if (!SetHandleInformation((HANDLE)udp->sock, HANDLE_FLAG_INHERIT, 0))
-    {
-        ret = GetLastError();
-        goto err;
-    }
-
-    /**
-     * Associate it with the I/O completion port. Use uv_handle_t pointer as
-     * completion key.
-     */
-    if (CreateIoCompletionPort((HANDLE)udp->sock, loop->backend.iocp, (ULONG_PTR)udp->sock, 0) == NULL)
-    {
-        ret = GetLastError();
-        goto err;
-    }
-
-    /*
-     * All known Windows that support SetFileCompletionNotificationModes have a
-     * bug that makes it impossible to use this function in conjunction with
-     * datagram sockets. We can work around that but only if the user is using
-     * the default UDP driver (AFD) and has no other. LSPs stacked on top. Here
-     * we check whether that is the case.
-     */
-    opt_len = sizeof(info);
-    if (getsockopt(udp->sock, SOL_SOCKET, SO_PROTOCOL_INFOW, (char*)&info, &opt_len) == SOCKET_ERROR)
-    {
-        ret = GetLastError();
-        goto err;
-    }
-    if (info.ProtocolChain.ChainLen == 1)
-    {
-        if (SetFileCompletionNotificationModes((HANDLE)udp->sock,
-            FILE_SKIP_SET_EVENT_ON_HANDLE | FILE_SKIP_COMPLETION_PORT_ON_SUCCESS))
-        {
-            udp->base.data.flags |= EV_HANDLE_UDP_BYPASS_IOCP;
-            udp->backend.fn_wsarecv = ev__wsa_recv_workaround;
-            udp->backend.fn_wsarecvfrom = ev__wsa_recvfrom_workaround;
-        }
-        else if ((ret = GetLastError()) != ERROR_INVALID_FUNCTION)
-        {
-            goto err;
-        }
-    }
-
-    if (family == AF_INET6)
-    {
-        udp->base.data.flags |= EV_HANDLE_UDP_IPV6;
-    }
-    else
-    {
-        assert(!(udp->base.data.flags & EV_HANDLE_UDP_IPV6));
-    }
-
-    return 0;
-
-err:
-    return ev__translate_sys_error(ret);
-}
-
-static void _ev_udp_on_close_win(ev_handle_t* handle)
-{
-    ev_udp_t* udp = EV_CONTAINER_OF(handle, ev_udp_t, base);
-    if (udp->close_cb != NULL)
-    {
-        udp->close_cb(udp);
-    }
-}
-
-static int _ev_udp_is_bound_win(ev_udp_t* udp)
-{
-    struct sockaddr_storage addr;
-    size_t addrlen = sizeof(addr);
-
-    int ret = ev_udp_getsockname(udp, (struct sockaddr*)&addr, &addrlen);
-    return ret == 0 && addrlen > 0;
-}
-
-static int _ev_udp_is_connected_win(ev_udp_t* udp)
-{
-    struct sockaddr_storage addr;
-    size_t addrlen = sizeof(addr);
-
-    int ret = ev_udp_getpeername(udp, (struct sockaddr*)&addr, &addrlen);
-    return ret == 0 && addrlen > 0;
-}
-
-static int _ev_udp_maybe_deferred_socket_win(ev_udp_t* udp, int domain)
-{
-    int ret;
-    if (udp->sock != EV_OS_SOCKET_INVALID)
-    {
-        return 0;
-    }
-
-    if ((udp->sock = socket(domain, SOCK_DGRAM, 0)) == INVALID_SOCKET)
-    {
-        ret = WSAGetLastError();
-        return ev__translate_sys_error(ret);
-    }
-
-    if ((ret = _ev_udp_setup_socket_attribute_win(udp->base.loop, udp, domain)) != 0)
-    {
-        closesocket(udp->sock);
-        udp->sock = EV_OS_SOCKET_INVALID;
-        return ret;
-    }
-
-    return 0;
-}
-
-static void _ev_udp_close_socket_win(ev_udp_t* udp)
-{
-    if (udp->sock != EV_OS_SOCKET_INVALID)
-    {
-        closesocket(udp->sock);
-        udp->sock = EV_OS_SOCKET_INVALID;
-    }
-}
-
-static int _ev_udp_disconnect_win(ev_udp_t* udp)
-{
-    struct sockaddr addr;
-    memset(&addr, 0, sizeof(addr));
-
-    int ret = connect(udp->sock, (struct sockaddr*)&addr, sizeof(addr));
-    if (ret != 0)
-    {
-        ret = WSAGetLastError();
-        return ev__translate_sys_error(ret);
-    }
-
-    udp->base.data.flags &= ~EV_HANDLE_UDP_CONNECTED;
-    return 0;
-}
-
-static int _ev_udp_maybe_deferred_bind_win(ev_udp_t* udp, int domain)
-{
-    if (udp->base.data.flags & EV_HANDLE_UDP_BOUND)
-    {
-        return 0;
-    }
-
-    struct sockaddr* bind_addr;
-    if (domain == AF_INET)
-    {
-        bind_addr = (struct sockaddr*)&ev_addr_ip4_any_;
-    }
-    else if (domain == AF_INET6)
-    {
-        bind_addr = (struct sockaddr*)&ev_addr_ip6_any_;
-    }
-    else
-    {
-        return EV_EINVAL;
-    }
-
-    return ev_udp_bind(udp, bind_addr, 0);
-}
-
-static int _ev_udp_set_membership_ipv4_win(ev_udp_t* udp,
-    const struct sockaddr_in* multicast_addr, const char* interface_addr,
-    ev_udp_membership_t membership)
-{
-    int ret;
-    struct ip_mreq mreq;
-    memset(&mreq, 0, sizeof(mreq));
-
-    if (interface_addr)
-    {
-        if (inet_pton(AF_INET, interface_addr, &mreq.imr_interface.s_addr) != 1)
-        {
-            ret = WSAGetLastError();
-            return ev__translate_sys_error(ret);
-        }
-    }
-    else
-    {
-        mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-    }
-
-    mreq.imr_multiaddr.s_addr = multicast_addr->sin_addr.s_addr;
-
-    int optname = membership == EV_UDP_ENTER_GROUP ? IP_ADD_MEMBERSHIP : IP_DROP_MEMBERSHIP;
-    if (setsockopt(udp->sock, IPPROTO_IP, optname, (char*)&mreq, sizeof(mreq)) != 0)
-    {
-        ret = WSAGetLastError();
-        return ev__translate_sys_error(ret);
-    }
-
-    return 0;
-}
-
-static int _ev_udp_set_membership_ipv6_win(ev_udp_t* udp,
-    const struct sockaddr_in6* multicast_addr, const char* interface_addr,
-    ev_udp_membership_t membership)
-{
-    int ret;
-    struct ipv6_mreq mreq;
-    struct sockaddr_in6 addr6;
-
-    memset(&mreq, 0, sizeof(mreq));
-
-    if (interface_addr)
-    {
-        if (ev_ipv6_addr(interface_addr, 0, &addr6))
-        {
-            return EV_EINVAL;
-        }
-        mreq.ipv6mr_interface = addr6.sin6_scope_id;
-    }
-    else
-    {
-        mreq.ipv6mr_interface = 0;
-    }
-    mreq.ipv6mr_multiaddr = multicast_addr->sin6_addr;
-
-    int optname = membership == EV_UDP_ENTER_GROUP ? IPV6_ADD_MEMBERSHIP : IPV6_DROP_MEMBERSHIP;
-    if (setsockopt(udp->sock, IPPROTO_IPV6, optname, (char*)&mreq, sizeof(mreq)) != 0)
-    {
-        ret = WSAGetLastError();
-        return ev__translate_sys_error(ret);
-    }
-
-    return 0;
-}
-
-static int _ev_udp_set_source_membership_ipv4(ev_udp_t* udp,
-    const struct sockaddr_in* multicast_addr, const char* interface_addr,
-    const struct sockaddr_in* source_addr, ev_udp_membership_t membership)
-{
-    int err;
-    struct ip_mreq_source mreq;
-    memset(&mreq, 0, sizeof(mreq));
-
-    if (interface_addr != NULL)
-    {
-        if (inet_pton(AF_INET, interface_addr, &mreq.imr_interface.s_addr) != 1)
-        {
-            err = WSAGetLastError();
-            return ev__translate_sys_error(err);
-        }
-    }
-    else
-    {
-        mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-    }
-
-    mreq.imr_multiaddr.s_addr = multicast_addr->sin_addr.s_addr;
-    mreq.imr_sourceaddr.s_addr = source_addr->sin_addr.s_addr;
-
-    int optname = membership == EV_UDP_ENTER_GROUP ? IP_ADD_SOURCE_MEMBERSHIP : IP_DROP_SOURCE_MEMBERSHIP;
-
-    if (setsockopt(udp->sock, IPPROTO_IP, optname, (char*)&mreq, sizeof(mreq)) != 0)
-    {
-        err = WSAGetLastError();
-        return ev__translate_sys_error(err);
-    }
-
-    return 0;
-}
-
-static int _ev_udp_set_source_membership_ipv6(ev_udp_t* udp,
-    const struct sockaddr_in6* multicast_addr, const char* interface_addr,
-    const struct sockaddr_in6* source_addr, ev_udp_membership_t membership)
-{
-    int ret;
-    struct group_source_req mreq;
-    struct sockaddr_in6 addr6;
-
-    memset(&mreq, 0, sizeof(mreq));
-
-    if (interface_addr != NULL)
-    {
-        if ((ret = ev_ipv6_addr(interface_addr, 0, &addr6)) != 0)
-        {
-            return ret;
-        }
-        mreq.gsr_interface = addr6.sin6_scope_id;
-    }
-    else
-    {
-        mreq.gsr_interface = 0;
-    }
-
-    memcpy(&mreq.gsr_group, multicast_addr, sizeof(*multicast_addr));
-    memcpy(&mreq.gsr_source, source_addr, sizeof(*source_addr));
-
-    int optname = membership == EV_UDP_ENTER_GROUP ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP;
-    if (setsockopt(udp->sock, IPPROTO_IPV6, optname, (char*)&mreq, sizeof(mreq)) != 0)
-    {
-        ret = WSAGetLastError();
-        return ev__translate_sys_error(ret);
-    }
-
-    return 0;
-}
-
-static void _ev_udp_smart_deactive(ev_udp_t* udp)
-{
-    size_t io_sz = 0;
-
-    io_sz += ev_list_size(&udp->send_list);
-    io_sz += ev_list_size(&udp->recv_list);
-
-    if (io_sz == 0)
-    {
-        ev__handle_deactive(&udp->base);
-    }
-}
-
-static void _ev_udp_w_user_callback_win(ev_udp_write_t* req, ssize_t size)
-{
-    ev_udp_t* udp = req->backend.owner;
-    _ev_udp_smart_deactive(udp);
-
-    ev__write_exit(&req->base);
-    ev__handle_exit(&req->handle, NULL);
-
-    req->usr_cb(req, size);
-}
-
-static void _ev_udp_r_user_callback_win(ev_udp_read_t* req, const struct sockaddr* addr, ssize_t size)
-{
-    ev_udp_t* udp = req->backend.owner;
-    _ev_udp_smart_deactive(udp);
-
-    ev__read_exit(&req->base);
-    ev__handle_exit(&req->handle, NULL);
-
-    req->usr_cb(req, addr, size);
-}
-
-static void _ev_udp_on_send_complete_win(ev_udp_t* udp, ev_udp_write_t* req)
-{
-    ev_list_erase(&udp->send_list, &req->base.node);
-
-    ssize_t result = req->backend.stat;
-    if (result >= 0)
-    {
-        result = req->base.size;
-    }
-    _ev_udp_w_user_callback_win(req, result);
-}
-
-static void _ev_udp_on_send_bypass_iocp(ev_handle_t* handle)
-{
-    ev_udp_write_t* req = EV_CONTAINER_OF(handle, ev_udp_write_t, handle);
-    ev_udp_t* udp = req->backend.owner;
-
-    _ev_udp_on_send_complete_win(udp, req);
-}
-
-static void _ev_udp_on_send_iocp_win(ev_iocp_t* iocp, size_t transferred, void* arg)
-{
-    ev_udp_t* udp = arg;
-    ev_udp_write_t* req = EV_CONTAINER_OF(iocp, ev_udp_write_t, backend.io);
-
-    req->base.size = transferred;
-    req->backend.stat = NT_SUCCESS(iocp->overlapped.Internal) ?
-        0 : ev__translate_sys_error(ev__ntstatus_to_winsock_error((NTSTATUS)iocp->overlapped.Internal));
-
-    _ev_udp_on_send_complete_win(udp, req);
-}
-
-static void _ev_udp_do_recv_win(ev_udp_t* udp, ev_udp_read_t* req)
-{
-    DWORD recv_bytes;
-    DWORD flags = 0;
-    socklen_t peer_addr_len = sizeof(req->addr);
-
-    int ret = WSARecvFrom(udp->sock, (WSABUF*)req->base.data.bufs, (DWORD)req->base.data.nbuf,
-        &recv_bytes, &flags, (struct sockaddr*)&req->addr, &peer_addr_len, NULL, NULL);
-    if (ret != SOCKET_ERROR)
-    {
-        req->base.data.size = recv_bytes;
-        req->backend.stat = 0;
-    }
-    else
-    {
-        ret = WSAGetLastError();
-        req->backend.stat = ev__translate_sys_error(ret);
-    }
-
-    ev_list_erase(&udp->recv_list, &req->base.node);
-
-    ssize_t recv_ret = req->backend.stat;
-    struct sockaddr* peer_addr = NULL;
-
-    if (recv_ret >= 0)
-    {
-        recv_ret = req->base.data.size;
-        peer_addr = (struct sockaddr*)&req->addr;
-    }
-
-    _ev_udp_r_user_callback_win(req, peer_addr, recv_ret);
-}
-
-static void _ev_udp_on_recv_iocp_win(ev_iocp_t* iocp, size_t transferred, void* arg)
-{
-    (void)transferred;
-    ev_udp_t* udp = arg;
-    ev_udp_read_t* req = EV_CONTAINER_OF(iocp, ev_udp_read_t, backend.io);
-
-    _ev_udp_do_recv_win(udp, req);
-}
-
-static void _ev_udp_on_recv_bypass_iocp_win(ev_handle_t* handle)
-{
-    ev_udp_read_t* req = EV_CONTAINER_OF(handle, ev_udp_read_t, handle);
-    ev_udp_t* udp = req->backend.owner;
-
-    _ev_udp_do_recv_win(udp, req);
-}
-
-static int _ev_udp_maybe_bind_win(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags)
-{
-    int ret;
-    if (udp->base.data.flags & EV_HANDLE_UDP_BOUND)
-    {
-        return EV_EALREADY;
-    }
-
-    if ((flags & EV_UDP_IPV6_ONLY) && addr->sa_family != AF_INET6)
-    {
-        return EV_EINVAL;
-    }
-
-    if (udp->sock == EV_OS_SOCKET_INVALID)
-    {
-        if ((udp->sock = socket(addr->sa_family, SOCK_DGRAM, 0)) == EV_OS_SOCKET_INVALID)
-        {
-            ret = WSAGetLastError();
-            return ev__translate_sys_error(ret);
-        }
-
-        ret = _ev_udp_setup_socket_attribute_win(udp->base.loop, udp, addr->sa_family);
-        if (ret != 0)
-        {
-            _ev_udp_close_socket_win(udp);
-            return ret;
-        }
-    }
-
-    if (flags & EV_UDP_REUSEADDR)
-    {
-        if ((ret = ev__reuse_win(udp->sock, 1)) != 0)
-        {
-            return ret;
-        }
-    }
-
-    if (addr->sa_family == AF_INET6)
-    {
-        udp->base.data.flags |= EV_HANDLE_UDP_IPV6;
-        if (flags & EV_UDP_IPV6_ONLY)
-        {
-            if ((ret = ev__ipv6only_win(udp->sock, 1)) != 0)
-            {
-                _ev_udp_close_socket_win(udp);
-                return ret;
-            }
-        }
-    }
-
-    socklen_t addrlen = ev__get_addr_len(addr);
-    if ((ret = bind(udp->sock, addr, addrlen)) == SOCKET_ERROR)
-    {
-        ret = WSAGetLastError();
-        return ev__translate_sys_error(ret);
-    }
-
-    udp->base.data.flags |= EV_HANDLE_UDP_BOUND;
-    return 0;
-}
-
-EV_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
-{
-    WSABUF buf;
-    buf.buf = g_ev_loop_win_ctx.net.zero_;
-    buf.len = 0;
-
-    DWORD bytes = 0;
-    DWORD flags = MSG_PEEK;
-
-    req->backend.owner = udp;
-    req->backend.stat = EV_EINPROGRESS;
-    ev__iocp_init(&req->backend.io, _ev_udp_on_recv_iocp_win, udp);
-
-    ev__handle_active(&udp->base);
-
-    int ret = WSARecv(udp->sock, &buf, 1, &bytes, &flags, &req->backend.io.overlapped, NULL);
-    if (ret == 0 && (udp->base.data.flags & EV_HANDLE_UDP_BYPASS_IOCP))
-    {
-        ev__backlog_submit(&req->handle, _ev_udp_on_recv_bypass_iocp_win);
-        return 0;
-    }
-
-    int err;
-    if (ret == 0 || (err = WSAGetLastError()) == ERROR_IO_PENDING)
-    {
-        return 0;
-    }
-
-    _ev_udp_smart_deactive(udp);
-    return ev__translate_sys_error(err);
-}
-
-EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
-    const struct sockaddr* addr, socklen_t addrlen)
-{
-    int ret, err;
-
-    if (!(udp->base.data.flags & EV_HANDLE_UDP_BOUND))
-    {
-        if (addr == NULL)
-        {
-            return EV_EINVAL;
-        }
-
-        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, addr->sa_family)) != 0)
-        {
-            return ret;
-        }
-    }
-
-    req->backend.owner = udp;
-    req->backend.stat = EV_EINPROGRESS;
-    ev__iocp_init(&req->backend.io, _ev_udp_on_send_iocp_win, udp);
-
-    DWORD send_bytes;
-
-    ev__handle_active(&udp->base);
-    ret = WSASendTo(udp->sock, (WSABUF*)req->base.bufs, (DWORD)req->base.nbuf,
-        &send_bytes, 0, addr, addrlen, &req->backend.io.overlapped, NULL);
-
-    if (ret == 0 && (udp->base.data.flags & EV_HANDLE_UDP_BYPASS_IOCP))
-    {
-        req->base.size += req->base.capacity;
-        req->backend.stat = 0;
-        ev__backlog_submit(&req->handle, _ev_udp_on_send_bypass_iocp);
-        return 0;
-    }
-
-    if (ret == 0 || (err = GetLastError()) == ERROR_IO_PENDING)
-    {
-        req->backend.stat = EV_EINPROGRESS;
-        return 0;
-    }
-
-    _ev_udp_smart_deactive(udp);
-    return ev__translate_sys_error(err);
-}
-
-int ev_udp_init(ev_loop_t* loop, ev_udp_t* udp, int domain)
-{
-    int err;
-
-    udp->sock = EV_OS_SOCKET_INVALID;
-    udp->close_cb = NULL;
-    ev_list_init(&udp->send_list);
-    ev_list_init(&udp->recv_list);
-    ev__handle_init(loop, &udp->base, EV_ROLE_EV_UDP);
-
-    udp->backend.fn_wsarecv = WSARecv;
-    udp->backend.fn_wsarecvfrom = WSARecvFrom;
-
-    if (domain != AF_UNSPEC)
-    {
-        if ((err = _ev_udp_maybe_deferred_socket_win(udp, domain)) != 0)
-        {
-            ev__handle_exit(&udp->base, NULL);
-            return err;
-        }
-    }
-
-    return 0;
-}
-
-void ev_udp_exit(ev_udp_t* udp, ev_udp_cb close_cb)
-{
-    udp->close_cb = close_cb;
-
-    _ev_udp_close_socket_win(udp);
-    ev__handle_exit(&udp->base, _ev_udp_on_close_win);
-}
-
-int ev_udp_open(ev_udp_t* udp, ev_os_socket_t sock)
-{
-    int ret;
-    if (udp->sock != EV_OS_SOCKET_INVALID)
-    {
-        return EV_EBUSY;
-    }
-
-    WSAPROTOCOL_INFOW protocol_info;
-    int opt_len = sizeof(protocol_info);
-    if (getsockopt(sock, SOL_SOCKET, SO_PROTOCOL_INFOW, (char*)&protocol_info, &opt_len) != 0)
-    {
-        int err = WSAGetLastError();
-        return ev__translate_sys_error(err);
-    }
-
-    udp->sock = sock;
-    if ((ret = _ev_udp_setup_socket_attribute_win(udp->base.loop, udp,
-        protocol_info.iAddressFamily)) != 0)
-    {
-        udp->sock = EV_OS_SOCKET_INVALID;
-        return ret;
-    }
-
-    if (_ev_udp_is_bound_win(udp))
-    {
-        udp->base.data.flags |= EV_HANDLE_UDP_BOUND;
-    }
-
-    if (_ev_udp_is_connected_win(udp))
-    {
-        udp->base.data.flags |= EV_HANDLE_UDP_CONNECTED;
-    }
-
-    return 0;
-}
-
-int ev_udp_bind(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags)
-{
-    return _ev_udp_maybe_bind_win(udp, addr, flags);
-}
-
-int ev_udp_connect(ev_udp_t* udp, const struct sockaddr* addr)
-{
-    int ret;
-    if (addr == NULL)
-    {
-        if (!(udp->base.data.flags & EV_HANDLE_UDP_CONNECTED))
-        {
-            return EV_ENOTCONN;
-        }
-
-        return _ev_udp_disconnect_win(udp);
-    }
-
-    if (!(udp->base.data.flags & EV_HANDLE_UDP_BOUND))
-    {
-        struct sockaddr* bind_addr = addr->sa_family == AF_INET ?
-            (struct sockaddr*)&ev_addr_ip4_any_ : (struct sockaddr*)&ev_addr_ip6_any_;
-        if ((ret = _ev_udp_maybe_bind_win(udp, bind_addr, 0)) != 0)
-        {
-            return ret;
-        }
-    }
-
-    socklen_t addrlen = ev__get_addr_len(addr);
-    if (addrlen == (socklen_t)-1)
-    {
-        return EV_EINVAL;
-    }
-
-    if ((ret = connect(udp->sock, addr, addrlen)) != 0)
-    {
-        ret = WSAGetLastError();
-        return ev__translate_sys_error(ret);
-    }
-
-    return 0;
-}
-
-int ev_udp_getsockname(ev_udp_t* udp, struct sockaddr* name, size_t* len)
-{
-    int wrap_len = (int)*len;
-    if (getsockname(udp->sock, name, &wrap_len) != 0)
-    {
-        int err = WSAGetLastError();
-        return ev__translate_sys_error(err);
-    }
-
-    *len = wrap_len;
-    return 0;
-}
-
-int ev_udp_getpeername(ev_udp_t* udp, struct sockaddr* name, size_t* len)
-{
-    int wrap_len = (int)*len;
-    if (getpeername(udp->sock, name, &wrap_len) != 0)
-    {
-        int err = WSAGetLastError();
-        return ev__translate_sys_error(err);
-    }
-
-    *len = wrap_len;
-    return 0;
-}
-
-int ev_udp_set_membership(ev_udp_t* udp, const char* multicast_addr,
-    const char* interface_addr, ev_udp_membership_t membership)
-{
-    int ret;
-    struct sockaddr_storage addr;
-
-    if (membership != EV_UDP_LEAVE_GROUP && membership != EV_UDP_ENTER_GROUP)
-    {
-        return EV_EINVAL;
-    }
-
-    if ((ret = ev_ipv4_addr(multicast_addr, 0, (struct sockaddr_in*)&addr)) == 0)
-    {
-        if (udp->base.data.flags & EV_HANDLE_UDP_IPV6)
-        {
-            return EV_EINVAL;
-        }
-        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, AF_INET)) != 0)
-        {
-            return ret;
-        }
-        return _ev_udp_set_membership_ipv4_win(udp, (struct sockaddr_in*)&addr,
-            interface_addr, membership);
-    }
-
-    if ((ret = ev_ipv6_addr(multicast_addr, 0, (struct sockaddr_in6*)&addr)) == 0)
-    {
-        if ((udp->base.data.flags & EV_HANDLE_UDP_BOUND) && !(udp->base.data.flags & EV_HANDLE_UDP_IPV6))
-        {
-            return EV_EINVAL;
-        }
-        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, AF_INET6)) != 0)
-        {
-            return ret;
-        }
-        return _ev_udp_set_membership_ipv6_win(udp, (struct sockaddr_in6*)&addr,
-            interface_addr, membership);
-    }
-
-    return ret;
-}
-
-int ev_udp_set_source_membership(ev_udp_t* udp, const char* multicast_addr,
-    const char* interface_addr, const char* source_addr, ev_udp_membership_t membership)
-{
-    int ret;
-    struct sockaddr_storage mcast_addr;
-    struct sockaddr_storage src_addr;
-
-    if (membership != EV_UDP_LEAVE_GROUP && membership != EV_UDP_ENTER_GROUP)
-    {
-        return EV_EINVAL;
-    }
-
-    if ((ret = ev_ipv4_addr(multicast_addr, 0, (struct sockaddr_in*)&mcast_addr)) == 0)
-    {
-        if ((ret = ev_ipv4_addr(source_addr, 0, (struct sockaddr_in*)&src_addr)) != 0)
-        {
-            return ret;
-        }
-        if (udp->base.data.flags & EV_HANDLE_UDP_IPV6)
-        {
-            return EV_EINVAL;
-        }
-        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, AF_INET)) != 0)
-        {
-            return ret;
-        }
-        return _ev_udp_set_source_membership_ipv4(udp, (struct sockaddr_in*)&mcast_addr,
-            interface_addr, (struct sockaddr_in*)&src_addr, membership);
-    }
-
-    if ((ret = ev_ipv6_addr(multicast_addr, 0, (struct sockaddr_in6*)&mcast_addr)) == 0)
-    {
-        if ((ret = ev_ipv6_addr(source_addr, 0, (struct sockaddr_in6*)&src_addr)) != 0)
-        {
-            return ret;
-        }
-        if ((udp->base.data.flags & EV_HANDLE_UDP_BOUND) && !(udp->base.data.flags & EV_HANDLE_UDP_IPV6))
-        {
-            return EV_EINVAL;
-        }
-        if ((ret = _ev_udp_maybe_deferred_bind_win(udp, AF_INET6)) != 0)
-        {
-            return ret;
-        }
-        return _ev_udp_set_source_membership_ipv6(udp, (struct sockaddr_in6*)&mcast_addr,
-            interface_addr, (struct sockaddr_in6*)&src_addr, membership);
-    }
-
-    return ret;
-}
-
-int ev_udp_set_multicast_loop(ev_udp_t* udp, int on)
-{
-    DWORD optval = on;
-    if (udp->sock == EV_OS_SOCKET_INVALID)
-    {
-        return EV_EBADF;
-    }
-
-    int level = IPPROTO_IP;
-    int optname = IP_MULTICAST_LOOP;
-    if (udp->base.data.flags & EV_HANDLE_UDP_IPV6)
-    {
-        level = IPPROTO_IPV6;
-        optname = IPV6_MULTICAST_LOOP;
-    }
-
-    if (setsockopt(udp->sock, level, optname, (char*)&optval, sizeof(optval)) != 0)
-    {
-        int ret = WSAGetLastError();
-        return ev__translate_sys_error(ret);
-    }
-
-    return 0;
-}
-
-int ev_udp_set_multicast_ttl(ev_udp_t* udp, int ttl)
-{
-    DWORD optval = (DWORD)ttl;
-    if (ttl < -1 || ttl > 255)
-    {
-        return EV_EINVAL;
-    }
-    if (udp->sock == EV_OS_SOCKET_INVALID)
-    {
-        return EV_EBADF;
-    }
-
-    int level = IPPROTO_IP;
-    int optname = IP_MULTICAST_TTL;
-    if (udp->base.data.flags & EV_HANDLE_UDP_IPV6)
-    {
-        level = IPPROTO_IPV6;
-        optname = IPV6_MULTICAST_HOPS;
-    }
-
-    if (setsockopt(udp->sock, level, optname, (char*)&optval, sizeof(optval)) != 0)
-    {
-        int ret = WSAGetLastError();
-        return ev__translate_sys_error(ret);
-    }
-
-    return 0;
-}
-
-int ev_udp_set_multicast_interface(ev_udp_t* udp, const char* interface_addr)
-{
-    int ret;
-    struct sockaddr_storage addr_st;
-    struct sockaddr_in* addr_4 = (struct sockaddr_in*)&addr_st;
-    struct sockaddr_in6* addr_6 = (struct sockaddr_in6*)&addr_st;
-
-    if (udp->sock == EV_OS_SOCKET_INVALID)
-    {
-        return EV_EBADF;
-    }
-
-    int is_ipv6 = udp->base.data.flags & EV_HANDLE_UDP_IPV6;
-    if ((ret = ev__udp_interface_addr_to_sockaddr(&addr_st, interface_addr, is_ipv6)) != 0)
-    {
-        return ret;
-    }
-
-    int level = IPPROTO_IP;
-    int optname = IP_MULTICAST_IF;
-    char* optval = (char*)&addr_4->sin_addr;
-    int optlen = sizeof(addr_4->sin_addr);
-    if (addr_st.ss_family == AF_INET6)
-    {
-        optval = (char*)&addr_6->sin6_scope_id;
-        optlen = sizeof(addr_6->sin6_scope_id);
-    }
-
-    if (setsockopt(udp->sock, level, optname, optval, optlen) != 0)
-    {
-        ret = WSAGetLastError();
-        return ev__translate_sys_error(ret);
-    }
-
-    return 0;
-}
-
-int ev_udp_set_broadcast(ev_udp_t* udp, int on)
-{
-    BOOL optval = !!on;
-
-    if (udp->sock == EV_OS_SOCKET_INVALID)
-    {
-        return EV_EBADF;
-    }
-
-    if (setsockopt(udp->sock, SOL_SOCKET, SO_BROADCAST, (char*)&optval, sizeof(optval)) != 0)
-    {
-        int err = WSAGetLastError();
-        return ev__translate_sys_error(err);
-    }
-
-    return 0;
-}
-
-int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
-{
-    DWORD optval = ttl;
-    if (optval < 1 || optval > 255)
-    {
-        return EV_EINVAL;
-    }
-    if (udp->sock == EV_OS_SOCKET_INVALID)
-    {
-        return EV_EBADF;
-    }
-
-    int level = IPPROTO_IP;
-    int optname = IP_TTL;
-    if (udp->base.data.flags & EV_HANDLE_UDP_IPV6)
-    {
-        level = IPPROTO_IPV6;
-        optname = IPV6_HOPLIMIT;
-    }
-
-    if (setsockopt(udp->sock, level, optname, (char*)&optval, sizeof(optval)) != 0)
-    {
-        int err = WSAGetLastError();
-        return ev__translate_sys_error(err);
-    }
-
-    return 0;
-}
-
-// #line 73 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/winapi.c
-// SIZE:    594
-// SHA-256: 60242db16813d1f3a443e560447e5151fdf17dea28c0f25538897831e2abd8b0
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/winapi.c"
-#include <assert.h>
-
-ev_winapi_t ev_winapi = {
-    NULL,
-    NULL,
-    NULL,
-};
-
-EV_LOCAL void ev__winapi_init(void)
-{
-#define GET_NTDLL_FUNC(name)  \
-    do {\
-        ev_winapi.name = (fn_##name)GetProcAddress(ntdll_modeule, #name);\
-        assert(ev_winapi.name != NULL);\
-    } while (0)
-
-    HMODULE ntdll_modeule = GetModuleHandleA("ntdll.dll");
-    assert(ntdll_modeule != NULL);
-
-    GET_NTDLL_FUNC(NtQueryInformationFile);
-    GET_NTDLL_FUNC(RtlNtStatusToDosError);
-    GET_NTDLL_FUNC(NtQueryVolumeInformationFile);
-    GET_NTDLL_FUNC(NtDeviceIoControlFile);
-
-#undef GET_NTDLL_FUNC
-}
-
-// #line 74 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/win/winsock.c
-// SIZE:    9169
-// SHA-256: 98aa2d8a3b47e1d675ae820e72af6991599bc57c8f379236b1954b12d587cce9
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/win/winsock.c"
-
-int ev_tcp_non_ifs_lsp_ipv4;
-int ev_tcp_non_ifs_lsp_ipv6;
-
-struct sockaddr_in ev_addr_ip4_any_;
-struct sockaddr_in6 ev_addr_ip6_any_;
-
-EV_LOCAL void ev__winsock_init(void)
-{
-#define DETECT_IFS_LSP(AF, flag)    \
-    do {\
-        flag = 1;\
-        SOCKET dummy = socket(AF, SOCK_STREAM, IPPROTO_IP);\
-        if (dummy != INVALID_SOCKET) {\
-            break;\
-        }\
-        WSAPROTOCOL_INFOW protocol_info;\
-        int opt_len = sizeof(protocol_info);\
-        if (getsockopt(dummy, SOL_SOCKET, SO_PROTOCOL_INFOW, (char*)&protocol_info, &opt_len) == 0) {\
-            if (protocol_info.dwServiceFlags1 & XP1_IFS_HANDLES) {\
-                flag = 0;\
-            }\
-        }\
-        closesocket(dummy);\
-    } while (0)
-
-    int ret; (void)ret;
-
-    /* Set implicit binding address used by connectEx */
-    if ((ret = ev_ipv4_addr("0.0.0.0", 0, &ev_addr_ip4_any_)) != 0)
-    {
-        abort();
-    }
-    if ((ret = ev_ipv6_addr("::", 0, &ev_addr_ip6_any_)) != 0)
-    {
-        abort();
-    }
-
-    /* Skip initialization in safe mode without network support */
-    if (GetSystemMetrics(SM_CLEANBOOT) == 1)
-    {
-        return;
-    }
-
-    /* Initialize winsock */
-    {
-        WSADATA wsa_data;
-        if ((ret = WSAStartup(MAKEWORD(2, 2), &wsa_data)) != 0)
-        {
-            EV_FATAL_SYSCALL(ret, "WSAStartup");
-        }
-    }
-    
-    /* Try to detect non-IFS LSPs */
-    DETECT_IFS_LSP(AF_INET, ev_tcp_non_ifs_lsp_ipv4);
-    /* Try to detect IPV6 support and non-IFS LSPs */
-    DETECT_IFS_LSP(AF_INET6, ev_tcp_non_ifs_lsp_ipv6);
-
-#undef DETECT_IFS_LSP
-}
-
-EV_LOCAL int WSAAPI ev__wsa_recv_workaround(SOCKET socket, WSABUF* buffers,
-    DWORD buffer_count, DWORD* bytes, DWORD* flags, WSAOVERLAPPED* overlapped,
-    LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine)
-{
-    NTSTATUS status;
-    void* apc_context;
-    IO_STATUS_BLOCK* iosb = (IO_STATUS_BLOCK*)&overlapped->Internal;
-    AFD_RECV_INFO info;
-    DWORD error;
-
-    if (overlapped == NULL || completion_routine != NULL) {
-        WSASetLastError(WSAEINVAL);
-        return SOCKET_ERROR;
-    }
-
-    info.BufferArray = buffers;
-    info.BufferCount = buffer_count;
-    info.AfdFlags = AFD_OVERLAPPED;
-    info.TdiFlags = TDI_RECEIVE_NORMAL;
-
-    if (*flags & MSG_PEEK) {
-        info.TdiFlags |= TDI_RECEIVE_PEEK;
-    }
-
-    if (*flags & MSG_PARTIAL) {
-        info.TdiFlags |= TDI_RECEIVE_PARTIAL;
-    }
-
-    if (!((intptr_t)overlapped->hEvent & 1)) {
-        apc_context = (void*)overlapped;
-    }
-    else {
-        apc_context = NULL;
-    }
-
-    iosb->Status = STATUS_PENDING;
-    iosb->Pointer = 0;
-
-    status = ev_winapi.NtDeviceIoControlFile((HANDLE)socket,
-        overlapped->hEvent,
-        NULL,
-        apc_context,
-        iosb,
-        IOCTL_AFD_RECEIVE,
-        &info,
-        sizeof(info),
-        NULL,
-        0);
-
-    *flags = 0;
-    *bytes = (DWORD)iosb->Information;
-
-    switch (status) {
-    case STATUS_SUCCESS:
-        error = ERROR_SUCCESS;
-        break;
-
-    case STATUS_PENDING:
-        error = WSA_IO_PENDING;
-        break;
-
-    case STATUS_BUFFER_OVERFLOW:
-        error = WSAEMSGSIZE;
-        break;
-
-    case STATUS_RECEIVE_EXPEDITED:
-        error = ERROR_SUCCESS;
-        *flags = MSG_OOB;
-        break;
-
-    case STATUS_RECEIVE_PARTIAL_EXPEDITED:
-        error = ERROR_SUCCESS;
-        *flags = MSG_PARTIAL | MSG_OOB;
-        break;
-
-    case STATUS_RECEIVE_PARTIAL:
-        error = ERROR_SUCCESS;
-        *flags = MSG_PARTIAL;
-        break;
-
-    default:
-        error = ev__ntstatus_to_winsock_error(status);
-        break;
-    }
-
-    WSASetLastError(error);
-
-    if (error == ERROR_SUCCESS)
-    {
-        return 0;
-    }
-
-    return SOCKET_ERROR;
-}
-
-EV_LOCAL int WSAAPI ev__wsa_recvfrom_workaround(SOCKET socket, WSABUF* buffers,
-    DWORD buffer_count, DWORD* bytes, DWORD* flags, struct sockaddr* addr,
-    int* addr_len, WSAOVERLAPPED* overlapped,
-    LPWSAOVERLAPPED_COMPLETION_ROUTINE completion_routine)
-{
-    NTSTATUS status;
-    void* apc_context;
-    IO_STATUS_BLOCK* iosb = (IO_STATUS_BLOCK*)&overlapped->Internal;
-    AFD_RECV_DATAGRAM_INFO info;
-    DWORD error;
-
-    if (overlapped == NULL || addr == NULL || addr_len == NULL ||
-        completion_routine != NULL)
-    {
-        WSASetLastError(WSAEINVAL);
-        return SOCKET_ERROR;
-    }
-
-    info.BufferArray = buffers;
-    info.BufferCount = buffer_count;
-    info.AfdFlags = AFD_OVERLAPPED;
-    info.TdiFlags = TDI_RECEIVE_NORMAL;
-    info.Address = addr;
-    info.AddressLength = addr_len;
-
-    if (*flags & MSG_PEEK) {
-        info.TdiFlags |= TDI_RECEIVE_PEEK;
-    }
-
-    if (*flags & MSG_PARTIAL) {
-        info.TdiFlags |= TDI_RECEIVE_PARTIAL;
-    }
-
-    if (!((intptr_t)overlapped->hEvent & 1)) {
-        apc_context = (void*)overlapped;
-    }
-    else {
-        apc_context = NULL;
-    }
-
-    iosb->Status = STATUS_PENDING;
-    iosb->Pointer = 0;
-
-    status = ev_winapi.NtDeviceIoControlFile((HANDLE)socket,
-        overlapped->hEvent,
-        NULL,
-        apc_context,
-        iosb,
-        IOCTL_AFD_RECEIVE_DATAGRAM,
-        &info,
-        sizeof(info),
-        NULL,
-        0);
-
-    *flags = 0;
-    *bytes = (DWORD)iosb->Information;
-
-    switch (status)
-    {
-    case STATUS_SUCCESS:
-        error = ERROR_SUCCESS;
-        break;
-
-    case STATUS_PENDING:
-        error = WSA_IO_PENDING;
-        break;
-
-    case STATUS_BUFFER_OVERFLOW:
-        error = WSAEMSGSIZE;
-        break;
-
-    case STATUS_RECEIVE_EXPEDITED:
-        error = ERROR_SUCCESS;
-        *flags = MSG_OOB;
-        break;
-
-    case STATUS_RECEIVE_PARTIAL_EXPEDITED:
-        error = ERROR_SUCCESS;
-        *flags = MSG_PARTIAL | MSG_OOB;
-        break;
-
-    case STATUS_RECEIVE_PARTIAL:
-        error = ERROR_SUCCESS;
-        *flags = MSG_PARTIAL;
-        break;
-
-    default:
-        error = ev__ntstatus_to_winsock_error(status);
-        break;
-    }
-
-    WSASetLastError(error);
-
-    if (error == ERROR_SUCCESS) {
-        return 0;
-    }
-
-    return SOCKET_ERROR;
-}
-
-EV_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status)
-{
-    switch (status)
-    {
-    case STATUS_SUCCESS:
-        return ERROR_SUCCESS;
-
-    case STATUS_PENDING:
-        return ERROR_IO_PENDING;
-
-    case STATUS_INVALID_HANDLE:
-    case STATUS_OBJECT_TYPE_MISMATCH:
-        return WSAENOTSOCK;
-
-    case STATUS_INSUFFICIENT_RESOURCES:
-    case STATUS_PAGEFILE_QUOTA:
-    case STATUS_COMMITMENT_LIMIT:
-    case STATUS_WORKING_SET_QUOTA:
-    case STATUS_NO_MEMORY:
-    case STATUS_QUOTA_EXCEEDED:
-    case STATUS_TOO_MANY_PAGING_FILES:
-    case STATUS_REMOTE_RESOURCES:
-        return WSAENOBUFS;
-
-    case STATUS_TOO_MANY_ADDRESSES:
-    case STATUS_SHARING_VIOLATION:
-    case STATUS_ADDRESS_ALREADY_EXISTS:
-        return WSAEADDRINUSE;
-
-    case STATUS_LINK_TIMEOUT:
-    case STATUS_IO_TIMEOUT:
-    case STATUS_TIMEOUT:
-        return WSAETIMEDOUT;
-
-    case STATUS_GRACEFUL_DISCONNECT:
-        return WSAEDISCON;
-
-    case STATUS_REMOTE_DISCONNECT:
-    case STATUS_CONNECTION_RESET:
-    case STATUS_LINK_FAILED:
-    case STATUS_CONNECTION_DISCONNECTED:
-    case STATUS_PORT_UNREACHABLE:
-    case STATUS_HOPLIMIT_EXCEEDED:
-        return WSAECONNRESET;
-
-    case STATUS_LOCAL_DISCONNECT:
-    case STATUS_TRANSACTION_ABORTED:
-    case STATUS_CONNECTION_ABORTED:
-        return WSAECONNABORTED;
-
-    case STATUS_BAD_NETWORK_PATH:
-    case STATUS_NETWORK_UNREACHABLE:
-    case STATUS_PROTOCOL_UNREACHABLE:
-        return WSAENETUNREACH;
-
-    case STATUS_HOST_UNREACHABLE:
-        return WSAEHOSTUNREACH;
-
-    case STATUS_CANCELLED:
-    case STATUS_REQUEST_ABORTED:
-        return WSAEINTR;
-
-    case STATUS_BUFFER_OVERFLOW:
-    case STATUS_INVALID_BUFFER_SIZE:
-        return WSAEMSGSIZE;
-
-    case STATUS_BUFFER_TOO_SMALL:
-    case STATUS_ACCESS_VIOLATION:
-        return WSAEFAULT;
-
-    case STATUS_DEVICE_NOT_READY:
-    case STATUS_REQUEST_NOT_ACCEPTED:
-        return WSAEWOULDBLOCK;
-
-    case STATUS_INVALID_NETWORK_RESPONSE:
-    case STATUS_NETWORK_BUSY:
-    case STATUS_NO_SUCH_DEVICE:
-    case STATUS_NO_SUCH_FILE:
-    case STATUS_OBJECT_PATH_NOT_FOUND:
-    case STATUS_OBJECT_NAME_NOT_FOUND:
-    case STATUS_UNEXPECTED_NETWORK_ERROR:
-        return WSAENETDOWN;
-
-    case STATUS_INVALID_CONNECTION:
-        return WSAENOTCONN;
-
-    case STATUS_REMOTE_NOT_LISTENING:
-    case STATUS_CONNECTION_REFUSED:
-        return WSAECONNREFUSED;
-
-    case STATUS_PIPE_DISCONNECTED:
-        return WSAESHUTDOWN;
-
-    case STATUS_CONFLICTING_ADDRESSES:
-    case STATUS_INVALID_ADDRESS:
-    case STATUS_INVALID_ADDRESS_COMPONENT:
-        return WSAEADDRNOTAVAIL;
-
-    case STATUS_NOT_SUPPORTED:
-    case STATUS_NOT_IMPLEMENTED:
-        return WSAEOPNOTSUPP;
-
-    case STATUS_ACCESS_DENIED:
-        return WSAEACCES;
-
-    default:
-        if ((status & (FACILITY_NTWIN32 << 16)) == (FACILITY_NTWIN32 << 16) &&
-            (status & (ERROR_SEVERITY_ERROR | ERROR_SEVERITY_WARNING)))
-        {
-            /*
-             * It's a windows error that has been previously mapped to an ntstatus
-             * code.
-             */
-            return (DWORD)(status & 0xffff);
-        }
-        else
-        {
-            /* The default fallback for unmappable ntstatus codes. */
-            return WSAEINVAL;
-        }
-    }
-}
-
-// #line 75 "ev.c"
-
-#else
-
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/async_unix.h
-// SIZE:    491
-// SHA-256: 35d22b0410bc633120906291e828465b21b8e188a572bfe49619d63006cbb572
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/async_unix.h"
-#ifndef __EV_ASYNC_UNIX_INTERNAL_H__
-#define __EV_ASYNC_UNIX_INTERNAL_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * @brief Create a pair of eventfd.
- * Index 0 for read, index 1 for write.
- */
-EV_LOCAL int ev__asyc_eventfd(int evtfd[2]);
-
-EV_LOCAL void ev__async_eventfd_close(int fd);
-
-/**
- * @brief Post event to eventfd.
- */
-EV_LOCAL void ev__async_post(int wfd);
-
-/**
- * @brief Pend event from eventfd.
- */
-EV_LOCAL void ev__async_pend(int rfd);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 79 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/io_unix.h
-// SIZE:    2857
-// SHA-256: cdff01bf63730f8c3a8494580da79bd59b744441b8d88a2309823f4f5145d826
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/io_unix.h"
-#ifndef __EV_IO_UNIX_H__
-#define __EV_IO_UNIX_H__
-
-#include <sys/epoll.h>
-#define EV_IO_IN            EPOLLIN     /**< The associated file is available for read(2) operations. */
-#define EV_IO_OUT           EPOLLOUT    /**< The associated file is available for write(2) operations. */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-EV_LOCAL void ev__init_io(ev_loop_t* loop);
-
-EV_LOCAL void ev__exit_io(ev_loop_t* loop);
-
-/**
- * @brief Initialize io structure
- * @param[out] io   A pointer to the structure
- * @param[in] fd    File descriptor
- * @param[in] cb    IO active callback
- * @param[in] arg   User data
- */
-EV_LOCAL void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb, void* arg);
-
-/**
- * @brief Add events to IO structure
- * @param[in] loop  Event loop
- * @param[in] io    IO structure
- * @param[in] evts  #EV_IO_IN or #EV_IO_OUT
- */
-EV_LOCAL void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts);
-
-/**
- * @brief Delete events from IO structure
- * @param[in] loop  Event loop
- * @param[in] io    IO structure
- * @param[in] evts  #EV_IO_IN or #EV_IO_OUT
- */
-EV_LOCAL void ev__nonblock_io_del(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts);
-
-/**
- * @brief Add or remove FD_CLOEXEC
- * @param[in] fd    File descriptor
- * @param[in] set   bool
- * @return          #ev_errno_t
- */
-EV_LOCAL int ev__cloexec(int fd, int set);
-
-/**
- * @brief Add or remove O_NONBLOCK
- * @param[in] fd    File descriptor
- * @param[in] set   bool
- * @return          #ev_errno_t
- */
-EV_LOCAL int ev__nonblock(int fd, int set);
-
-/**
- * @brief Set reuse
- * @return          #ev_errno_t
- */
-EV_LOCAL int ev__reuse_unix(int fd);
-
-/**
- * @brief Return the file access mode and the file status flags
- */
-EV_LOCAL int ev__fcntl_getfl_unix(int fd);
-
-/**
- * @brief Return the file descriptor flags.
- */
-EV_LOCAL int ev__fcntl_getfd_unix(int fd);
-
-/**
- * @brief readv wrap
- * @return 0: try again; >0: read size; <0 errno
- */
-EV_LOCAL ssize_t ev__readv_unix(int fd, ev_buf_t* iov, int iovcnt);
-
-/**
- * @brief readv wrap
- * @return 0: try again; >0: write size; <0 errno
- */
-EV_LOCAL ssize_t ev__writev_unix(int fd, ev_buf_t* iov, int iovcnt);
-
-/**
- * @brief write
- * @return 0: try again; >0: write size; <0 errno
- */
-EV_LOCAL ssize_t ev__write_unix(int fd, void* buffer, size_t size);
-
-/**
- * @brief Write \p req to \p fd
- * @param[in] fd    File to write
- * @param[in] req   Write request
- * @param[in] do_write  Write function
- * @param[in] arg       User defined data
- * @return              + #EV_SUCCESS: \p req send finish
- *                      + #EV_EAGAIN: \p req not send finish, need to try again
- *                      + other value: error
- */
-EV_LOCAL int ev__send_unix(int fd, ev_write_t* req,
-    ssize_t(*do_write)(int fd, struct iovec* iov, int iovcnt, void* arg), void* arg);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 80 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/process_unix.h
-// SIZE:    417
-// SHA-256: da95020dc882f252d9e3053f674a5d6b80dbb9fe2c6eeca7c82d5a729ced50a9
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/process_unix.h"
-#ifndef __EV_PROCESS_UNIX_H__
-#define __EV_PROCESS_UNIX_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct ev_process_ctx_s
-{
-    ev_list_t       wait_queue;         /**< #ev_process_t::node */
-    ev_mutex_t      wait_queue_mutex;   /**< Mutex for wait_queue */
-} ev_process_ctx_t;
-
-/**
- * @brief Initialize process context.
- */
-EV_LOCAL void ev__init_process_unix(void);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 81 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/tcp_unix.h
-// SIZE:    306
-// SHA-256: edc3dae939e8f69acbd65494c0cc33fb9ae6862033d36c29cf6c5598a24fd0db
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/tcp_unix.h"
-#ifndef __EV_TCP_UNIX_H__
-#define __EV_TCP_UNIX_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * @brief Open fd for read/write.
- * @param[in] tcp   TCP handle
- * @param[in] fd    fd
- * @return          #ev_errno_t
- */
-EV_LOCAL int ev__tcp_open(ev_tcp_t* tcp, int fd);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 82 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/loop_unix.h
-// SIZE:    568
-// SHA-256: 3d8ece467c0c09f516a565097adcd81230ae09136633f83058415949b932fc45
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/loop_unix.h"
-#ifndef __EV_LOOP_UNIX_H__
-#define __EV_LOOP_UNIX_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct ev_loop_unix_ctx
-{
-    clockid_t           hwtime_clock_id;    /**< Clock id */
-    int                 iovmax;             /**< The limits instead of readv/writev */
-    ev_process_ctx_t    process;            /**< Process context */
-}ev_loop_unix_ctx_t;
-
-/**
- * @brief Global runtime
- */
-extern ev_loop_unix_ctx_t g_ev_loop_unix_ctx;
-
-/**
- * @brief Initialize windows context.
- */
-EV_LOCAL void ev__init_once_unix(void);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 83 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/stream_unix.h
-// SIZE:    1796
-// SHA-256: 9b706c88ae8e57a461ee12ee041bf7c37ffec9dfe4d567408a62f9908c7ba6fe
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/stream_unix.h"
-#ifndef __EV_STREAM_UNIX_H__
-#define __EV_STREAM_UNIX_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
- * @brief Initialize stream.
- * @param[in] loop      Event loop
- * @param[out] stream   Stream handler
- * @param[in] fd        File descriptor
- * @param[in] wcb       Write callback
- * @param[in] rcb       Read callback
- */
-EV_LOCAL void ev__nonblock_stream_init(ev_loop_t* loop, ev_nonblock_stream_t* stream,
-    int fd, ev_stream_write_cb wcb, ev_stream_read_cb rcb);
-
-/**
- * @brief Cleanup and exit stream
- * @param[in] stream    Stream handler
- */
-EV_LOCAL void ev__nonblock_stream_exit(ev_nonblock_stream_t* stream);
-
-/**
- * @brief Do stream write
- * @param[in] stream    Stream handle
- * @param[in] req       Write request
- * @return              #ev_errno_t
- */
-EV_LOCAL int ev__nonblock_stream_write(ev_nonblock_stream_t* stream, ev_write_t* req);
-
-/**
- * @brief Do stream read
- * @param[in] stream    Stream handle
- * @param[in] req       Read request
- * @return              #ev_errno_t
- */
-EV_LOCAL int ev__nonblock_stream_read(ev_nonblock_stream_t* stream, ev_read_t* req);
-
-/**
- * @brief Get pending action count.
- * @param[in] stream    Stream handle
- * @param[in] evts      #EV_IO_IN or #EV_IO_OUT
- * @return              Action count
- */
-EV_LOCAL size_t ev__nonblock_stream_size(ev_nonblock_stream_t* stream, unsigned evts);
-
-/**
- * @brief Abort pending requests
- * @param[in] stream    Stream handle
- * @param[in] evts      #EV_IO_IN or #EV_IO_OUT
- */
-EV_LOCAL void ev__nonblock_stream_abort(ev_nonblock_stream_t* stream);
-
-/**
- * @brief Cleanup pending requests
- * @param[in] stream    Stream handle
- * @param[in] evts      #EV_IO_IN or #EV_IO_OUT
- */
-EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned evts);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 84 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/work.h
-// SIZE:    231
-// SHA-256: 55f148e626b082262c2d61bdecb715d4ec5cd25b6caaa3ad21c676a4e6bf53b4
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/work.h"
-#ifndef __EV_WORK_INTERNAL_H__
-#define __EV_WORK_INTERNAL_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-EV_LOCAL void ev__init_work(ev_loop_t* loop);
-
-EV_LOCAL void ev__exit_work(ev_loop_t* loop);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-// #line 85 "ev.c"
-
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/async_unix.c
-// SIZE:    3307
-// SHA-256: 42c2fd42273c7ee061b8c83ec481548f12fbe6bd0871d5f37caac394c2dd7874
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/async_unix.c"
-#include <unistd.h>
-#include <assert.h>
-#include <sys/eventfd.h>
-
-static void _async_on_wakeup_unix(ev_nonblock_io_t* io, unsigned evts, void* arg)
-{
-    (void)evts; (void)arg;
-    ev_async_t* handle = EV_CONTAINER_OF(io, ev_async_t, backend.io);
-
-    ev__async_pend(handle->backend.pipfd[0]);
-    handle->active_cb(handle);
-}
-
-static void _ev_async_on_close(ev_handle_t* handle)
-{
-    ev_async_t* async = EV_CONTAINER_OF(handle, ev_async_t, base);
-
-    if (async->close_cb != NULL)
-    {
-        async->close_cb(async);
-    }
-}
-
-static void _async_close_pipe(ev_async_t* handle)
-{
-    if (handle->backend.pipfd[0] != -1)
-    {
-        close(handle->backend.pipfd[0]);
-        handle->backend.pipfd[0] = -1;
-    }
-    if (handle->backend.pipfd[1] != -1)
-    {
-        close(handle->backend.pipfd[1]);
-        handle->backend.pipfd[1] = -1;
-    }
-}
-
-static void _ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
-{
-    assert(!ev__handle_is_closing(&handle->base));
-
-    handle->close_cb = close_cb;
-    _async_close_pipe(handle);
-
-    ev__handle_deactive(&handle->base);
-    ev__handle_exit(&handle->base, close_cb != NULL ? _ev_async_on_close : NULL);
-}
-
-EV_LOCAL void ev__async_exit_force(ev_async_t* handle)
-{
-    _ev_async_exit(handle, NULL);
-}
-
-EV_LOCAL int ev__asyc_eventfd(int evtfd[2])
-{
-    int errcode;
-
-#if defined(__linux__)
-    if ((evtfd[0] = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK)) < 0)
-    {
-        errcode = errno;
-        return ev__translate_sys_error(errcode);
-    }
-
-    if ((evtfd[1] = dup(evtfd[0])) < 0)
-    {
-        errcode = errno;
-        close(evtfd[0]);
-        return ev__translate_sys_error(errcode);
-    }
-#else
-    errcode = ev_pipe_make(evtfd, EV_PIPE_NONBLOCK, EV_PIPE_NONBLOCK);
-    if (errcode != 0)
-    {
-        return errcode;
-    }
-#endif
-
-    return 0;
-}
-
-EV_LOCAL void ev__async_eventfd_close(int fd)
-{
-    close(fd);
-}
-
-EV_LOCAL void ev__async_post(int wfd)
-{
-    uint64_t val = 1;
-
-    ssize_t write_size;
-    int errcode;
-
-    do
-    {
-        write_size = write(wfd, &val, sizeof(val));
-    }while(write_size == -1 && (errcode = errno) == EINTR);
-
-    if (write_size < 0)
-    {
-        EV_ABORT();
-    }
-}
-
-EV_LOCAL void ev__async_pend(int rfd)
-{
-    uint64_t val;
-    int errcode;
-    ssize_t read_size;
-
-    do
-    {
-        read_size = read(rfd, &val, sizeof(val));
-    }while(read_size == -1 && (errcode = errno) == EINTR);
-
-    if (read_size < 0)
-    {
-        EV_ABORT();
-    }
-}
-
-int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb)
-{
-    int errcode;
-
-    handle->active_cb = cb;
-    handle->close_cb = NULL;
-    ev__handle_init(loop, &handle->base, EV_ROLE_EV_ASYNC);
-
-    errcode = ev__asyc_eventfd(handle->backend.pipfd);
-    if (errcode != 0)
-    {
-        goto err_close_handle;
-    }
-
-    ev__nonblock_io_init(&handle->backend.io, handle->backend.pipfd[0],
-        _async_on_wakeup_unix, NULL);
-    ev__nonblock_io_add(loop, &handle->backend.io, EV_IO_IN);
-    ev__handle_active(&handle->base);
-
-    return 0;
-
-err_close_handle:
-    _async_close_pipe(handle);
-    ev__handle_exit(&handle->base, NULL);
-    return errcode;
-}
-
-void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb)
-{
-    _ev_async_exit(handle, close_cb);
-}
-
-void ev_async_wakeup(ev_async_t* handle)
-{
-    ev__async_post(handle->backend.pipfd[1]);
-}
-
-// #line 87 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/fs_unix.c
-// SIZE:    11029
-// SHA-256: 6f59d9af229fa0353c639b421c6d27c4a75e19d092cab36d079f9f535bce19fc
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/fs_unix.c"
-#define _GNU_SOURCE
-#include <assert.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <sys/uio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/sysmacros.h>
-#include <sys/mman.h>
-
-static ev_dirent_type_t _ev_fs_get_dirent_type(struct dirent* dent)
-{
-    ev_dirent_type_t type;
-
-    switch (dent->d_type)
-    {
-    case DT_DIR:
-        type = EV_DIRENT_DIR;
-        break;
-    case DT_REG:
-        type = EV_DIRENT_FILE;
-        break;
-    case DT_LNK:
-        type = EV_DIRENT_LINK;
-        break;
-    case DT_FIFO:
-        type = EV_DIRENT_FIFO;
-        break;
-    case DT_SOCK:
-        type = EV_DIRENT_SOCKET;
-        break;
-    case DT_CHR:
-        type = EV_DIRENT_CHR;
-        break;
-    case DT_BLK:
-        type = EV_DIRENT_BLOCK;
-        break;
-    default:
-        type = EV_DIRENT_UNKNOWN;
-        break;
-    }
-
-    return type;
-}
-
-static int _ev_fs_mkpath(char* file_path, int mode)
-{
-    char* p;
-    int errcode;
-    assert(file_path && *file_path);
-
-    for (p = strchr(file_path + 1, '/'); p != NULL; p = strchr(p + 1, '/'))
-    {
-        *p = '\0';
-        if (mkdir(file_path, mode) == -1)
-        {
-            errcode = errno;
-            if (errcode != EEXIST)
-            {
-                *p = '/';
-                return ev__translate_sys_error(errcode);
-            }
-        }
-        *p = '/';
-    }
-
-    if (mkdir(file_path, mode) == -1)
-    {
-        errcode = errno;
-        if (errcode != EEXIST)
-        {
-            return ev__translate_sys_error(errcode);
-        }
-    }
-
-    return 0;
-}
-
-static int _ev_file_mmap_to_native_prot_unix(int flags)
-{
-    int prot = 0;
-    if (flags & EV_FS_S_IRUSR)
-    {
-        prot |= PROT_READ;
-    }
-    if (flags & EV_FS_S_IWUSR)
-    {
-        prot |= PROT_WRITE;
-    }
-    if (flags & EV_FS_S_IXUSR)
-    {
-        prot |= PROT_EXEC;
-    }
-    return prot;
-}
-
-EV_LOCAL int ev__fs_fstat(ev_os_file_t file, ev_fs_stat_t* statbuf)
-{
-    int ret;
-    int errcode;
-
-#if defined(__GLIBC_PREREQ) && __GLIBC_PREREQ(2, 28)
-    struct statx statxbuf;
-    ret = statx(file, "", AT_EMPTY_PATH, STATX_ALL, &statxbuf);
-    if (ret != 0)
-    {
-        goto err_errno;
-    }
-
-    statbuf->st_dev                 = makedev(statxbuf.stx_dev_major, statxbuf.stx_dev_minor);
-    statbuf->st_mode                = statxbuf.stx_mode;
-    statbuf->st_nlink               = statxbuf.stx_nlink;
-    statbuf->st_uid                 = statxbuf.stx_uid;
-    statbuf->st_gid                 = statxbuf.stx_gid;
-    statbuf->st_rdev                = makedev(statxbuf.stx_rdev_major, statxbuf.stx_rdev_minor);
-    statbuf->st_ino                 = statxbuf.stx_ino;
-    statbuf->st_size                = statxbuf.stx_size;
-    statbuf->st_blksize             = statxbuf.stx_blksize;
-    statbuf->st_blocks              = statxbuf.stx_blocks;
-    statbuf->st_atim.tv_sec         = statxbuf.stx_atime.tv_sec;
-    statbuf->st_atim.tv_nsec        = statxbuf.stx_atime.tv_nsec;
-    statbuf->st_mtim.tv_sec         = statxbuf.stx_mtime.tv_sec;
-    statbuf->st_mtim.tv_nsec        = statxbuf.stx_mtime.tv_nsec;
-    statbuf->st_ctim.tv_sec         = statxbuf.stx_ctime.tv_sec;
-    statbuf->st_ctim.tv_nsec        = statxbuf.stx_ctime.tv_nsec;
-    statbuf->st_birthtim.tv_sec     = statxbuf.stx_btime.tv_sec;
-    statbuf->st_birthtim.tv_nsec    = statxbuf.stx_btime.tv_nsec;
-    statbuf->st_flags               = 0;
-    statbuf->st_gen                 = 0;
-#else
-    struct stat pbuf;
-    ret = fstat(file, &pbuf);
-    if (ret != 0)
-    {
-        goto err_errno;
-    }
-    statbuf->st_dev                 = pbuf.st_dev;
-    statbuf->st_mode                = pbuf.st_mode;
-    statbuf->st_nlink               = pbuf.st_nlink;
-    statbuf->st_uid                 = pbuf.st_uid;
-    statbuf->st_gid                 = pbuf.st_gid;
-    statbuf->st_rdev                = pbuf.st_rdev;
-    statbuf->st_ino                 = pbuf.st_ino;
-    statbuf->st_size                = pbuf.st_size;
-    statbuf->st_blksize             = pbuf.st_blksize;
-    statbuf->st_blocks              = pbuf.st_blocks;
-
-#   if defined(__APPLE__)
-    statbuf->st_atim.tv_sec         = pbuf.st_atimespec.tv_sec;
-    statbuf->st_atim.tv_nsec        = pbuf.st_atimespec.tv_nsec;
-    statbuf->st_mtim.tv_sec         = pbuf.st_mtimespec.tv_sec;
-    statbuf->st_mtim.tv_nsec        = pbuf.st_mtimespec.tv_nsec;
-    statbuf->st_ctim.tv_sec         = pbuf.st_ctimespec.tv_sec;
-    statbuf->st_ctim.tv_nsec        = pbuf.st_ctimespec.tv_nsec;
-    statbuf->st_birthtim.tv_sec     = pbuf.st_birthtimespec.tv_sec;
-    statbuf->st_birthtim.tv_nsec    = pbuf.st_birthtimespec.tv_nsec;
-    statbuf->st_flags               = pbuf.st_flags;
-    statbuf->st_gen                 = pbuf.st_gen;
-#   elif defined(__ANDROID__)
-    statbuf->st_atim.tv_sec         = pbuf.st_atime;
-    statbuf->st_atim.tv_nsec        = pbuf.st_atimensec;
-    statbuf->st_mtim.tv_sec         = pbuf.st_mtime;
-    statbuf->st_mtim.tv_nsec        = pbuf.st_mtimensec;
-    statbuf->st_ctim.tv_sec         = pbuf.st_ctime;
-    statbuf->st_ctim.tv_nsec        = pbuf.st_ctimensec;
-    statbuf->st_birthtim.tv_sec     = pbuf.st_ctime;
-    statbuf->st_birthtim.tv_nsec    = pbuf.st_ctimensec;
-    statbuf->st_flags               = 0;
-    statbuf->st_gen                 = 0;
-#   elif !defined(_AIX) && !defined(__MVS__) && \
-        (\
-            defined(__DragonFly__)   || \
-            defined(__FreeBSD__)     || \
-            defined(__OpenBSD__)     || \
-            defined(__NetBSD__)      || \
-            defined(_GNU_SOURCE)     || \
-            defined(_BSD_SOURCE)     || \
-            defined(_SVID_SOURCE)    || \
-            defined(_XOPEN_SOURCE)   || \
-            defined(_DEFAULT_SOURCE)\
-        )
-    statbuf->st_atim.tv_sec         = pbuf.st_atim.tv_sec;
-    statbuf->st_atim.tv_nsec        = pbuf.st_atim.tv_nsec;
-    statbuf->st_mtim.tv_sec         = pbuf.st_mtim.tv_sec;
-    statbuf->st_mtim.tv_nsec        = pbuf.st_mtim.tv_nsec;
-    statbuf->st_ctim.tv_sec         = pbuf.st_ctim.tv_sec;
-    statbuf->st_ctim.tv_nsec        = pbuf.st_ctim.tv_nsec;
-#       if defined(__FreeBSD__) || defined(__NetBSD__)
-    statbuf->st_birthtim.tv_sec     = pbuf.st_birthtim.tv_sec;
-    statbuf->st_birthtim.tv_nsec    = pbuf.st_birthtim.tv_nsec;
-    statbuf->st_flags               = pbuf.st_flags;
-    statbuf->st_gen                 = pbuf.st_gen;
-#       else
-    statbuf->st_birthtim.tv_sec     = pbuf.st_ctim.tv_sec;
-    statbuf->st_birthtim.tv_nsec    = pbuf.st_ctim.tv_nsec;
-    statbuf->st_flags               = 0;
-    statbuf->st_gen                 = 0;
-#       endif
-#   else
-    statbuf->st_atim.tv_sec         = pbuf.st_atime;
-    statbuf->st_atim.tv_nsec        = 0;
-    statbuf->st_mtim.tv_sec         = pbuf.st_mtime;
-    statbuf->st_mtim.tv_nsec        = 0;
-    statbuf->st_ctim.tv_sec         = pbuf.st_ctime;
-    statbuf->st_ctim.tv_nsec        = 0;
-    statbuf->st_birthtim.tv_sec     = pbuf.st_ctime;
-    statbuf->st_birthtim.tv_nsec    = 0;
-    statbuf->st_flags               = 0;
-    statbuf->st_gen                 = 0;
-#   endif
-#endif
-
-    return 0;
-
-err_errno:
-    errcode = errno;
-    return ev__translate_sys_error(errcode);
-}
-
-EV_LOCAL int ev__fs_close(ev_os_file_t file)
-{
-    int errcode;
-    if (close(file) != 0)
-    {
-        errcode = errno;
-        return ev__translate_sys_error(errcode);
-    }
-    return 0;
-}
-
-EV_LOCAL int ev__fs_open(ev_os_file_t* file, const char* path, int flags, int mode)
-{
-    int errcode;
-
-#if defined(O_CLOEXEC)
-    flags |= O_CLOEXEC;
-#endif
-
-    int fd = open(path, flags, mode);
-    if (fd < 0)
-    {
-        errcode = errno;
-        return ev__translate_sys_error(errcode);
-    }
-
-#if defined(O_CLOEXEC)
-    if ((errcode = ev__cloexec(fd, 1)) != 0)
-    {
-        close(fd);
-        return errcode;
-    }
-#endif
-
-    *file = fd;
-    return 0;
-}
-
-EV_LOCAL int64_t ev__fs_seek(ev_os_file_t file, int whence, int64_t offset)
-{
-    off_t ret = lseek(file, offset, whence);
-    if (ret == (off_t)-1)
-    {
-        int errcode = errno;
-        return ev__translate_sys_error(errcode);
-    }
-    return ret;
-}
-
-EV_LOCAL ssize_t ev__fs_readv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
-{
-    ssize_t read_size = readv(file, (struct iovec*)bufs, nbuf);
-    if (read_size >= 0)
-    {
-        return read_size;
-    }
-
-    int errcode = errno;
-    return ev__translate_sys_error(errcode);
-}
-
-EV_LOCAL ssize_t ev__fs_preadv(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf, int64_t offset)
-{
-    ssize_t read_size = preadv(file, (struct iovec*)bufs, nbuf, offset);
-    if (read_size >= 0)
-    {
-        return read_size;
-    }
-
-    int errcode = errno;
-    return ev__translate_sys_error(errcode);
-}
-
-EV_LOCAL ssize_t ev__fs_writev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf)
-{
-    ssize_t write_size = writev(file, (struct iovec*)bufs, nbuf);
-    if (write_size >= 0)
-    {
-        return write_size;
-    }
-
-    int errcode = errno;
-    return ev__translate_sys_error(errcode);
-}
-
-EV_LOCAL ssize_t ev__fs_pwritev(ev_os_file_t file, ev_buf_t* bufs, size_t nbuf,
-    int64_t offset)
-{
-    ssize_t write_size = pwritev(file, (struct iovec*)bufs, nbuf, offset);
-    if (write_size >= 0)
-    {
-        return write_size;
-    }
-
-    int errcode = errno;
-    return ev__translate_sys_error(errcode);
-}
-
-EV_LOCAL int ev__fs_readdir(const char* path, ev_fs_readdir_cb cb, void* arg)
-{
-    int ret = 0;
-    DIR* dir = opendir(path);
-
-    if (dir == NULL)
-    {
-        ret = errno;
-        return ev__translate_sys_error(ret);
-    }
-
-    struct dirent* res;
-    ev_dirent_t info;
-
-    while ((res = readdir(dir)) != NULL)
-    {
-        if (strcmp(res->d_name, ".") == 0 || strcmp(res->d_name, "..") == 0)
-        {
-            continue;
-        }
-
-        info.name = res->d_name;
-        info.type = _ev_fs_get_dirent_type(res);
-
-        if (cb(&info, arg) != 0)
-        {
-            break;
-        }
-    }
-
-    closedir(dir);
-
-    return ret;
-}
-
-EV_LOCAL int ev__fs_mkdir(const char* path, int mode)
-{
-    char* dup_path = ev__strdup(path);
-    if (dup_path == NULL)
-    {
-        return EV_ENOMEM;
-    }
-
-    int ret = _ev_fs_mkpath(dup_path, mode);
-    ev_free(dup_path);
-
-    return ret;
-}
-
-int ev_file_mmap(ev_file_map_t* view, ev_file_t* file, uint64_t offset,
-    size_t size, int flags)
-{
-    int ret;
-    const int prot = _ev_file_mmap_to_native_prot_unix(flags);
-
-    ev_fs_stat_t stat = EV_FS_STAT_INVALID;
-    if ((ret = ev__fs_fstat(file->file, &stat)) != 0)
-    {
-        return ret;
-    }
-
-    if (offset >= stat.st_size)
-    {
-        EV_ASSERT(size > 0);
-    }
-    else if (size == 0)
-    {
-        size = stat.st_size - offset;
-    }
-
-    view->addr = mmap(NULL, size, prot, MAP_SHARED, file->file, offset);
-    if (view->addr == NULL)
-    {
-        ret = errno;
-        return ev__translate_posix_sys_error(ret);
-    }
-    view->size = size;
-
-    return 0;
-}
-
-void ev_file_munmap(ev_file_map_t* view)
-{
-    if (view->addr != NULL)
-    {
-        munmap(view->addr, view->size);
-        view->addr = NULL;
-    }
-    view->size = 0;
-}
-
-// #line 88 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/io_unix.c
-// SIZE:    8754
-// SHA-256: 8878dae3342ae9e1c25e2efe760a4b14377439d35a6a14b854f769b0bae6d211
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/io_unix.c"
-#include <assert.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <sys/uio.h>
-
-static int _ev_io_finalize_send_req_unix(ev_write_t* req, size_t write_size)
-{
-    req->size += write_size;
-
-    /* All data is sent */
-    if (req->size == req->capacity)
-    {
-        req->nbuf = 0;
-        return 0;
-    }
-    assert(req->size < req->capacity);
-
-    /* maintenance iovec */
-    size_t idx;
-    for (idx = 0; write_size > 0 && idx < req->nbuf; idx++)
-    {
-        if (write_size < req->bufs[idx].size)
-        {
-            req->bufs[idx].size -= write_size;
-            req->bufs[idx].data = (uint8_t*)req->bufs[idx].data + write_size;
-            break;
-        }
-        else
-        {
-            write_size -= req->bufs[idx].size;
-        }
-    }
-
-    assert(idx < req->nbuf);
-
-    memmove(&req->bufs[0], &req->bufs[idx], sizeof(req->bufs[0]) * (req->nbuf - idx));
-    req->nbuf -= idx;
-
-    return EV_EAGAIN;
-}
-
-static int _ev_cmp_io_unix(const ev_map_node_t* key1, const ev_map_node_t* key2, void* arg)
-{
-    (void)arg;
-    ev_nonblock_io_t* io1 = EV_CONTAINER_OF(key1, ev_nonblock_io_t, node);
-    ev_nonblock_io_t* io2 = EV_CONTAINER_OF(key2, ev_nonblock_io_t, node);
-    return io1->data.fd - io2->data.fd;
-}
-
-EV_LOCAL void ev__init_io(ev_loop_t* loop)
-{
-    int err;
-    ev_map_init(&loop->backend.io, _ev_cmp_io_unix, NULL);
-
-    if ((loop->backend.pollfd = epoll_create(256)) == -1)
-    {
-        err = errno;
-        EV_ABORT("errno:%d", err);
-    }
-    if ((err = ev__cloexec(loop->backend.pollfd, 1)) != 0)
-    {
-        err = errno;
-        EV_ABORT("errno:%d", err);
-    }
-}
-
-EV_LOCAL void ev__exit_io(ev_loop_t* loop)
-{
-    if (loop->backend.pollfd != -1)
-    {
-        close(loop->backend.pollfd);
-        loop->backend.pollfd = -1;
-    }
-}
-
-EV_LOCAL void ev__nonblock_io_init(ev_nonblock_io_t* io, int fd, ev_nonblock_io_cb cb, void* arg)
-{
-    io->data.fd = fd;
-    io->data.c_events = 0;
-    io->data.n_events = 0;
-    io->data.cb = cb;
-    io->data.arg = arg;
-}
-
-EV_LOCAL void ev__nonblock_io_add(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
-{
-    int errcode;
-    struct epoll_event poll_event;
-
-    io->data.n_events |= evts;
-    if (io->data.n_events == io->data.c_events)
-    {
-        return;
-    }
-
-    memset(&poll_event, 0, sizeof(poll_event));
-    poll_event.events = io->data.n_events;
-    poll_event.data.fd = io->data.fd;
-
-    int op = io->data.c_events == 0 ? EPOLL_CTL_ADD : EPOLL_CTL_MOD;
-
-    if (epoll_ctl(loop->backend.pollfd, op, io->data.fd, &poll_event) != 0)
-    {
-        errcode = errno;
-        EV_ABORT("errno:%d", errcode);
-    }
-
-    io->data.c_events = io->data.n_events;
-    if (op == EPOLL_CTL_ADD)
-    {
-        ev_map_insert(&loop->backend.io, &io->node);
-    }
-}
-
-EV_LOCAL void ev__nonblock_io_del(ev_loop_t* loop, ev_nonblock_io_t* io, unsigned evts)
-{
-    int errcode;
-    struct epoll_event poll_event;
-    io->data.n_events &= ~evts;
-    if (io->data.n_events == io->data.c_events)
-    {
-        return;
-    }
-
-    memset(&poll_event, 0, sizeof(poll_event));
-    poll_event.events = io->data.n_events;
-    poll_event.data.fd = io->data.fd;
-
-    int op = io->data.n_events == 0 ? EPOLL_CTL_DEL : EPOLL_CTL_MOD;
-    if (epoll_ctl(loop->backend.pollfd, op, io->data.fd, &poll_event) != 0)
-    {
-        errcode = errno;
-        EV_ABORT("errno:%d", errcode);
-    }
-
-    io->data.c_events = io->data.n_events;
-    if (op == EPOLL_CTL_DEL)
-    {
-        ev_map_erase(&loop->backend.io, &io->node);
-    }
-}
-
-EV_LOCAL int ev__cloexec(int fd, int set)
-{
-#if defined(_AIX) || \
-    defined(__APPLE__) || \
-    defined(__DragonFly__) || \
-    defined(__FreeBSD__) || \
-    defined(__FreeBSD_kernel__) || \
-    defined(__linux__) || \
-    defined(__OpenBSD__) || \
-    defined(__NetBSD__)
-    int r;
-
-    do
-    {
-        r = ioctl(fd, set ? FIOCLEX : FIONCLEX);
-    } while (r == -1 && errno == EINTR);
-
-    if (r)
-    {
-        return ev__translate_sys_error(errno);
-    }
-
-    return 0;
-#else
-    int flags;
-
-    int r = ev__fcntl_getfd_unix(fd);
-    if (r == -1)
-    {
-        return errno;
-    }
-
-    /* Bail out now if already set/clear. */
-    if (!!(r & FD_CLOEXEC) == !!set)
-    {
-        return 0;
-    }
-
-    if (set)
-    {
-        flags = r | FD_CLOEXEC;
-    }
-    else
-    {
-        flags = r & ~FD_CLOEXEC;
-    }
-
-    do
-    {
-        r = fcntl(fd, F_SETFD, flags);
-    } while (r == -1 && errno == EINTR);
-
-    if (r)
-    {
-        return ev__translate_sys_error(errno);
-    }
-
-    return 0;
-#endif
-}
-
-EV_LOCAL int ev__nonblock(int fd, int set)
-{
-#if defined(_AIX) || \
-    defined(__APPLE__) || \
-    defined(__DragonFly__) || \
-    defined(__FreeBSD__) || \
-    defined(__FreeBSD_kernel__) || \
-    defined(__linux__) || \
-    defined(__OpenBSD__) || \
-    defined(__NetBSD__)
-    int r;
-
-    do
-    {
-        r = ioctl(fd, FIONBIO, &set);
-    } while (r == -1 && errno == EINTR);
-
-    if (r)
-    {
-        return ev__translate_sys_error(errno);
-    }
-
-    return 0;
-#else
-    int flags;
-
-    int r = ev__fcntl_getfl_unix(fd);
-    if (r == -1)
-    {
-        return ev__translate_sys_error(errno);
-    }
-
-    /* Bail out now if already set/clear. */
-    if (!!(r & O_NONBLOCK) == !!set)
-    {
-        return 0;
-    }
-
-    if (set)
-    {
-        flags = r | O_NONBLOCK;
-    }
-    else
-    {
-        flags = r & ~O_NONBLOCK;
-    }
-
-    do
-    {
-        r = fcntl(fd, F_SETFL, flags);
-    } while (r == -1 && errno == EINTR);
-
-    if (r)
-    {
-        return ev__translate_sys_error(errno);
-    }
-
-    return 0;
-#endif
-}
-
-EV_LOCAL int ev__reuse_unix(int fd)
-{
-    int yes;
-    yes = 1;
-
-#if defined(SO_REUSEPORT) && defined(__MVS__)
-    struct sockaddr_in sockfd;
-    unsigned int sockfd_len = sizeof(sockfd);
-    if (getsockname(fd, (struct sockaddr*)&sockfd, &sockfd_len) == -1)
-    {
-        goto err;
-    }
-    if (sockfd.sin_family == AF_UNIX)
-    {
-        if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)))
-        {
-            goto err;
-        }
-    }
-    else
-    {
-        if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes)))
-        {
-            goto err;
-        }
-    }
-#elif defined(SO_REUSEPORT) && !defined(__linux__)
-    if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes)))
-    {
-        goto err;
-    }
-#else
-    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)))
-    {
-        goto err;
-    }
-#endif
-
-    return 0;
-
-err:
-    yes = errno;
-    return ev__translate_sys_error(yes);
-}
-
-EV_LOCAL int ev__fcntl_getfl_unix(int fd)
-{
-    int mode;
-    do
-    {
-        mode = fcntl(fd, F_GETFL);
-    } while (mode == -1 && errno == EINTR);
-    return mode;
-}
-
-EV_LOCAL int ev__fcntl_getfd_unix(int fd)
-{
-    int flags;
-
-    do
-    {
-        flags = fcntl(fd, F_GETFD);
-    } while (flags == -1 && errno == EINTR);
-
-    return flags;
-}
-
-EV_LOCAL ssize_t ev__readv_unix(int fd, ev_buf_t* iov, int iovcnt)
-{
-    ssize_t read_size;
-    do
-    {
-        read_size = readv(fd, (struct iovec*)iov, iovcnt);
-    } while (read_size == -1 && errno == EINTR);
-
-    if (read_size > 0)
-    {
-        return read_size;
-    }
-    else if (read_size == 0)
-    {
-        return EV_EOF;
-    }
-
-    int err = errno;
-    if (err == EAGAIN || err == EWOULDBLOCK)
-    {
-        return 0;
-    }
-
-    return ev__translate_sys_error(err);
-}
-
-EV_LOCAL ssize_t ev__writev_unix(int fd, ev_buf_t* iov, int iovcnt)
-{
-    ssize_t write_size;
-    do
-    {
-        write_size = writev(fd, (struct iovec*)iov, iovcnt);
-    } while (write_size == -1 && errno == EINTR);
-
-    if (write_size >= 0)
-    {
-        return write_size;
-    }
-
-    int err = errno;
-    if (err == EAGAIN || err == EWOULDBLOCK)
-    {
-        return 0;
-    }
-
-    return ev__translate_sys_error(err);
-}
-
-EV_LOCAL ssize_t ev__write_unix(int fd, void* buffer, size_t size)
-{
-    ssize_t send_size;
-    do
-    {
-        send_size = write(fd, buffer, size);
-    } while (send_size == -1 && errno == EINTR);
-
-    if (send_size >= 0)
-    {
-        return send_size;
-    }
-
-    int err = errno;
-    if (err == EAGAIN || err == EWOULDBLOCK)
-    {
-        return 0;
-    }
-
-    return ev__translate_sys_error(err);
-}
-
-EV_LOCAL int ev__send_unix(int fd, ev_write_t* req,
-    ssize_t(*do_write)(int fd, struct iovec* iov, int iovcnt, void* arg), void* arg)
-{
-    ev_buf_t* iov = req->bufs;
-    int iovcnt = req->nbuf;
-    if (iovcnt > g_ev_loop_unix_ctx.iovmax)
-    {
-        iovcnt = g_ev_loop_unix_ctx.iovmax;
-    }
-
-    ssize_t write_size = do_write(fd, (struct iovec*)iov, iovcnt, arg);
-
-    /* Check send result */
-    if (write_size < 0)
-    {
-        if (write_size == EV_ENOBUFS)
-        {
-            write_size = EV_EAGAIN;
-        }
-        return write_size;
-    }
-
-    return _ev_io_finalize_send_req_unix(req, (size_t)write_size);
-}
-
-// #line 89 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/loop_unix.c
-// SIZE:    4177
-// SHA-256: 331beb7e207b61cc9699b689b8ed3bfb01612064d435cd3e8c752e2a5494ac21
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/loop_unix.c"
-#include <assert.h>
-#include <unistd.h>
-#include <errno.h>
-#include <limits.h>
-#include <sys/eventfd.h>
-
-#if defined(__PASE__)
-/* on IBMi PASE the control message length can not exceed 256. */
-#   define EV__CMSG_FD_COUNT 60
-#else
-#   define EV__CMSG_FD_COUNT 64
-#endif
-#define EV__CMSG_FD_SIZE (EV__CMSG_FD_COUNT * sizeof(int))
-
-ev_loop_unix_ctx_t g_ev_loop_unix_ctx;
-
-static void _ev_init_hwtime(void)
-{
-    struct timespec t;
-    if (clock_getres(CLOCK_MONOTONIC_COARSE, &t) != 0)
-    {
-        goto err;
-    }
-    if (t.tv_nsec > 1 * 1000 * 1000)
-    {
-        goto err;
-    }
-    g_ev_loop_unix_ctx.hwtime_clock_id = CLOCK_MONOTONIC_COARSE;
-    return;
-
-err:
-    g_ev_loop_unix_ctx.hwtime_clock_id = CLOCK_MONOTONIC;
-}
-
-static ev_nonblock_io_t* _ev_find_io(ev_loop_t* loop, int fd)
-{
-    ev_nonblock_io_t tmp;
-    tmp.data.fd = fd;
-
-    ev_map_node_t* it = ev_map_find(&loop->backend.io, &tmp.node);
-    return it != NULL ? EV_CONTAINER_OF(it, ev_nonblock_io_t, node) : NULL;
-}
-
-static int _ev_poll_once(ev_loop_t* loop, struct epoll_event* events, int maxevents, int timeout)
-{
-    int nfds = epoll_wait(loop->backend.pollfd, events, maxevents, timeout);
-    if (nfds < 0)
-    {
-        return nfds;
-    }
-
-    int i;
-    for (i = 0; i < nfds; i++)
-    {
-        ev_nonblock_io_t* io = _ev_find_io(loop, events[i].data.fd);
-        io->data.cb(io, events[i].events, io->data.arg);
-    }
-
-    return nfds;
-}
-
-static void _ev_init_iovmax(void)
-{
-#if defined(IOV_MAX)
-    g_ev_loop_unix_ctx.iovmax = IOV_MAX;
-#elif defined(__IOV_MAX)
-    g_ev_loop_unix_ctx.iovmax = __IOV_MAX;
-#elif defined(_SC_IOV_MAX)
-    g_ev_loop_unix_ctx.iovmax = sysconf(_SC_IOV_MAX);
-    if (g_ev_loop_unix_ctx.iovmax == -1)
-    {
-        g_ev_loop_unix_ctx.iovmax = 1;
-    }
-#else
-    g_ev_loop_unix_ctx.iovmax = EV_IOV_MAX;
-#endif
-}
-
-static void _ev_check_layout_unix(void)
-{
-    ENSURE_LAYOUT(ev_buf_t, data, size, struct iovec, iov_base, iov_len);
-}
-
-static void _ev_init_once_unix(void)
-{
-    _ev_check_layout_unix();
-    _ev_init_hwtime();
-    _ev_init_iovmax();
-    ev__init_process_unix();
-}
-
-EV_LOCAL void ev__init_once_unix(void)
-{
-    static ev_once_t once = EV_ONCE_INIT;
-    ev_once_execute(&once, _ev_init_once_unix);
-}
-
-EV_LOCAL int ev__loop_init_backend(ev_loop_t* loop)
-{
-    ev__init_once_unix();
-    ev__init_io(loop);
-    ev__init_work(loop);
-
-    return 0;
-}
-
-EV_LOCAL void ev__loop_exit_backend(ev_loop_t* loop)
-{
-    ev__exit_work(loop);
-    ev__exit_io(loop);
-}
-
-EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
-{
-    int nevts;
-    int errcode;
-    struct epoll_event events[128];
-
-    /**
-     * A bug in kernels < 2.6.37 makes timeouts larger than ~30 minutes
-     * effectively infinite on 32 bits architectures.  To avoid blocking
-     * indefinitely, we cap the timeout and poll again if necessary.
-     *
-     * Note that "30 minutes" is a simplification because it depends on
-     * the value of CONFIG_HZ.  The magic constant assumes CONFIG_HZ=1200,
-     * that being the largest value I have seen in the wild (and only once.)
-     */
-    const uint32_t max_safe_timeout = 1789569;
-
-    /**
-     * from libuv, this value gives the best throughput.
-     */
-    int max_performance_events = 49152;
-
-    const uint64_t base_time = loop->hwtime;
-    const uint32_t user_timeout = timeout;
-    for (; max_performance_events != 0; max_performance_events--)
-    {
-        if (timeout > max_safe_timeout)
-        {
-            timeout = max_safe_timeout;
-        }
-
-        nevts = _ev_poll_once(loop, events, ARRAY_SIZE(events), timeout);
-
-        if (nevts == ARRAY_SIZE(events))
-        {/* Poll for more events but don't block this time. */
-            timeout = 0;
-            continue;
-        }
-
-        if (nevts >= 0)
-        {
-            break;
-        }
-
-        /* If errno is not EINTR, something must wrong in the program */
-        if ((errcode = errno) != EINTR)
-        {
-            EV_ABORT("errno:%d", errcode);
-        }
-
-        ev__loop_update_time(loop);
-        uint64_t pass_time = loop->hwtime - base_time;
-        if (pass_time >= user_timeout)
-        {
-            break;
-        }
-
-        timeout = user_timeout - pass_time;
-    }
-}
-
-// #line 90 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/misc_unix.c
-// SIZE:    290
-// SHA-256: ef5ea84a17556676433ac6add4ad05896431bdb8111b1da636198ac411014bee
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/misc_unix.c"
-#include <errno.h>
-#include <unistd.h>
-
-EV_LOCAL int ev__translate_sys_error(int syserr)
-{
-    return ev__translate_posix_sys_error(syserr);
-}
-
-size_t ev_os_page_size(void)
-{
-    return sysconf(_SC_PAGE_SIZE);
-}
-
-size_t ev_os_mmap_offset_granularity(void)
-{
-    return ev_os_page_size();
-}
-
-// #line 91 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/misc_random_unix.c
-// SIZE:    7547
-// SHA-256: 72ea67ec0e77792f56debfc9260c01a6e6563e2a4bb5c7044dc4bfa04d27628b
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/misc_random_unix.c"
-#include <dlfcn.h>
-
-#if defined(__NetBSD__)
-
-static int _ev_random_sysctl_netbsd(void* buf, size_t len)
-{
-    static int name[] = { CTL_KERN, KERN_ARND };
-    size_t count, req;
-    unsigned char* p;
-
-    p = buf;
-    while (len)
-    {
-        req = len < 32 ? len : 32;
-        count = req;
-
-        if (sysctl(name, ARRAY_SIZE(name), p, &count, NULL, 0) == -1)
-        {
-            return ev__translate_posix_sys_error(errno);
-        }
-
-        if (count != req)
-        {
-            return EV_EIO;  /* Can't happen. */
-        }
-
-        p += count;
-        len -= count;
-    }
-
-    return 0;
-}
-
-EV_LOCAL int ev__random(void* buf, size_t len)
-{
-    return _ev_random_sysctl_netbsd(buf, len);
-}
-
-#elif defined(__FreeBSD__) || defined(__linux__)
-
-typedef struct ev__sysctl_args
-{
-  int* name;
-  int nlen;
-  void* oldval;
-  size_t* oldlenp;
-  void* newval;
-  size_t newlen;
-  unsigned long unused[4];
-} ev__sysctl_args_t;
-
-/**
- * @brief getrandom() protocol type.
- */
-typedef ssize_t (*ev__getrandom_fn)(void *, size_t, unsigned);
-
-static ev__getrandom_fn ev__getrandom = NULL;
-
-static void _ev_random_getrandom_init(void)
-{
-    ev__getrandom = (ev__getrandom_fn)dlsym(RTLD_DEFAULT, "getrandom");
-}
-
-static int _ev_random_getrandom(void* buf, size_t len)
-{
-    static ev_once_t token = EV_ONCE_INIT;
-    ev_once_execute(&token, _ev_random_getrandom_init);
-
-    if (ev__getrandom == NULL)
-    {
-        return EV_ENOSYS;
-    }
-
-    size_t pos; ssize_t n;
-    for (pos = 0; pos < len; pos += n)
-    {
-        n = len - pos;
-        if (n > 256)
-        {
-            n = 256;
-        }
-
-        do
-        {
-            n = ev__getrandom((char*)buf + pos, n, 0);
-        } while (n == -1 && errno == EINTR);
-        
-        if (n < 0)
-        {
-            return ev__translate_posix_sys_error(errno);
-        }
-        else if (n == 0)
-        {
-            return EV_EIO;
-        }
-    }
-
-    return 0;
-}
-
-static int _ev_random_sysctl_linux(void* buf, size_t len)
-{
-    static int name[] = {1 /*CTL_KERN*/, 40 /*KERN_RANDOM*/, 6 /*RANDOM_UUID*/};
-    ev__sysctl_args_t args;
-    char uuid[16];
-    char* p;
-    char* pe;
-    size_t n;
-
-    p = buf;
-    pe = p + len;
-
-    while (p < pe)
-    {
-        memset(&args, 0, sizeof(args));
-
-        args.name = name;
-        args.nlen = ARRAY_SIZE(name);
-        args.oldval = uuid;
-        args.oldlenp = &n;
-        n = sizeof(uuid);
-
-        /* Emits a deprecation warning with some kernels but that seems like
-        * an okay trade-off for the fallback of the fallback: this function is
-        * only called when neither getrandom(2) nor /dev/urandom are available.
-        * Fails with ENOSYS on kernels configured without CONFIG_SYSCTL_SYSCALL.
-        * At least arm64 never had a _sysctl system call and therefore doesn't
-        * have a SYS__sysctl define either.
-        */
-    #ifdef SYS__sysctl
-        if (syscall(SYS__sysctl, &args) == -1)
-        {
-            return UV__ERR(errno);
-        }
-    #else
-        {
-            (void) &args;
-            return EV_ENOSYS;
-        }
-    #endif
-
-        if (n != sizeof(uuid))
-        {
-            return EV_EIO;  /* Can't happen. */
-        }
-
-        /* uuid[] is now a type 4 UUID. Bytes 6 and 8 (counting from zero) contain
-        * 4 and 5 bits of entropy, respectively. For ease of use, we skip those
-        * and only use 14 of the 16 bytes.
-        */
-        uuid[6] = uuid[14];
-        uuid[8] = uuid[15];
-
-        n = pe - p;
-        if (n > 14)
-        {
-            n = 14;
-        }
-
-        memcpy(p, uuid, n);
-        p += n;
-    }
-
-    return 0;
-}
-
-EV_LOCAL int ev__random(void* buf, size_t len)
-{
-    int rc = _ev_random_getrandom(buf, len);
-#if defined(__linux__)
-    switch (rc)
-    {
-    case EV_EACCES:
-    case EV_EIO:
-    case EV_ELOOP:
-    case EV_EMFILE:
-    case EV_ENFILE:
-    case EV_ENOENT:
-    case EV_EPERM:
-        rc = _ev_random_sysctl_linux(buf, len);
-        break;
-    }
-#endif
-    return rc;
-}
-
-#else
-
-static int _ev_open_cloexec(const char* path, int flags)
-{
-#if defined(O_CLOEXEC)
-    int fd = open(path, flags | O_CLOEXEC);
-    if (fd < 0)
-    {
-        int errcode = errno;
-        return ev__translate_posix_sys_error(errcode);
-    }
-    return fd;
-#else
-    int fd = open(path, flags);
-    if (fd < 0)
-    {
-        int errcode = errno;
-        return ev__translate_posix_sys_error(errcode);
-    }
-    int err = ev__cloexec(fd, 1);
-    if (err != 0)
-    {
-        close(fd);
-        return err;
-    }
-    return fd;
-#endif
-}
-
-static int _ev_random_readpath(const char* path, void* buf, size_t len)
-{
-    int fd = _ev_open_cloexec(path, O_RDONLY);
-    if (fd < 0)
-    {
-        return fd;
-    }
-
-    size_t pos;
-    ssize_t read_sz;
-    for (pos = 0; pos < len; pos += read_sz)
-    {
-        do
-        {
-            read_sz = read(fd, (char*)buf + pos, len - pos);
-        } while (read_sz == -1 && errno == EINTR);
-
-        if (read_sz < 0)
-        {
-            int errcode = errno;
-            close(fd);
-            return ev__translate_posix_sys_error(errcode);
-        }
-
-        if (read_sz == 0)
-        {
-            close(fd);
-            return EV_EIO;
-        }
-    }
-
-    close(fd);
-    return 0;
-}
-
-#if defined(__PASE__)
-
-EV_LOCAL int ev__random(void* buf, size_t len)
-{
-    return _ev_random_readpath("/dev/urandom", buf, len);
-}
-
-#elif defined(_AIX) || defined(__QNX__)
-
-EV_LOCAL int ev__random(void* buf, size_t len)
-{
-    return _ev_random_readpath("/dev/random", buf, len);
-}
-
-#else
-
-static int _ev_random_dev_urandom_status = 0;
-
-static void _ev_random_dev_urandom_init(void)
-{
-    char c;
-
-    /*
-     * Linux's random(4) man page suggests applications should read at least
-     * once from /dev/random before switching to /dev/urandom in order to seed
-     * the system RNG. Reads from /dev/random can of course block indefinitely
-     * until entropy is available but that's the point.
-     */
-    _ev_random_dev_urandom_status = _ev_random_readpath("/dev/random", &c, 1);
-}
-
-static int _ev_random_dev_urandom(void* buf, size_t len)
-{
-    static ev_once_t token = EV_ONCE_INIT;
-    ev_once_execute(&token, _ev_random_dev_urandom_init);
-
-    if (_ev_random_dev_urandom_status != 0)
-    {
-        return _ev_random_dev_urandom_status;
-    }
-
-    return _ev_random_readpath("/dev/urandom", buf, len);
-}
-
-#if defined(__APPLE__) || defined(__OpenBSD__) || \
-     (defined(__ANDROID_API__) && __ANDROID_API__ >= 28)
-
-typedef int (*ev__getentropy_fn)(void*, size_t);
-
-static ev__getentropy_fn ev__getentropy = NULL;
-
-static void _ev_random_getentropy_init(void)
-{
-    ev__getentropy = (ev__getentropy_fn) dlsym(RTLD_DEFAULT, "getentropy");
-}
-
-static int _ev_random_getentropy(void* buf, size_t len)
-{
-    static ev_once_t token = EV_ONCE_INIT;
-    ev_once_execute(&token, _ev_random_getentropy_init);
-
-    if (ev__getentropy == NULL)
-    {
-        return EV_ENOSYS;
-    }
-
-    size_t pos, stride;
-    for (pos = 0, stride = 256; pos + stride < len; pos += stride)
-    {
-        if (ev__getentropy((char*)buf + pos, len - pos))
-        {
-            return ev__translate_posix_sys_error(errno);
-        }
-    }
-    if (ev__getentropy((char*)buf + pos, len - pos))
-    {
-        return ev__translate_posix_sys_error(errno);
-    }
-
-    return 0;
-}
-
-EV_LOCAL int ev__random(void* buf, size_t len)
-{
-    int rc = _ev_random_getentropy(buf, len);
-    if (rc == EV_ENOSYS)
-    {
-        rc = _ev_random_dev_urandom(buf, len);
-    }
-    return rc;
-}
-
-#else
-
-EV_LOCAL int ev__random(void* buf, size_t len)
-{
-    return _ev_random_dev_urandom(buf, len);
-}
-
-#endif
-
-#endif
-
-#endif
-
-// #line 92 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/mutex_unix.c
-// SIZE:    1802
-// SHA-256: a1f1459e5d2dff7318a6580f205592a6f447715f34a44192f8de57c53331d9f9
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/mutex_unix.c"
-
-static void _ev_mutex_init_unix(ev_os_mutex_t* handle)
-{
-#if defined(NDEBUG) || !defined(PTHREAD_MUTEX_ERRORCHECK)
-    if (pthread_mutex_init(handle, NULL) != 0)
-    {
-        EV_ABORT();
-    }
-#else
-    pthread_mutexattr_t attr;
-
-    if (pthread_mutexattr_init(&attr))
-    {
-        EV_ABORT();
-    }
-
-    if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK))
-    {
-        EV_ABORT();
-    }
-
-    if (pthread_mutex_init(handle, &attr) != 0)
-    {
-        EV_ABORT();
-    }
-
-    if (pthread_mutexattr_destroy(&attr))
-    {
-        EV_ABORT();
-    }
-#endif
-}
-
-static void _ev_mutex_init_recursive_unix(ev_os_mutex_t* handle)
-{
-    pthread_mutexattr_t attr;
-
-    if (pthread_mutexattr_init(&attr))
-    {
-        EV_ABORT();
-    }
-
-    if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE))
-    {
-        EV_ABORT();
-    }
-
-    if (pthread_mutex_init(handle, &attr) != 0)
-    {
-        EV_ABORT();
-    }
-
-    if (pthread_mutexattr_destroy(&attr))
-    {
-        EV_ABORT();
-    }
-}
-
-void ev_mutex_init(ev_mutex_t* handle, int recursive)
-{
-    if (recursive)
-    {
-        _ev_mutex_init_recursive_unix(&handle->u.r);
-    }
-    else
-    {
-        _ev_mutex_init_unix(&handle->u.r);
-    }
-}
-
-void ev_mutex_exit(ev_mutex_t* handle)
-{
-    if (pthread_mutex_destroy(&handle->u.r))
-    {
-        EV_ABORT();
-    }
-}
-
-void ev_mutex_enter(ev_mutex_t* handle)
-{
-    if (pthread_mutex_lock(&handle->u.r))
-    {
-        EV_ABORT();
-    }
-}
-
-void ev_mutex_leave(ev_mutex_t* handle)
-{
-    if (pthread_mutex_unlock(&handle->u.r))
-    {
-        EV_ABORT();
-    }
-}
-
-int ev_mutex_try_enter(ev_mutex_t* handle)
-{
-    int err = pthread_mutex_trylock(&handle->u.r);
-    if (!err)
-    {
-        return 0;
-    }
-
-    if (err != EBUSY && err != EAGAIN)
-    {
-        EV_ABORT();
-    }
-
-    return EV_EBUSY;
-}
-
-// #line 93 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/once_unix.c
-// SIZE:    157
-// SHA-256: 6b15ddc16ee6acfdb4dc4722eb30eea83501c89d86d36de69d7fbadd25315e24
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/once_unix.c"
-#include <stdlib.h>
-
-void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
-{
-    if (pthread_once(&guard->guard, cb) != 0)
-    {
-        EV_ABORT();
-    }
-}
-
-// #line 94 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/pipe_unix.c
-// SIZE:    25603
-// SHA-256: e05090a88a94083813983e05a98eabae016a128a3500a15af6ec470fb652b682
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/pipe_unix.c"
-#define _GNU_SOURCE
-#include <assert.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <string.h>
-
-typedef char ev_ipc_msghdr[CMSG_SPACE(sizeof(int))];
-
-static void _ev_pipe_close_unix(ev_pipe_t* pipe)
-{
-    if (pipe->pipfd != EV_OS_PIPE_INVALID)
-    {
-        close(pipe->pipfd);
-        pipe->pipfd = EV_OS_PIPE_INVALID;
-    }
-}
-
-static void _ev_pipe_on_close_unix(ev_handle_t* handle)
-{
-    ev_pipe_t* pipe_handle = EV_CONTAINER_OF(handle, ev_pipe_t, base);
-
-    if (pipe_handle->close_cb != NULL)
-    {
-        pipe_handle->close_cb(pipe_handle);
-    }
-}
-
-static void _ev_pipe_smart_deactive(ev_pipe_t* pipe)
-{
-    size_t io_sz = 0;
-
-    if (!ev__handle_is_active(&pipe->base))
-    {
-        return;
-    }
-
-    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
-    {
-        io_sz += ev_list_size(&pipe->backend.ipc_mode.rio.rqueue);
-        io_sz += pipe->backend.ipc_mode.rio.curr.reading != NULL ? 1 : 0;
-        io_sz += ev_list_size(&pipe->backend.ipc_mode.wio.wqueue);
-        io_sz += pipe->backend.ipc_mode.wio.curr.writing != NULL ? 1 : 0;
-    }
-    else
-    {
-        io_sz = ev__nonblock_stream_size(&pipe->backend.data_mode.stream, EV_IO_IN | EV_IO_OUT);
-    }
-
-    if (io_sz == 0)
-    {
-        ev__handle_deactive(&pipe->base);
-    }
-}
-
-static void _ev_pipe_w_user_callback_unix(ev_pipe_t* pipe,
-    ev_pipe_write_req_t* req, ssize_t size)
-{
-    _ev_pipe_smart_deactive(pipe);
-    ev__write_exit(&req->base);
-    req->ucb(req, size);
-}
-
-static void _ev_pipe_r_user_callback_unix(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ssize_t size)
-{
-    _ev_pipe_smart_deactive(pipe);
-    ev__read_exit(&req->base);
-    req->ucb(req, size);
-}
-
-static void _ev_pipe_on_data_mode_write_unix(ev_nonblock_stream_t* stream,
-    ev_write_t* req, ssize_t size)
-{
-    ev_pipe_t* pipe_handle = EV_CONTAINER_OF(stream, ev_pipe_t, backend.data_mode.stream);
-    ev_pipe_write_req_t* w_req = EV_CONTAINER_OF(req, ev_pipe_write_req_t, base);
-    _ev_pipe_w_user_callback_unix(pipe_handle, w_req, size);
-}
-
-static void _ev_pipe_on_data_mode_read_unix(ev_nonblock_stream_t* stream,
-    ev_read_t* req, ssize_t size)
-{
-    ev_pipe_t* pipe_handle = EV_CONTAINER_OF(stream, ev_pipe_t, backend.data_mode.stream);
-
-    ev_pipe_read_req_t* r_req = EV_CONTAINER_OF(req, ev_pipe_read_req_t, base);
-    _ev_pipe_r_user_callback_unix(pipe_handle, r_req, size);
-}
-
-static int _ev_pipe_on_ipc_mode_io_read_remain(ev_pipe_t* pipe)
-{
-    assert(pipe->backend.ipc_mode.rio.curr.reading != NULL);
-
-    ev_buf_t bufs[EV_IOV_MAX];
-    size_t target_size = pipe->backend.ipc_mode.rio.curr.data_remain_size;
-    ev_pipe_read_req_t* req = pipe->backend.ipc_mode.rio.curr.reading;
-
-    size_t buf_idx = pipe->backend.ipc_mode.rio.curr.buf_idx;
-    size_t buf_pos = pipe->backend.ipc_mode.rio.curr.buf_pos;
-
-    size_t idx;
-    for (idx = 0;
-        idx < ARRAY_SIZE(bufs) && target_size > 0 && buf_idx < req->base.data.nbuf;
-        idx++, buf_idx++)
-    {
-        bufs[idx].data = (uint8_t*)req->base.data.bufs[buf_idx].data + buf_pos;
-        bufs[idx].size = req->base.data.bufs[buf_idx].size - buf_pos;
-
-        bufs[idx].size = EV_MIN(bufs[idx].size, target_size);
-        target_size -= bufs[idx].size;
-
-        buf_pos = 0;
-    }
-
-    ssize_t read_size = ev__readv_unix(pipe->pipfd, bufs, idx);
-    if (read_size < 0)
-    {
-        return read_size;
-    }
-
-    pipe->backend.ipc_mode.rio.curr.data_remain_size -= read_size;
-    req->base.data.size += read_size;
-
-    /* no data remain */
-    if (pipe->backend.ipc_mode.rio.curr.data_remain_size == 0)
-    {
-        goto callback;
-    }
-
-    /* move cursor */
-    while (read_size > 0 && pipe->backend.ipc_mode.rio.curr.buf_idx < req->base.data.nbuf)
-    {
-        size_t left_size = req->base.data.bufs[pipe->backend.ipc_mode.rio.curr.buf_idx].size
-            - pipe->backend.ipc_mode.rio.curr.buf_pos;
-
-        if (left_size > (size_t)read_size)
-        {
-            pipe->backend.ipc_mode.rio.curr.buf_pos += read_size;
-            break;
-        }
-
-        read_size -= left_size;
-        pipe->backend.ipc_mode.rio.curr.buf_idx++;
-        pipe->backend.ipc_mode.rio.curr.buf_pos = 0;
-        continue;
-    }
-
-    /* Buffer is full */
-    if (pipe->backend.ipc_mode.rio.curr.buf_idx >= req->base.data.nbuf)
-    {
-        goto callback;
-    }
-
-    return 0;
-
-callback:
-    pipe->backend.ipc_mode.rio.curr.reading = NULL;
-    _ev_pipe_r_user_callback_unix(pipe, req, req->base.data.size);
-    return 0;
-}
-
-static ssize_t _ev_pipe_recvmsg_unix(ev_pipe_t* pipe, struct msghdr* msg)
-{
-    struct cmsghdr* cmsg;
-    ssize_t rc;
-    int* pfd;
-    int* end;
-    int fd = pipe->pipfd;
-#if defined(__linux__)
-    if (!pipe->backend.ipc_mode.mask.no_cmsg_cloexec)
-    {
-        rc = recvmsg(fd, msg, MSG_CMSG_CLOEXEC);
-        if (rc != -1)
-        {
-            return rc;
-        }
-        if ((rc = errno) != EINVAL)
-        {
-            return ev__translate_sys_error(errno);
-        }
-        rc = recvmsg(fd, msg, 0);
-        if (rc == -1)
-        {
-            return ev__translate_sys_error(errno);
-        }
-        pipe->backend.ipc_mode.mask.no_cmsg_cloexec = 1;
-    }
-    else
-    {
-        rc = recvmsg(fd, msg, 0);
-    }
-#else
-    rc = recvmsg(fd, msg, 0);
-#endif
-    if (rc == -1)
-    {
-        return ev__translate_sys_error(errno);
-    }
-    if (msg->msg_controllen == 0)
-    {
-        return rc;
-    }
-    for (cmsg = CMSG_FIRSTHDR(msg); cmsg != NULL; cmsg = CMSG_NXTHDR(msg, cmsg))
-    {
-        if (cmsg->cmsg_type == SCM_RIGHTS)
-        {
-            for (pfd = (int*)CMSG_DATA(cmsg),
-                end = (int*)((char*)cmsg + cmsg->cmsg_len);
-                pfd < end;
-                pfd += 1)
-            {
-                ev__cloexec(*pfd, 1);
-            }
-        }
-    }
-    return rc;
-}
-
-static void _ev_stream_do_read_parser_msghdr(ev_pipe_read_req_t* req, struct msghdr* msg)
-{
-    struct cmsghdr* cmsg = CMSG_FIRSTHDR(msg);
-    if (cmsg == NULL)
-    {
-        return;
-    }
-
-    void* pv = CMSG_DATA(cmsg);
-    int* pi = pv;
-    req->handle.os_socket = *pi;
-
-    assert(CMSG_NXTHDR(msg, cmsg) == NULL);
-}
-
-static int _ev_pipe_on_ipc_mode_io_read_first(ev_pipe_t* pipe)
-{
-    void* buffer = (uint8_t*)pipe->backend.ipc_mode.rio.buffer + pipe->backend.ipc_mode.rio.curr.head_read_size;
-    size_t buffer_size = sizeof(pipe->backend.ipc_mode.rio.buffer) - pipe->backend.ipc_mode.rio.curr.head_read_size;
-
-    if (pipe->backend.ipc_mode.rio.curr.head_read_size == 0)
-    {
-        struct msghdr msg;
-        ev_ipc_msghdr cmsg_space;
-        struct iovec iov = { buffer, buffer_size };
-
-        /* ipc uses recvmsg */
-        msg.msg_flags = 0;
-        msg.msg_iov = &iov;
-        msg.msg_iovlen = 1;
-        msg.msg_name = NULL;
-        msg.msg_namelen = 0;
-        /* Set up to receive a descriptor even if one isn't in the message */
-        msg.msg_controllen = sizeof(cmsg_space);
-        msg.msg_control = cmsg_space;
-
-        ssize_t read_size = _ev_pipe_recvmsg_unix(pipe, &msg);
-        if (read_size <= 0)
-        {/* Error or EOF */
-            return read_size;
-        }
-        assert(read_size <= (ssize_t)sizeof(pipe->backend.ipc_mode.rio.buffer));
-
-        _ev_stream_do_read_parser_msghdr(pipe->backend.ipc_mode.rio.curr.reading, &msg);
-        pipe->backend.ipc_mode.rio.curr.head_read_size += read_size;
-    }
-    else
-    {
-        ssize_t read_size = read(pipe->pipfd, buffer, buffer_size);
-        if (read_size == 0)
-        {
-            return EV_EOF;
-        }
-        if (read_size < 0)
-        {
-            int err = errno;
-            if (err == EAGAIN)
-            {/* try again */
-                return 0;
-            }
-            return ev__translate_sys_error(err);
-        }
-        pipe->backend.ipc_mode.rio.curr.head_read_size += read_size;
-    }
-
-    /* If frame header not read complete, try again */
-    if (pipe->backend.ipc_mode.rio.curr.head_read_size < sizeof(ev_ipc_frame_hdr_t))
-    {
-        return 0;
-    }
-
-    /* A invalid frame header means something wrong in the transmission link */
-    if (!ev__ipc_check_frame_hdr(pipe->backend.ipc_mode.rio.buffer, sizeof(ev_ipc_frame_hdr_t)))
-    {
-        return EV_EPIPE;
-    }
-
-    ev_ipc_frame_hdr_t* hdr = (ev_ipc_frame_hdr_t*)pipe->backend.ipc_mode.rio.buffer;
-    pipe->backend.ipc_mode.rio.curr.data_remain_size = hdr->hdr_dtsz;
-
-    /* No data remain to read means peer send a empty package */
-    if (pipe->backend.ipc_mode.rio.curr.data_remain_size == 0)
-    {
-        ev_pipe_read_req_t* req = pipe->backend.ipc_mode.rio.curr.reading;
-        pipe->backend.ipc_mode.rio.curr.reading = NULL;
-        _ev_pipe_r_user_callback_unix(pipe, req, req->base.data.size);
-    }
-
-    /* Process to read body */
-    return _ev_pipe_on_ipc_mode_io_read_remain(pipe);
-}
-
-static int _ev_pipe_on_ipc_mode_io_read_unix(ev_pipe_t* pipe)
-{
-    if (pipe->backend.ipc_mode.rio.curr.data_remain_size != 0)
-    {
-        return _ev_pipe_on_ipc_mode_io_read_remain(pipe);
-    }
-
-    assert(pipe->backend.ipc_mode.rio.curr.reading == NULL);
-
-    ev_list_node_t* it = ev_list_pop_front(&pipe->backend.ipc_mode.rio.rqueue);
-    assert(it != NULL);
-
-    pipe->backend.ipc_mode.rio.curr.reading = EV_CONTAINER_OF(it, ev_pipe_read_req_t, base.node);
-    pipe->backend.ipc_mode.rio.curr.head_read_size = 0;
-    pipe->backend.ipc_mode.rio.curr.buf_idx = 0;
-    pipe->backend.ipc_mode.rio.curr.buf_pos = 0;
-
-    return _ev_pipe_on_ipc_mode_io_read_first(pipe);
-}
-
-static ssize_t _ev_pipe_sendmsg_unix(int fd, int fd_to_send, struct iovec* iov, int iovcnt)
-{
-    struct msghdr msg;
-    struct cmsghdr* cmsg;
-
-    ev_ipc_msghdr msg_ctrl_hdr;
-    memset(&msg_ctrl_hdr, 0, sizeof(msg_ctrl_hdr));
-
-    msg.msg_name = NULL;
-    msg.msg_namelen = 0;
-    msg.msg_iov = iov;
-    msg.msg_iovlen = iovcnt;
-    msg.msg_flags = 0;
-
-    msg.msg_control = msg_ctrl_hdr;
-    msg.msg_controllen = sizeof(msg_ctrl_hdr);
-
-    cmsg = CMSG_FIRSTHDR(&msg);
-    cmsg->cmsg_level = SOL_SOCKET;
-    cmsg->cmsg_type = SCM_RIGHTS;
-    cmsg->cmsg_len = CMSG_LEN(sizeof(fd_to_send));
-
-    /* silence aliasing warning */
-    {
-        void* pv = CMSG_DATA(cmsg);
-        int* pi = pv;
-        *pi = fd_to_send;
-    }
-
-    ssize_t n;
-    do
-    {
-        n = sendmsg(fd, &msg, 0);
-    } while (n == -1 && errno == EINTR);
-
-    if (n >= 0)
-    {
-        return n;
-    }
-
-    int err = errno;
-    if (err == EAGAIN || err == EWOULDBLOCK)
-    {
-        return 0;
-    }
-    return ev__translate_sys_error(err);
-}
-
-static int _ev_pipe_on_ipc_mode_io_write_remain_body_unix(ev_pipe_t* pipe)
-{
-    ev_buf_t bufs[EV_IOV_MAX];
-    ev_pipe_write_req_t* req = pipe->backend.ipc_mode.wio.curr.writing;
-    assert(req != NULL);
-
-    size_t buf_idx = pipe->backend.ipc_mode.wio.curr.buf_idx;
-    size_t buf_pos = pipe->backend.ipc_mode.wio.curr.buf_pos;
-
-    size_t idx;
-    for (idx = 0; idx < ARRAY_SIZE(bufs) && buf_idx < req->base.nbuf; idx++, buf_idx++)
-    {
-        bufs[idx].data = (uint8_t*)req->base.bufs[buf_idx].data + buf_pos;
-        bufs[idx].size = req->base.bufs[buf_idx].size - buf_pos;
-        buf_pos = 0;
-    }
-
-    ssize_t write_size = ev__writev_unix(pipe->pipfd, bufs, idx);
-    if (write_size < 0)
-    {
-        return write_size;
-    }
-
-    req->base.size += write_size;
-    while (write_size > 0)
-    {
-        size_t left_size = req->base.bufs[pipe->backend.ipc_mode.wio.curr.buf_idx].size -
-            pipe->backend.ipc_mode.wio.curr.buf_pos;
-        if (left_size > (size_t)write_size)
-        {
-            pipe->backend.ipc_mode.wio.curr.buf_pos += write_size;
-            write_size = 0;
-            break;
-        }
-
-        write_size -= left_size;
-        pipe->backend.ipc_mode.wio.curr.buf_idx++;
-        pipe->backend.ipc_mode.wio.curr.buf_pos = 0;
-    }
-
-    /* send finish */
-    if (pipe->backend.ipc_mode.wio.curr.buf_idx >= req->base.nbuf)
-    {
-        pipe->backend.ipc_mode.wio.curr.writing = NULL;
-        _ev_pipe_w_user_callback_unix(pipe, req, req->base.size);
-    }
-
-    return 0;
-}
-
-static int _ev_pipe_on_ipc_mode_io_write_remain_head_unix(ev_pipe_t* pipe)
-{
-    EV_LOG_TRACE("pipe(%p) send remain header", pipe);
-
-    const size_t buffer_pos = pipe->backend.ipc_mode.wio.curr.head_send_size;
-    void* buffer = pipe->backend.ipc_mode.wio.buffer + buffer_pos;
-    size_t buffer_size = pipe->backend.ipc_mode.wio.curr.head_send_capacity - buffer_pos;
-
-    ssize_t send_size = ev__write_unix(pipe->pipfd, buffer, buffer_size);
-    if (send_size < 0)
-    {
-        return send_size;
-    }
-    pipe->backend.ipc_mode.wio.curr.head_send_size += send_size;
-
-    /* try again */
-    if ((size_t)send_size < buffer_size)
-    {
-        return 0;
-    }
-
-    /* Write body */
-    return _ev_pipe_on_ipc_mode_io_write_remain_body_unix(pipe);
-}
-
-static int _ev_pipe_on_ipc_mode_io_write_remain_unix(ev_pipe_t* pipe)
-{
-    if (pipe->backend.ipc_mode.wio.curr.head_send_size < pipe->backend.ipc_mode.wio.curr.head_send_capacity)
-    {
-        return _ev_pipe_on_ipc_mode_io_write_remain_head_unix(pipe);
-    }
-
-    return _ev_pipe_on_ipc_mode_io_write_remain_body_unix(pipe);
-}
-
-static int _ev_pipe_ipc_mode_write_new_frame_unix(ev_pipe_t* pipe)
-{
-    ev_pipe_write_req_t* req = pipe->backend.ipc_mode.wio.curr.writing;
-
-    ev_ipc_frame_hdr_t frame_hdr;
-    ev__ipc_init_frame_hdr(&frame_hdr, 0, 0, req->base.capacity);
-    memcpy(pipe->backend.ipc_mode.wio.buffer, &frame_hdr, sizeof(frame_hdr));
-    pipe->backend.ipc_mode.wio.curr.head_send_capacity = sizeof(frame_hdr);
-
-    ssize_t send_size;
-    if (req->handle.role == EV_ROLE_EV_TCP)
-    {
-        struct iovec iov = {
-            pipe->backend.ipc_mode.wio.buffer,
-            pipe->backend.ipc_mode.wio.curr.head_send_capacity
-        };
-
-        send_size = _ev_pipe_sendmsg_unix(pipe->pipfd, req->handle.u.os_socket, &iov, 1);
-        if (send_size >= 0)
-        {
-            req->handle.role = EV_ROLE_UNKNOWN;
-            req->handle.u.os_socket = EV_OS_SOCKET_INVALID;
-        }
-    }
-    else
-    {
-        send_size = ev__write_unix(pipe->pipfd, pipe->backend.ipc_mode.wio.buffer,
-            pipe->backend.ipc_mode.wio.curr.head_send_capacity);
-    }
-
-    if (send_size == 0)
-    {/* If data not send, try again */
-        EV_LOG_TRACE("pipe(%p) data not send, try again", pipe);
-        ev_list_push_front(&pipe->backend.ipc_mode.wio.wqueue, &req->base.node);
-        pipe->backend.ipc_mode.wio.curr.writing = NULL;
-        return 0;
-    }
-    else if (send_size < 0)
-    {/* send_size is error code */
-        EV_LOG_ERROR("pipe(%p) data send failed, err:%d", pipe, send_size);
-        return send_size;
-    }
-
-    pipe->backend.ipc_mode.wio.curr.head_send_size = send_size;
-
-    /* try again to send frame header */
-    if ((size_t)send_size < pipe->backend.ipc_mode.wio.curr.head_send_capacity)
-    {
-        EV_LOG_TRACE("pipe(%p) frame header remain %zu bytes", pipe,
-            pipe->backend.ipc_mode.wio.curr.head_send_capacity - send_size);
-        return 0;
-    }
-
-    return _ev_pipe_on_ipc_mode_io_write_remain_unix(pipe);
-}
-
-static void _ev_pipe_ipc_mode_reset_wio_curr_cnt(ev_pipe_t* pipe)
-{
-    pipe->backend.ipc_mode.wio.curr.head_send_size = 0;
-    pipe->backend.ipc_mode.wio.curr.head_send_capacity = 0;
-    pipe->backend.ipc_mode.wio.curr.buf_idx = 0;
-    pipe->backend.ipc_mode.wio.curr.buf_pos = 0;
-}
-
-static void _ev_pipe_ipc_mode_reset_rio_curr_cnt(ev_pipe_t* pipe)
-{
-    pipe->backend.ipc_mode.rio.curr.head_read_size = 0;
-    pipe->backend.ipc_mode.rio.curr.data_remain_size = 0;
-    pipe->backend.ipc_mode.rio.curr.buf_idx = 0;
-    pipe->backend.ipc_mode.rio.curr.buf_pos = 0;
-}
-
-static int _ev_pipe_on_ipc_mode_io_write_unix(ev_pipe_t* pipe)
-{
-    if (pipe->backend.ipc_mode.wio.curr.writing != NULL)
-    {
-        return _ev_pipe_on_ipc_mode_io_write_remain_unix(pipe);
-    }
-
-    ev_list_node_t* it = ev_list_pop_front(&pipe->backend.ipc_mode.wio.wqueue);
-    assert(it != NULL);
-    pipe->backend.ipc_mode.wio.curr.writing =
-        EV_CONTAINER_OF(it, ev_pipe_write_req_t, base.node);
-    _ev_pipe_ipc_mode_reset_wio_curr_cnt(pipe);
-
-    return _ev_pipe_ipc_mode_write_new_frame_unix(pipe);
-}
-
-static void _ev_pipe_ipc_mode_cancel_all_rio_unix(ev_pipe_t* pipe, int stat)
-{
-    ev_list_node_t* it;
-    while ((it = ev_list_pop_front(&pipe->backend.ipc_mode.rio.rqueue)) != NULL)
-    {
-        ev_pipe_read_req_t* req = EV_CONTAINER_OF(it, ev_pipe_read_req_t, base.node);
-        _ev_pipe_r_user_callback_unix(pipe, req, stat);
-    }
-}
-
-static void _ev_pipe_ipc_mode_cancel_all_wio_unix(ev_pipe_t* pipe, int stat)
-{
-    ev_list_node_t* it;
-    while ((it = ev_list_pop_front(&pipe->backend.ipc_mode.wio.wqueue)) != NULL)
-    {
-        ev_pipe_write_req_t* req = EV_CONTAINER_OF(it, ev_pipe_write_req_t, base.node);
-        _ev_pipe_w_user_callback_unix(pipe, req, stat);
-    }
-}
-
-static void _ev_pipe_abort_unix(ev_pipe_t* pipe, int stat)
-{
-    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
-    {
-        ev__nonblock_io_del(pipe->base.loop, &pipe->backend.ipc_mode.io, EV_IO_IN | EV_IO_OUT);
-        _ev_pipe_close_unix(pipe);
-
-        _ev_pipe_ipc_mode_cancel_all_rio_unix(pipe, stat);
-        _ev_pipe_ipc_mode_cancel_all_wio_unix(pipe, stat);
-    }
-    else
-    {
-        if (pipe->base.data.flags & EV_HANDLE_PIPE_STREAMING)
-        {
-            ev__nonblock_stream_exit(&pipe->backend.data_mode.stream);
-            pipe->base.data.flags &= ~EV_HANDLE_PIPE_STREAMING;
-        }
-        _ev_pipe_close_unix(pipe);
-    }
-}
-
-static void _ev_pipe_on_ipc_mode_io_unix(ev_nonblock_io_t* io, unsigned evts, void* arg)
-{
-    (void)arg;
-
-    int ret = 0;
-    ev_pipe_t* pipe = EV_CONTAINER_OF(io, ev_pipe_t, backend.ipc_mode.io);
-
-    if (evts & (EPOLLIN | EPOLLHUP))
-    {
-        if ((ret = _ev_pipe_on_ipc_mode_io_read_unix(pipe)) != 0)
-        {
-            goto err;
-        }
-        if (ev_list_size(&pipe->backend.ipc_mode.rio.rqueue) == 0
-            && pipe->backend.ipc_mode.rio.curr.reading == NULL)
-        {
-            pipe->backend.ipc_mode.mask.rio_pending = 0;
-            ev__nonblock_io_del(pipe->base.loop, &pipe->backend.ipc_mode.io, EPOLLIN);
-        }
-    }
-    if (evts & (EPOLLOUT | EPOLLERR))
-    {
-        if ((ret = _ev_pipe_on_ipc_mode_io_write_unix(pipe)) != 0)
-        {
-            goto err;
-        }
-        if (ev_list_size(&pipe->backend.ipc_mode.wio.wqueue) == 0
-            && pipe->backend.ipc_mode.wio.curr.writing == NULL)
-        {
-            pipe->backend.ipc_mode.mask.wio_pending = 0;
-            ev__nonblock_io_del(pipe->base.loop, &pipe->backend.ipc_mode.io, EPOLLOUT);
-        }
-    }
-
-    return;
-
-err:
-    _ev_pipe_abort_unix(pipe, ret);
-}
-
-static void _ev_pipe_init_as_ipc_mode_unix(ev_pipe_t* pipe)
-{
-    ev__nonblock_io_init(&pipe->backend.ipc_mode.io, pipe->pipfd, _ev_pipe_on_ipc_mode_io_unix, NULL);
-    memset(&pipe->backend.ipc_mode.mask, 0, sizeof(pipe->backend.ipc_mode.mask));
-
-    _ev_pipe_ipc_mode_reset_rio_curr_cnt(pipe);
-    pipe->backend.ipc_mode.rio.curr.reading = NULL;
-    ev_list_init(&pipe->backend.ipc_mode.rio.rqueue);
-
-    _ev_pipe_ipc_mode_reset_wio_curr_cnt(pipe);
-    pipe->backend.ipc_mode.wio.curr.writing = NULL;
-    ev_list_init(&pipe->backend.ipc_mode.wio.wqueue);
-}
-
-static void _ev_pipe_ipc_mode_want_write_unix(ev_pipe_t* pipe)
-{
-    if (pipe->backend.ipc_mode.mask.wio_pending)
-    {
-        return;
-    }
-
-    ev__nonblock_io_add(pipe->base.loop, &pipe->backend.ipc_mode.io, EV_IO_OUT);
-    pipe->backend.ipc_mode.mask.wio_pending = 1;
-}
-
-static void _ev_pipe_ipc_mode_want_read_unix(ev_pipe_t* pipe)
-{
-    if (pipe->backend.ipc_mode.mask.rio_pending)
-    {
-        return;
-    }
-
-    ev__nonblock_io_add(pipe->base.loop, &pipe->backend.ipc_mode.io, EV_IO_IN);
-    pipe->backend.ipc_mode.mask.rio_pending = 1;
-}
-
-static int _ev_pipe_write_ipc_mode_unix(ev_pipe_t* pipe, ev_pipe_write_req_t* req)
-{
-    if (req->base.capacity > UINT32_MAX)
-    {
-        return EV_E2BIG;
-    }
-
-    ev_list_push_back(&pipe->backend.ipc_mode.wio.wqueue, &req->base.node);
-    _ev_pipe_ipc_mode_want_write_unix(pipe);
-
-    return 0;
-}
-
-static int _ev_pipe_read_ipc_mode_unix(ev_pipe_t* pipe, ev_pipe_read_req_t* req)
-{
-    ev_list_push_back(&pipe->backend.ipc_mode.rio.rqueue, &req->base.node);
-    _ev_pipe_ipc_mode_want_read_unix(pipe);
-    return 0;
-}
-
-static int _ev_pipe_make_pipe(ev_os_pipe_t fds[2], int rflags, int wflags)
-{
-    int errcode;
-    fds[0] = EV_OS_PIPE_INVALID;
-    fds[1] = EV_OS_PIPE_INVALID;
-
-    if (pipe(fds) < 0)
-    {
-        errcode = errno;
-        errcode = ev__translate_sys_error(errcode);
-        goto err;
-    }
-
-    if ((errcode = ev__cloexec(fds[0], 1)) != 0)
-    {
-        goto err;
-    }
-    if ((errcode = ev__cloexec(fds[1], 1)) != 0)
-    {
-        goto err;
-    }
-
-    if (rflags & EV_PIPE_NONBLOCK)
-    {
-        if ((errcode = ev__nonblock(fds[0], 1)) != 0)
-        {
-            goto err;
-        }
-    }
-
-    if (wflags & EV_PIPE_NONBLOCK)
-    {
-        if ((errcode = ev__nonblock(fds[1], 1)) != 0)
-        {
-            goto err;
-        }
-    }
-
-    return 0;
-
-err:
-    if (fds[0] != EV_OS_PIPE_INVALID)
-    {
-        close(fds[0]);
-        fds[0] = EV_OS_PIPE_INVALID;
-    }
-    if (fds[1] != EV_OS_PIPE_INVALID)
-    {
-        close(fds[1]);
-        fds[1] = EV_OS_PIPE_INVALID;
-    }
-    return errcode;
-}
-
-static int _ev_pipe_make_socketpair(ev_os_pipe_t fds[2], int rflags, int wflags)
-{
-    int errcode;
-    if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, fds) != 0)
-    {
-        errcode = errno;
-        return ev__translate_sys_error(errcode);
-    }
-
-    if (rflags & EV_PIPE_NONBLOCK)
-    {
-        if ((errcode = ev__nonblock(fds[0], 1)) != 0)
-        {
-            goto err;
-        }
-    }
-
-    if (wflags & EV_PIPE_NONBLOCK)
-    {
-        if ((errcode = ev__nonblock(fds[1], 1)) != 0)
-        {
-            goto err;
-        }
-    }
-
-    return 0;
-
-err:
-    close(fds[0]);
-    close(fds[1]);
-    return errcode;
-}
-
-int ev_pipe_make(ev_os_pipe_t fds[2], int rflags, int wflags)
-{
-    if ((rflags & EV_PIPE_IPC) != (wflags & EV_PIPE_IPC))
-    {
-        return EV_EINVAL;
-    }
-
-    int is_ipc = rflags & EV_PIPE_IPC;
-
-    if (is_ipc)
-    {
-        return _ev_pipe_make_socketpair(fds, rflags, wflags);
-    }
-
-    return _ev_pipe_make_pipe(fds, rflags, wflags);
-}
-
-int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe, int ipc)
-{
-    ev__handle_init(loop, &pipe->base, EV_ROLE_EV_PIPE);
-    pipe->close_cb = NULL;
-    pipe->pipfd = EV_OS_PIPE_INVALID;
-    pipe->base.data.flags |= ipc ? EV_HANDLE_PIPE_IPC : 0;
-
-    return 0;
-}
-
-void ev_pipe_exit(ev_pipe_t* pipe, ev_pipe_cb cb)
-{
-    pipe->close_cb = cb;
-    _ev_pipe_abort_unix(pipe, EV_ECANCELED);
-    ev__handle_exit(&pipe->base, _ev_pipe_on_close_unix);
-}
-
-int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle)
-{
-    if (pipe->pipfd != EV_OS_PIPE_INVALID)
-    {
-        return EV_EEXIST;
-    }
-
-    int mode = ev__fcntl_getfl_unix(handle);
-    if (mode == -1)
-    {
-        return ev__translate_sys_error(errno);
-    }
-
-    int ret;
-    if ((ret = ev__nonblock(handle, 1)) != 0)
-    {
-        return ret;
-    }
-
-    pipe->pipfd = handle;
-    pipe->base.data.flags |= EV_HANDLE_PIPE_STREAMING;
-
-    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
-    {
-        _ev_pipe_init_as_ipc_mode_unix(pipe);
-    }
-    else
-    {
-        ev__nonblock_stream_init(pipe->base.loop, &pipe->backend.data_mode.stream, handle,
-            _ev_pipe_on_data_mode_write_unix, _ev_pipe_on_data_mode_read_unix);
-    }
-
-    return 0;
-}
-
-int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
-    ev_buf_t* bufs, size_t nbuf,
-    ev_role_t handle_role, void* handle_addr, size_t handle_size,
-    ev_pipe_write_cb cb)
-{
-    if (pipe->pipfd == EV_OS_PIPE_INVALID)
-    {
-        return EV_EBADF;
-    }
-
-    int ret = ev__pipe_write_init_ext(req, cb, bufs, nbuf,
-        handle_role, handle_addr, handle_size);
-    if (ret != 0)
-    {
-        return ret;
-    }
-
-    ev__handle_active(&pipe->base);
-
-    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
-    {
-        ret = _ev_pipe_write_ipc_mode_unix(pipe, req);
-    }
-    else
-    {
-        ret = ev__nonblock_stream_write(&pipe->backend.data_mode.stream, &req->base);
-    }
-
-    if (ret != 0)
-    {
-        _ev_pipe_abort_unix(pipe, ret);
-
-        /* The final state must be non-active. */
-        ev__handle_deactive(&pipe->base);
-    }
-
-    return ret;
-}
-
-int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
-    size_t nbuf, ev_pipe_read_cb cb)
-{
-    if (pipe->pipfd == EV_OS_PIPE_INVALID)
-    {
-        return EV_EBADF;
-    }
-
-    int ret = ev__pipe_read_init(req, bufs, nbuf, cb);
-    if (ret != 0)
-    {
-        return ret;
-    }
-
-    ev__handle_active(&pipe->base);
-
-    if (pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
-    {
-        ret = _ev_pipe_read_ipc_mode_unix(pipe, req);
-    }
-    else
-    {
-        ret = ev__nonblock_stream_read(&pipe->backend.data_mode.stream, &req->base);
-    }
-
-    if (ret != 0)
-    {
-        _ev_pipe_abort_unix(pipe, ret);
-
-        /* The final state must be non-active. */
-        ev__handle_deactive(&pipe->base);
-    }
-
-    return ret;
-}
-
-int ev_pipe_accept(ev_pipe_t* pipe, ev_pipe_read_req_t* req,
-    ev_role_t handle_role, void* handle_addr, size_t handle_size)
-{
-    if (!(pipe->base.data.flags & EV_HANDLE_PIPE_IPC)
-        || handle_role != EV_ROLE_EV_TCP
-        || handle_addr == NULL)
-    {
-        return EV_EINVAL;
-    }
-    if (req->handle.os_socket == EV_OS_SOCKET_INVALID)
-    {
-        return EV_ENOENT;
-    }
-    if (handle_size < sizeof(ev_buf_t))
-    {
-        return EV_ENOMEM;
-    }
-
-    ev_tcp_t* tcp = handle_addr;
-    return ev__tcp_open(tcp, req->handle.os_socket);
-}
-
-void ev_pipe_close(ev_os_pipe_t fd)
-{
-    if (fd != EV_OS_PIPE_INVALID)
-    {
-        close(fd);
-    }
-}
-
-// #line 95 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/process_unix.c
-// SIZE:    15820
-// SHA-256: 3f66532a4a0b9bad795c9b828745dcc1595a0c61a50ec5a6081eed5f02089068
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/process_unix.c"
-#define _GNU_SOURCE
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <unistd.h>
-#include <sys/wait.h>
-#include <limits.h>
-#include <stdio.h>
-
-typedef struct dup_pair_s
-{
-    int*    src;
-    int     dst;
-} dup_pair_t;
-
-typedef struct spawn_helper_s
-{
-    /**
-     * Channel for internal IPC.
-     *
-     * pipefd[0] refers to the read end of the pipe. pipefd[1] refers to the
-     * write end of the pipe.
-     *
-     * The data always system errno.
-     */
-    int         pipefd[2];
-
-    /**
-     * The file descriptor always need close after fork().
-     */
-    struct
-    {
-        int     fd_stdin;
-        int     fd_stdout;
-        int     fd_stderr;
-    } child;
-} spawn_helper_t;
-
-static void _ev_spawn_write_errno_and_exit(spawn_helper_t* helper, int value)
-{
-    ssize_t n;
-    do
-    {
-        n = write(helper->pipefd[1], &value, sizeof(value));
-    } while (n == -1 && errno == EINTR);
-
-    exit(EXIT_FAILURE);
-}
-
-static int _ev_process_setup_child_fd(int fd)
-{
-    int ret;
-
-    /* must in block mode */
-    if ((ret = ev__nonblock(fd, 0)) != 0)
-    {
-        return ret;
-    }
-
-    /* cannot have FD_CLOEXEC */
-    if ((ret = ev__cloexec(fd, 0)) != 0)
-    {
-        return ret;
-    }
-
-    return 0;
-}
-
-static int _ev_spawn_setup_stdio_as_fd(int* handle, int fd)
-{
-    int dup_fd = dup(fd);
-    if (dup_fd < 0)
-    {
-        int errcode = errno;
-        return ev__translate_sys_error(errcode);
-    }
-
-    int ret = _ev_process_setup_child_fd(dup_fd);
-    if (ret != 0)
-    {
-        close(dup_fd);
-        return ret;
-    }
-
-    *handle = dup_fd;
-    return 0;
-}
-
-static int _ev_spawn_setup_stdio_as_null(int* handle, int mode)
-{
-    int null_fd = open("/dev/null", mode);
-    if (null_fd < 0)
-    {
-        int errcode = errno;
-        return ev__translate_sys_error(errcode);
-    }
-
-    int ret = _ev_process_setup_child_fd(null_fd);
-    if (ret != 0)
-    {
-        close(null_fd);
-        return ret;
-    }
-
-    *handle = null_fd;
-    return 0;
-}
-
-static int _ev_spawn_setup_stdio_as_pipe(ev_pipe_t* pipe, int* handle, int is_pipe_read)
-{
-    int errcode;
-    ev_os_pipe_t pipfd[2] = { EV_OS_PIPE_INVALID, EV_OS_PIPE_INVALID };
-
-    /* fd for #ev_pipe_t should open in nonblock mode */
-    int rflags = is_pipe_read ? EV_PIPE_NONBLOCK : 0;
-    int wflags = is_pipe_read ? 0 : EV_PIPE_NONBLOCK;
-
-    errcode = ev_pipe_make(pipfd, rflags, wflags);
-    if (errcode != 0)
-    {
-        return errcode;
-    }
-
-    errcode = _ev_process_setup_child_fd(is_pipe_read ? pipfd[1] : pipfd[0]);
-    if (errcode != 0)
-    {
-        goto err_exit;
-    }
-
-    errcode = ev_pipe_open(pipe, is_pipe_read ? pipfd[0] : pipfd[1]);
-    if (errcode != 0)
-    {
-        goto err_exit;
-    }
-
-    *handle = is_pipe_read ? pipfd[1] : pipfd[0];
-    return 0;
-
-err_exit:
-    ev_pipe_close(pipfd[0]);
-    ev_pipe_close(pipfd[1]);
-    return errcode;
-}
-
-static void _ev_spawn_dup_stdio(spawn_helper_t* helper)
-{
-    int ret = 0;
-    dup_pair_t dup_list[] = {
-        { &helper->child.fd_stdin, STDIN_FILENO },
-        { &helper->child.fd_stdout, STDOUT_FILENO },
-        { &helper->child.fd_stderr, STDERR_FILENO },
-    };
-
-    size_t i;
-    for (i = 0; i < ARRAY_SIZE(dup_list); i++)
-    {
-        if (*dup_list[i].src == EV_OS_PIPE_INVALID)
-        {
-            continue;
-        }
-
-        ret = dup2(*dup_list[i].src, dup_list[i].dst);
-        if (ret < 0)
-        {
-            ret = errno;
-            goto err_dup;
-        }
-
-        close(*dup_list[i].src);
-        *dup_list[i].src = EV_OS_PIPE_INVALID;
-    }
-
-    return;
-
-err_dup:
-    _ev_spawn_write_errno_and_exit(helper, ret);
-}
-
-static void _ev_spawn_child(spawn_helper_t* helper, const ev_process_options_t* opt)
-{
-    int errcode;
-    _ev_spawn_dup_stdio(helper);
-
-    if (opt->cwd != NULL && chdir(opt->cwd))
-    {
-        errcode = errno;
-        _ev_spawn_write_errno_and_exit(helper, errcode);
-    }
-
-    const char* file = opt->file != NULL ? opt->file : opt->argv[0];
-
-    if (opt->envp == NULL)
-    {
-        (void)execvp(file, opt->argv);
-    }
-    else
-    {
-        (void)execvpe(file, opt->argv, opt->envp);
-    }
-
-    /* Error */
-    errcode = errno;
-    _ev_spawn_write_errno_and_exit(helper, errcode);
-}
-
-static int _ev_spawn_parent(ev_process_t* handle, spawn_helper_t* spawn_helper)
-{
-    int status;
-    pid_t pid_ret;
-    int child_errno = 0;
-    ssize_t r;
-
-    do
-    {
-        r = read(spawn_helper->pipefd[0], &child_errno, sizeof(child_errno));
-    } while (r == -1 && errno == EINTR);
-
-    /* EOF, child exec success */
-    if (r == 0)
-    {
-        return 0;
-    }
-
-    if (r == sizeof(child_errno))
-    {
-        do
-        {
-            pid_ret = waitpid(handle->pid, &status, 0); /* okay, got EPIPE */
-        } while (pid_ret == -1 && errno == EINTR);
-        assert(pid_ret == handle->pid);
-
-        return ev__translate_sys_error(child_errno);
-    }
-
-    /* Something unknown happened to our child before spawn */
-    if (r == -1 && errno == EPIPE)
-    {
-        do
-        {
-            pid_ret = waitpid(handle->pid, &status, 0); /* okay, got EPIPE */
-        } while (pid_ret == -1 && errno == EINTR);
-        assert(pid_ret == handle->pid);
-
-        return EV_EPIPE;
-    }
-
-    /* unknown error */
-    EV_ABORT();
-
-    return EV_EPIPE;
-}
-
-EV_LOCAL void ev__init_process_unix(void)
-{
-    ev_list_init(&g_ev_loop_unix_ctx.process.wait_queue);
-    ev_mutex_init(&g_ev_loop_unix_ctx.process.wait_queue_mutex, 0);
-
-    struct sigaction sa;
-    memset(&sa, 0, sizeof(sa));
-
-    if (sigfillset(&sa.sa_mask) != 0)
-    {
-        EV_ABORT();
-    }
-
-    sa.sa_handler = ev_process_sigchld;
-
-    if (sigaction(SIGCHLD, &sa, NULL) != 0)
-    {
-        EV_ABORT();
-    }
-}
-
-static void _ev_process_on_async_close(ev_async_t* async)
-{
-    ev_process_t* handle = EV_CONTAINER_OF(async, ev_process_t, sigchld);
-
-    if (handle->exit_cb != NULL)
-    {
-        handle->exit_cb(handle);
-    }
-}
-
-static void _ev_process_on_sigchild_unix(ev_async_t* async)
-{
-    ev_process_t* handle = EV_CONTAINER_OF(async, ev_process_t, sigchld);
-    if (handle->backend.flags.waitpid)
-    {
-        return;
-    }
-
-    int wstatus;
-    pid_t pid_ret;
-    do
-    {
-        pid_ret = waitpid(handle->pid, &wstatus, WNOHANG);
-    } while(pid_ret == -1 && errno == EINTR);
-
-    if (pid_ret == 0)
-    {
-        return;
-    }
-    if (pid_ret == -1)
-    {
-        int errcode = errno;
-
-        /**
-         * The child died, and we missed it. This probably means someone else
-         * stole the waitpid().
-         */
-        if (errcode == ECHILD)
-        {
-            handle->exit_status = EV_PROCESS_EXIT_UNKNOWN;
-            goto fin;
-        }
-    }
-
-    assert(pid_ret == handle->pid);
-
-    if (WIFEXITED(wstatus))
-    {
-        handle->exit_status = EV_PROCESS_EXIT_NORMAL;
-        handle->exit_code = WEXITSTATUS(wstatus);
-    }
-
-    if (WIFSIGNALED(wstatus))
-    {
-        handle->exit_status = EV_PROCESS_EXIT_SIGNAL;
-        handle->exit_code = WTERMSIG(wstatus);
-    }
-
-fin:
-    handle->backend.flags.waitpid = 1;
-
-    if (handle->sigchild_cb != NULL)
-    {
-        handle->sigchild_cb(handle, handle->exit_status, handle->exit_code);
-    }
-}
-
-static int _ev_process_init_process(ev_loop_t* loop, ev_process_t* handle, const ev_process_options_t* opt)
-{
-    int ret;
-
-    handle->sigchild_cb = opt->on_exit;
-    handle->exit_cb = NULL;
-    handle->pid = EV_OS_PID_INVALID;
-    handle->exit_status = EV_PROCESS_EXIT_UNKNOWN;
-    handle->exit_code = 0;
-    memset(&handle->backend.flags, 0, sizeof(handle->backend.flags));
-
-    ret = ev_async_init(loop, &handle->sigchld, _ev_process_on_sigchild_unix);
-    if (ret != 0)
-    {
-        return ret;
-    }
-
-    ev_mutex_enter(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
-    {
-        ev_list_push_back(&g_ev_loop_unix_ctx.process.wait_queue, &handle->node);
-    }
-    ev_mutex_leave(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
-
-    return 0;
-}
-
-static int _ev_process_setup_child_stdin(spawn_helper_t* helper,
-        const ev_process_stdio_container_t* container)
-{
-    if (container->flag == EV_PROCESS_STDIO_IGNORE)
-    {
-        return 0;
-    }
-
-    if (container->flag & EV_PROCESS_STDIO_REDIRECT_NULL)
-    {
-        return _ev_spawn_setup_stdio_as_null(&helper->child.fd_stdin, O_RDONLY);
-    }
-
-    if (container->flag & EV_PROCESS_STDIO_REDIRECT_FD)
-    {
-        return _ev_spawn_setup_stdio_as_fd(&helper->child.fd_stdin, container->data.fd);
-    }
-
-    if (container->flag & EV_PROCESS_STDIO_REDIRECT_PIPE)
-    {
-        return _ev_spawn_setup_stdio_as_pipe(container->data.pipe, &helper->child.fd_stdin, 0);
-    }
-
-    return 0;
-}
-
-static int _ev_process_setup_child_stdout(spawn_helper_t* helper,
-    const ev_process_stdio_container_t* container)
-{
-    if (container->flag == EV_PROCESS_STDIO_IGNORE)
-    {
-        return 0;
-    }
-
-    if (container->flag & EV_PROCESS_STDIO_REDIRECT_NULL)
-    {
-        return  _ev_spawn_setup_stdio_as_null(&helper->child.fd_stdout, O_WRONLY);
-    }
-
-    if (container->flag & EV_PROCESS_STDIO_REDIRECT_FD)
-    {
-        return _ev_spawn_setup_stdio_as_fd(&helper->child.fd_stdout, container->data.fd);
-    }
-
-    if (container->flag & EV_PROCESS_STDIO_REDIRECT_PIPE)
-    {
-        return _ev_spawn_setup_stdio_as_pipe(container->data.pipe, &helper->child.fd_stdout, 1);
-    }
-
-    return 0;
-}
-
-static int _ev_process_setup_child_stderr(spawn_helper_t* helper,
-    const ev_process_stdio_container_t* container)
-{
-    if (container->flag == EV_PROCESS_STDIO_IGNORE)
-    {
-        return 0;
-    }
-
-    if (container->flag & EV_PROCESS_STDIO_REDIRECT_NULL)
-    {
-        return  _ev_spawn_setup_stdio_as_null(&helper->child.fd_stderr, O_WRONLY);
-    }
-
-    if (container->flag & EV_PROCESS_STDIO_REDIRECT_FD)
-    {
-        return _ev_spawn_setup_stdio_as_fd(&helper->child.fd_stderr, container->data.fd);
-    }
-
-    if (container->flag & EV_PROCESS_STDIO_REDIRECT_PIPE)
-    {
-        return _ev_spawn_setup_stdio_as_pipe(container->data.pipe, &helper->child.fd_stderr, 1);
-    }
-
-    return 0;
-}
-
-static void _ev_process_close_read_end(spawn_helper_t* helper)
-{
-    if (helper->pipefd[0] != EV_OS_PIPE_INVALID)
-    {
-        close(helper->pipefd[0]);
-        helper->pipefd[0] = EV_OS_PIPE_INVALID;
-    }
-}
-
-static void _ev_process_close_write_end(spawn_helper_t* helper)
-{
-    if (helper->pipefd[1] != EV_OS_PIPE_INVALID)
-    {
-        close(helper->pipefd[1]);
-        helper->pipefd[1] = EV_OS_PIPE_INVALID;
-    }
-}
-
-static void _ev_process_close_stdin(spawn_helper_t* helper)
-{
-    if (helper->child.fd_stdin != EV_OS_PIPE_INVALID)
-    {
-        close(helper->child.fd_stdin);
-        helper->child.fd_stdin = EV_OS_PIPE_INVALID;
-    }
-}
-
-static void _ev_process_close_stdout(spawn_helper_t* helper)
-{
-    if (helper->child.fd_stdout != EV_OS_PIPE_INVALID)
-    {
-        close(helper->child.fd_stdout);
-        helper->child.fd_stdout = EV_OS_PIPE_INVALID;
-    }
-}
-
-static void _ev_process_close_stderr(spawn_helper_t* helper)
-{
-    if (helper->child.fd_stderr != EV_OS_PIPE_INVALID)
-    {
-        close(helper->child.fd_stderr);
-        helper->child.fd_stderr = EV_OS_PIPE_INVALID;
-    }
-}
-
-static int _ev_process_init_spawn_helper(spawn_helper_t* helper, const ev_process_options_t* opt)
-{
-    int ret;
-    memset(helper, 0, sizeof(*helper));
-    helper->child.fd_stdin = EV_OS_PIPE_INVALID;
-    helper->child.fd_stdout = EV_OS_PIPE_INVALID;
-    helper->child.fd_stderr = EV_OS_PIPE_INVALID;
-
-    if ((ret = pipe2(helper->pipefd, O_CLOEXEC)) != 0)
-    {
-        ret = errno;
-        return ev__translate_sys_error(ret);
-    }
-
-    if ((ret = _ev_process_setup_child_stdin(helper, &opt->stdios[0])) != 0)
-    {
-        goto err_close_pipe;
-    }
-
-    if ((ret = _ev_process_setup_child_stdout(helper, &opt->stdios[1])) != 0)
-    {
-        goto err_close_stdin;
-    }
-
-    if ((ret = _ev_process_setup_child_stderr(helper, &opt->stdios[2])) != 0)
-    {
-        goto err_close_stdout;
-    }
-
-    return 0;
-
-err_close_stdout:
-    _ev_process_close_stdout(helper);
-err_close_stdin:
-    _ev_process_close_stdin(helper);
-err_close_pipe:
-    _ev_process_close_read_end(helper);
-    _ev_process_close_write_end(helper);
-    return ret;
-}
-
-static void _ev_process_exit_spawn_helper(spawn_helper_t* helper)
-{
-    _ev_process_close_read_end(helper);
-    _ev_process_close_write_end(helper);
-    _ev_process_close_stdin(helper);
-    _ev_process_close_stdout(helper);
-    _ev_process_close_stderr(helper);
-}
-
-int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_options_t* opt)
-{
-    int ret;
-
-    spawn_helper_t spawn_helper;
-    if ((ret = _ev_process_init_spawn_helper(&spawn_helper, opt)) != 0)
-    {
-        return ret;
-    }
-
-    if ((ret = _ev_process_init_process(loop, handle, opt)) != 0)
-    {
-        goto finish;
-    }
-
-    handle->pid = fork();
-    switch (handle->pid)
-    {
-    case -1:    /* fork failed */
-        ret = errno;
-        ret = ev__translate_sys_error(ret);
-        goto finish;
-
-    case 0:     /* Child process */
-        _ev_process_close_read_end(&spawn_helper);
-        _ev_spawn_child(&spawn_helper, opt);
-        break;
-
-    default:    /* parent process */
-        _ev_process_close_write_end(&spawn_helper);
-        ret = _ev_spawn_parent(handle, &spawn_helper);
-        goto finish;
-    }
-
-    /* should not reach here. */
-    EV_ABORT();
-    return EV_EPIPE;
-
-finish:
-    _ev_process_exit_spawn_helper(&spawn_helper);
-    return ret;
-}
-
-void ev_process_exit(ev_process_t* handle, ev_process_exit_cb cb)
-{
-    if (handle->pid != EV_OS_PID_INVALID)
-    {
-        handle->pid = EV_OS_PID_INVALID;
-    }
-
-    ev_mutex_enter(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
-    {
-        ev_list_erase(&g_ev_loop_unix_ctx.process.wait_queue, &handle->node);
-    }
-    ev_mutex_leave(&g_ev_loop_unix_ctx.process.wait_queue_mutex);
-
-    handle->exit_cb = cb;
-    ev_async_exit(&handle->sigchld, _ev_process_on_async_close);
-}
-
-void ev_process_sigchld(int signum)
-{
-    assert(signum == SIGCHLD); (void)signum;
-
-    ev_list_node_t* it = ev_list_begin(&g_ev_loop_unix_ctx.process.wait_queue);
-    for (; it != NULL; it = ev_list_next(it))
-    {
-        ev_process_t* handle = EV_CONTAINER_OF(it, ev_process_t, node);
-        ev_async_wakeup(&handle->sigchld);
-    }
-}
-
-ssize_t ev_getcwd(char* buffer, size_t size)
-{
-    size_t str_len;
-    int errcode;
-
-    if (buffer != NULL && getcwd(buffer, size) != NULL)
-    {
-        str_len = strlen(buffer);
-        if (buffer[str_len - 1] == '/')
-        {
-            buffer[str_len - 1] = '\0';
-            str_len -= 1;
-        }
-
-        return str_len;
-    }
-
-    const size_t max_path_size = PATH_MAX + 1;
-    char* tmp_buf = ev_malloc(max_path_size);
-    if (tmp_buf == NULL)
-    {
-        return EV_ENOMEM;
-    }
-
-    if (getcwd(tmp_buf, max_path_size) == NULL)
-    {
-        errcode = errno;
-        ev_free(tmp_buf);
-        return ev__translate_sys_error(errcode);
-    }
-
-    str_len = strlen(tmp_buf);
-    if (tmp_buf[str_len - 1] == '/')
-    {
-        tmp_buf[str_len - 1] = '\0';
-        str_len -= 1;
-    }
-
-    if (buffer != NULL)
-    {
-        snprintf(buffer, size, "%s", tmp_buf);
-    }
-
-    ev_free(tmp_buf);
-    return str_len;
-}
-
-ssize_t ev_exepath(char* buffer, size_t size)
-{
-    int errcode;
-
-    size_t tmp_size = PATH_MAX;
-    char* tmp_buffer = ev_malloc(tmp_size);
-    if (tmp_buffer == NULL)
-    {
-        errcode = EV_ENOMEM;
-        goto error;
-    }
-
-    ssize_t ret = readlink("/proc/self/exe", tmp_buffer, tmp_size - 1);
-    if (ret < 0)
-    {
-        errcode = ev__translate_sys_error(errno);
-        goto error;
-    }
-    tmp_buffer[ret] = '\0';
-
-    if (buffer != NULL)
-    {
-        ret = snprintf(buffer, size, "%s", tmp_buffer);
-    }
-    ev_free(tmp_buffer);
-
-    return ret;
-
-error:
-    if (buffer != NULL && size > 0)
-    {
-        buffer[0] = '\0';
-    }
-    ev_free(tmp_buffer);
-    return errcode;
-}
-
-// #line 96 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/sem_unix.c
-// SIZE:    782
-// SHA-256: 73e0c3a42e346fb929e6d6733e67c7f5840337f9830d521ef1e573c505e72cdf
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/sem_unix.c"
-
-void ev_sem_init(ev_sem_t* sem, unsigned value)
-{
-    if (sem_init(&sem->u.r, 0, value))
-    {
-        EV_ABORT();
-    }
-}
-
-void ev_sem_exit(ev_sem_t* sem)
-{
-    if (sem_destroy(&sem->u.r))
-    {
-        EV_ABORT();
-    }
-}
-
-void ev_sem_post(ev_sem_t* sem)
-{
-    if (sem_post(&sem->u.r))
-    {
-        EV_ABORT();
-    }
-}
-
-void ev_sem_wait(ev_sem_t* sem)
-{
-    int r;
-    do
-    {
-        r = sem_wait(&sem->u.r);
-    } while (r == -1 && errno == EINTR);
-
-    if (r)
-    {
-        EV_ABORT();
-    }
-}
-
-int ev_sem_try_wait(ev_sem_t* sem)
-{
-    int r;
-
-    do
-    {
-        r = sem_trywait(&sem->u.r);
-    } while (r == -1 && errno == EINTR);
-
-    if (r)
-    {
-        if (errno == EAGAIN)
-        {
-            return EV_EAGAIN;
-        }
-        EV_ABORT();
-    }
-
-    return 0;
-}
-
-// #line 97 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/shdlib_unix.c
-// SIZE:    963
-// SHA-256: 0be8dd1686ad775ecaf7fb6e02234c8eba0787b3ff3a9f2d2187a9c0294b4361
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/shdlib_unix.c"
-#include <dlfcn.h>
-
-int ev_dlopen(ev_shdlib_t* lib, const char* filename, char** errmsg)
-{
-    /* Reset error status. */
-    dlerror();
-
-    if ((lib->handle = dlopen(filename, RTLD_LAZY)) != NULL)
-    {
-        return 0;
-    }
-
-    const char* dlerrmsg = dlerror();
-    if (dlerrmsg == NULL)
-    {
-        return 0;
-    }
-
-    if (errmsg != NULL)
-    {
-        *errmsg = ev__strdup(dlerrmsg);
-    }
-
-    return EV_EINVAL;
-}
-
-void ev_dlclose(ev_shdlib_t* lib)
-{
-    if (lib->handle != EV_OS_SHDLIB_INVALID)
-    {
-        dlclose(lib->handle);
-        lib->handle = EV_OS_SHDLIB_INVALID;
-    }
-}
-
-int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr)
-{
-    /* Reset error status. */
-    dlerror();
-
-    /* Resolve symbol. */
-    if ((*ptr = dlsym(lib->handle, name)) != NULL)
-    {
-        return 0;
-    }
-
-    /* Check for error message. */
-    const char* errmsg = dlerror();
-    if (errmsg == NULL)
-    {
-        return 0;
-    }
-
-    return EV_ENOENT;
-}
-
-// #line 98 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/shmem_unix.c
-// SIZE:    2334
-// SHA-256: 560380ad3b2ea591fe64178ae8936a7a49a38a947852229cd1d616f6ec7e72e1
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/shmem_unix.c"
-#include <assert.h>
-#include <sys/mman.h>
-#include <sys/stat.h>        /* For mode constants */
-#include <fcntl.h>           /* For O_* constants */
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-
-int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
-{
-    int err;
-    shm->size = size;
-
-    int ret = snprintf(shm->backend.name, sizeof(shm->backend.name), "%s", key);
-    if (ret >= (int)sizeof(shm->backend.name))
-    {
-        return EV_ENOMEM;
-    }
-    memset(&shm->backend.mask, 0, sizeof(shm->backend.mask));
-
-    shm->backend.map_file = shm_open(key, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
-    if (shm->backend.map_file == -1)
-    {
-        err = errno;
-        goto err_shm_open;
-    }
-
-    if (ftruncate(shm->backend.map_file, size) != 0)
-    {
-        err = errno;
-        goto err_ftruncate;
-    }
-
-    shm->addr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, shm->backend.map_file, 0);
-    if (shm->addr == NULL)
-    {
-        err = errno;
-        goto err_ftruncate;
-    }
-
-    return 0;
-
-err_ftruncate:
-    close(shm->backend.map_file);
-err_shm_open:
-    return ev__translate_sys_error(err);
-}
-
-int ev_shm_open(ev_shm_t* shm, const char* key)
-{
-    int err;
-    int ret = snprintf(shm->backend.name, sizeof(shm->backend.name), "%s", key);
-    if (ret >= (int)sizeof(shm->backend.name))
-    {
-        return EV_ENOMEM;
-    }
-    memset(&shm->backend.mask, 0, sizeof(shm->backend.mask));
-
-    shm->backend.mask.is_open = 1;
-    shm->backend.map_file = shm_open(key, O_RDWR, 0);
-    if (shm->backend.map_file == -1)
-    {
-        err = errno;
-        goto err_shm_open;
-    }
-
-    struct stat statbuf;
-    if (fstat(shm->backend.map_file, &statbuf) != 0)
-    {
-        err = errno;
-        goto err_fstat;
-    }
-    shm->size = statbuf.st_size;
-
-    shm->addr = mmap(NULL, shm->size, PROT_READ | PROT_WRITE, MAP_SHARED, shm->backend.map_file, 0);
-    if (shm->addr == NULL)
-    {
-        err = errno;
-        goto err_fstat;
-    }
-
-    return 0;
-
-err_fstat:
-    close(shm->backend.map_file);
-err_shm_open:
-    return ev__translate_sys_error(err);
-}
-
-void ev_shm_exit(ev_shm_t* shm)
-{
-    if (!shm->backend.mask.is_open)
-    {
-        shm_unlink(shm->backend.name);
-    }
-
-    int ret = munmap(shm->addr, shm->size);
-    assert(ret == 0); (void)ret;
-
-    close(shm->backend.map_file);
-}
-
-// #line 99 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/stream_unix.c
-// SIZE:    6160
-// SHA-256: f671a1c513eede33d980a7b1547d8d85eafa337fdd58de40e494003593a35c1d
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/stream_unix.c"
-
-static ssize_t _ev_stream_do_write_writev_unix(int fd, struct iovec* iov, int iovcnt, void* arg)
-{
-    (void)arg;
-    return ev__writev_unix(fd, (ev_buf_t*)iov, iovcnt);
-}
-
-static int _ev_stream_do_write_once(ev_nonblock_stream_t* stream, ev_write_t* req)
-{
-    return ev__send_unix(stream->io.data.fd, req, _ev_stream_do_write_writev_unix, NULL);
-}
-
-static int _ev_stream_do_read_once(ev_nonblock_stream_t* stream, ev_read_t* req, size_t* size)
-{
-    int iovcnt = req->data.nbuf;
-    if (iovcnt > g_ev_loop_unix_ctx.iovmax)
-    {
-        iovcnt = g_ev_loop_unix_ctx.iovmax;
-    }
-
-    ssize_t read_size;
-    read_size = ev__readv_unix(stream->io.data.fd, req->data.bufs, iovcnt);
-    if (read_size >= 0)
-    {
-        *size = read_size;
-        return 0;
-    }
-    return read_size;
-}
-
-static void _ev_stream_do_write(ev_nonblock_stream_t* stream)
-{
-    ssize_t ret;
-    ev_list_node_t* it;
-    ev_write_t* req;
-
-    while ((it = ev_list_pop_front(&stream->pending.w_queue)) != NULL)
-    {
-        req = EV_CONTAINER_OF(it, ev_write_t, node);
-        if ((ret = _ev_stream_do_write_once(stream, req)) == 0)
-        {
-            stream->callbacks.w_cb(stream, req, req->size);
-            continue;
-        }
-
-        /* Unsuccess operation should restore list */
-        ev_list_push_front(&stream->pending.w_queue, it);
-
-        if (ret == EV_EAGAIN)
-        {
-            break;
-        }
-        goto err;
-    }
-
-    return;
-
-err:
-    while ((it = ev_list_pop_front(&stream->pending.w_queue)) != NULL)
-    {
-        req = EV_CONTAINER_OF(it, ev_write_t, node);
-        ret = ret < 0 ? ret : (ssize_t)req->size;
-        stream->callbacks.w_cb(stream, req, ret);
-    }
-}
-
-static void _ev_stream_do_read(ev_nonblock_stream_t* stream)
-{
-    int ret;
-    ev_list_node_t* it = ev_list_pop_front(&stream->pending.r_queue);
-    ev_read_t* req = EV_CONTAINER_OF(it, ev_read_t, node);
-
-    size_t r_size = 0;
-    ret = _ev_stream_do_read_once(stream, req, &r_size);
-    req->data.size += r_size;
-
-    if (ret == 0)
-    {
-        stream->callbacks.r_cb(stream, req, req->data.size);
-        return;
-    }
-
-    ev_list_push_front(&stream->pending.r_queue, it);
-
-    if (ret == EV_EAGAIN)
-    {
-        return;
-    }
-
-    /* If error, cleanup all pending read requests */
-    while ((it = ev_list_pop_front(&stream->pending.r_queue)) != NULL)
-    {
-        req = EV_CONTAINER_OF(it, ev_read_t, node);
-        stream->callbacks.r_cb(stream, req, ret);
-    }
-}
-
-static void _ev_stream_cleanup_r(ev_nonblock_stream_t* stream, int errcode)
-{
-    ev_list_node_t* it;
-    while ((it = ev_list_pop_front(&stream->pending.r_queue)) != NULL)
-    {
-        ev_read_t* req = EV_CONTAINER_OF(it, ev_read_t, node);
-        stream->callbacks.r_cb(stream, req, errcode);
-    }
-}
-
-static void _ev_stream_cleanup_w(ev_nonblock_stream_t* stream, int errcode)
-{
-    ev_list_node_t* it;
-    while ((it = ev_list_pop_front(&stream->pending.w_queue)) != NULL)
-    {
-        ev_write_t* req = EV_CONTAINER_OF(it, ev_write_t, node);
-        stream->callbacks.w_cb(stream, req, errcode);
-    }
-}
-
-static void _ev_nonblock_stream_on_io(ev_nonblock_io_t* io, unsigned evts, void* arg)
-{
-    (void)arg;
-    ev_nonblock_stream_t* stream = EV_CONTAINER_OF(io, ev_nonblock_stream_t, io);
-
-    if (evts & EPOLLOUT)
-    {
-        _ev_stream_do_write(stream);
-        if (ev_list_size(&stream->pending.w_queue) == 0)
-        {
-            ev__nonblock_io_del(stream->loop, &stream->io, EV_IO_OUT);
-            stream->flags.io_reg_w = 0;
-        }
-    }
-
-    else if (evts & (EPOLLIN | EPOLLHUP))
-    {
-        _ev_stream_do_read(stream);
-        if (ev_list_size(&stream->pending.r_queue) == 0)
-        {
-            ev__nonblock_io_del(stream->loop, &stream->io, EV_IO_IN);
-            stream->flags.io_reg_r = 0;
-        }
-    }
-}
-
-EV_LOCAL void ev__nonblock_stream_init(ev_loop_t* loop,
-    ev_nonblock_stream_t* stream, int fd, ev_stream_write_cb wcb,
-    ev_stream_read_cb rcb)
-{
-    stream->loop = loop;
-
-    stream->flags.io_abort = 0;
-    stream->flags.io_reg_r = 0;
-    stream->flags.io_reg_w = 0;
-
-    ev__nonblock_io_init(&stream->io, fd, _ev_nonblock_stream_on_io, NULL);
-
-    ev_list_init(&stream->pending.w_queue);
-    ev_list_init(&stream->pending.r_queue);
-
-    stream->callbacks.w_cb = wcb;
-    stream->callbacks.r_cb = rcb;
-}
-
-EV_LOCAL void ev__nonblock_stream_exit(ev_nonblock_stream_t* stream)
-{
-    ev__nonblock_stream_abort(stream);
-    ev__nonblock_stream_cleanup(stream, EV_IO_IN | EV_IO_OUT);
-    stream->loop = NULL;
-    stream->callbacks.w_cb = NULL;
-    stream->callbacks.r_cb = NULL;
-}
-
-EV_LOCAL int ev__nonblock_stream_write(ev_nonblock_stream_t* stream, ev_write_t* req)
-{
-    if (stream->flags.io_abort)
-    {
-        return EV_EBADF;
-    }
-
-    if (!stream->flags.io_reg_w)
-    {
-        ev__nonblock_io_add(stream->loop, &stream->io, EV_IO_OUT);
-        stream->flags.io_reg_w = 1;
-    }
-
-    ev_list_push_back(&stream->pending.w_queue, &req->node);
-    return 0;
-}
-
-EV_LOCAL int ev__nonblock_stream_read(ev_nonblock_stream_t* stream, ev_read_t* req)
-{
-    if (stream->flags.io_abort)
-    {
-        return EV_EBADF;
-    }
-
-    if (!stream->flags.io_reg_r)
-    {
-        ev__nonblock_io_add(stream->loop, &stream->io, EV_IO_IN);
-        stream->flags.io_reg_r = 1;
-    }
-
-    ev_list_push_back(&stream->pending.r_queue, &req->node);
-    return 0;
-}
-
-EV_LOCAL size_t ev__nonblock_stream_size(ev_nonblock_stream_t* stream, unsigned evts)
-{
-    size_t ret = 0;
-    if (evts & EV_IO_IN)
-    {
-        ret += ev_list_size(&stream->pending.r_queue);
-    }
-    if (evts & EV_IO_OUT)
-    {
-        ret += ev_list_size(&stream->pending.w_queue);
-    }
-    return ret;
-}
-
-EV_LOCAL void ev__nonblock_stream_abort(ev_nonblock_stream_t* stream)
-{
-    if (!stream->flags.io_abort)
-    {
-        ev__nonblock_io_del(stream->loop, &stream->io, EV_IO_IN | EV_IO_OUT);
-        stream->flags.io_abort = 1;
-    }
-}
-
-EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned evts)
-{
-    if (evts & EV_IO_OUT)
-    {
-        _ev_stream_cleanup_w(stream, EV_ECANCELED);
-    }
-
-    if (evts & EV_IO_IN)
-    {
-        _ev_stream_cleanup_r(stream, EV_ECANCELED);
-    }
-}
-
-// #line 100 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/tcp_unix.c
-// SIZE:    13059
-// SHA-256: 013066c775692ca8503e6efe0a16754ac9f7212f2d3fd80210c3b00a6ad6b0e1
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/tcp_unix.c"
-#include <sys/uio.h>
-#include <assert.h>
-#include <unistd.h>
-
-static void _ev_tcp_close_fd(ev_tcp_t* sock)
-{
-    if (sock->sock != EV_OS_SOCKET_INVALID)
-    {
-        close(sock->sock);
-        sock->sock = EV_OS_SOCKET_INVALID;
-    }
-}
-
-static void _ev_tcp_cleanup_listen_queue(ev_tcp_t* s_sock, int stat)
-{
-    ev_list_node_t* it;
-    while ((it = ev_list_pop_front(&s_sock->backend.u.listen.accept_queue)) != NULL)
-    {
-        ev_tcp_t* c_sock = EV_CONTAINER_OF(it, ev_tcp_t, backend.u.accept.accept_node);
-        c_sock->backend.u.accept.cb(s_sock, c_sock, stat);
-    }
-}
-
-static void _ev_tcp_connect_callback_once(ev_tcp_t* sock, int stat)
-{
-    ev_tcp_connect_cb bak_cb = sock->backend.u.client.cb;
-    sock->backend.u.client.cb = NULL;
-    bak_cb(sock, stat);
-}
-
-static void _ev_tcp_on_close(ev_handle_t* handle)
-{
-    ev_tcp_t* sock = EV_CONTAINER_OF(handle, ev_tcp_t, base);
-
-    if (sock->base.data.flags & EV_HANDLE_TCP_STREAMING)
-    {
-        ev__nonblock_stream_exit(&sock->backend.u.stream);
-        sock->base.data.flags &= ~EV_HANDLE_TCP_STREAMING;
-    }
-
-    if (sock->base.data.flags & EV_HANDLE_TCP_LISTING)
-    {
-        _ev_tcp_cleanup_listen_queue(sock, EV_ECANCELED);
-        sock->base.data.flags &= ~EV_HANDLE_TCP_LISTING;
-    }
-
-    if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
-    {
-        _ev_tcp_connect_callback_once(sock, EV_ECANCELED);
-        sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
-    }
-
-    if (sock->close_cb != NULL)
-    {
-        sock->close_cb(sock);
-    }
-}
-
-static void _ev_tcp_smart_deactive(ev_tcp_t* sock)
-{
-    if (sock->base.data.flags & EV_HANDLE_TCP_LISTING)
-    {
-        size_t size = ev_list_size(&sock->backend.u.listen.accept_queue);
-        if (size != 0)
-        {
-            return;
-        }
-    }
-    else if (sock->base.data.flags & EV_HANDLE_TCP_ACCEPTING)
-    {
-        if (sock->backend.u.accept.cb != NULL)
-        {
-            return;
-        }
-    }
-    else if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
-    {
-        if (sock->backend.u.client.cb != NULL)
-        {
-            return;
-        }
-    }
-    else if (sock->base.data.flags & EV_HANDLE_TCP_STREAMING)
-    {
-        size_t io_sz = ev__nonblock_stream_size(&sock->backend.u.stream, EV_IO_IN | EV_IO_OUT);
-        if (io_sz != 0)
-        {
-            return;
-        }
-    }
-
-    ev__handle_deactive(&sock->base);
-}
-
-static void _ev_tcp_on_connect(ev_tcp_t* sock)
-{
-    int ret;
-    socklen_t result_len = sizeof(ret);
-
-    ev__nonblock_io_del(sock->base.loop, &sock->backend.u.client.io, EV_IO_OUT);
-
-    /* Get connect result */
-    if (getsockopt(sock->sock, SOL_SOCKET, SO_ERROR, &ret, &result_len) < 0)
-    {
-        sock->backend.u.client.stat = ev__translate_sys_error(errno);
-        goto fin;
-    }
-
-    /* Result is in `result` */
-    sock->backend.u.client.stat = ev__translate_sys_error(ret);
-
-fin:
-    sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
-    _ev_tcp_connect_callback_once(sock, sock->backend.u.client.stat);
-    _ev_tcp_smart_deactive(sock);
-}
-
-static void _ev_tcp_w_user_callback_unix(ev_tcp_t* sock, ev_tcp_write_req_t* req, ssize_t size)
-{
-    _ev_tcp_smart_deactive(sock);
-    ev__write_exit(&req->base);
-    req->user_callback(req, size);
-}
-
-static void _ev_tcp_r_user_callback_unix(ev_tcp_t* sock, ev_tcp_read_req_t* req, ssize_t size)
-{
-    _ev_tcp_smart_deactive(sock);
-    ev__read_exit(&req->base);
-    req->user_callback(req, size);
-}
-
-static void _on_tcp_write_done(ev_nonblock_stream_t* stream, ev_write_t* req, ssize_t size)
-{
-    ev_tcp_t* sock = EV_CONTAINER_OF(stream, ev_tcp_t, backend.u.stream);
-    ev_tcp_write_req_t* w_req = EV_CONTAINER_OF(req, ev_tcp_write_req_t, base);
-    _ev_tcp_w_user_callback_unix(sock, w_req, size);
-}
-
-static void _on_tcp_read_done(ev_nonblock_stream_t* stream, ev_read_t* req, ssize_t size)
-{
-    ev_tcp_t* sock = EV_CONTAINER_OF(stream, ev_tcp_t, backend.u.stream);
-
-    ev_tcp_read_req_t* r_req = EV_CONTAINER_OF(req, ev_tcp_read_req_t, base);
-    _ev_tcp_r_user_callback_unix(sock, r_req, size);
-}
-
-static void _ev_tcp_accept_user_callback_unix(ev_tcp_t* acpt, ev_tcp_t* conn, int ret)
-{
-    conn->base.data.flags &= ~EV_HANDLE_TCP_ACCEPTING;
-    _ev_tcp_smart_deactive(conn);
-    _ev_tcp_smart_deactive(acpt);
-
-    ev_tcp_accept_cb bak_cb = conn->backend.u.accept.cb;
-    conn->backend.u.accept.cb = NULL;
-    bak_cb(acpt, conn, ret);
-}
-
-static void _ev_tcp_on_accept(ev_tcp_t* acpt)
-{
-    ev_list_node_t* it = ev_list_pop_front(&acpt->backend.u.listen.accept_queue);
-    if (it == NULL)
-    {
-        EV_ABORT("empty accept queue");
-    }
-
-    ev_tcp_t* conn = EV_CONTAINER_OF(it, ev_tcp_t, backend.u.accept.accept_node);
-    _ev_tcp_close_fd(conn);
-
-    do
-    {
-        conn->sock = accept(acpt->sock, NULL, NULL);
-    } while (conn->sock == -1 && errno == EINTR);
-
-    int ret = conn->sock >= 0 ? 0 : ev__translate_sys_error(errno);
-    if (ret == 0)
-    {/* Set non-block mode */
-        if ((ret = ev__nonblock(conn->sock, 1)) != 0)
-        {
-            _ev_tcp_close_fd(conn);
-        }
-    }
-
-    _ev_tcp_accept_user_callback_unix(acpt, conn, ret);
-
-    /* might be close in callback */
-    if (ev__handle_is_closing(&acpt->base))
-    {
-        return;
-    }
-    if (ev_list_size(&acpt->backend.u.listen.accept_queue) == 0)
-    {
-        ev__nonblock_io_del(acpt->base.loop, &acpt->backend.u.listen.io, EV_IO_IN);
-    }
-}
-
-static void _ev_tcp_on_server_event(ev_nonblock_io_t* io, unsigned evts, void* arg)
-{
-    (void)evts; (void)arg;
-    ev_tcp_t* sock = EV_CONTAINER_OF(io, ev_tcp_t, backend.u.listen.io);
-
-    _ev_tcp_on_accept(sock);
-}
-
-static void _ev_tcp_on_client_event(ev_nonblock_io_t* io, unsigned evts, void* arg)
-{
-    (void)evts; (void)arg;
-    ev_tcp_t* sock = EV_CONTAINER_OF(io, ev_tcp_t, backend.u.client.io);
-
-    _ev_tcp_on_connect(sock);
-}
-
-/**
- * @return #ev_errno_t
- */
-static int _ev_tcp_setup_fd(ev_tcp_t* sock, int domain, int is_server, int* new_fd)
-{
-    int ret = 0;
-    int tmp_new_fd = 0;
-    if (sock->sock != EV_OS_SOCKET_INVALID)
-    {
-        goto fin;
-    }
-
-    if ((sock->sock = socket(domain, SOCK_STREAM, 0)) == EV_OS_SOCKET_INVALID)
-    {
-        ret = ev__translate_sys_error(errno);
-        goto fin;
-    }
-
-    if ((ret = ev__nonblock(sock->sock, 1)) != 0)
-    {
-        goto err_nonblock;
-    }
-
-    tmp_new_fd = 1;
-    if (is_server)
-    {
-        ev__nonblock_io_init(&sock->backend.u.listen.io, sock->sock, _ev_tcp_on_server_event, NULL);
-    }
-    else
-    {
-        ev__nonblock_io_init(&sock->backend.u.client.io, sock->sock, _ev_tcp_on_client_event, NULL);
-    }
-
-    goto fin;
-
-err_nonblock:
-    _ev_tcp_close_fd(sock);
-fin:
-    if (new_fd != NULL)
-    {
-        *new_fd = tmp_new_fd;
-    }
-    return ret;
-}
-
-static int _ev_tcp_is_listening(ev_tcp_t* sock)
-{
-    return sock->base.data.flags & EV_HANDLE_TCP_LISTING;
-}
-
-static void _ev_tcp_to_connect(ev_handle_t* handle)
-{
-    ev_tcp_t* sock = EV_CONTAINER_OF(handle, ev_tcp_t, base);
-
-    sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
-    _ev_tcp_connect_callback_once(sock, 0);
-}
-
-static void _ev_tcp_setup_stream_once(ev_tcp_t* sock)
-{
-    if (sock->base.data.flags & EV_HANDLE_TCP_STREAMING)
-    {
-        return;
-    }
-    ev__nonblock_stream_init(sock->base.loop, &sock->backend.u.stream, sock->sock,
-        _on_tcp_write_done, _on_tcp_read_done);
-    sock->base.data.flags |= EV_HANDLE_TCP_STREAMING;
-}
-
-int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* sock)
-{
-    ev__handle_init(loop, &sock->base, EV_ROLE_EV_TCP);
-    sock->close_cb = NULL;
-    sock->sock = EV_OS_SOCKET_INVALID;
-
-    return 0;
-}
-
-void ev_tcp_exit(ev_tcp_t* sock, ev_tcp_close_cb cb)
-{
-    /* Stop all pending IO actions */
-    if (sock->base.data.flags & EV_HANDLE_TCP_STREAMING)
-    {
-        ev__nonblock_stream_abort(&sock->backend.u.stream);
-    }
-    if (sock->base.data.flags & EV_HANDLE_TCP_LISTING)
-    {
-        ev__nonblock_io_del(sock->base.loop, &sock->backend.u.listen.io, EV_IO_IN);
-    }
-    if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
-    {
-        ev__nonblock_io_del(sock->base.loop, &sock->backend.u.client.io, EV_IO_OUT);
-    }
-
-    /* Close fd */
-    _ev_tcp_close_fd(sock);
-
-    sock->close_cb = cb;
-    ev__handle_exit(&sock->base, _ev_tcp_on_close);
-}
-
-int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen)
-{
-    int ret;
-    int flag_new_fd;
-    if ((ret = _ev_tcp_setup_fd(tcp, addr->sa_family, 1, &flag_new_fd)) != 0)
-    {
-        return ret;
-    }
-
-    if ((ret = bind(tcp->sock, addr, addrlen)) != 0)
-    {
-        ret = ev__translate_sys_error(errno);
-        goto err_bind;
-    }
-    tcp->base.data.flags |= EV_HABDLE_TCP_BOUND;
-
-    return 0;
-
-err_bind:
-    if (flag_new_fd)
-    {
-        _ev_tcp_close_fd(tcp);
-    }
-    return ret;
-}
-
-int ev_tcp_listen(ev_tcp_t* tcp, int backlog)
-{
-    if (_ev_tcp_is_listening(tcp))
-    {
-        return EV_EADDRINUSE;
-    }
-
-    int ret;
-    if ((ret = listen(tcp->sock, backlog)) != 0)
-    {
-        return ev__translate_sys_error(errno);
-    }
-
-    ev_list_init(&tcp->backend.u.listen.accept_queue);
-    tcp->base.data.flags |= EV_HANDLE_TCP_LISTING;
-
-    return 0;
-}
-
-int ev_tcp_accept(ev_tcp_t* lisn, ev_tcp_t* conn, ev_tcp_accept_cb cb)
-{
-    if (conn->base.data.flags & EV_HANDLE_TCP_ACCEPTING)
-    {
-        return EV_EINPROGRESS;
-    }
-    assert(cb != NULL);
-
-    conn->base.data.flags |= EV_HANDLE_TCP_ACCEPTING;
-    conn->backend.u.accept.cb = cb;
-    ev_list_push_back(&lisn->backend.u.listen.accept_queue, &conn->backend.u.accept.accept_node);
-    ev__nonblock_io_add(lisn->base.loop, &lisn->backend.u.listen.io, EV_IO_IN);
-
-    ev__handle_active(&lisn->base);
-    ev__handle_active(&conn->base);
-
-    return 0;
-}
-
-int ev_tcp_write(ev_tcp_t* sock, ev_tcp_write_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_tcp_write_cb cb)
-{
-    req->user_callback = cb;
-    int ret = ev__write_init(&req->base, bufs, nbuf);
-    if (ret != 0)
-    {
-        return ret;
-    }
-
-    if (sock->base.data.flags & (EV_HANDLE_TCP_LISTING | EV_HANDLE_TCP_ACCEPTING | EV_HANDLE_TCP_CONNECTING))
-    {
-        return EV_EINVAL;
-    }
-
-    _ev_tcp_setup_stream_once(sock);
-
-    ev__handle_active(&sock->base);
-    ret = ev__nonblock_stream_write(&sock->backend.u.stream, &req->base);
-
-    if (ret != 0)
-    {
-        _ev_tcp_smart_deactive(sock);
-        return ret;
-    }
-    return 0;
-}
-
-int ev_tcp_read(ev_tcp_t* sock, ev_tcp_read_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_tcp_read_cb cb)
-{
-    if (sock->base.data.flags & (EV_HANDLE_TCP_LISTING | EV_HANDLE_TCP_ACCEPTING | EV_HANDLE_TCP_CONNECTING))
-    {
-        return EV_EINVAL;
-    }
-
-    req->user_callback = cb;
-    int ret = ev__read_init(&req->base, bufs, nbuf);
-    if (ret != 0)
-    {
-        return ret;
-    }
-
-    _ev_tcp_setup_stream_once(sock);
-
-    ev__handle_active(&sock->base);
-    ret = ev__nonblock_stream_read(&sock->backend.u.stream, &req->base);
-
-    if (ret != 0)
-    {
-        _ev_tcp_smart_deactive(sock);
-        return ret;
-    }
-    return 0;
-}
-
-int ev_tcp_getsockname(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
-{
-    socklen_t socklen = *len;
-    if (getsockname(sock->sock, name, &socklen) != 0)
-    {
-        return ev__translate_sys_error(errno);
-    }
-
-    *len = (size_t)socklen;
-    return 0;
-}
-
-int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len)
-{
-    int ret;
-    socklen_t socklen = *len;
-
-    if ((ret = getpeername(sock->sock, name, &socklen)) != 0)
-    {
-        return ev__translate_sys_error(errno);
-    }
-
-    *len = socklen;
-    return 0;
-}
-
-int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size, ev_tcp_connect_cb cb)
-{
-    int ret;
-    ev_loop_t* loop = sock->base.loop;
-
-    if (sock->base.data.flags & EV_HANDLE_TCP_CONNECTING)
-    {
-        return EV_EINPROGRESS;
-    }
-    if (sock->base.data.flags & (EV_HANDLE_TCP_LISTING | EV_HANDLE_TCP_ACCEPTING | EV_HANDLE_TCP_STREAMING))
-    {
-        return EV_EINVAL;
-    }
-
-    if ((ret = _ev_tcp_setup_fd(sock, addr->sa_family, 0, NULL)) != 0)
-    {
-        return ret;
-    }
-
-    sock->backend.u.client.cb = cb;
-    sock->base.data.flags |= EV_HANDLE_TCP_CONNECTING;
-
-    if ((ret = connect(sock->sock, addr, size)) == 0)
-    {/* Connect success immediately */
-        sock->backend.u.client.stat = 0;
-        ev__backlog_submit(&sock->base, _ev_tcp_to_connect);
-        return 0;
-    }
-
-    if (errno != EINPROGRESS)
-    {
-        sock->base.data.flags &= ~EV_HANDLE_TCP_CONNECTING;
-        ret = ev__translate_sys_error(errno);
-        goto err;
-    }
-
-    ev__handle_active(&sock->base);
-    ev__nonblock_io_add(loop, &sock->backend.u.client.io, EV_IO_OUT);
-
-    return 0;
-
-err:
-    _ev_tcp_close_fd(sock);
-    ev__handle_deactive(&sock->base);
-    return ret;
-}
-
-EV_LOCAL int ev__tcp_open(ev_tcp_t* tcp, int fd)
-{
-    int busy_flags = EV_HANDLE_TCP_LISTING | EV_HANDLE_TCP_ACCEPTING |
-            EV_HANDLE_TCP_STREAMING | EV_HANDLE_TCP_CONNECTING | EV_HABDLE_TCP_BOUND;
-    if (tcp->base.data.flags & busy_flags)
-    {
-        return EV_EBUSY;
-    }
-
-    tcp->sock = fd;
-    _ev_tcp_setup_stream_once(tcp);
-
-    return 0;
-}
-
-// #line 101 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/thread_unix.c
-// SIZE:    3650
-// SHA-256: c9657f65b8d8414261c6026f3c68d1b38f5e7b9ab17da1a67bd0ee46da5df176
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/thread_unix.c"
-#define _GNU_SOURCE
-#include <semaphore.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <sys/syscall.h>
-
-typedef struct ev_thread_helper_unix
-{
-    ev_thread_cb    cb;
-    void*           arg;
-    sem_t           sem;
-}ev_thread_helper_unix_t;
-
-static void* _ev_thread_proxy_unix(void* arg)
-{
-    ev_thread_helper_unix_t* p_helper = arg;
-    ev_thread_helper_unix_t helper = *p_helper;
-
-    if (sem_post(&p_helper->sem) != 0)
-    {
-        EV_ABORT();
-    }
-
-    helper.cb(helper.arg);
-    return NULL;
-}
-
-int ev_thread_init(ev_os_thread_t* thr, const ev_thread_opt_t* opt,
-    ev_thread_cb cb, void* arg)
-{
-    int err = 0;
-
-    pthread_attr_t* attr = NULL;
-    pthread_attr_t attr_storage;
-
-    if (opt != NULL && opt->flags.have_stack_size)
-    {
-        if (pthread_attr_init(&attr_storage) != 0)
-        {
-            err = errno;
-            return ev__translate_sys_error(err);
-        }
-
-        if (pthread_attr_setstacksize(&attr_storage, opt->stack_size) != 0)
-        {
-            err = errno;
-            goto err_fin;
-        }
-
-        attr = &attr_storage;
-    }
-
-    ev_thread_helper_unix_t helper;
-    helper.cb = cb;
-    helper.arg = arg;
-    if (sem_init(&helper.sem, 0, 0) != 0)
-    {
-        err = errno;
-        goto err_fin;
-    }
-
-    if ((err = pthread_create(thr, attr, _ev_thread_proxy_unix, &helper)) != 0)
-    {
-        goto release_sem;
-    }
-
-    do 
-    {
-        err = sem_wait(&helper.sem);
-    } while (err == -1 && errno == EINTR);
-
-    err = err != 0 ? errno : 0;
-
-release_sem:
-    sem_destroy(&helper.sem);
-err_fin:
-    if (attr != NULL)
-    {
-        pthread_attr_destroy(attr);
-    }
-    return ev__translate_sys_error(err);
-}
-
-int ev_thread_exit(ev_os_thread_t* thr, unsigned long timeout)
-{
-    int ret = EBUSY;
-    if (timeout == EV_INFINITE_TIMEOUT)
-    {
-        int err = pthread_join(*thr, NULL);
-        return ev__translate_sys_error(err);
-    }
-
-    const uint64_t t_start = ev_hrtime() / 1000000;
-    const uint64_t t_end = t_start + timeout;
-
-    uint64_t t_now;
-    while ((t_now = ev_hrtime() / 1000000) < t_end)
-    {
-        if ((ret = pthread_tryjoin_np(*thr, NULL)) == 0)
-        {
-            break;
-        }
-
-        uint64_t t_diff = t_end - t_now;
-        unsigned sleep_time = t_diff < 10 ? t_diff : 10;
-        ev_thread_sleep(sleep_time);
-    }
-
-    /* try last time */
-    if (ret == EBUSY)
-    {
-        ret = pthread_tryjoin_np(*thr, NULL);
-    }
-
-    return ret == EBUSY ? EV_ETIMEDOUT : ev__translate_sys_error(ret);
-}
-
-ev_os_thread_t ev_thread_self(void)
-{
-    return pthread_self();
-}
-
-ev_os_tid_t ev_thread_id(void)
-{
-    return syscall(__NR_gettid);
-}
-
-int ev_thread_equal(const ev_os_thread_t* t1, const ev_os_thread_t* t2)
-{
-    return pthread_equal(*t1, *t2);
-}
-
-void ev_thread_sleep(uint32_t timeout)
-{
-    struct timespec t_req, t_rem;
-    t_req.tv_sec = timeout / 1000;
-    t_req.tv_nsec = (timeout - t_req.tv_sec * 1000) * 1000 * 1000;
-
-    int ret;
-    while((ret = nanosleep(&t_req, &t_rem)) != 0)
-    {
-        ret = errno;
-        if (ret != EINTR)
-        {
-            EV_ABORT();
-        }
-        t_req = t_rem;
-    }
-}
-
-int ev_tls_init(ev_tls_t* tls)
-{
-    int ret = pthread_key_create(&tls->tls, NULL);
-    if (ret == 0)
-    {
-        return 0;
-    }
-    return ev__translate_sys_error(ret);
-}
-
-void ev_tls_exit(ev_tls_t* tls)
-{
-    int ret = pthread_key_delete(tls->tls);
-    if (ret != 0)
-    {
-        EV_ABORT();
-    }
-}
-
-void ev_tls_set(ev_tls_t* tls, void* val)
-{
-    int ret = pthread_setspecific(tls->tls, val);
-    if (ret != 0)
-    {
-        EV_ABORT();
-    }
-}
-
-void* ev_tls_get(ev_tls_t* tls)
-{
-    return pthread_getspecific(tls->tls);
-}
-
-// #line 102 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/threadpool_unix.c
-// SIZE:    942
-// SHA-256: 10487ad39897977af6e2f63e4ac09366f191adc87e314b98c5ef22b3b7567044
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/threadpool_unix.c"
-
-static void _on_work_unix(ev_nonblock_io_t* io, unsigned evts, void* arg)
-{
-    (void)evts; (void)arg;
-
-    ev_loop_t* loop = EV_CONTAINER_OF(io, ev_loop_t, backend.threadpool.io);
-    ev__async_pend(loop->backend.threadpool.evtfd[0]);
-
-    ev__threadpool_process(loop);
-}
-
-EV_LOCAL void ev__threadpool_wakeup(ev_loop_t* loop)
-{
-    ev__async_post(loop->backend.threadpool.evtfd[1]);
-}
-
-EV_LOCAL void ev__init_work(ev_loop_t* loop)
-{
-    ev__asyc_eventfd(loop->backend.threadpool.evtfd);
-
-    ev__nonblock_io_init(&loop->backend.threadpool.io, loop->backend.threadpool.evtfd[0], _on_work_unix, NULL);
-    ev__nonblock_io_add(loop, &loop->backend.threadpool.io, EV_IO_IN);
-}
-
-EV_LOCAL void ev__exit_work(ev_loop_t* loop)
-{
-    ev__async_eventfd_close(loop->backend.threadpool.evtfd[0]);
-    loop->backend.threadpool.evtfd[0] = -1;
-
-    ev__async_eventfd_close(loop->backend.threadpool.evtfd[1]);
-    loop->backend.threadpool.evtfd[1] = -1;
-}
-
-// #line 103 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/time_unix.c
-// SIZE:    284
-// SHA-256: 29005a6567d68fb9b141f64f08c5fb3e9d407a6e7e0727d9a850028c69a7a79c
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/time_unix.c"
-#include <time.h>
-
-uint64_t ev_hrtime(void)
-{
-    int errcode;
-    struct timespec t;
-
-    if (clock_gettime(g_ev_loop_unix_ctx.hwtime_clock_id, &t) != 0)
-    {
-        errcode = errno;
-        EV_ABORT("errno:%d", errcode);
-    }
-
-    return t.tv_sec * (uint64_t) 1e9 + t.tv_nsec;
-}
-
-// #line 104 "ev.c"
-////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/unix/udp_unix.c
-// SIZE:    23177
-// SHA-256: 44f757b5e103ec263b6459f301e8f22c5aff19aef05226d5e672aa3fdd553a5a
-////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/unix/udp_unix.c"
-#include <unistd.h>
-#include <string.h>
-
-static void _ev_udp_close_unix(ev_udp_t* udp)
-{
-    if (udp->sock != EV_OS_SOCKET_INVALID)
-    {
-        ev__nonblock_io_del(udp->base.loop, &udp->backend.io, EPOLLIN | EPOLLOUT);
-        close(udp->sock);
-        udp->sock = EV_OS_SOCKET_INVALID;
-    }
-}
-
-static void _ev_udp_smart_deactive(ev_udp_t* udp)
-{
-    size_t io_sz = 0;
-
-    io_sz += ev_list_size(&udp->send_list);
-    io_sz += ev_list_size(&udp->recv_list);
-
-    if (io_sz == 0)
-    {
-        ev__handle_deactive(&udp->base);
-    }
-}
-
-static void _ev_udp_w_user_callback_unix(ev_udp_t* udp, ev_udp_write_t* req, ssize_t size)
-{
-    _ev_udp_smart_deactive(udp);
-    ev__write_exit(&req->base);
-    ev__handle_exit(&req->handle, NULL);
-    req->usr_cb(req, size);
-}
-
-static void _ev_udp_r_user_callback_unix(ev_udp_t* udp, ev_udp_read_t* req,
-    const struct sockaddr* addr, ssize_t size)
-{
-    _ev_udp_smart_deactive(udp);
-    ev__read_exit(&req->base);
-    ev__handle_exit(&req->handle, NULL);
-    req->usr_cb(req, addr, size);
-}
-
-static void _ev_udp_cancel_all_w_unix(ev_udp_t* udp, int err)
-{
-    ev_list_node_t* it;
-    while ((it = ev_list_pop_front(&udp->send_list)) != NULL)
-    {
-        ev_udp_write_t* req = EV_CONTAINER_OF(it, ev_udp_write_t, base.node);
-        _ev_udp_w_user_callback_unix(udp, req, err);
-    }
-}
-
-static void _ev_udp_cancel_all_r_unix(ev_udp_t* udp, int err)
-{
-    ev_list_node_t* it;
-    while ((it = ev_list_pop_front(&udp->recv_list)) != NULL)
-    {
-        ev_udp_read_t* req = EV_CONTAINER_OF(it, ev_udp_read_t, base.node);
-        _ev_udp_r_user_callback_unix(udp, req, NULL, err);
-    }
-}
-
-static void _ev_udp_abort_unix(ev_udp_t* udp, int err)
-{
-    _ev_udp_close_unix(udp);
-    _ev_udp_cancel_all_w_unix(udp, err);
-    _ev_udp_cancel_all_r_unix(udp, err);
-}
-
-static void _ev_udp_on_close_unix(ev_handle_t* handle)
-{
-    ev_udp_t* udp = EV_CONTAINER_OF(handle, ev_udp_t, base);
-
-    _ev_udp_abort_unix(udp, EV_ECANCELED);
-
-    if (udp->close_cb != NULL)
-    {
-        udp->close_cb(udp);
-    }
-}
-
-/**
- * @return bool
- */
-static int _ev_udp_is_connected_unix(ev_os_socket_t sock)
-{
-    struct sockaddr_storage addr;
-    socklen_t addrlen = sizeof(addr);
-
-    if (getpeername(sock, (struct sockaddr*)&addr, &addrlen) != 0)
-    {
-        return 0;
-    }
-    return addrlen > 0;
-}
-
-static int _ev_udp_set_flags_unix(ev_udp_t* udp, unsigned flags)
-{
-    int err;
-    if (flags & EV_UDP_IPV6_ONLY)
-    {
-        int yes = 1;
-        if (setsockopt(udp->sock, IPPROTO_IPV6, IPV6_V6ONLY, &yes, sizeof(yes)) == -1)
-        {
-            err = errno;
-            return ev__translate_sys_error(err);
-        }
-    }
-
-    if (flags & EV_UDP_REUSEADDR)
-    {
-        if ((err = ev__reuse_unix(udp->sock)) != 0)
-        {
-            return err;
-        }
-    }
-
-    return 0;
-}
-
-static int _ev_udp_disconnect_unix(ev_udp_t* udp)
-{
-    struct sockaddr addr;
-    memset(&addr, 0, sizeof(addr));
-    addr.sa_family = AF_UNSPEC;
-
-    int r;
-    do
-    {
-        r = connect(udp->sock, &addr, sizeof(addr));
-    } while (r == -1 && errno == EINTR);
-
-    if (r == -1 && errno != EAFNOSUPPORT)
-    {
-        r = errno;
-        return ev__translate_sys_error(r);
-    }
-
-    udp->base.data.flags &= ~EV_HANDLE_UDP_CONNECTED;
-    return 0;
-}
-
-static ssize_t _ev_udp_sendmsg_unix(int fd, struct iovec* iov, int iovcnt, void* arg)
-{
-    struct msghdr* p_hdr = arg;
-    p_hdr->msg_iov = iov;
-    p_hdr->msg_iovlen = iovcnt;
-
-    ssize_t write_size;
-    do 
-    {
-        write_size = sendmsg(fd, p_hdr, 0);
-    } while (write_size < 0 && errno == EINTR);
-
-    if (write_size < 0)
-    {
-        int err = errno;
-        return ev__translate_sys_error(err);
-    }
-
-    return write_size;
-}
-
-static int _ev_udp_do_sendmsg_unix(ev_udp_t* udp, ev_udp_write_t* req)
-{
-    struct msghdr hdr;
-    memset(&hdr, 0, sizeof(hdr));
-
-    if (req->backend.peer_addr.ss_family == AF_UNSPEC)
-    {
-        hdr.msg_name = NULL;
-        hdr.msg_namelen = 0;
-    }
-    else
-    {
-        hdr.msg_name = &req->backend.peer_addr;
-        hdr.msg_namelen = ev__get_addr_len((struct sockaddr*)&req->backend.peer_addr);
-    }
-
-    return ev__send_unix(udp->sock, &req->base, _ev_udp_sendmsg_unix, &hdr);
-}
-
-static int _ev_udp_on_io_write_unix(ev_udp_t* udp)
-{
-    int ret = 0;
-    ev_list_node_t* it;
-    while ((it = ev_list_begin(&udp->send_list)) != NULL)
-    {
-        ev_udp_write_t* req = EV_CONTAINER_OF(it, ev_udp_write_t, base.node);
-
-        if ((ret = _ev_udp_do_sendmsg_unix(udp, req)) != 0)
-        {
-            break;
-        }
-
-        ev_list_erase(&udp->send_list, it);
-        _ev_udp_w_user_callback_unix(udp, req, req->base.size);
-    }
-
-    if (ret == EV_EAGAIN)
-    {
-        ret = 0;
-    }
-    return ret;
-}
-
-static int _ev_udp_do_recvmsg_unix(ev_udp_t* udp, ev_udp_read_t* req)
-{
-    struct msghdr hdr;
-    memset(&hdr, 0, sizeof(hdr));
-    memset(&req->addr, 0, sizeof(req->addr));
-
-    hdr.msg_name = &req->addr;
-    hdr.msg_namelen = sizeof(req->addr);
-    hdr.msg_iov = (struct iovec*)req->base.data.bufs;
-    hdr.msg_iovlen = req->base.data.nbuf;
-
-    ssize_t read_size;
-    do
-    {
-        read_size = recvmsg(udp->sock, &hdr, 0);
-    } while (read_size < 0 && errno == EINTR);
-
-    if (read_size < 0)
-    {
-        int err = errno;
-        if (err == EAGAIN || err == EWOULDBLOCK)
-        {
-            return EV_EAGAIN;
-        }
-        return ev__translate_sys_error(err);
-    }
-
-    req->base.data.size += read_size;
-    return 0;
-}
-
-static int _ev_udp_on_io_read_unix(ev_udp_t* udp)
-{
-    int ret = 0;
-    ev_list_node_t* it;
-    while ((it = ev_list_begin(&udp->recv_list)) != NULL)
-    {
-        ev_udp_read_t* req = EV_CONTAINER_OF(it, ev_udp_read_t, base.node);
-
-        if ((ret = _ev_udp_do_recvmsg_unix(udp, req)) != 0)
-        {
-            break;
-        }
-
-        ev_list_erase(&udp->recv_list, it);
-        _ev_udp_r_user_callback_unix(udp, req, (struct sockaddr*)&req->addr, req->base.data.size);
-    }
-
-    if (ret == EV_EAGAIN)
-    {
-        ret = 0;
-    }
-    return ret;
-}
-
-static void _ev_udp_on_io_unix(ev_nonblock_io_t* io, unsigned evts, void* arg)
-{
-    (void)arg;
-    int ret;
-    ev_udp_t* udp = EV_CONTAINER_OF(io, ev_udp_t, backend.io);
-
-    if (evts & EPOLLOUT)
-    {
-        if ((ret = _ev_udp_on_io_write_unix(udp)) != 0)
-        {
-            goto err;
-        }
-
-        if (ev_list_size(&udp->send_list) == 0)
-        {
-            ev__nonblock_io_del(udp->base.loop, &udp->backend.io, EPOLLOUT);
-        }
-    }
-
-    if (evts & EPOLLIN)
-    {
-        if ((ret = _ev_udp_on_io_read_unix(udp)) != 0)
-        {
-            goto err;
-        }
-
-        if (ev_list_size(&udp->recv_list) == 0)
-        {
-            ev__nonblock_io_del(udp->base.loop, &udp->backend.io, EPOLLIN);
-        }
-    }
-
-    return;
-
-err:
-    _ev_udp_abort_unix(udp, ret);
-}
-
-static int _ev_udp_maybe_deferred_socket_unix(ev_udp_t* udp, int domain)
-{
-    if (udp->sock != EV_OS_SOCKET_INVALID)
-    {
-        return 0;
-    }
-
-    if ((udp->sock = socket(domain, SOCK_DGRAM, 0)) < 0)
-    {
-        int ret = errno;
-        return ev__translate_sys_error(ret);
-    }
-
-    ev__nonblock_io_init(&udp->backend.io, udp->sock, _ev_udp_on_io_unix, NULL);
-
-    return 0;
-}
-
-static int _ev_udp_do_connect_unix(ev_udp_t* udp, const struct sockaddr* addr)
-{
-    int ret;
-    socklen_t addrlen = ev__get_addr_len(addr);
-    if (addrlen == (socklen_t)-1)
-    {
-        return EV_EINVAL;
-    }
-
-    if ((ret = _ev_udp_maybe_deferred_socket_unix(udp, addr->sa_family)) != 0)
-    {
-        return ret;
-    }
-
-    do 
-    {
-        ret = connect(udp->sock, addr, addrlen);
-    } while (ret == -1 && errno == EINTR);
-
-    if (ret != 0)
-    {
-        ret = errno;
-        return ev__translate_sys_error(ret);
-    }
-
-    udp->base.data.flags |= EV_HANDLE_UDP_CONNECTED;
-    return 0;
-}
-
-static int _ev_udp_maybe_deferred_bind_unix(ev_udp_t* udp, int domain, int flags)
-{
-    int ret = _ev_udp_maybe_deferred_socket_unix(udp, domain);
-    if (ret != 0)
-    {
-        return ret;
-    }
-
-    if (udp->base.data.flags & EV_HANDLE_UDP_BOUND)
-    {
-        return 0;
-    }
-
-    struct sockaddr_storage addr;
-    struct sockaddr_in* addr4 = (struct sockaddr_in*)&addr;
-    struct sockaddr_in6* addr6 = (struct sockaddr_in6*)&addr;
-
-    switch (domain)
-    {
-    case AF_INET:
-    {
-        memset(addr4, 0, sizeof(*addr4));
-        addr4->sin_family = AF_INET;
-        addr4->sin_addr.s_addr = INADDR_ANY;
-        return ev_udp_bind(udp, (struct sockaddr*)addr4, flags);
-    }
-
-    case AF_INET6:
-    {
-        memset(addr6, 0, sizeof(*addr6));
-        addr6->sin6_family = AF_INET6;
-        addr6->sin6_addr = in6addr_any;
-        return ev_udp_bind(udp, (struct sockaddr*)addr6, flags);
-    }
-
-    default:
-        break;
-    }
-
-    EV_ABORT();
-}
-
-static int _ev_udp_convert_interface_addr4_unix(struct ip_mreq* dst,
-    const struct sockaddr_in* multicast_addr, const char* interface_addr)
-{
-    int ret;
-    memset(dst, 0, sizeof(*dst));
-
-    if (interface_addr != NULL)
-    {
-        if ((ret = inet_pton(AF_INET, interface_addr, &dst->imr_interface.s_addr)) != 1)
-        {
-            int ret = errno;
-            return ev__translate_sys_error(ret);
-        }
-    }
-    else
-    {
-        dst->imr_interface.s_addr = htonl(INADDR_ANY);
-    }
-
-    dst->imr_multiaddr.s_addr = multicast_addr->sin_addr.s_addr;
-
-    return 0;
-}
-
-static int _ev_udp_setmembership4_unix(ev_udp_t* udp, struct sockaddr_in* multicast_addr,
-    const char* interface_addr, ev_udp_membership_t membership)
-{
-    int ret;
-
-    struct ip_mreq mreq;
-    if ((ret = _ev_udp_convert_interface_addr4_unix(&mreq, multicast_addr, interface_addr)) != 0)
-    {
-        return ret;
-    }
-
-    int optname = membership == EV_UDP_ENTER_GROUP ? IP_ADD_MEMBERSHIP : IP_DROP_MEMBERSHIP;
-    if (setsockopt(udp->sock, IPPROTO_IP, optname, &mreq, sizeof(mreq)) != 0)
-    {
-        ret = errno;
-        return ev__translate_sys_error(ret);
-    }
-
-    return 0;
-}
-
-static void _ev_udp_convert_interface_addr6_unix(struct ipv6_mreq* dst,
-    struct sockaddr_in6* multicast_addr, const char* interface_addr)
-{
-    memset(dst, 0, sizeof(*dst));
-
-    if (interface_addr != 0)
-    {
-        struct sockaddr_in6 addr6;
-        ev_ipv6_addr(interface_addr, 0, &addr6);
-
-        dst->ipv6mr_interface = addr6.sin6_scope_id;
-    }
-    else
-    {
-        dst->ipv6mr_interface = 0;
-    }
-    dst->ipv6mr_multiaddr = multicast_addr->sin6_addr;
-}
-
-static int _ev_udp_setmembership6_unix(ev_udp_t* udp, struct sockaddr_in6* multicast_addr,
-    const char* interface_addr, ev_udp_membership_t membership)
-{
-    int ret;
-    struct ipv6_mreq mreq;
-    _ev_udp_convert_interface_addr6_unix(&mreq, multicast_addr, interface_addr);
-
-    int optname = membership == EV_UDP_ENTER_GROUP ? IPV6_ADD_MEMBERSHIP : IPV6_DROP_MEMBERSHIP;
-    if (setsockopt(udp->sock, IPPROTO_IPV6, optname, &mreq, sizeof(mreq)) != 0)
-    {
-        ret = errno;
-        return ev__translate_sys_error(ret);
-    }
-
-    return 0;
-}
-
-static int _ev_udp_convert_source_interface_addr4_unix(struct ip_mreq_source* dst,
-    const char* interface_addr, const struct sockaddr_in* multicast_addr, const struct sockaddr_in* source_addr)
-{
-    int ret;
-    memset(dst, 0, sizeof(*dst));
-
-    if (interface_addr != NULL)
-    {
-        if ((ret = inet_pton(AF_INET, interface_addr, &dst->imr_interface.s_addr)) != 1)
-        {
-            ret = errno;
-            return ev__translate_sys_error(ret);
-        }
-    }
-    else
-    {
-        dst->imr_interface.s_addr = htonl(INADDR_ANY);
-    }
-
-    dst->imr_multiaddr.s_addr = multicast_addr->sin_addr.s_addr;
-    dst->imr_sourceaddr.s_addr = source_addr->sin_addr.s_addr;
-
-    return 0;
-}
-
-static int _ev_udp_set_source_membership4_unix(ev_udp_t* udp, const struct sockaddr_in* multicast_addr,
-    const char* interface_addr, const struct sockaddr_in* source_addr, ev_udp_membership_t membership)
-{
-    int ret = _ev_udp_maybe_deferred_bind_unix(udp, AF_INET, EV_UDP_REUSEADDR);
-    if (ret != 0)
-    {
-        return ret;
-    }
-
-    struct ip_mreq_source mreq;
-    if ((ret = _ev_udp_convert_source_interface_addr4_unix(&mreq, interface_addr,
-        multicast_addr, source_addr)) != 0)
-    {
-        return ret;
-    }
-
-    int optname = membership == EV_UDP_ENTER_GROUP ? IP_ADD_SOURCE_MEMBERSHIP : IP_DROP_SOURCE_MEMBERSHIP;
-    if (setsockopt(udp->sock, IPPROTO_IP, optname, &mreq, sizeof(mreq)) != 0)
-    {
-        ret = errno;
-        return ev__translate_sys_error(ret);
-    }
-
-    return 0;
-}
-
-static int _ev_udp_convert_source_interface_addr6_unix(struct group_source_req* dst,
-    const char* interface_addr, const struct sockaddr_in6* multicast_addr,
-    const struct sockaddr_in6* source_addr)
-{
-    int ret;
-    struct sockaddr_in6 addr_6;
-
-    memset(dst, 0, sizeof(*dst));
-
-    if (interface_addr != NULL)
-    {
-        if ((ret = ev_ipv6_addr(interface_addr, 0, &addr_6)) != 0)
-        {
-            return ret;
-        }
-        dst->gsr_interface = addr_6.sin6_scope_id;
-    }
-    else
-    {
-        dst->gsr_interface = 0;
-    }
-
-    memcpy(&dst->gsr_group, multicast_addr, sizeof(*multicast_addr));
-    memcpy(&dst->gsr_source, source_addr, sizeof(*source_addr));
-
-    return 0;
-}
-
-static int _ev_udp_set_source_membership6_unix(ev_udp_t* udp, const struct sockaddr_in6* multicast_addr,
-    const char* interface_addr, const struct sockaddr_in6* source_addr, ev_udp_membership_t membership)
-{
-    int ret = _ev_udp_maybe_deferred_bind_unix(udp, AF_INET6, EV_UDP_REUSEADDR);
-    if (ret != 0)
-    {
-        return ret;
-    }
-
-    struct group_source_req mreq;
-    if ((ret = _ev_udp_convert_source_interface_addr6_unix(&mreq, interface_addr,
-        multicast_addr, source_addr)) != 0)
-    {
-        return ret;
-    }
-
-    int optname = membership == EV_UDP_ENTER_GROUP ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP;
-    if (setsockopt(udp->sock, IPPROTO_IPV6, optname, &mreq, sizeof(mreq)) != 0)
-    {
-        ret = errno;
-        return ev__translate_sys_error(ret);
-    }
-
-    return 0;
-}
-
-static int _ev_udp_set_ttl_unix(ev_udp_t* udp, int ttl, int option4, int option6)
-{
-    int level;
-    int option;
-    if (udp->base.data.flags & EV_HANDLE_UDP_IPV6)
-    {
-        level = IPPROTO_IPV6;
-        option = option6;
-    }
-    else
-    {
-        level = IPPROTO_IP;
-        option = option4;
-    }
-
-    void* optval = &ttl;
-    socklen_t optlen = sizeof(ttl);
-
-    /**
-     * On Solaris and derivatives such as SmartOS, the length of socket options
-     * is sizeof(int) for IPV6_MULTICAST_LOOP and sizeof(char) for
-     * IP_MULTICAST_LOOP, so hardcode the size of the option in the IPv6 case,
-     * and use the general uv__setsockopt_maybe_char call otherwise.
-     */
-#if defined(__sun) || defined(_AIX) || defined(__OpenBSD__) || defined(__MVS__) || defined(__QNX__)
-    char char_val = ttl;
-    if (!(udp->base.data.flags & EV_HANDLE_UDP_IPV6))
-    {
-        optval = &char_val;
-        optlen = sizeof(char_val);
-    }
-#endif
-
-    if (setsockopt(udp->sock, level, option, optval, optlen) != 0)
-    {
-        int ret = errno;
-        return ev__translate_sys_error(ret);
-    }
-
-    return 0;
-}
-
-EV_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
-{
-    (void)req;
-    if (ev_list_size(&udp->recv_list) == 1)
-    {
-        ev__nonblock_io_add(udp->base.loop, &udp->backend.io, EPOLLIN);
-    }
-
-    ev__handle_active(&udp->base);
-
-    return 0;
-}
-
-EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
-    const struct sockaddr* addr, socklen_t addrlen)
-{
-    int ret;
-
-    if (addr == NULL)
-    {
-        req->backend.peer_addr.ss_family = AF_UNSPEC;
-    }
-    else
-    {
-        if ((ret = _ev_udp_maybe_deferred_bind_unix(udp, addr->sa_family, 0)) != 0)
-        {
-            return ret;
-        }
-
-        if (addrlen == (socklen_t)-1)
-        {
-            return EV_EINVAL;
-        }
-
-        memcpy(&req->backend.peer_addr, addr, addrlen);
-    }
-
-    if (ev_list_size(&udp->send_list) == 1)
-    {
-        ev__nonblock_io_add(udp->base.loop, &udp->backend.io, EPOLLOUT);
-    }
-
-    ev__handle_active(&udp->base);
-
-    return 0;
-}
-
-int ev_udp_init(ev_loop_t* loop, ev_udp_t* udp, int domain)
-{
-    int err;
-    if (domain != AF_INET && domain != AF_INET6 && domain != AF_UNSPEC)
-    {
-        return EV_EINVAL;
-    }
-
-    udp->sock = EV_OS_SOCKET_INVALID;
-    if (domain != AF_UNSPEC)
-    {
-        if ((err = _ev_udp_maybe_deferred_socket_unix(udp, domain)) != 0)
-        {
-            return err;
-        }
-    }
-
-    ev__handle_init(loop, &udp->base, EV_ROLE_EV_UDP);
-    ev_list_init(&udp->send_list);
-    ev_list_init(&udp->recv_list);
-
-    return 0;
-}
-
-int ev_udp_open(ev_udp_t* udp, ev_os_socket_t sock)
-{
-    int err;
-    if (udp->sock != EV_OS_SOCKET_INVALID)
-    {
-        return EV_EBUSY;
-    }
-
-    if ((err = ev__nonblock(sock, 1)) != 0)
-    {
-        return err;
-    }
-
-    if (_ev_udp_is_connected_unix(sock))
-    {
-        udp->base.data.flags |= EV_HANDLE_UDP_CONNECTED;
-    }
-
-    return 0;
-}
-
-void ev_udp_exit(ev_udp_t* udp, ev_udp_cb close_cb)
-{
-    _ev_udp_close_unix(udp);
-    udp->close_cb = close_cb;
-    ev__handle_exit(&udp->base, _ev_udp_on_close_unix);
-}
-
-int ev_udp_bind(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags)
-{
-    int ret;
-    socklen_t addrlen = ev__get_addr_len(addr);
-    if (addrlen == (socklen_t)-1)
-    {
-        return EV_EINVAL;
-    }
-
-    if ((ret = _ev_udp_maybe_deferred_socket_unix(udp, addr->sa_family)) != 0)
-    {
-        return ret;
-    }
-
-    if ((ret = _ev_udp_set_flags_unix(udp, flags)) != 0)
-    {
-        return ret;
-    }
-
-    if (bind(udp->sock, addr, addrlen) < 0)
-    {
-        ret = errno;
-        if (ret == EAFNOSUPPORT)
-        {
-            return EV_EINVAL;
-        }
-        return ev__translate_sys_error(ret);
-    }
-
-    if (addr->sa_family == AF_INET6)
-    {
-        udp->base.data.flags |= EV_HANDLE_UDP_IPV6;
-    }
-
-    udp->base.data.flags |= EV_HANDLE_UDP_BOUND;
-    return 0;
-}
-
-int ev_udp_connect(ev_udp_t* udp, const struct sockaddr* addr)
-{
-    if (addr == NULL)
-    {
-        if (!(udp->base.data.flags & EV_HANDLE_UDP_CONNECTED))
-        {
-            return EV_ENOTCONN;
-        }
-        return _ev_udp_disconnect_unix(udp);
-    }
-
-    return _ev_udp_do_connect_unix(udp, addr);
-}
-
-int ev_udp_getsockname(ev_udp_t* udp, struct sockaddr* name, size_t* len)
-{
-    socklen_t wrap_len = *len;
-    if (getsockname(udp->sock, name, &wrap_len) != 0)
-    {
-        int err = errno;
-        return ev__translate_sys_error(err);
-    }
-
-    *len = wrap_len;
-    return 0;
-}
-
-int ev_udp_getpeername(ev_udp_t* udp, struct sockaddr* name, size_t* len)
-{
-    socklen_t wrap_len = *len;
-    if (getpeername(udp->sock, name, &wrap_len) != 0)
-    {
-        int err = errno;
-        return ev__translate_sys_error(err);
-    }
-
-    *len = wrap_len;
-    return 0;
-}
-
-int ev_udp_set_membership(ev_udp_t* udp, const char* multicast_addr,
-    const char* interface_addr, ev_udp_membership_t membership)
-{
-    int ret;
-    struct sockaddr_storage addr;
-
-    if (membership != EV_UDP_LEAVE_GROUP && membership != EV_UDP_ENTER_GROUP)
-    {
-        return EV_EINVAL;
-    }
-
-    struct sockaddr_in* addr_4 = (struct sockaddr_in*)&addr;
-    memset(addr_4, 0, sizeof(*addr_4));
-
-    if (ev_ipv4_addr(multicast_addr, 0, addr_4) == 0)
-    {
-        if ((ret = _ev_udp_maybe_deferred_bind_unix(udp, AF_INET, EV_UDP_REUSEADDR)) != 0)
-        {
-            return ret;
-        }
-
-        return _ev_udp_setmembership4_unix(udp, addr_4, interface_addr, membership);
-    }
-
-    struct sockaddr_in6* addr_6 = (struct sockaddr_in6*)&addr;
-    memset(addr_6, 0, sizeof(*addr_6));
-
-    if (ev_ipv6_addr(multicast_addr, 0, addr_6) == 0)
-    {
-        if ((ret = _ev_udp_maybe_deferred_bind_unix(udp, AF_INET6, EV_UDP_REUSEADDR)) != 0)
-        {
-            return ret;
-        }
-
-        return _ev_udp_setmembership6_unix(udp, addr_6, interface_addr, membership);
-    }
-
-    return EV_EINVAL;
-}
-
-int ev_udp_set_source_membership(ev_udp_t* udp, const char* multicast_addr,
-    const char* interface_addr, const char* source_addr, ev_udp_membership_t membership)
-{
-    int ret;
-    struct sockaddr_storage mcast_addr;
-    struct sockaddr_storage src_addr;
-
-    if (membership != EV_UDP_LEAVE_GROUP && membership != EV_UDP_ENTER_GROUP)
-    {
-        return EV_EINVAL;
-    }
-
-    struct sockaddr_in* mcast_addr_4 = (struct sockaddr_in*)&mcast_addr;
-    if ((ret = ev_ipv4_addr(multicast_addr, 0, mcast_addr_4)) == 0)
-    {
-        struct sockaddr_in* src_addr_4 = (struct sockaddr_in*)&src_addr;
-        if ((ret = ev_ipv4_addr(source_addr, 0, src_addr_4)) != 0)
-        {
-            return ret;
-        }
-
-        return _ev_udp_set_source_membership4_unix(udp, mcast_addr_4, interface_addr, src_addr_4, membership);
-    }
-
-    struct sockaddr_in6* mcast_addr_6 = (struct sockaddr_in6*)&mcast_addr;
-    if ((ret = ev_ipv6_addr(multicast_addr, 0, mcast_addr_6)) == 0)
-    {
-        struct sockaddr_in6* src_addr_6 = (struct sockaddr_in6*)&src_addr;
-        if ((ret = ev_ipv6_addr(source_addr, 0, src_addr_6)) != 0)
-        {
-            return ret;
-        }
-
-        return _ev_udp_set_source_membership6_unix(udp, mcast_addr_6, interface_addr, src_addr_6, membership);
-    }
-
-    return ret;
-}
-
-int ev_udp_set_multicast_loop(ev_udp_t* udp, int on)
-{
-    return _ev_udp_set_ttl_unix(udp, on, IP_MULTICAST_LOOP, IPV6_MULTICAST_LOOP);
-}
-
-int ev_udp_set_multicast_ttl(ev_udp_t* udp, int ttl)
-{
-    return _ev_udp_set_ttl_unix(udp, ttl, IP_MULTICAST_TTL, IPV6_MULTICAST_HOPS);
-}
-
-int ev_udp_set_multicast_interface(ev_udp_t* udp, const char* interface_addr)
-{
-    int ret;
-    struct sockaddr_storage addr_st;
-    struct sockaddr_in* addr_4 = (struct sockaddr_in*)&addr_st;
-    struct sockaddr_in6* addr_6 = (struct sockaddr_in6*)&addr_st;
-
-    int is_ipv6 = udp->base.data.flags & EV_HANDLE_UDP_IPV6;
-    if ((ret = ev__udp_interface_addr_to_sockaddr(&addr_st, interface_addr, is_ipv6)) != 0)
-    {
-        return ret;
-    }
-
-    int level;
-    int optname;
-    void* optval;
-    socklen_t optlen;
-
-    if (addr_st.ss_family == AF_INET)
-    {
-        level = IPPROTO_IP;
-        optname = IP_MULTICAST_IF;
-        optval = &addr_4->sin_addr;
-        optlen = sizeof(addr_4->sin_addr);
-    }
-    else if(addr_st.ss_family == AF_INET6)
-    {
-        level = IPPROTO_IPV6;
-        optname = IPV6_MULTICAST_IF;
-        optval = &addr_6->sin6_scope_id;
-        optlen = sizeof(addr_6->sin6_scope_id);
-    }
-    else
-    {
-        EV_ABORT();
-    }
-
-    if (setsockopt(udp->sock, level, optname, optval, optlen) != 0)
-    {
-        ret = errno;
-        return ev__translate_sys_error(ret);
-    }
-
-    return 0;
-}
-
-int ev_udp_set_broadcast(ev_udp_t* udp, int on)
-{
-    int err;
-    if (setsockopt(udp->sock, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on)) != 0)
-    {
-        err = errno;
-        return ev__translate_sys_error(err);
-    }
-
-    return 0;
-}
-
-int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
-{
-    if (ttl < 1 || ttl > 255)
-    {
-        return EV_EINVAL;
-    }
-
-#if defined(__MVS__)
-    /* zOS does not support setting ttl for IPv4 */
-    if (!(udp->base.data.flags & EV_HANDLE_UDP_IPV6))
-    {
-        return EV_ENOTSUP;
-    }
-#endif
-
-    return _ev_udp_set_ttl_unix(udp, ttl, IP_TTL, IPV6_UNICAST_HOPS);
-}
-
-// #line 105 "ev.c"
-
-#endif
+// #line 107 "ev.c"
 

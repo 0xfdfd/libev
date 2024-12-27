@@ -336,9 +336,10 @@ err:
     return ret;
 }
 
-static void _ev_process_on_async_exit(ev_async_t* async)
+static void _ev_process_on_async_exit(ev_async_t* async, void* arg)
 {
-    ev_process_t* process = EV_CONTAINER_OF(async, ev_process_t, sigchld);
+    (void)async;
+    ev_process_t* process = (ev_process_t*)arg;
 
     if (process->exit_cb != NULL)
     {
@@ -374,10 +375,11 @@ fin:
     process->backend.wait_handle = INVALID_HANDLE_VALUE;
 }
 
-static void _ev_process_on_sigchild_win(ev_async_t* async)
+static void _ev_process_on_sigchild_win(ev_async_t* async, void* arg)
 {
+    (void)async;
     DWORD status;
-    ev_process_t* process = EV_CONTAINER_OF(async, ev_process_t, sigchld);
+    ev_process_t* process = (ev_process_t*)arg;
 
     _ev_process_unregister_wait_handle(process);
 
@@ -442,7 +444,7 @@ static VOID NTAPI _ev_process_on_object_exit(PVOID data, BOOLEAN didTimeout)
     assert(didTimeout == FALSE); (void) didTimeout;
     assert(process != NULL);
 
-    ev_async_wakeup(&process->sigchld);
+    ev_async_wakeup(process->sigchld);
 }
 
 static void _ev_process_init_win(ev_process_t* handle, const ev_process_options_t* opt)
@@ -471,7 +473,7 @@ int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_opt
 
     _ev_process_init_win(handle, opt);
 
-    ret = ev_async_init(loop, &handle->sigchld, _ev_process_on_sigchild_win);
+    ret = ev_async_init(loop, &handle->sigchld, _ev_process_on_sigchild_win, handle);
     if (ret != 0)
     {
         _ev_process_cleanup_start_info(&start_info);
@@ -487,7 +489,7 @@ int ev_process_spawn(ev_loop_t* loop, ev_process_t* handle, const ev_process_opt
     if (!ret)
     {
         errcode = GetLastError();
-        ev__async_exit_force(&handle->sigchld);
+        ev__async_exit_force(handle->sigchld);
         return ev__translate_sys_error(errcode);
     }
 
@@ -523,7 +525,7 @@ void ev_process_exit(ev_process_t* handle, ev_process_exit_cb cb)
 
     handle->sigchild_cb = NULL;
     handle->exit_cb = cb;
-    ev_async_exit(&handle->sigchld, _ev_process_on_async_exit);
+    ev_async_exit(handle->sigchld, _ev_process_on_async_exit, handle);
 }
 
 ssize_t ev_getcwd(char* buffer, size_t size)

@@ -12,7 +12,7 @@ typedef struct ev_strerror_pair
 {
     int             errn;           /**< Error number */
     const char*     info;           /**< Error string */
-}ev_strerror_pair_t;
+} ev_strerror_pair_t;
 
 static int _ev_loop_init(ev_loop_t* loop)
 {
@@ -155,21 +155,31 @@ EV_LOCAL ev_loop_t* ev__handle_loop(ev_handle_t* handle)
     return handle->loop;
 }
 
-int ev_loop_init(ev_loop_t* loop)
+int ev_loop_init(ev_loop_t** loop)
 {
     int ret;
-    if ((ret = _ev_loop_init(loop)) != 0)
+    ev_loop_t* new_loop = ev_malloc(sizeof(ev_loop_t));
+    if (new_loop == NULL)
     {
+        return EV_ENOMEM;
+    }
+
+    if ((ret = _ev_loop_init(new_loop)) != 0)
+    {
+        ev_free(new_loop);
         return ret;
     }
 
-    if ((ret = ev__loop_init_backend(loop)) != 0)
+    if ((ret = ev__loop_init_backend(new_loop)) != 0)
     {
-        _ev_loop_exit(loop);
+        _ev_loop_exit(new_loop);
+        ev_free(new_loop);
         return ret;
     }
 
-    ev__loop_update_time(loop);
+    ev__loop_update_time(new_loop);
+    *loop = new_loop;
+
     return 0;
 }
 
@@ -183,6 +193,7 @@ int ev_loop_exit(ev_loop_t* loop)
 
     ev__loop_exit_backend(loop);
     _ev_loop_exit(loop);
+    ev_free(loop);
 
     return 0;
 }

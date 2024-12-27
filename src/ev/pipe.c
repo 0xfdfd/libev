@@ -1,11 +1,12 @@
 
-int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req, ev_buf_t* bufs,
-    size_t nbuf, ev_pipe_write_cb cb)
+int ev_pipe_write(ev_pipe_t *pipe, ev_buf_t *bufs, size_t nbuf,
+                  ev_pipe_write_cb cb, void *arg)
 {
-    return ev_pipe_write_ex(pipe, req, bufs, nbuf, EV_ROLE_UNKNOWN, NULL, 0, cb);
+    return ev_pipe_write_ex(pipe, bufs, nbuf, EV_ROLE_UNKNOWN, NULL, cb, arg);
 }
 
-EV_LOCAL int ev__pipe_read_init(ev_pipe_read_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_pipe_read_cb cb)
+EV_LOCAL int ev__pipe_read_init(ev_pipe_read_req_t *req, ev_buf_t *bufs,
+                                size_t nbuf, ev_pipe_read_cb cb)
 {
     int ret;
     if ((ret = ev__read_init(&req->base, bufs, nbuf)) != 0)
@@ -18,21 +19,25 @@ EV_LOCAL int ev__pipe_read_init(ev_pipe_read_req_t* req, ev_buf_t* bufs, size_t 
     return 0;
 }
 
-EV_LOCAL int ev__pipe_write_init(ev_pipe_write_req_t* req, ev_buf_t* bufs, size_t nbuf, ev_pipe_write_cb cb)
+EV_LOCAL int ev__pipe_write_init(ev_pipe_write_req_t *req, ev_buf_t *bufs,
+                                 size_t nbuf, ev_pipe_write_cb cb, void *arg)
 {
-    return ev__pipe_write_init_ext(req, cb, bufs, nbuf, EV_ROLE_UNKNOWN, NULL, 0);
+    return ev__pipe_write_init_ext(req, cb, arg, bufs, nbuf, EV_ROLE_UNKNOWN,
+                                   NULL);
 }
 
-EV_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t* req, ev_pipe_write_cb callback,
-    ev_buf_t* bufs, size_t nbuf,
-    ev_role_t handle_role, void* handle_addr, size_t handle_size)
+EV_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t *req,
+                                     ev_pipe_write_cb cb, void *arg,
+                                     ev_buf_t *bufs, size_t nbuf,
+                                     ev_role_t handle_role, void *handle_addr)
 {
     int ret;
     if ((ret = ev__write_init(&req->base, bufs, nbuf)) != 0)
     {
         return ret;
     }
-    req->ucb = callback;
+    req->ucb = cb;
+    req->ucb_arg = arg;
 
     req->handle.role = handle_role;
     switch (handle_role)
@@ -42,11 +47,11 @@ EV_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t* req, ev_pipe_write_cb 
         break;
 
     case EV_ROLE_EV_TCP:
-        if (handle_size != sizeof(ev_tcp_t))
+        if (((ev_tcp_t *)handle_addr)->base.data.role != EV_ROLE_EV_TCP)
         {
             return EV_EINVAL;
         }
-        req->handle.u.os_socket = ((ev_tcp_t*)handle_addr)->sock;
+        req->handle.u.os_socket = ((ev_tcp_t *)handle_addr)->sock;
         break;
 
         /* not support other type */

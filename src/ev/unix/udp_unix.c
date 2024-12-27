@@ -1,17 +1,18 @@
 #include <unistd.h>
 #include <string.h>
 
-static void _ev_udp_close_unix(ev_udp_t* udp)
+static void _ev_udp_close_unix(ev_udp_t *udp)
 {
     if (udp->sock != EV_OS_SOCKET_INVALID)
     {
-        ev__nonblock_io_del(udp->base.loop, &udp->backend.io, EPOLLIN | EPOLLOUT);
+        ev__nonblock_io_del(udp->base.loop, &udp->backend.io,
+                            EPOLLIN | EPOLLOUT);
         close(udp->sock);
         udp->sock = EV_OS_SOCKET_INVALID;
     }
 }
 
-static void _ev_udp_smart_deactive(ev_udp_t* udp)
+static void _ev_udp_smart_deactive(ev_udp_t *udp)
 {
     size_t io_sz = 0;
 
@@ -24,59 +25,68 @@ static void _ev_udp_smart_deactive(ev_udp_t* udp)
     }
 }
 
-static void _ev_udp_w_user_callback_unix(ev_udp_t* udp, ev_udp_write_t* req, ssize_t size)
+static void _ev_udp_w_user_callback_unix(ev_udp_t *udp, ev_udp_write_t *req,
+                                         ssize_t size)
 {
     _ev_udp_smart_deactive(udp);
     ev__write_exit(&req->base);
     ev__handle_exit(&req->handle, NULL);
-    req->usr_cb(req, size);
+
+    req->usr_cb(udp, size, req->usr_cb_arg);
+    ev_free(req);
 }
 
-static void _ev_udp_r_user_callback_unix(ev_udp_t* udp, ev_udp_read_t* req,
-    const struct sockaddr* addr, ssize_t size)
+static void _ev_udp_r_user_callback_unix(ev_udp_t *udp, ev_udp_read_t *req,
+                                         const struct sockaddr *addr,
+                                         ssize_t                size)
 {
     _ev_udp_smart_deactive(udp);
     ev__read_exit(&req->base);
     ev__handle_exit(&req->handle, NULL);
-    req->usr_cb(req, addr, size);
+
+    req->usr_cb(udp, addr, size, req->usr_cb_arg);
+    ev_free(req);
 }
 
-static void _ev_udp_cancel_all_w_unix(ev_udp_t* udp, int err)
+static void _ev_udp_cancel_all_w_unix(ev_udp_t *udp, int err)
 {
-    ev_list_node_t* it;
+    ev_list_node_t *it;
     while ((it = ev_list_pop_front(&udp->send_list)) != NULL)
     {
-        ev_udp_write_t* req = EV_CONTAINER_OF(it, ev_udp_write_t, base.node);
+        ev_udp_write_t *req = EV_CONTAINER_OF(it, ev_udp_write_t, base.node);
         _ev_udp_w_user_callback_unix(udp, req, err);
     }
 }
 
-static void _ev_udp_cancel_all_r_unix(ev_udp_t* udp, int err)
+static void _ev_udp_cancel_all_r_unix(ev_udp_t *udp, int err)
 {
-    ev_list_node_t* it;
+    ev_list_node_t *it;
     while ((it = ev_list_pop_front(&udp->recv_list)) != NULL)
     {
-        ev_udp_read_t* req = EV_CONTAINER_OF(it, ev_udp_read_t, base.node);
+        ev_udp_read_t *req = EV_CONTAINER_OF(it, ev_udp_read_t, base.node);
         _ev_udp_r_user_callback_unix(udp, req, NULL, err);
     }
 }
 
-static void _ev_udp_abort_unix(ev_udp_t* udp, int err)
+static void _ev_udp_abort_unix(ev_udp_t *udp, int err)
 {
     _ev_udp_close_unix(udp);
     _ev_udp_cancel_all_w_unix(udp, err);
     _ev_udp_cancel_all_r_unix(udp, err);
 }
 
-static void _ev_udp_on_close_unix(ev_handle_t* handle)
+static void _ev_udp_on_close_unix(ev_handle_t *handle)
 {
-    ev_udp_t* udp = EV_CONTAINER_OF(handle, ev_udp_t, base);
+    ev_udp_t *udp = EV_CONTAINER_OF(handle, ev_udp_t, base);
+    ev_udp_cb close_cb = udp->close_cb;
+    void     *close_arg = udp->close_arg;
 
     _ev_udp_abort_unix(udp, EV_ECANCELED);
+    ev_free(udp);
 
-    if (udp->close_cb != NULL)
+    if (close_cb != NULL)
     {
-        udp->close_cb(udp);
+        close_cb(udp, close_arg);
     }
 }
 
@@ -86,22 +96,23 @@ static void _ev_udp_on_close_unix(ev_handle_t* handle)
 static int _ev_udp_is_connected_unix(ev_os_socket_t sock)
 {
     struct sockaddr_storage addr;
-    socklen_t addrlen = sizeof(addr);
+    socklen_t               addrlen = sizeof(addr);
 
-    if (getpeername(sock, (struct sockaddr*)&addr, &addrlen) != 0)
+    if (getpeername(sock, (struct sockaddr *)&addr, &addrlen) != 0)
     {
         return 0;
     }
     return addrlen > 0;
 }
 
-static int _ev_udp_set_flags_unix(ev_udp_t* udp, unsigned flags)
+static int _ev_udp_set_flags_unix(ev_udp_t *udp, unsigned flags)
 {
     int err;
     if (flags & EV_UDP_IPV6_ONLY)
     {
         int yes = 1;
-        if (setsockopt(udp->sock, IPPROTO_IPV6, IPV6_V6ONLY, &yes, sizeof(yes)) == -1)
+        if (setsockopt(udp->sock, IPPROTO_IPV6, IPV6_V6ONLY, &yes,
+                       sizeof(yes)) == -1)
         {
             err = errno;
             return ev__translate_sys_error(err);
@@ -119,7 +130,7 @@ static int _ev_udp_set_flags_unix(ev_udp_t* udp, unsigned flags)
     return 0;
 }
 
-static int _ev_udp_disconnect_unix(ev_udp_t* udp)
+static int _ev_udp_disconnect_unix(ev_udp_t *udp)
 {
     struct sockaddr addr;
     memset(&addr, 0, sizeof(addr));
@@ -141,14 +152,15 @@ static int _ev_udp_disconnect_unix(ev_udp_t* udp)
     return 0;
 }
 
-static ssize_t _ev_udp_sendmsg_unix(int fd, struct iovec* iov, int iovcnt, void* arg)
+static ssize_t _ev_udp_sendmsg_unix(int fd, struct iovec *iov, int iovcnt,
+                                    void *arg)
 {
-    struct msghdr* p_hdr = arg;
+    struct msghdr *p_hdr = arg;
     p_hdr->msg_iov = iov;
     p_hdr->msg_iovlen = iovcnt;
 
     ssize_t write_size;
-    do 
+    do
     {
         write_size = sendmsg(fd, p_hdr, 0);
     } while (write_size < 0 && errno == EINTR);
@@ -162,7 +174,7 @@ static ssize_t _ev_udp_sendmsg_unix(int fd, struct iovec* iov, int iovcnt, void*
     return write_size;
 }
 
-static int _ev_udp_do_sendmsg_unix(ev_udp_t* udp, ev_udp_write_t* req)
+static int _ev_udp_do_sendmsg_unix(ev_udp_t *udp, ev_udp_write_t *req)
 {
     struct msghdr hdr;
     memset(&hdr, 0, sizeof(hdr));
@@ -175,19 +187,20 @@ static int _ev_udp_do_sendmsg_unix(ev_udp_t* udp, ev_udp_write_t* req)
     else
     {
         hdr.msg_name = &req->backend.peer_addr;
-        hdr.msg_namelen = ev__get_addr_len((struct sockaddr*)&req->backend.peer_addr);
+        hdr.msg_namelen =
+            ev__get_addr_len((struct sockaddr *)&req->backend.peer_addr);
     }
 
     return ev__send_unix(udp->sock, &req->base, _ev_udp_sendmsg_unix, &hdr);
 }
 
-static int _ev_udp_on_io_write_unix(ev_udp_t* udp)
+static int _ev_udp_on_io_write_unix(ev_udp_t *udp)
 {
-    int ret = 0;
-    ev_list_node_t* it;
+    int             ret = 0;
+    ev_list_node_t *it;
     while ((it = ev_list_begin(&udp->send_list)) != NULL)
     {
-        ev_udp_write_t* req = EV_CONTAINER_OF(it, ev_udp_write_t, base.node);
+        ev_udp_write_t *req = EV_CONTAINER_OF(it, ev_udp_write_t, base.node);
 
         if ((ret = _ev_udp_do_sendmsg_unix(udp, req)) != 0)
         {
@@ -205,7 +218,7 @@ static int _ev_udp_on_io_write_unix(ev_udp_t* udp)
     return ret;
 }
 
-static int _ev_udp_do_recvmsg_unix(ev_udp_t* udp, ev_udp_read_t* req)
+static int _ev_udp_do_recvmsg_unix(ev_udp_t *udp, ev_udp_read_t *req)
 {
     struct msghdr hdr;
     memset(&hdr, 0, sizeof(hdr));
@@ -213,7 +226,7 @@ static int _ev_udp_do_recvmsg_unix(ev_udp_t* udp, ev_udp_read_t* req)
 
     hdr.msg_name = &req->addr;
     hdr.msg_namelen = sizeof(req->addr);
-    hdr.msg_iov = (struct iovec*)req->base.data.bufs;
+    hdr.msg_iov = (struct iovec *)req->base.data.bufs;
     hdr.msg_iovlen = req->base.data.nbuf;
 
     ssize_t read_size;
@@ -236,13 +249,13 @@ static int _ev_udp_do_recvmsg_unix(ev_udp_t* udp, ev_udp_read_t* req)
     return 0;
 }
 
-static int _ev_udp_on_io_read_unix(ev_udp_t* udp)
+static int _ev_udp_on_io_read_unix(ev_udp_t *udp)
 {
-    int ret = 0;
-    ev_list_node_t* it;
+    int             ret = 0;
+    ev_list_node_t *it;
     while ((it = ev_list_begin(&udp->recv_list)) != NULL)
     {
-        ev_udp_read_t* req = EV_CONTAINER_OF(it, ev_udp_read_t, base.node);
+        ev_udp_read_t *req = EV_CONTAINER_OF(it, ev_udp_read_t, base.node);
 
         if ((ret = _ev_udp_do_recvmsg_unix(udp, req)) != 0)
         {
@@ -250,7 +263,8 @@ static int _ev_udp_on_io_read_unix(ev_udp_t* udp)
         }
 
         ev_list_erase(&udp->recv_list, it);
-        _ev_udp_r_user_callback_unix(udp, req, (struct sockaddr*)&req->addr, req->base.data.size);
+        _ev_udp_r_user_callback_unix(udp, req, (struct sockaddr *)&req->addr,
+                                     req->base.data.size);
     }
 
     if (ret == EV_EAGAIN)
@@ -260,11 +274,11 @@ static int _ev_udp_on_io_read_unix(ev_udp_t* udp)
     return ret;
 }
 
-static void _ev_udp_on_io_unix(ev_nonblock_io_t* io, unsigned evts, void* arg)
+static void _ev_udp_on_io_unix(ev_nonblock_io_t *io, unsigned evts, void *arg)
 {
     (void)arg;
-    int ret;
-    ev_udp_t* udp = EV_CONTAINER_OF(io, ev_udp_t, backend.io);
+    int       ret;
+    ev_udp_t *udp = EV_CONTAINER_OF(io, ev_udp_t, backend.io);
 
     if (evts & EPOLLOUT)
     {
@@ -298,7 +312,7 @@ err:
     _ev_udp_abort_unix(udp, ret);
 }
 
-static int _ev_udp_maybe_deferred_socket_unix(ev_udp_t* udp, int domain)
+static int _ev_udp_maybe_deferred_socket_unix(ev_udp_t *udp, int domain)
 {
     if (udp->sock != EV_OS_SOCKET_INVALID)
     {
@@ -316,9 +330,9 @@ static int _ev_udp_maybe_deferred_socket_unix(ev_udp_t* udp, int domain)
     return 0;
 }
 
-static int _ev_udp_do_connect_unix(ev_udp_t* udp, const struct sockaddr* addr)
+static int _ev_udp_do_connect_unix(ev_udp_t *udp, const struct sockaddr *addr)
 {
-    int ret;
+    int       ret;
     socklen_t addrlen = ev__get_addr_len(addr);
     if (addrlen == (socklen_t)-1)
     {
@@ -330,7 +344,7 @@ static int _ev_udp_do_connect_unix(ev_udp_t* udp, const struct sockaddr* addr)
         return ret;
     }
 
-    do 
+    do
     {
         ret = connect(udp->sock, addr, addrlen);
     } while (ret == -1 && errno == EINTR);
@@ -345,7 +359,8 @@ static int _ev_udp_do_connect_unix(ev_udp_t* udp, const struct sockaddr* addr)
     return 0;
 }
 
-static int _ev_udp_maybe_deferred_bind_unix(ev_udp_t* udp, int domain, int flags)
+static int _ev_udp_maybe_deferred_bind_unix(ev_udp_t *udp, int domain,
+                                            int flags)
 {
     int ret = _ev_udp_maybe_deferred_socket_unix(udp, domain);
     if (ret != 0)
@@ -359,25 +374,23 @@ static int _ev_udp_maybe_deferred_bind_unix(ev_udp_t* udp, int domain, int flags
     }
 
     struct sockaddr_storage addr;
-    struct sockaddr_in* addr4 = (struct sockaddr_in*)&addr;
-    struct sockaddr_in6* addr6 = (struct sockaddr_in6*)&addr;
+    struct sockaddr_in     *addr4 = (struct sockaddr_in *)&addr;
+    struct sockaddr_in6    *addr6 = (struct sockaddr_in6 *)&addr;
 
     switch (domain)
     {
-    case AF_INET:
-    {
+    case AF_INET: {
         memset(addr4, 0, sizeof(*addr4));
         addr4->sin_family = AF_INET;
         addr4->sin_addr.s_addr = INADDR_ANY;
-        return ev_udp_bind(udp, (struct sockaddr*)addr4, flags);
+        return ev_udp_bind(udp, (struct sockaddr *)addr4, flags);
     }
 
-    case AF_INET6:
-    {
+    case AF_INET6: {
         memset(addr6, 0, sizeof(*addr6));
         addr6->sin6_family = AF_INET6;
         addr6->sin6_addr = in6addr_any;
-        return ev_udp_bind(udp, (struct sockaddr*)addr6, flags);
+        return ev_udp_bind(udp, (struct sockaddr *)addr6, flags);
     }
 
     default:
@@ -387,15 +400,17 @@ static int _ev_udp_maybe_deferred_bind_unix(ev_udp_t* udp, int domain, int flags
     EV_ABORT();
 }
 
-static int _ev_udp_convert_interface_addr4_unix(struct ip_mreq* dst,
-    const struct sockaddr_in* multicast_addr, const char* interface_addr)
+static int _ev_udp_convert_interface_addr4_unix(
+    struct ip_mreq *dst, const struct sockaddr_in *multicast_addr,
+    const char *interface_addr)
 {
     int ret;
     memset(dst, 0, sizeof(*dst));
 
     if (interface_addr != NULL)
     {
-        if ((ret = inet_pton(AF_INET, interface_addr, &dst->imr_interface.s_addr)) != 1)
+        if ((ret = inet_pton(AF_INET, interface_addr,
+                             &dst->imr_interface.s_addr)) != 1)
         {
             int ret = errno;
             return ev__translate_sys_error(ret);
@@ -411,18 +426,22 @@ static int _ev_udp_convert_interface_addr4_unix(struct ip_mreq* dst,
     return 0;
 }
 
-static int _ev_udp_setmembership4_unix(ev_udp_t* udp, struct sockaddr_in* multicast_addr,
-    const char* interface_addr, ev_udp_membership_t membership)
+static int _ev_udp_setmembership4_unix(ev_udp_t           *udp,
+                                       struct sockaddr_in *multicast_addr,
+                                       const char         *interface_addr,
+                                       ev_udp_membership_t membership)
 {
     int ret;
 
     struct ip_mreq mreq;
-    if ((ret = _ev_udp_convert_interface_addr4_unix(&mreq, multicast_addr, interface_addr)) != 0)
+    if ((ret = _ev_udp_convert_interface_addr4_unix(&mreq, multicast_addr,
+                                                    interface_addr)) != 0)
     {
         return ret;
     }
 
-    int optname = membership == EV_UDP_ENTER_GROUP ? IP_ADD_MEMBERSHIP : IP_DROP_MEMBERSHIP;
+    int optname = membership == EV_UDP_ENTER_GROUP ? IP_ADD_MEMBERSHIP
+                                                   : IP_DROP_MEMBERSHIP;
     if (setsockopt(udp->sock, IPPROTO_IP, optname, &mreq, sizeof(mreq)) != 0)
     {
         ret = errno;
@@ -432,8 +451,9 @@ static int _ev_udp_setmembership4_unix(ev_udp_t* udp, struct sockaddr_in* multic
     return 0;
 }
 
-static void _ev_udp_convert_interface_addr6_unix(struct ipv6_mreq* dst,
-    struct sockaddr_in6* multicast_addr, const char* interface_addr)
+static void _ev_udp_convert_interface_addr6_unix(
+    struct ipv6_mreq *dst, struct sockaddr_in6 *multicast_addr,
+    const char *interface_addr)
 {
     memset(dst, 0, sizeof(*dst));
 
@@ -451,14 +471,17 @@ static void _ev_udp_convert_interface_addr6_unix(struct ipv6_mreq* dst,
     dst->ipv6mr_multiaddr = multicast_addr->sin6_addr;
 }
 
-static int _ev_udp_setmembership6_unix(ev_udp_t* udp, struct sockaddr_in6* multicast_addr,
-    const char* interface_addr, ev_udp_membership_t membership)
+static int _ev_udp_setmembership6_unix(ev_udp_t            *udp,
+                                       struct sockaddr_in6 *multicast_addr,
+                                       const char          *interface_addr,
+                                       ev_udp_membership_t  membership)
 {
-    int ret;
+    int              ret;
     struct ipv6_mreq mreq;
     _ev_udp_convert_interface_addr6_unix(&mreq, multicast_addr, interface_addr);
 
-    int optname = membership == EV_UDP_ENTER_GROUP ? IPV6_ADD_MEMBERSHIP : IPV6_DROP_MEMBERSHIP;
+    int optname = membership == EV_UDP_ENTER_GROUP ? IPV6_ADD_MEMBERSHIP
+                                                   : IPV6_DROP_MEMBERSHIP;
     if (setsockopt(udp->sock, IPPROTO_IPV6, optname, &mreq, sizeof(mreq)) != 0)
     {
         ret = errno;
@@ -468,15 +491,18 @@ static int _ev_udp_setmembership6_unix(ev_udp_t* udp, struct sockaddr_in6* multi
     return 0;
 }
 
-static int _ev_udp_convert_source_interface_addr4_unix(struct ip_mreq_source* dst,
-    const char* interface_addr, const struct sockaddr_in* multicast_addr, const struct sockaddr_in* source_addr)
+static int _ev_udp_convert_source_interface_addr4_unix(
+    struct ip_mreq_source *dst, const char *interface_addr,
+    const struct sockaddr_in *multicast_addr,
+    const struct sockaddr_in *source_addr)
 {
     int ret;
     memset(dst, 0, sizeof(*dst));
 
     if (interface_addr != NULL)
     {
-        if ((ret = inet_pton(AF_INET, interface_addr, &dst->imr_interface.s_addr)) != 1)
+        if ((ret = inet_pton(AF_INET, interface_addr,
+                             &dst->imr_interface.s_addr)) != 1)
         {
             ret = errno;
             return ev__translate_sys_error(ret);
@@ -493,8 +519,10 @@ static int _ev_udp_convert_source_interface_addr4_unix(struct ip_mreq_source* ds
     return 0;
 }
 
-static int _ev_udp_set_source_membership4_unix(ev_udp_t* udp, const struct sockaddr_in* multicast_addr,
-    const char* interface_addr, const struct sockaddr_in* source_addr, ev_udp_membership_t membership)
+static int _ev_udp_set_source_membership4_unix(
+    ev_udp_t *udp, const struct sockaddr_in *multicast_addr,
+    const char *interface_addr, const struct sockaddr_in *source_addr,
+    ev_udp_membership_t membership)
 {
     int ret = _ev_udp_maybe_deferred_bind_unix(udp, AF_INET, EV_UDP_REUSEADDR);
     if (ret != 0)
@@ -503,13 +531,14 @@ static int _ev_udp_set_source_membership4_unix(ev_udp_t* udp, const struct socka
     }
 
     struct ip_mreq_source mreq;
-    if ((ret = _ev_udp_convert_source_interface_addr4_unix(&mreq, interface_addr,
-        multicast_addr, source_addr)) != 0)
+    if ((ret = _ev_udp_convert_source_interface_addr4_unix(
+             &mreq, interface_addr, multicast_addr, source_addr)) != 0)
     {
         return ret;
     }
 
-    int optname = membership == EV_UDP_ENTER_GROUP ? IP_ADD_SOURCE_MEMBERSHIP : IP_DROP_SOURCE_MEMBERSHIP;
+    int optname = membership == EV_UDP_ENTER_GROUP ? IP_ADD_SOURCE_MEMBERSHIP
+                                                   : IP_DROP_SOURCE_MEMBERSHIP;
     if (setsockopt(udp->sock, IPPROTO_IP, optname, &mreq, sizeof(mreq)) != 0)
     {
         ret = errno;
@@ -519,11 +548,12 @@ static int _ev_udp_set_source_membership4_unix(ev_udp_t* udp, const struct socka
     return 0;
 }
 
-static int _ev_udp_convert_source_interface_addr6_unix(struct group_source_req* dst,
-    const char* interface_addr, const struct sockaddr_in6* multicast_addr,
-    const struct sockaddr_in6* source_addr)
+static int _ev_udp_convert_source_interface_addr6_unix(
+    struct group_source_req *dst, const char *interface_addr,
+    const struct sockaddr_in6 *multicast_addr,
+    const struct sockaddr_in6 *source_addr)
 {
-    int ret;
+    int                 ret;
     struct sockaddr_in6 addr_6;
 
     memset(dst, 0, sizeof(*dst));
@@ -547,8 +577,10 @@ static int _ev_udp_convert_source_interface_addr6_unix(struct group_source_req* 
     return 0;
 }
 
-static int _ev_udp_set_source_membership6_unix(ev_udp_t* udp, const struct sockaddr_in6* multicast_addr,
-    const char* interface_addr, const struct sockaddr_in6* source_addr, ev_udp_membership_t membership)
+static int _ev_udp_set_source_membership6_unix(
+    ev_udp_t *udp, const struct sockaddr_in6 *multicast_addr,
+    const char *interface_addr, const struct sockaddr_in6 *source_addr,
+    ev_udp_membership_t membership)
 {
     int ret = _ev_udp_maybe_deferred_bind_unix(udp, AF_INET6, EV_UDP_REUSEADDR);
     if (ret != 0)
@@ -557,13 +589,14 @@ static int _ev_udp_set_source_membership6_unix(ev_udp_t* udp, const struct socka
     }
 
     struct group_source_req mreq;
-    if ((ret = _ev_udp_convert_source_interface_addr6_unix(&mreq, interface_addr,
-        multicast_addr, source_addr)) != 0)
+    if ((ret = _ev_udp_convert_source_interface_addr6_unix(
+             &mreq, interface_addr, multicast_addr, source_addr)) != 0)
     {
         return ret;
     }
 
-    int optname = membership == EV_UDP_ENTER_GROUP ? MCAST_JOIN_SOURCE_GROUP : MCAST_LEAVE_SOURCE_GROUP;
+    int optname = membership == EV_UDP_ENTER_GROUP ? MCAST_JOIN_SOURCE_GROUP
+                                                   : MCAST_LEAVE_SOURCE_GROUP;
     if (setsockopt(udp->sock, IPPROTO_IPV6, optname, &mreq, sizeof(mreq)) != 0)
     {
         ret = errno;
@@ -573,7 +606,8 @@ static int _ev_udp_set_source_membership6_unix(ev_udp_t* udp, const struct socka
     return 0;
 }
 
-static int _ev_udp_set_ttl_unix(ev_udp_t* udp, int ttl, int option4, int option6)
+static int _ev_udp_set_ttl_unix(ev_udp_t *udp, int ttl, int option4,
+                                int option6)
 {
     int level;
     int option;
@@ -588,7 +622,7 @@ static int _ev_udp_set_ttl_unix(ev_udp_t* udp, int ttl, int option4, int option6
         option = option4;
     }
 
-    void* optval = &ttl;
+    void     *optval = &ttl;
     socklen_t optlen = sizeof(ttl);
 
     /**
@@ -597,7 +631,8 @@ static int _ev_udp_set_ttl_unix(ev_udp_t* udp, int ttl, int option4, int option6
      * IP_MULTICAST_LOOP, so hardcode the size of the option in the IPv6 case,
      * and use the general uv__setsockopt_maybe_char call otherwise.
      */
-#if defined(__sun) || defined(_AIX) || defined(__OpenBSD__) || defined(__MVS__) || defined(__QNX__)
+#if defined(__sun) || defined(_AIX) || defined(__OpenBSD__) ||                 \
+    defined(__MVS__) || defined(__QNX__)
     char char_val = ttl;
     if (!(udp->base.data.flags & EV_HANDLE_UDP_IPV6))
     {
@@ -615,7 +650,7 @@ static int _ev_udp_set_ttl_unix(ev_udp_t* udp, int ttl, int option4, int option6
     return 0;
 }
 
-EV_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
+EV_LOCAL int ev__udp_recv(ev_udp_t *udp, ev_udp_read_t *req)
 {
     (void)req;
     if (ev_list_size(&udp->recv_list) == 1)
@@ -628,8 +663,8 @@ EV_LOCAL int ev__udp_recv(ev_udp_t* udp, ev_udp_read_t* req)
     return 0;
 }
 
-EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
-    const struct sockaddr* addr, socklen_t addrlen)
+EV_LOCAL int ev__udp_send(ev_udp_t *udp, ev_udp_write_t *req,
+                          const struct sockaddr *addr, socklen_t addrlen)
 {
     int ret;
 
@@ -639,7 +674,8 @@ EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
     }
     else
     {
-        if ((ret = _ev_udp_maybe_deferred_bind_unix(udp, addr->sa_family, 0)) != 0)
+        if ((ret = _ev_udp_maybe_deferred_bind_unix(udp, addr->sa_family, 0)) !=
+            0)
         {
             return ret;
         }
@@ -662,7 +698,7 @@ EV_LOCAL int ev__udp_send(ev_udp_t* udp, ev_udp_write_t* req,
     return 0;
 }
 
-int ev_udp_init(ev_loop_t* loop, ev_udp_t* udp, int domain)
+int ev_udp_init(ev_loop_t *loop, ev_udp_t **udp, int domain)
 {
     int err;
     if (domain != AF_INET && domain != AF_INET6 && domain != AF_UNSPEC)
@@ -670,23 +706,31 @@ int ev_udp_init(ev_loop_t* loop, ev_udp_t* udp, int domain)
         return EV_EINVAL;
     }
 
-    udp->sock = EV_OS_SOCKET_INVALID;
+    ev_udp_t *new_udp = ev_malloc(sizeof(ev_udp_t));
+    if (new_udp == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    new_udp->sock = EV_OS_SOCKET_INVALID;
     if (domain != AF_UNSPEC)
     {
-        if ((err = _ev_udp_maybe_deferred_socket_unix(udp, domain)) != 0)
+        if ((err = _ev_udp_maybe_deferred_socket_unix(new_udp, domain)) != 0)
         {
+            ev_free(new_udp);
             return err;
         }
     }
 
-    ev__handle_init(loop, &udp->base, EV_ROLE_EV_UDP);
-    ev_list_init(&udp->send_list);
-    ev_list_init(&udp->recv_list);
+    ev__handle_init(loop, &new_udp->base, EV_ROLE_EV_UDP);
+    ev_list_init(&new_udp->send_list);
+    ev_list_init(&new_udp->recv_list);
 
+    *udp = new_udp;
     return 0;
 }
 
-int ev_udp_open(ev_udp_t* udp, ev_os_socket_t sock)
+int ev_udp_open(ev_udp_t *udp, ev_os_socket_t sock)
 {
     int err;
     if (udp->sock != EV_OS_SOCKET_INVALID)
@@ -707,16 +751,17 @@ int ev_udp_open(ev_udp_t* udp, ev_os_socket_t sock)
     return 0;
 }
 
-void ev_udp_exit(ev_udp_t* udp, ev_udp_cb close_cb)
+void ev_udp_exit(ev_udp_t *udp, ev_udp_cb close_cb, void *close_arg)
 {
     _ev_udp_close_unix(udp);
     udp->close_cb = close_cb;
+    udp->close_arg = close_arg;
     ev__handle_exit(&udp->base, _ev_udp_on_close_unix);
 }
 
-int ev_udp_bind(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags)
+int ev_udp_bind(ev_udp_t *udp, const struct sockaddr *addr, unsigned flags)
 {
-    int ret;
+    int       ret;
     socklen_t addrlen = ev__get_addr_len(addr);
     if (addrlen == (socklen_t)-1)
     {
@@ -752,7 +797,7 @@ int ev_udp_bind(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags)
     return 0;
 }
 
-int ev_udp_connect(ev_udp_t* udp, const struct sockaddr* addr)
+int ev_udp_connect(ev_udp_t *udp, const struct sockaddr *addr)
 {
     if (addr == NULL)
     {
@@ -766,7 +811,7 @@ int ev_udp_connect(ev_udp_t* udp, const struct sockaddr* addr)
     return _ev_udp_do_connect_unix(udp, addr);
 }
 
-int ev_udp_getsockname(ev_udp_t* udp, struct sockaddr* name, size_t* len)
+int ev_udp_getsockname(ev_udp_t *udp, struct sockaddr *name, size_t *len)
 {
     socklen_t wrap_len = *len;
     if (getsockname(udp->sock, name, &wrap_len) != 0)
@@ -779,7 +824,7 @@ int ev_udp_getsockname(ev_udp_t* udp, struct sockaddr* name, size_t* len)
     return 0;
 }
 
-int ev_udp_getpeername(ev_udp_t* udp, struct sockaddr* name, size_t* len)
+int ev_udp_getpeername(ev_udp_t *udp, struct sockaddr *name, size_t *len)
 {
     socklen_t wrap_len = *len;
     if (getpeername(udp->sock, name, &wrap_len) != 0)
@@ -792,10 +837,11 @@ int ev_udp_getpeername(ev_udp_t* udp, struct sockaddr* name, size_t* len)
     return 0;
 }
 
-int ev_udp_set_membership(ev_udp_t* udp, const char* multicast_addr,
-    const char* interface_addr, ev_udp_membership_t membership)
+int ev_udp_set_membership(ev_udp_t *udp, const char *multicast_addr,
+                          const char         *interface_addr,
+                          ev_udp_membership_t membership)
 {
-    int ret;
+    int                     ret;
     struct sockaddr_storage addr;
 
     if (membership != EV_UDP_LEAVE_GROUP && membership != EV_UDP_ENTER_GROUP)
@@ -803,39 +849,45 @@ int ev_udp_set_membership(ev_udp_t* udp, const char* multicast_addr,
         return EV_EINVAL;
     }
 
-    struct sockaddr_in* addr_4 = (struct sockaddr_in*)&addr;
+    struct sockaddr_in *addr_4 = (struct sockaddr_in *)&addr;
     memset(addr_4, 0, sizeof(*addr_4));
 
     if (ev_ipv4_addr(multicast_addr, 0, addr_4) == 0)
     {
-        if ((ret = _ev_udp_maybe_deferred_bind_unix(udp, AF_INET, EV_UDP_REUSEADDR)) != 0)
+        if ((ret = _ev_udp_maybe_deferred_bind_unix(udp, AF_INET,
+                                                    EV_UDP_REUSEADDR)) != 0)
         {
             return ret;
         }
 
-        return _ev_udp_setmembership4_unix(udp, addr_4, interface_addr, membership);
+        return _ev_udp_setmembership4_unix(udp, addr_4, interface_addr,
+                                           membership);
     }
 
-    struct sockaddr_in6* addr_6 = (struct sockaddr_in6*)&addr;
+    struct sockaddr_in6 *addr_6 = (struct sockaddr_in6 *)&addr;
     memset(addr_6, 0, sizeof(*addr_6));
 
     if (ev_ipv6_addr(multicast_addr, 0, addr_6) == 0)
     {
-        if ((ret = _ev_udp_maybe_deferred_bind_unix(udp, AF_INET6, EV_UDP_REUSEADDR)) != 0)
+        if ((ret = _ev_udp_maybe_deferred_bind_unix(udp, AF_INET6,
+                                                    EV_UDP_REUSEADDR)) != 0)
         {
             return ret;
         }
 
-        return _ev_udp_setmembership6_unix(udp, addr_6, interface_addr, membership);
+        return _ev_udp_setmembership6_unix(udp, addr_6, interface_addr,
+                                           membership);
     }
 
     return EV_EINVAL;
 }
 
-int ev_udp_set_source_membership(ev_udp_t* udp, const char* multicast_addr,
-    const char* interface_addr, const char* source_addr, ev_udp_membership_t membership)
+int ev_udp_set_source_membership(ev_udp_t *udp, const char *multicast_addr,
+                                 const char         *interface_addr,
+                                 const char         *source_addr,
+                                 ev_udp_membership_t membership)
 {
-    int ret;
+    int                     ret;
     struct sockaddr_storage mcast_addr;
     struct sockaddr_storage src_addr;
 
@@ -844,59 +896,64 @@ int ev_udp_set_source_membership(ev_udp_t* udp, const char* multicast_addr,
         return EV_EINVAL;
     }
 
-    struct sockaddr_in* mcast_addr_4 = (struct sockaddr_in*)&mcast_addr;
+    struct sockaddr_in *mcast_addr_4 = (struct sockaddr_in *)&mcast_addr;
     if ((ret = ev_ipv4_addr(multicast_addr, 0, mcast_addr_4)) == 0)
     {
-        struct sockaddr_in* src_addr_4 = (struct sockaddr_in*)&src_addr;
+        struct sockaddr_in *src_addr_4 = (struct sockaddr_in *)&src_addr;
         if ((ret = ev_ipv4_addr(source_addr, 0, src_addr_4)) != 0)
         {
             return ret;
         }
 
-        return _ev_udp_set_source_membership4_unix(udp, mcast_addr_4, interface_addr, src_addr_4, membership);
+        return _ev_udp_set_source_membership4_unix(
+            udp, mcast_addr_4, interface_addr, src_addr_4, membership);
     }
 
-    struct sockaddr_in6* mcast_addr_6 = (struct sockaddr_in6*)&mcast_addr;
+    struct sockaddr_in6 *mcast_addr_6 = (struct sockaddr_in6 *)&mcast_addr;
     if ((ret = ev_ipv6_addr(multicast_addr, 0, mcast_addr_6)) == 0)
     {
-        struct sockaddr_in6* src_addr_6 = (struct sockaddr_in6*)&src_addr;
+        struct sockaddr_in6 *src_addr_6 = (struct sockaddr_in6 *)&src_addr;
         if ((ret = ev_ipv6_addr(source_addr, 0, src_addr_6)) != 0)
         {
             return ret;
         }
 
-        return _ev_udp_set_source_membership6_unix(udp, mcast_addr_6, interface_addr, src_addr_6, membership);
+        return _ev_udp_set_source_membership6_unix(
+            udp, mcast_addr_6, interface_addr, src_addr_6, membership);
     }
 
     return ret;
 }
 
-int ev_udp_set_multicast_loop(ev_udp_t* udp, int on)
+int ev_udp_set_multicast_loop(ev_udp_t *udp, int on)
 {
-    return _ev_udp_set_ttl_unix(udp, on, IP_MULTICAST_LOOP, IPV6_MULTICAST_LOOP);
+    return _ev_udp_set_ttl_unix(udp, on, IP_MULTICAST_LOOP,
+                                IPV6_MULTICAST_LOOP);
 }
 
-int ev_udp_set_multicast_ttl(ev_udp_t* udp, int ttl)
+int ev_udp_set_multicast_ttl(ev_udp_t *udp, int ttl)
 {
-    return _ev_udp_set_ttl_unix(udp, ttl, IP_MULTICAST_TTL, IPV6_MULTICAST_HOPS);
+    return _ev_udp_set_ttl_unix(udp, ttl, IP_MULTICAST_TTL,
+                                IPV6_MULTICAST_HOPS);
 }
 
-int ev_udp_set_multicast_interface(ev_udp_t* udp, const char* interface_addr)
+int ev_udp_set_multicast_interface(ev_udp_t *udp, const char *interface_addr)
 {
-    int ret;
+    int                     ret;
     struct sockaddr_storage addr_st;
-    struct sockaddr_in* addr_4 = (struct sockaddr_in*)&addr_st;
-    struct sockaddr_in6* addr_6 = (struct sockaddr_in6*)&addr_st;
+    struct sockaddr_in     *addr_4 = (struct sockaddr_in *)&addr_st;
+    struct sockaddr_in6    *addr_6 = (struct sockaddr_in6 *)&addr_st;
 
     int is_ipv6 = udp->base.data.flags & EV_HANDLE_UDP_IPV6;
-    if ((ret = ev__udp_interface_addr_to_sockaddr(&addr_st, interface_addr, is_ipv6)) != 0)
+    if ((ret = ev__udp_interface_addr_to_sockaddr(&addr_st, interface_addr,
+                                                  is_ipv6)) != 0)
     {
         return ret;
     }
 
-    int level;
-    int optname;
-    void* optval;
+    int       level;
+    int       optname;
+    void     *optval;
     socklen_t optlen;
 
     if (addr_st.ss_family == AF_INET)
@@ -906,7 +963,7 @@ int ev_udp_set_multicast_interface(ev_udp_t* udp, const char* interface_addr)
         optval = &addr_4->sin_addr;
         optlen = sizeof(addr_4->sin_addr);
     }
-    else if(addr_st.ss_family == AF_INET6)
+    else if (addr_st.ss_family == AF_INET6)
     {
         level = IPPROTO_IPV6;
         optname = IPV6_MULTICAST_IF;
@@ -927,7 +984,7 @@ int ev_udp_set_multicast_interface(ev_udp_t* udp, const char* interface_addr)
     return 0;
 }
 
-int ev_udp_set_broadcast(ev_udp_t* udp, int on)
+int ev_udp_set_broadcast(ev_udp_t *udp, int on)
 {
     int err;
     if (setsockopt(udp->sock, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on)) != 0)
@@ -939,7 +996,7 @@ int ev_udp_set_broadcast(ev_udp_t* udp, int on)
     return 0;
 }
 
-int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
+int ev_udp_set_ttl(ev_udp_t *udp, int ttl)
 {
     if (ttl < 1 || ttl > 255)
     {

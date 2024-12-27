@@ -1,5 +1,10 @@
 #ifndef __TEST_H__
 #define __TEST_H__
+
+#if defined(_WIN32)
+#define strdup(s) _strdup(s)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -85,8 +90,6 @@ typedef struct test_execute_token
  * @brief Hook for tests.
  */
 TEST_EXPOSE_API extern cutest_hook_t test_hook;
-
-extern ev_loop_t empty_loop;
 
 int test_thread_execute(test_execute_token_t* token, fn_execute callback);
 

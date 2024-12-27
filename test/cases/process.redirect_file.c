@@ -19,12 +19,11 @@ TEST_FIXTURE_SETUP(process)
     ev_fs_remove(NULL, NULL, TEST_PROCESS_TMPFILE_PATH, 1, NULL);
     memset(&g_test_process, 0, sizeof(g_test_process));
 
-    g_test_process.loop = ev_calloc(1, sizeof(ev_loop_t));
-    ASSERT_EQ_INT(ev_loop_init(g_test_process.loop), 0);
+    ASSERT_EQ_INT(ev_loop_init(&g_test_process.loop), 0);
 
     g_test_process.file = ev_calloc(1, sizeof(ev_file_t));
 
-    g_test_process.self_exe_path = mmc_strdup(test_get_self_exe());
+    g_test_process.self_exe_path = strdup(test_get_self_exe());
     g_test_process.process = ev_calloc(1, sizeof(ev_process_t));
 }
 
@@ -40,13 +39,12 @@ TEST_FIXTURE_TEARDOWN(process)
     }
 
     ev_loop_exit(g_test_process.loop);
-    ev_free(g_test_process.loop);
     g_test_process.loop = NULL;
 
     ev_free(g_test_process.process);
     g_test_process.process = NULL;
 
-    ev_free(g_test_process.self_exe_path);
+    free(g_test_process.self_exe_path);
     g_test_process.self_exe_path = NULL;
 
     ev_fs_remove(NULL, NULL, TEST_PROCESS_TMPFILE_PATH, 1, NULL);

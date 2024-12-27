@@ -1,8 +1,6 @@
 #include "ev.h"
 #include "file.h"
-#include "config.h"
-#include "cutest.h"
-#include "memcheck.h"
+#include "test.h"
 #include <stdio.h>
 #include <errno.h>
 #include <assert.h>
@@ -13,6 +11,7 @@
 #else
 #   include <unistd.h>
 #   include <dirent.h>
+#   include <stdlib.h>
 #endif
 
 typedef struct test_file_ctx
@@ -178,11 +177,11 @@ char* file_parrent_dir(const char* path)
 
     if (last_slash == NULL)
     {
-        return mmc_strdup("");
+        return strdup("");
     }
 
     size_t str_size = last_slash - path;
-    char* buffer = ev_malloc(str_size + 1);
+    char* buffer = malloc(str_size + 1);
     ASSERT_NE_PTR(buffer, NULL);
 
     memcpy(buffer, path, str_size);

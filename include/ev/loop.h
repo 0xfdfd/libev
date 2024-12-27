@@ -104,74 +104,11 @@ typedef struct ev_loop ev_loop_t;
 typedef int (*ev_walk_cb)(ev_handle_t* handle, void* arg);
 
 /**
- * @brief Event loop type.
- */
-struct ev_loop
-{
-    uint64_t                        hwtime;             /**< A fast clock time in milliseconds */
-
-    struct
-    {
-        ev_list_t                   idle_list;          /**< (#ev_handle::node) All idle handles */
-        ev_list_t                   active_list;        /**< (#ev_handle::node) All active handles */
-    }handles;                                           /**< table for handles */
-
-    ev_list_t                       backlog_queue;      /**< Backlog queue */
-    ev_list_t                       endgame_queue;      /**< Close queue */
-
-    /**
-     * @brief Timer context
-     */
-    struct
-    {
-        ev_map_t                    heap;               /**< #ev_timer_t::node. Timer heap */
-    }timer;
-
-    struct
-    {
-        struct ev_threadpool*       pool;               /**< Thread pool */
-        ev_list_node_t              node;               /**< node for #ev_threadpool_t::loop_table */
-
-        ev_mutex_t                  mutex;              /**< Work queue lock */
-        ev_list_t                   work_queue;         /**< Work queue */
-    } threadpool;
-
-    struct
-    {
-        unsigned                    b_stop : 1;         /**< Flag: need to stop */
-    }mask;
-
-    EV_LOOP_BACKEND                 backend;            /**< Platform related implementation */
-};
-
-/**
- * @brief Static initializer for #ev_loop_t.
- * @note A static initialized #ev_loop_t is not a workable event loop, please
- *   initialize with #ev_loop_init().
- */
-#define EV_LOOP_INVALID        \
-    {\
-        0,                                      /* .hwtime */\
-        { EV_LIST_INIT, EV_LIST_INIT },         /* .handles */\
-        EV_LIST_INIT,                           /* .backlog_queue */\
-        EV_LIST_INIT,                           /* .endgame_queue */\
-        { EV_MAP_INIT(NULL, NULL) },            /* .timer */ \
-        {/* .threadpool */\
-            NULL,                               /* .pool */\
-            EV_LIST_NODE_INIT,                  /* .node */\
-            EV_MUTEX_INVALID,                   /* .mutex */\
-            EV_LIST_INIT,                       /* .work_queue */\
-        },\
-        { 0 },                                  /* .mask */\
-        EV_LOOP_PLT_INIT,                       /* .backend */\
-    }
-
-/**
  * @brief Initializes the given structure.
  * @param[out] loop     Event loop handler
  * @return              #ev_errno_t
  */
-EV_API int ev_loop_init(ev_loop_t* loop);
+EV_API int ev_loop_init(ev_loop_t** loop);
 
 /**
  * @brief Releases all internal loop resources.

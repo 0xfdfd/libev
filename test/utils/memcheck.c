@@ -220,17 +220,6 @@ static void* mmc_realloc(void* ptr, size_t size)
     return dst_memblock != new_memblock ? NULL : dst_memblock;
 }
 
-char* mmc_strdup(const char* str)
-{
-    size_t len = strlen(str) + 1;
-    char* m = mmc_malloc(len);
-    if (m == NULL)
-    {
-        return NULL;
-    }
-    return memcpy(m, str, len);
-}
-
 static void _mmc_dump_add_snapshot(mmc_info_t* info, mmc_snapshot_t* snapshot)
 {
     ev_mutex_enter(&snapshot->guard);

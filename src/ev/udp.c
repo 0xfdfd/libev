@@ -1,10 +1,11 @@
 #include <string.h>
 
-EV_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
-    const char* interface_addr, int is_ipv6)
+EV_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage *dst,
+                                                const char *interface_addr,
+                                                int         is_ipv6)
 {
-    struct sockaddr_in* addr_4 = (struct sockaddr_in*)dst;
-    struct sockaddr_in6* addr_6 = (struct sockaddr_in6*)dst;
+    struct sockaddr_in  *addr_4 = (struct sockaddr_in *)dst;
+    struct sockaddr_in6 *addr_6 = (struct sockaddr_in6 *)dst;
 
     if (interface_addr == NULL)
     {
@@ -36,18 +37,19 @@ EV_LOCAL int ev__udp_interface_addr_to_sockaddr(struct sockaddr_storage* dst,
     return 0;
 }
 
-int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
-    const struct sockaddr* addr, ev_udp_write_cb cb)
+int ev_udp_try_send(ev_udp_t *udp, ev_buf_t *bufs, size_t nbuf,
+                    const struct sockaddr *addr, ev_udp_write_cb cb, void *arg)
 {
     if (ev_list_size(&udp->send_list) != 0)
     {
         return EV_EAGAIN;
     }
 
-    return ev_udp_send(udp, req, bufs, nbuf, addr, cb);
+    return ev_udp_send(udp, bufs, nbuf, addr, cb, arg);
 }
 
-int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf, ev_udp_recv_cb cb)
+int ev_udp_recv(ev_udp_t *udp, ev_buf_t *bufs, size_t nbuf, ev_udp_recv_cb cb,
+                void *arg)
 {
     int ret;
     if (udp->sock == EV_OS_SOCKET_INVALID)
@@ -55,7 +57,14 @@ int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf, 
         return EV_EPIPE;
     }
 
+    ev_udp_read_t *req = ev_malloc(sizeof(ev_udp_read_t));
+    if (req == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
     req->usr_cb = cb;
+    req->usr_cb_arg = arg;
     ev__handle_init(udp->base.loop, &req->handle, EV_ROLE_EV_REQ_UDP_R);
 
     if ((ret = ev__read_init(&req->base, bufs, nbuf)) != 0)
@@ -75,15 +84,22 @@ int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs, size_t nbuf, 
 
 err:
     ev__handle_exit(&req->handle, NULL);
+    ev_free(req);
     return ret;
 }
 
-int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs, size_t nbuf,
-    const struct sockaddr* addr, ev_udp_write_cb cb)
+int ev_udp_send(ev_udp_t *udp, ev_buf_t *bufs, size_t nbuf,
+                const struct sockaddr *addr, ev_udp_write_cb cb, void *arg)
 {
-    int ret;
+    int             ret;
+    ev_udp_write_t *req = ev_malloc(sizeof(ev_udp_write_t));
+    if (req == NULL)
+    {
+        return EV_ENOMEM;
+    }
 
     req->usr_cb = cb;
+    req->usr_cb_arg = arg;
     ev__handle_init(udp->base.loop, &req->handle, EV_ROLE_EV_REQ_UDP_W);
 
     if ((ret = ev__write_init(&req->base, bufs, nbuf)) != 0)
@@ -105,5 +121,6 @@ err_cleanup_write:
     ev__write_exit(&req->base);
 err:
     ev__handle_exit(&req->handle, NULL);
+    ev_free(req);
     return ret;
 }

@@ -8,7 +8,6 @@ add_library(ev_test_lib SHARED
     "test/cases/fs_seek.c"
     "test/cases/ipv4_addr.c"
     "test/cases/list.c"
-    "test/cases/loop_empty.c"
     "test/cases/misc_page_size.c"
     "test/cases/misc_random.c"
     "test/cases/mutex.c"
@@ -46,7 +45,6 @@ add_library(ev_test_lib SHARED
     "test/tools/pwd.c"
     "test/tools/tabcheck.c"
     "test/type/__init__.c"
-    "test/type/ev_loop_t.c"
     "test/type/ssize_t.c"
     "test/utils/config.c"
     "test/utils/file.c"
@@ -115,18 +113,9 @@ if(EV_HAVE_COVERAGE)
     )
 endif()
 
-add_custom_target(ev_test_valgrind
-    COMMAND valgrind
-            --trace-children=yes
-            --track-fds=yes
-            --leak-check=full
-            --show-leak-kinds=all
-            $<TARGET_FILE:ev_test>
-)
-
-add_custom_target(ev_test_drmemory
-    COMMAND drmemory
-            -show_reachable
-            -logdir $<TARGET_FILE_DIR:ev_test>
-            $<TARGET_FILE:ev_test>
-)
+if (EV_ASAN)
+    target_compile_options(ev_test_lib PRIVATE -fsanitize=address -DTEST_NO_MMC)
+    target_compile_options(ev_test PRIVATE -fsanitize=address -DTEST_NO_MMC)
+    target_link_options(ev_test_lib PRIVATE -fsanitize=address)
+    target_link_options(ev_test PRIVATE -fsanitize=address)
+endif()

@@ -12,110 +12,57 @@ extern "C" {
 /**
  * @brief Multicast operation.
  */
-enum ev_udp_membership
+typedef enum ev_udp_membership
 {
-    EV_UDP_LEAVE_GROUP  = 0,    /**< Leave multicast group */
-    EV_UDP_ENTER_GROUP  = 1,    /**< Join multicast group */
-};
-
-/**
- * @brief Typedef of #ev_udp_membership.
- */
-typedef enum ev_udp_membership ev_udp_membership_t;
+    EV_UDP_LEAVE_GROUP = 0, /**< Leave multicast group */
+    EV_UDP_ENTER_GROUP = 1, /**< Join multicast group */
+} ev_udp_membership_t;
 
 /**
  * @brief UDP socket flags.
  */
-enum ev_udp_flags
+typedef enum ev_udp_flags
 {
-    EV_UDP_IPV6_ONLY    = 1,    /**< Do not bound to IPv4 address */
-    EV_UDP_REUSEADDR    = 2,    /**< Reuse address. Only the last one can receive message. */
-};
+    /**
+     * @brief Do not bound to IPv4 address.
+     */
+    EV_UDP_IPV6_ONLY = 1,
 
-/**
- * @brief Typedef of #ev_udp_flags.
- */
-typedef enum ev_udp_flags ev_udp_flags_t;
-
-struct ev_udp;
-
-/**
- * @brief Typedef of #ev_udp.
- */
-typedef struct ev_udp ev_udp_t;
-
-struct ev_udp_write;
-
-/**
- * @brief Typedef of #ev_udp_write.
- */
-typedef struct ev_udp_write ev_udp_write_t;
-
-struct ev_udp_read;
-
-/**
- * @brief Typedef of #ev_udp_read.
- */
-typedef struct ev_udp_read ev_udp_read_t;
-
-/**
- * @brief Callback for #ev_udp_t
- * @param[in] udp   UDP handle
- */
-typedef void (*ev_udp_cb)(ev_udp_t* udp);
-
-/**
- * @brief Write callback
- * @param[in] req       Write request.
- * @param[in] size      Write result.
- */
-typedef void (*ev_udp_write_cb)(ev_udp_write_t* req, ssize_t size);
-
-/**
- * @brief Read callback
- * @param[in] req       Read callback.
- * @param[in] addr      Peer address.
- * @param[in] size      Read result.
- */
-typedef void (*ev_udp_recv_cb)(ev_udp_read_t* req, const struct sockaddr* addr, ssize_t size);
+    /**
+     * @brief Reuse address. Only the last one can receive message.
+     */
+    EV_UDP_REUSEADDR = 2,
+} ev_udp_flags_t;
 
 /**
  * @brief UDP socket type.
  */
-struct ev_udp
-{
-    ev_handle_t             base;               /**< Base object */
-    ev_udp_cb               close_cb;           /**< Close callback */
-    ev_os_socket_t          sock;               /**< OS socket */
-
-    ev_list_t               send_list;          /**< Send queue */
-    ev_list_t               recv_list;          /**< Recv queue */
-
-    EV_UDP_BACKEND          backend;            /**< Platform related implementation */
-};
+typedef struct ev_udp ev_udp_t;
 
 /**
- * @brief Write request token for UDP socket.
+ * @brief Callback for #ev_udp_t
+ * @param[in] udp   UDP handle
+ * @param[in] arg   User defined argument.
  */
-struct ev_udp_write
-{
-    ev_handle_t             handle;             /**< Base object */
-    ev_write_t              base;               /**< Base request */
-    ev_udp_write_cb         usr_cb;             /**< User callback */
-    EV_UDP_WRITE_BACKEND    backend;            /**< Backend */
-};
+typedef void (*ev_udp_cb)(ev_udp_t *udp, void *arg);
 
 /**
- * @brief Read request token for UDP socket.
+ * @brief Write callback
+ * @param[in] udp       UDP socket.
+ * @param[in] size      Write result.
+ * @param[in] arg       User defined argument.
  */
-struct ev_udp_read
-{
-    ev_handle_t             handle;             /**< Base object */
-    ev_read_t               base;               /**< Base request */
-    ev_udp_recv_cb          usr_cb;             /**< User callback */
-    struct sockaddr_storage addr;               /**< Peer address */
-    EV_UDP_READ_BACKEND     backend;            /**< Backend */
-};
+typedef void (*ev_udp_write_cb)(ev_udp_t *udp, ssize_t size, void *arg);
+
+/**
+ * @brief Read callback
+ * @param[in] udp       UDP socket.
+ * @param[in] addr      Peer address.
+ * @param[in] size      Read result.
+ * @param[in] arg       User defined argument.
+ */
+typedef void (*ev_udp_recv_cb)(ev_udp_t *udp, const struct sockaddr *addr,
+                               ssize_t size, void *arg);
 
 /**
  * @brief Initialize a UDP handle.
@@ -124,14 +71,15 @@ struct ev_udp_read
  * @param[in] domain    AF_INET / AF_INET6 / AF_UNSPEC
  * @return              #ev_errno_t
  */
-EV_API int ev_udp_init(ev_loop_t* loop, ev_udp_t* udp, int domain);
+EV_API int ev_udp_init(ev_loop_t *loop, ev_udp_t **udp, int domain);
 
 /**
  * @brief Close UDP handle
  * @param[in] udp       A UDP handle
  * @param[in] close_cb  Close callback
+ * @param[in] close_arg User defined argument.
  */
-EV_API void ev_udp_exit(ev_udp_t* udp, ev_udp_cb close_cb);
+EV_API void ev_udp_exit(ev_udp_t *udp, ev_udp_cb close_cb, void *close_arg);
 
 /**
  * @brief Open a existing UDP socket
@@ -140,7 +88,7 @@ EV_API void ev_udp_exit(ev_udp_t* udp, ev_udp_cb close_cb);
  * @param[in] sock      A system UDP socket
  * @return              #ev_errno_t
  */
-EV_API int ev_udp_open(ev_udp_t* udp, ev_os_socket_t sock);
+EV_API int ev_udp_open(ev_udp_t *udp, ev_os_socket_t sock);
 
 /**
  * @brief Bind the UDP handle to an IP address and port.
@@ -150,38 +98,43 @@ EV_API int ev_udp_open(ev_udp_t* udp, ev_os_socket_t sock);
  * @param[in] flags     #ev_udp_flags_t
  * @return              #ev_errno_t
  */
-EV_API int ev_udp_bind(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags);
+EV_API int ev_udp_bind(ev_udp_t *udp, const struct sockaddr *addr,
+                       unsigned flags);
 
 /**
- * @brief Associate the UDP handle to a remote address and port, so every message
- *   sent by this handle is automatically sent to that destination.
+ * @brief Associate the UDP handle to a remote address and port, so every
+ * message sent by this handle is automatically sent to that destination.
  * @param[in] udp       A UDP handle
  * @param[in] addr      Remote address
  * @return              #ev_errno_t
  */
-EV_API int ev_udp_connect(ev_udp_t* udp, const struct sockaddr* addr);
+EV_API int ev_udp_connect(ev_udp_t *udp, const struct sockaddr *addr);
 
 /**
  * @brief Get the local IP and port of the UDP handle.
  * @param[in] udp       A UDP handle
- * @param[out] name     Pointer to the structure to be filled with the address data.
- *   In order to support IPv4 and IPv6 struct sockaddr_storage should be used.
+ * @param[out] name     Pointer to the structure to be filled with the address
+ * data. In order to support IPv4 and IPv6 struct sockaddr_storage should be
+ * used.
  * @param[in,out] len   On input it indicates the data of the name field.
  *   On output it indicates how much of it was filled.
  * @return              #ev_errno_t
  */
-EV_API int ev_udp_getsockname(ev_udp_t* udp, struct sockaddr* name, size_t* len);
+EV_API int ev_udp_getsockname(ev_udp_t *udp, struct sockaddr *name,
+                              size_t *len);
 
 /**
  * @brief Get the remote IP and port of the UDP handle on connected UDP handles.
  * @param[in] udp       A UDP handle
- * @param[out] name     Pointer to the structure to be filled with the address data.
- *   In order to support IPv4 and IPv6 struct sockaddr_storage should be used.
+ * @param[out] name     Pointer to the structure to be filled with the address
+ * data. In order to support IPv4 and IPv6 struct sockaddr_storage should be
+ * used.
  * @param[in,out] len   On input it indicates the data of the name field.
  *   On output it indicates how much of it was filled.
  * @return              #ev_errno_t
  */
-EV_API int ev_udp_getpeername(ev_udp_t* udp, struct sockaddr* name, size_t* len);
+EV_API int ev_udp_getpeername(ev_udp_t *udp, struct sockaddr *name,
+                              size_t *len);
 
 /**
  * @brief Set membership for a multicast address.
@@ -191,8 +144,9 @@ EV_API int ev_udp_getpeername(ev_udp_t* udp, struct sockaddr* name, size_t* len)
  * @param[in] membership        #ev_udp_membership_t
  * @return                      #ev_errno_t
  */
-EV_API int ev_udp_set_membership(ev_udp_t* udp, const char* multicast_addr,
-    const char* interface_addr, ev_udp_membership_t membership);
+EV_API int ev_udp_set_membership(ev_udp_t *udp, const char *multicast_addr,
+                                 const char         *interface_addr,
+                                 ev_udp_membership_t membership);
 
 /**
  * @brief Set membership for a source-specific multicast group.
@@ -203,16 +157,20 @@ EV_API int ev_udp_set_membership(ev_udp_t* udp, const char* multicast_addr,
  * @param[in] membership        #ev_udp_membership_t
  * @return                      #ev_errno_t
  */
-EV_API int ev_udp_set_source_membership(ev_udp_t* udp, const char* multicast_addr,
-    const char* interface_addr, const char* source_addr, ev_udp_membership_t membership);
+EV_API int ev_udp_set_source_membership(ev_udp_t           *udp,
+                                        const char         *multicast_addr,
+                                        const char         *interface_addr,
+                                        const char         *source_addr,
+                                        ev_udp_membership_t membership);
 
 /**
- * @brief Set IP multicast loop flag. Makes multicast packets loop back to local sockets.
+ * @brief Set IP multicast loop flag. Makes multicast packets loop back to local
+ * sockets.
  * @param[in] udp   A UDP handle
  * @param[in] on    bool
  * @return          #ev_errno_t
  */
-EV_API int ev_udp_set_multicast_loop(ev_udp_t* udp, int on);
+EV_API int ev_udp_set_multicast_loop(ev_udp_t *udp, int on);
 
 /**
  * @brief Set the multicast ttl.
@@ -220,7 +178,7 @@ EV_API int ev_udp_set_multicast_loop(ev_udp_t* udp, int on);
  * @param[in] ttl   1 through 255
  * @return          #ev_errno_t
  */
-EV_API int ev_udp_set_multicast_ttl(ev_udp_t* udp, int ttl);
+EV_API int ev_udp_set_multicast_ttl(ev_udp_t *udp, int ttl);
 
 /**
  * @brief Set the multicast interface to send or receive data on.
@@ -228,7 +186,8 @@ EV_API int ev_udp_set_multicast_ttl(ev_udp_t* udp, int ttl);
  * @param[in] interface_addr    interface address.
  * @return                      #ev_errno_t
  */
-EV_API int ev_udp_set_multicast_interface(ev_udp_t* udp, const char* interface_addr);
+EV_API int ev_udp_set_multicast_interface(ev_udp_t   *udp,
+                                          const char *interface_addr);
 
 /**
  * @brief Set broadcast on or off.
@@ -236,7 +195,7 @@ EV_API int ev_udp_set_multicast_interface(ev_udp_t* udp, const char* interface_a
  * @param[in] on    1 for on, 0 for off
  * @return          #ev_errno_t
  */
-EV_API int ev_udp_set_broadcast(ev_udp_t* udp, int on);
+EV_API int ev_udp_set_broadcast(ev_udp_t *udp, int on);
 
 /**
  * @brief Set the time to live.
@@ -244,50 +203,53 @@ EV_API int ev_udp_set_broadcast(ev_udp_t* udp, int on);
  * @param[in] ttl   1 through 255.
  * @return          #ev_errno_t
  */
-EV_API int ev_udp_set_ttl(ev_udp_t* udp, int ttl);
+EV_API int ev_udp_set_ttl(ev_udp_t *udp, int ttl);
 
 /**
  * @brief Send data over the UDP socket.
  *
- * If the socket has not previously been bound with #ev_udp_bind() it will be bound
- * to 0.0.0.0 (the "all interfaces" IPv4 address) and a random port number.
+ * If the socket has not previously been bound with #ev_udp_bind() it will be
+ * bound to 0.0.0.0 (the "all interfaces" IPv4 address) and a random port
+ * number.
  *
  * @param[in] udp   A UDP handle
- * @param[in] req   Write request token
  * @param[in] bufs  Buffer list
  * @param[in] nbuf  Buffer number
  * @param[in] addr  Peer address
  * @param[in] cb    Send result callback
+ * @param[in] arg   User defined argument.
  * @return          #ev_errno_t
  */
-EV_API int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs,
-    size_t nbuf, const struct sockaddr* addr, ev_udp_write_cb cb);
+EV_API int ev_udp_send(ev_udp_t *udp, ev_buf_t *bufs, size_t nbuf,
+                       const struct sockaddr *addr, ev_udp_write_cb cb,
+                       void *arg);
 
 /**
  * @brief Same as #ev_udp_send(), but won't queue a send request if it can't be
  *   completed immediately.
  * @param[in] udp   A UDP handle
- * @param[in] req   Write request token
  * @param[in] bufs  Buffer list
  * @param[in] nbuf  Buffer number
  * @param[in] addr  Peer address
  * @param[in] cb    Send result callback
+ * @param[in] arg   User defined argument.
  * @return          #ev_errno_t
  */
-EV_API int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs,
-    size_t nbuf, const struct sockaddr* addr, ev_udp_write_cb cb);
+EV_API int ev_udp_try_send(ev_udp_t *udp, ev_buf_t *bufs, size_t nbuf,
+                           const struct sockaddr *addr, ev_udp_write_cb cb,
+                           void *arg);
 
 /**
  * @brief Queue a read request.
  * @param[in] udp   A UDP handle
- * @param[in] req   Read request token
  * @param[in] bufs  Receive buffer
  * @param[in] nbuf  Buffer number
  * @param[in] cb    Receive callback
+ * @param[in] arg   User defined argument.
  * @return          #ev_errno_t
  */
-EV_API int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs,
-    size_t nbuf, ev_udp_recv_cb cb);
+EV_API int ev_udp_recv(ev_udp_t *udp, ev_buf_t *bufs, size_t nbuf,
+                       ev_udp_recv_cb cb, void *arg);
 
 /**
  * @} EV_UDP

@@ -170,7 +170,7 @@ struct ev_process_s
     ev_os_pid_t                     pid;            /**< Process ID */
     ev_process_exit_status_t        exit_status;    /**< Exit status */
     int                             exit_code;      /**< Exit code or termainl signal  */
-    ev_async_t                      sigchld;        /**< SIGCHLD notifier */
+    ev_async_t*                     sigchld;        /**< SIGCHLD notifier */
 
     EV_PROCESS_BACKEND              backend;
 };

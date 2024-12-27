@@ -8,6 +8,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/third_party/cmake-modules")
 option(EV_ENABLE_COVERAGE "Enable code coverage. GCC/Clang only" OFF)
 option(EV_DEV "Enable develop mode." OFF)
 option(EV_LINENO "Enable line control when generate code" OFF)
+option(EV_ASAN "Enable address sanitizer" OFF)
 
 ###############################################################################
 # Support functions
@@ -99,6 +100,11 @@ if (EV_ENABLE_COVERAGE AND CMAKE_C_COMPILER_ID MATCHES "(GNU|Clang)")
     target_compile_options(${PROJECT_NAME} PRIVATE -fprofile-arcs -ftest-coverage)
     set(EV_HAVE_COVERAGE true)
 endif ()
+
+if (EV_ASAN)
+    target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
+    target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address)
+endif()
 
 ###############################################################################
 # Build examples

@@ -264,47 +264,6 @@ struct ev_iocp
     }
 
 /**
- * @brief Windows backend for #ev_tcp_t.
- */
-#define EV_TCP_BACKEND  \
-    struct ev_tcp_backend {\
-        int                         af;                 /**< AF_INET / AF_INET6 */\
-        ev_iocp_t                   io;                 /**< IOCP */\
-        struct {\
-            unsigned                todo_pending : 1;   /**< Already submit todo request */\
-        }mask;\
-        union {\
-            struct {\
-                ev_list_t           a_queue;            /**< (#ev_tcp_backend::u::accept::node) Accept queue */\
-                ev_list_t           a_queue_done;       /**< (#ev_tcp_backend::u::accept::node) Accept done queue */\
-            }listen;\
-            struct {\
-                ev_tcp_accept_cb    cb;                 /**< Accept callback */\
-                ev_list_node_t      node;               /**< (#ev_tcp_backend::u::listen) Accept queue node */\
-                ev_tcp_t*           listen;             /**< Listen socket */\
-                int                 stat;               /**< Accept result */\
-                /**\
-                 * lpOutputBuffer for AcceptEx.\
-                 * dwLocalAddressLength and dwRemoteAddressLength require 16 bytes\
-                 * more than the maximum address length for the transport protocol.\
-                 */\
-                char                buffer[(sizeof(struct sockaddr_storage) + 16) * 2];\
-            }accept;\
-            struct {\
-                ev_tcp_connect_cb   cb;                 /**< Callback */\
-                LPFN_CONNECTEX      fn_connectex;       /**< ConnectEx */\
-                int                 stat;               /**< Connect result */\
-            }client;\
-            struct {\
-                ev_list_t           w_queue;            /**< (#ev_write_t::node) Write queue */\
-                ev_list_t           w_queue_done;       /**< (#ev_write_t::node) Write done queue */\
-                ev_list_t           r_queue;            /**< (#ev_read_t::node) Read queue */\
-                ev_list_t           r_queue_done;       /**< (#ev_read_t::node) Read done queue */\
-            }stream;\
-        }u;\
-    }
-
-/**
  * @brief Initialize #EV_TCP_BACKEND to Windows specific invalid value.
  */
 #define EV_TCP_BACKEND_INIT     \
@@ -407,7 +366,6 @@ typedef struct ev_pipe_win_ipc_info
 
 #define EV_PIPE_BACKEND \
     union ev_pipe_backend {\
-        int                                 _useless;           /**< For static initializer */\
         struct {\
             struct {\
                 ev_iocp_t                   io;                 /**< IOCP backend */\

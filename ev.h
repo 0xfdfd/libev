@@ -312,7 +312,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.h
 // SIZE:    1020
-// SHA-256: 13a89b2f24a7d0b3ead2bb11c3b7c5b50267067a42a0ace8123bd789496876e3
+// SHA-256: d305de0458fd00e9caef834cb7f503cb0c02421e84bf48ebb35a6d54b4b402f8
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/version.h"
 #ifndef __EV_VERSION_H__
@@ -329,7 +329,7 @@ extern "C" {
 /**
  * @brief Major version.
  */
-#define EV_VERSION_MAJOR            1
+#define EV_VERSION_MAJOR            2
 
 /**
  * @brief Minor version.
@@ -1388,8 +1388,8 @@ EV_API ev_queue_node_t* ev_queue_next(ev_queue_node_t* head, ev_queue_node_t* no
 #if defined(_WIN32)
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win.h
-// SIZE:    15962
-// SHA-256: 6a4d28aa70d26fde676900ab52dc0b0ec1fa430dc23f30c7bc95fac97054e74b
+// SIZE:    13714
+// SHA-256: 5491408f80ce0903c13b469cded66c4cf1651bab256ef0d515a8c90122a464d9
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win.h"
 /**
@@ -1658,47 +1658,6 @@ struct ev_iocp
     }
 
 /**
- * @brief Windows backend for #ev_tcp_t.
- */
-#define EV_TCP_BACKEND  \
-    struct ev_tcp_backend {\
-        int                         af;                 /**< AF_INET / AF_INET6 */\
-        ev_iocp_t                   io;                 /**< IOCP */\
-        struct {\
-            unsigned                todo_pending : 1;   /**< Already submit todo request */\
-        }mask;\
-        union {\
-            struct {\
-                ev_list_t           a_queue;            /**< (#ev_tcp_backend::u::accept::node) Accept queue */\
-                ev_list_t           a_queue_done;       /**< (#ev_tcp_backend::u::accept::node) Accept done queue */\
-            }listen;\
-            struct {\
-                ev_tcp_accept_cb    cb;                 /**< Accept callback */\
-                ev_list_node_t      node;               /**< (#ev_tcp_backend::u::listen) Accept queue node */\
-                ev_tcp_t*           listen;             /**< Listen socket */\
-                int                 stat;               /**< Accept result */\
-                /**\
-                 * lpOutputBuffer for AcceptEx.\
-                 * dwLocalAddressLength and dwRemoteAddressLength require 16 bytes\
-                 * more than the maximum address length for the transport protocol.\
-                 */\
-                char                buffer[(sizeof(struct sockaddr_storage) + 16) * 2];\
-            }accept;\
-            struct {\
-                ev_tcp_connect_cb   cb;                 /**< Callback */\
-                LPFN_CONNECTEX      fn_connectex;       /**< ConnectEx */\
-                int                 stat;               /**< Connect result */\
-            }client;\
-            struct {\
-                ev_list_t           w_queue;            /**< (#ev_write_t::node) Write queue */\
-                ev_list_t           w_queue_done;       /**< (#ev_write_t::node) Write done queue */\
-                ev_list_t           r_queue;            /**< (#ev_read_t::node) Read queue */\
-                ev_list_t           r_queue_done;       /**< (#ev_read_t::node) Read done queue */\
-            }stream;\
-        }u;\
-    }
-
-/**
  * @brief Initialize #EV_TCP_BACKEND to Windows specific invalid value.
  */
 #define EV_TCP_BACKEND_INIT     \
@@ -1801,7 +1760,6 @@ typedef struct ev_pipe_win_ipc_info
 
 #define EV_PIPE_BACKEND \
     union ev_pipe_backend {\
-        int                                 _useless;           /**< For static initializer */\
         struct {\
             struct {\
                 ev_iocp_t                   io;                 /**< IOCP backend */\
@@ -1899,8 +1857,8 @@ typedef struct ev_file_map_backend
 #else
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix.h
-// SIZE:    13023
-// SHA-256: 90800c9c98204638b7a237b1ae3165306714d0c79c97ce25e97a5357d8062f37
+// SIZE:    11959
+// SHA-256: f00e5c25ef8152d02346dad83adb97eaec0a9d2779eb6452bc75b56f860512f1
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/unix.h"
 /**
@@ -2227,29 +2185,6 @@ struct ev_nonblock_stream
     }
 
 /**
- * @brief Unix backend for #ev_tcp_t.
- */
-#define EV_TCP_BACKEND    \
-    struct ev_tcp_backend {\
-        union {\
-            struct {\
-                ev_nonblock_io_t            io;                 /**< IO object */\
-                ev_list_t                   accept_queue;       /**< Accept queue */\
-            }listen;\
-            struct {\
-                ev_tcp_accept_cb            cb;                 /**< Accept callback */\
-                ev_list_node_t              accept_node;        /**< Accept queue node */\
-            }accept;\
-            ev_nonblock_stream_t            stream;             /**< IO component */\
-            struct {\
-                ev_nonblock_io_t            io;                 /**< IO object */\
-                ev_tcp_connect_cb           cb;                 /**< Connect callback */\
-                int                         stat;               /**< Connect result */\
-            }client;\
-        }u;\
-    }
-
-/**
  * @brief Initialize #EV_TCP_BACKEND to Unix specific invalid value.
  */
 #define EV_TCP_BACKEND_INIT         { { { EV_NONBLOCK_IO_INVALID, EV_LIST_INIT } } }
@@ -2283,7 +2218,6 @@ struct ev_nonblock_stream
  */
 #define EV_PIPE_BACKEND \
     union ev_pipe_backend {\
-        int                                 _useless;           /**< For static initializer */\
         struct {\
             ev_nonblock_stream_t            stream;             /**< Stream */\
         }data_mode;\
@@ -3544,8 +3478,8 @@ struct ev_handle
 // #line 92 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/loop.h
-// SIZE:    7941
-// SHA-256: aa7c5f8ccafaecacef419045970848c771037875bd7f071d651807c467ac5166
+// SIZE:    5622
+// SHA-256: a4851098894e725931c7e0c628d5ae5e6c714299755d0ab6d029d7d6a5e14ab4
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/loop.h"
 #ifndef __EV_LOOP_H__
@@ -3654,74 +3588,11 @@ typedef struct ev_loop ev_loop_t;
 typedef int (*ev_walk_cb)(ev_handle_t* handle, void* arg);
 
 /**
- * @brief Event loop type.
- */
-struct ev_loop
-{
-    uint64_t                        hwtime;             /**< A fast clock time in milliseconds */
-
-    struct
-    {
-        ev_list_t                   idle_list;          /**< (#ev_handle::node) All idle handles */
-        ev_list_t                   active_list;        /**< (#ev_handle::node) All active handles */
-    }handles;                                           /**< table for handles */
-
-    ev_list_t                       backlog_queue;      /**< Backlog queue */
-    ev_list_t                       endgame_queue;      /**< Close queue */
-
-    /**
-     * @brief Timer context
-     */
-    struct
-    {
-        ev_map_t                    heap;               /**< #ev_timer_t::node. Timer heap */
-    }timer;
-
-    struct
-    {
-        struct ev_threadpool*       pool;               /**< Thread pool */
-        ev_list_node_t              node;               /**< node for #ev_threadpool_t::loop_table */
-
-        ev_mutex_t                  mutex;              /**< Work queue lock */
-        ev_list_t                   work_queue;         /**< Work queue */
-    } threadpool;
-
-    struct
-    {
-        unsigned                    b_stop : 1;         /**< Flag: need to stop */
-    }mask;
-
-    EV_LOOP_BACKEND                 backend;            /**< Platform related implementation */
-};
-
-/**
- * @brief Static initializer for #ev_loop_t.
- * @note A static initialized #ev_loop_t is not a workable event loop, please
- *   initialize with #ev_loop_init().
- */
-#define EV_LOOP_INVALID        \
-    {\
-        0,                                      /* .hwtime */\
-        { EV_LIST_INIT, EV_LIST_INIT },         /* .handles */\
-        EV_LIST_INIT,                           /* .backlog_queue */\
-        EV_LIST_INIT,                           /* .endgame_queue */\
-        { EV_MAP_INIT(NULL, NULL) },            /* .timer */ \
-        {/* .threadpool */\
-            NULL,                               /* .pool */\
-            EV_LIST_NODE_INIT,                  /* .node */\
-            EV_MUTEX_INVALID,                   /* .mutex */\
-            EV_LIST_INIT,                       /* .work_queue */\
-        },\
-        { 0 },                                  /* .mask */\
-        EV_LOOP_PLT_INIT,                       /* .backend */\
-    }
-
-/**
  * @brief Initializes the given structure.
  * @param[out] loop     Event loop handler
  * @return              #ev_errno_t
  */
-EV_API int ev_loop_init(ev_loop_t* loop);
+EV_API int ev_loop_init(ev_loop_t** loop);
 
 /**
  * @brief Releases all internal loop resources.
@@ -3813,8 +3684,8 @@ EV_API void ev_loop_walk(ev_loop_t* loop, ev_walk_cb cb, void* arg);
 // #line 93 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/async.h
-// SIZE:    1757
-// SHA-256: 3b549d2b411bec8b520cd7402b3be3716b73b796bd9bc2f7147c3389165120a6
+// SIZE:    1507
+// SHA-256: 72110a9b21df7b574a0366c6e45c90500985718e56071ad4a16fe2f9954f839a
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/async.h"
 #ifndef __EV_ASYNC_H__
@@ -3828,67 +3699,49 @@ extern "C" {
  * @{
  */
 
-struct ev_async;
-
 /**
- * @brief Typedef of #ev_async.
+ * @brief Async handle type.
  */
 typedef struct ev_async ev_async_t;
 
 /**
  * @brief Type definition for callback passed to #ev_async_init().
- * @param[in] async     A pointer to #ev_async_t structure
+ * @param[in] async   A pointer to #ev_async_t structure
+ * @param[in] arg     User defined argument.
  */
-typedef void(*ev_async_cb)(ev_async_t* async);
-
-/**
- * @brief Async handle type.
- */
-struct ev_async
-{
-    ev_handle_t             base;               /**< Base object */
-    ev_async_cb             active_cb;          /**< Active callback */
-    ev_async_cb             close_cb;           /**< Close callback */
-    EV_ASYNC_BACKEND        backend;            /**< Platform related fields */
-};
-
-/**
- * @brief Static initializer for #ev_async_t.
- * @note A static initialized #ev_async_t is not a valid handle.
- */
-#define EV_ASYNC_INVALID    \
-    {\
-        EV_HANDLE_INVALID,\
-        NULL,\
-        NULL,\
-        EV_ASYNC_PLT_INVALID,\
-    }
+typedef void (*ev_async_cb)(ev_async_t *async, void *arg);
 
 /**
  * @brief Initialize the handle.
  *
  * A NULL callback is allowed.
  *
- * @param[in] loop      Event loop
- * @param[out] handle   A pointer to the structure
- * @param[in] cb        Active callback
- * @return              #ev_errno_t
+ * @param[in] loop          Event loop
+ * @param[out] handle       A pointer to the structure
+ * @param[in] activate_cb   Activate callback
+ * @param[in] activate_arg  Activate argument.
+ * @return                  #ev_errno_t
  */
-EV_API int ev_async_init(ev_loop_t* loop, ev_async_t* handle, ev_async_cb cb);
+EV_API int ev_async_init(ev_loop_t *loop, ev_async_t **handle,
+                         ev_async_cb activate_cb, void *activate_arg);
 
 /**
  * @brief Destroy the structure.
- * @param[in] handle    Async handle
- * @param[in] close_cb  Close callback
+ * @param[in] handle    Async handle.
+ * @param[in] close_cb  [Optional] Close callback.
+ * @param[in] close_arg Close argument.
+ * @note When \p close_cb is called, the \p handle object is already released.
+ *   Do not access it.
  */
-EV_API void ev_async_exit(ev_async_t* handle, ev_async_cb close_cb);
+EV_API void ev_async_exit(ev_async_t *handle, ev_async_cb close_cb,
+                          void *close_arg);
 
 /**
  * @brief Wake up the event loop and call the async handle's callback.
  * @note MT-Safe
  * @param[in] handle    Async handle
  */
-EV_API void ev_async_wakeup(ev_async_t* handle);
+EV_API void ev_async_wakeup(ev_async_t *handle);
 
 /**
  * @} EV_ASYNC
@@ -4021,8 +3874,8 @@ EV_API void ev_timer_stop(ev_timer_t* handle);
 // #line 95 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/tcp.h
-// SIZE:    6462
-// SHA-256: 69c5ab52fb50698ea65c5596320fe69fc493ce1070853b241feda9b427f7f7be
+// SIZE:    6478
+// SHA-256: 1b2cac34cd5727f79affb7e38f1158f35c77e68371ee59ae20e632932fca8d19
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/tcp.h"
 #ifndef __EV_TCP_H__
@@ -4045,7 +3898,7 @@ extern "C" {
  */
 
 /**
- * @brief Typedef of #ev_tcp.
+ * @brief TCP socket.
  */
 typedef struct ev_tcp ev_tcp_t;
 
@@ -4062,69 +3915,49 @@ typedef struct ev_tcp_write_req ev_tcp_write_req_t;
 /**
  * @brief Close callback for #ev_tcp_t
  * @param[in] sock      A closed socket
+ * @param[in] arg       User defined argument.
  */
-typedef void(*ev_tcp_close_cb)(ev_tcp_t* sock);
+typedef void (*ev_tcp_close_cb)(ev_tcp_t *sock, void *arg);
 
 /**
  * @brief Accept callback
  * @param[in] lisn      Listen socket
  * @param[in] conn      Accepted socket
  * @param[in] stat      #ev_errno_t
+ * @param[in] arg       User defined argument.
  */
-typedef void(*ev_tcp_accept_cb)(ev_tcp_t* lisn, ev_tcp_t* conn, int stat);
+typedef void (*ev_tcp_accept_cb)(ev_tcp_t *lisn, ev_tcp_t *conn, int stat,
+                                 void *arg);
 
 /**
  * @brief Connect callback
  * @param[in] sock      Connect socket
  * @param[in] stat      #ev_errno_t
  */
-typedef void(*ev_tcp_connect_cb)(ev_tcp_t* sock, int stat);
+typedef void (*ev_tcp_connect_cb)(ev_tcp_t *sock, int stat, void *arg);
 
 /**
  * @brief Write callback
  * @param[in] req       Write request token
  * @param[in] size      Write result
  */
-typedef void (*ev_tcp_write_cb)(ev_tcp_write_req_t* req, ssize_t size);
+typedef void (*ev_tcp_write_cb)(ev_tcp_write_req_t *req, ssize_t size);
 
 /**
  * @brief Read callback
  * @param[in] req       Read callback
  * @param[in] size      Read result
  */
-typedef void (*ev_tcp_read_cb)(ev_tcp_read_req_t* req, ssize_t size);
-
-/**
- * @brief TCP socket.
- */
-struct ev_tcp
-{
-    ev_handle_t             base;               /**< Base object */
-    ev_tcp_close_cb         close_cb;           /**< User close callback */
-
-    ev_os_socket_t          sock;               /**< Socket handle */
-    EV_TCP_BACKEND          backend;            /**< Platform related implementation */
-};
-/**
- * @brief Initialize #ev_tcp_t to an invalid value.
- * @see ev_tcp_init()
- */
-#define EV_TCP_INVALID      \
-    {\
-        EV_HANDLE_INVALID,\
-        NULL,\
-        EV_OS_SOCKET_INVALID,\
-        EV_TCP_BACKEND_INIT,\
-    }
+typedef void (*ev_tcp_read_cb)(ev_tcp_read_req_t *req, ssize_t size);
 
 /**
  * @brief Read request token for TCP socket.
  */
 struct ev_tcp_read_req
 {
-    ev_read_t               base;               /**< Base object */
-    ev_tcp_read_cb          user_callback;      /**< User callback */
-    EV_TCP_READ_BACKEND     backend;            /**< Backend */
+    ev_read_t           base;          /**< Base object */
+    ev_tcp_read_cb      user_callback; /**< User callback */
+    EV_TCP_READ_BACKEND backend;       /**< Backend */
 };
 
 /**
@@ -4132,9 +3965,9 @@ struct ev_tcp_read_req
  */
 struct ev_tcp_write_req
 {
-    ev_write_t              base;               /**< Base object */
-    ev_tcp_write_cb         user_callback;      /**< User callback */
-    EV_TCP_WRITE_BACKEND    backend;            /**< Backend */
+    ev_write_t           base;          /**< Base object */
+    ev_tcp_write_cb      user_callback; /**< User callback */
+    EV_TCP_WRITE_BACKEND backend;       /**< Backend */
 };
 
 /**
@@ -4142,24 +3975,28 @@ struct ev_tcp_write_req
  * @param[in] loop      Event loop
  * @param[out] tcp      TCP handle
  */
-EV_API int ev_tcp_init(ev_loop_t* loop, ev_tcp_t* tcp);
+EV_API int ev_tcp_init(ev_loop_t *loop, ev_tcp_t **tcp);
 
 /**
  * @brief Destroy socket
  * @param[in] sock      Socket
- * @param[in] cb        Destroy callback
+ * @param[in] close_cb  Destroy callback
+ * @param[in] close_arg User defined argument.
  */
-EV_API void ev_tcp_exit(ev_tcp_t* sock, ev_tcp_close_cb cb);
+EV_API void ev_tcp_exit(ev_tcp_t *sock, ev_tcp_close_cb close_cb,
+                        void *close_arg);
 
 /**
  * @brief Bind the handle to an address and port.
- * addr should point to an initialized struct sockaddr_in or struct sockaddr_in6.
+ * addr should point to an initialized struct sockaddr_in or struct
+ * sockaddr_in6.
  * @param[in] tcp       Socket handler
  * @param[in] addr      Bind address
  * @param[in] addrlen   Address length
  * @return              #ev_errno_t
  */
-EV_API int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrlen);
+EV_API int ev_tcp_bind(ev_tcp_t *tcp, const struct sockaddr *addr,
+                       size_t addrlen);
 
 /**
  * @brief Start listening for incoming connections.
@@ -4167,40 +4004,44 @@ EV_API int ev_tcp_bind(ev_tcp_t* tcp, const struct sockaddr* addr, size_t addrle
  * @param[in] backlog   The number of connections the kernel might queue
  * @return              #ev_errno_t
  */
-EV_API int ev_tcp_listen(ev_tcp_t* sock, int backlog);
+EV_API int ev_tcp_listen(ev_tcp_t *sock, int backlog);
 
 /**
  * @brief Accept a connection from listen socket
- * @param[in] acpt  Listen socket
- * @param[in] conn  The socket to store new connection
- * @param[in] cb    Accept callback
- * @return          #ev_errno_t
+ * @param[in] acpt          Listen socket
+ * @param[in] conn          The socket to store new connection
+ * @param[in] accept_cb     Accept callback
+ * @param[in] accept_arg    User defined argument pass to \p accept_cb.
+ * @return                  #ev_errno_t
  */
-EV_API int ev_tcp_accept(ev_tcp_t* acpt, ev_tcp_t* conn, ev_tcp_accept_cb cb);
+EV_API int ev_tcp_accept(ev_tcp_t *acpt, ev_tcp_t *conn,
+                         ev_tcp_accept_cb accept_cb, void *accept_arg);
 
 /**
  * @brief Connect to address
- * @param[in] sock  Socket handle
- * @param[in] addr  Address
- * @param[in] size  Address size
- * @param[in] cb    Connect callback
+ * @param[in] sock          Socket handle
+ * @param[in] addr          Address
+ * @param[in] size          Address size
+ * @param[in] connect_cb  Connect callback
+ * @param[in] connect_arg Connect argument.
  * @return          #ev_errno_t
  */
-EV_API int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size,
-    ev_tcp_connect_cb cb);
+EV_API int ev_tcp_connect(ev_tcp_t *sock, struct sockaddr *addr, size_t size,
+                          ev_tcp_connect_cb connect_cb, void *connect_arg);
 
 /**
  * @brief Write data
- * 
+ *
  * Once #ev_tcp_write() return #EV_SUCCESS, it take the ownership of \p req, so
  * you should not modify the content of it until bounded callback is called.
- * 
+ *
  * It is a guarantee that every bounded callback of \p req will be called, with
  * following scene:
- *   + If write success or failure. The callback will be called with write status.
+ *   + If write success or failure. The callback will be called with write
+ * status.
  *   + If \p pipe is exiting but there are pending write request. The callback
  *     will be called with status #EV_ECANCELED.
- * 
+ *
  * @param[in] sock  Socket handle
  * @param[in] req   Write request
  * @param[in] bufs  Buffer list
@@ -4208,21 +4049,21 @@ EV_API int ev_tcp_connect(ev_tcp_t* sock, struct sockaddr* addr, size_t size,
  * @param[in] cb    Send result callback
  * @return          #ev_errno_t
  */
-EV_API int ev_tcp_write(ev_tcp_t* sock, ev_tcp_write_req_t* req,
-    ev_buf_t* bufs, size_t nbuf, ev_tcp_write_cb cb);
+EV_API int ev_tcp_write(ev_tcp_t *sock, ev_tcp_write_req_t *req, ev_buf_t *bufs,
+                        size_t nbuf, ev_tcp_write_cb cb);
 
 /**
  * @brief Read data
- * 
+ *
  * Once #ev_tcp_read() return #EV_SUCCESS, it take the ownership of \p req, so
  * you should not modify the content of it until bounded callback is called.
- * 
+ *
  * It is a guarantee that every bounded callback of \p req will be called, with
  * following scene:
  *   + If read success or failure. The callback will be called with read status.
  *   + If \p pipe is exiting but there are pending read request. The callback
  *     will be called with status #EV_ECANCELED.
- * 
+ *
  * @param[in] sock  Socket handle
  * @param[in] req   Read request
  * @param[in] bufs  Buffer list
@@ -4230,8 +4071,8 @@ EV_API int ev_tcp_write(ev_tcp_t* sock, ev_tcp_write_req_t* req,
  * @param[in] cb    Read result callback
  * @return          #ev_errno_t
  */
-EV_API int ev_tcp_read(ev_tcp_t* sock, ev_tcp_read_req_t* req,
-    ev_buf_t* bufs, size_t nbuf, ev_tcp_read_cb cb);
+EV_API int ev_tcp_read(ev_tcp_t *sock, ev_tcp_read_req_t *req, ev_buf_t *bufs,
+                       size_t nbuf, ev_tcp_read_cb cb);
 
 /**
  * @brief Get the current address to which the socket is bound.
@@ -4240,7 +4081,8 @@ EV_API int ev_tcp_read(ev_tcp_t* sock, ev_tcp_read_req_t* req,
  * @param[in,out] len   buffer size
  * @return          #ev_errno_t
  */
-EV_API int ev_tcp_getsockname(ev_tcp_t* sock, struct sockaddr* name, size_t* len);
+EV_API int ev_tcp_getsockname(ev_tcp_t *sock, struct sockaddr *name,
+                              size_t *len);
 
 /**
  * @brief Get the address of the peer connected to the socket.
@@ -4249,7 +4091,8 @@ EV_API int ev_tcp_getsockname(ev_tcp_t* sock, struct sockaddr* name, size_t* len
  * @param[in,out] len   buffer size
  * @return          #ev_errno_t
  */
-EV_API int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len);
+EV_API int ev_tcp_getpeername(ev_tcp_t *sock, struct sockaddr *name,
+                              size_t *len);
 
 /**
  * @} EV_TCP
@@ -4263,8 +4106,8 @@ EV_API int ev_tcp_getpeername(ev_tcp_t* sock, struct sockaddr* name, size_t* len
 // #line 96 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/udp.h
-// SIZE:    9029
-// SHA-256: 60cf0da60a3235d17edbef5a4b31c3c3982b0ca4d8975e78f26e67054a465049
+// SIZE:    8161
+// SHA-256: a4395c06ff06bce34a4b8f0f2cb03e51dc4a669fa5b2d489960d03ed4fed6527
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/udp.h"
 #ifndef __EV_UDP_H__
@@ -4281,110 +4124,57 @@ extern "C" {
 /**
  * @brief Multicast operation.
  */
-enum ev_udp_membership
+typedef enum ev_udp_membership
 {
-    EV_UDP_LEAVE_GROUP  = 0,    /**< Leave multicast group */
-    EV_UDP_ENTER_GROUP  = 1,    /**< Join multicast group */
-};
-
-/**
- * @brief Typedef of #ev_udp_membership.
- */
-typedef enum ev_udp_membership ev_udp_membership_t;
+    EV_UDP_LEAVE_GROUP = 0, /**< Leave multicast group */
+    EV_UDP_ENTER_GROUP = 1, /**< Join multicast group */
+} ev_udp_membership_t;
 
 /**
  * @brief UDP socket flags.
  */
-enum ev_udp_flags
+typedef enum ev_udp_flags
 {
-    EV_UDP_IPV6_ONLY    = 1,    /**< Do not bound to IPv4 address */
-    EV_UDP_REUSEADDR    = 2,    /**< Reuse address. Only the last one can receive message. */
-};
+    /**
+     * @brief Do not bound to IPv4 address.
+     */
+    EV_UDP_IPV6_ONLY = 1,
 
-/**
- * @brief Typedef of #ev_udp_flags.
- */
-typedef enum ev_udp_flags ev_udp_flags_t;
-
-struct ev_udp;
-
-/**
- * @brief Typedef of #ev_udp.
- */
-typedef struct ev_udp ev_udp_t;
-
-struct ev_udp_write;
-
-/**
- * @brief Typedef of #ev_udp_write.
- */
-typedef struct ev_udp_write ev_udp_write_t;
-
-struct ev_udp_read;
-
-/**
- * @brief Typedef of #ev_udp_read.
- */
-typedef struct ev_udp_read ev_udp_read_t;
-
-/**
- * @brief Callback for #ev_udp_t
- * @param[in] udp   UDP handle
- */
-typedef void (*ev_udp_cb)(ev_udp_t* udp);
-
-/**
- * @brief Write callback
- * @param[in] req       Write request.
- * @param[in] size      Write result.
- */
-typedef void (*ev_udp_write_cb)(ev_udp_write_t* req, ssize_t size);
-
-/**
- * @brief Read callback
- * @param[in] req       Read callback.
- * @param[in] addr      Peer address.
- * @param[in] size      Read result.
- */
-typedef void (*ev_udp_recv_cb)(ev_udp_read_t* req, const struct sockaddr* addr, ssize_t size);
+    /**
+     * @brief Reuse address. Only the last one can receive message.
+     */
+    EV_UDP_REUSEADDR = 2,
+} ev_udp_flags_t;
 
 /**
  * @brief UDP socket type.
  */
-struct ev_udp
-{
-    ev_handle_t             base;               /**< Base object */
-    ev_udp_cb               close_cb;           /**< Close callback */
-    ev_os_socket_t          sock;               /**< OS socket */
-
-    ev_list_t               send_list;          /**< Send queue */
-    ev_list_t               recv_list;          /**< Recv queue */
-
-    EV_UDP_BACKEND          backend;            /**< Platform related implementation */
-};
+typedef struct ev_udp ev_udp_t;
 
 /**
- * @brief Write request token for UDP socket.
+ * @brief Callback for #ev_udp_t
+ * @param[in] udp   UDP handle
+ * @param[in] arg   User defined argument.
  */
-struct ev_udp_write
-{
-    ev_handle_t             handle;             /**< Base object */
-    ev_write_t              base;               /**< Base request */
-    ev_udp_write_cb         usr_cb;             /**< User callback */
-    EV_UDP_WRITE_BACKEND    backend;            /**< Backend */
-};
+typedef void (*ev_udp_cb)(ev_udp_t *udp, void *arg);
 
 /**
- * @brief Read request token for UDP socket.
+ * @brief Write callback
+ * @param[in] udp       UDP socket.
+ * @param[in] size      Write result.
+ * @param[in] arg       User defined argument.
  */
-struct ev_udp_read
-{
-    ev_handle_t             handle;             /**< Base object */
-    ev_read_t               base;               /**< Base request */
-    ev_udp_recv_cb          usr_cb;             /**< User callback */
-    struct sockaddr_storage addr;               /**< Peer address */
-    EV_UDP_READ_BACKEND     backend;            /**< Backend */
-};
+typedef void (*ev_udp_write_cb)(ev_udp_t *udp, ssize_t size, void *arg);
+
+/**
+ * @brief Read callback
+ * @param[in] udp       UDP socket.
+ * @param[in] addr      Peer address.
+ * @param[in] size      Read result.
+ * @param[in] arg       User defined argument.
+ */
+typedef void (*ev_udp_recv_cb)(ev_udp_t *udp, const struct sockaddr *addr,
+                               ssize_t size, void *arg);
 
 /**
  * @brief Initialize a UDP handle.
@@ -4393,14 +4183,15 @@ struct ev_udp_read
  * @param[in] domain    AF_INET / AF_INET6 / AF_UNSPEC
  * @return              #ev_errno_t
  */
-EV_API int ev_udp_init(ev_loop_t* loop, ev_udp_t* udp, int domain);
+EV_API int ev_udp_init(ev_loop_t *loop, ev_udp_t **udp, int domain);
 
 /**
  * @brief Close UDP handle
  * @param[in] udp       A UDP handle
  * @param[in] close_cb  Close callback
+ * @param[in] close_arg User defined argument.
  */
-EV_API void ev_udp_exit(ev_udp_t* udp, ev_udp_cb close_cb);
+EV_API void ev_udp_exit(ev_udp_t *udp, ev_udp_cb close_cb, void *close_arg);
 
 /**
  * @brief Open a existing UDP socket
@@ -4409,7 +4200,7 @@ EV_API void ev_udp_exit(ev_udp_t* udp, ev_udp_cb close_cb);
  * @param[in] sock      A system UDP socket
  * @return              #ev_errno_t
  */
-EV_API int ev_udp_open(ev_udp_t* udp, ev_os_socket_t sock);
+EV_API int ev_udp_open(ev_udp_t *udp, ev_os_socket_t sock);
 
 /**
  * @brief Bind the UDP handle to an IP address and port.
@@ -4419,38 +4210,43 @@ EV_API int ev_udp_open(ev_udp_t* udp, ev_os_socket_t sock);
  * @param[in] flags     #ev_udp_flags_t
  * @return              #ev_errno_t
  */
-EV_API int ev_udp_bind(ev_udp_t* udp, const struct sockaddr* addr, unsigned flags);
+EV_API int ev_udp_bind(ev_udp_t *udp, const struct sockaddr *addr,
+                       unsigned flags);
 
 /**
- * @brief Associate the UDP handle to a remote address and port, so every message
- *   sent by this handle is automatically sent to that destination.
+ * @brief Associate the UDP handle to a remote address and port, so every
+ * message sent by this handle is automatically sent to that destination.
  * @param[in] udp       A UDP handle
  * @param[in] addr      Remote address
  * @return              #ev_errno_t
  */
-EV_API int ev_udp_connect(ev_udp_t* udp, const struct sockaddr* addr);
+EV_API int ev_udp_connect(ev_udp_t *udp, const struct sockaddr *addr);
 
 /**
  * @brief Get the local IP and port of the UDP handle.
  * @param[in] udp       A UDP handle
- * @param[out] name     Pointer to the structure to be filled with the address data.
- *   In order to support IPv4 and IPv6 struct sockaddr_storage should be used.
+ * @param[out] name     Pointer to the structure to be filled with the address
+ * data. In order to support IPv4 and IPv6 struct sockaddr_storage should be
+ * used.
  * @param[in,out] len   On input it indicates the data of the name field.
  *   On output it indicates how much of it was filled.
  * @return              #ev_errno_t
  */
-EV_API int ev_udp_getsockname(ev_udp_t* udp, struct sockaddr* name, size_t* len);
+EV_API int ev_udp_getsockname(ev_udp_t *udp, struct sockaddr *name,
+                              size_t *len);
 
 /**
  * @brief Get the remote IP and port of the UDP handle on connected UDP handles.
  * @param[in] udp       A UDP handle
- * @param[out] name     Pointer to the structure to be filled with the address data.
- *   In order to support IPv4 and IPv6 struct sockaddr_storage should be used.
+ * @param[out] name     Pointer to the structure to be filled with the address
+ * data. In order to support IPv4 and IPv6 struct sockaddr_storage should be
+ * used.
  * @param[in,out] len   On input it indicates the data of the name field.
  *   On output it indicates how much of it was filled.
  * @return              #ev_errno_t
  */
-EV_API int ev_udp_getpeername(ev_udp_t* udp, struct sockaddr* name, size_t* len);
+EV_API int ev_udp_getpeername(ev_udp_t *udp, struct sockaddr *name,
+                              size_t *len);
 
 /**
  * @brief Set membership for a multicast address.
@@ -4460,8 +4256,9 @@ EV_API int ev_udp_getpeername(ev_udp_t* udp, struct sockaddr* name, size_t* len)
  * @param[in] membership        #ev_udp_membership_t
  * @return                      #ev_errno_t
  */
-EV_API int ev_udp_set_membership(ev_udp_t* udp, const char* multicast_addr,
-    const char* interface_addr, ev_udp_membership_t membership);
+EV_API int ev_udp_set_membership(ev_udp_t *udp, const char *multicast_addr,
+                                 const char         *interface_addr,
+                                 ev_udp_membership_t membership);
 
 /**
  * @brief Set membership for a source-specific multicast group.
@@ -4472,16 +4269,20 @@ EV_API int ev_udp_set_membership(ev_udp_t* udp, const char* multicast_addr,
  * @param[in] membership        #ev_udp_membership_t
  * @return                      #ev_errno_t
  */
-EV_API int ev_udp_set_source_membership(ev_udp_t* udp, const char* multicast_addr,
-    const char* interface_addr, const char* source_addr, ev_udp_membership_t membership);
+EV_API int ev_udp_set_source_membership(ev_udp_t           *udp,
+                                        const char         *multicast_addr,
+                                        const char         *interface_addr,
+                                        const char         *source_addr,
+                                        ev_udp_membership_t membership);
 
 /**
- * @brief Set IP multicast loop flag. Makes multicast packets loop back to local sockets.
+ * @brief Set IP multicast loop flag. Makes multicast packets loop back to local
+ * sockets.
  * @param[in] udp   A UDP handle
  * @param[in] on    bool
  * @return          #ev_errno_t
  */
-EV_API int ev_udp_set_multicast_loop(ev_udp_t* udp, int on);
+EV_API int ev_udp_set_multicast_loop(ev_udp_t *udp, int on);
 
 /**
  * @brief Set the multicast ttl.
@@ -4489,7 +4290,7 @@ EV_API int ev_udp_set_multicast_loop(ev_udp_t* udp, int on);
  * @param[in] ttl   1 through 255
  * @return          #ev_errno_t
  */
-EV_API int ev_udp_set_multicast_ttl(ev_udp_t* udp, int ttl);
+EV_API int ev_udp_set_multicast_ttl(ev_udp_t *udp, int ttl);
 
 /**
  * @brief Set the multicast interface to send or receive data on.
@@ -4497,7 +4298,8 @@ EV_API int ev_udp_set_multicast_ttl(ev_udp_t* udp, int ttl);
  * @param[in] interface_addr    interface address.
  * @return                      #ev_errno_t
  */
-EV_API int ev_udp_set_multicast_interface(ev_udp_t* udp, const char* interface_addr);
+EV_API int ev_udp_set_multicast_interface(ev_udp_t   *udp,
+                                          const char *interface_addr);
 
 /**
  * @brief Set broadcast on or off.
@@ -4505,7 +4307,7 @@ EV_API int ev_udp_set_multicast_interface(ev_udp_t* udp, const char* interface_a
  * @param[in] on    1 for on, 0 for off
  * @return          #ev_errno_t
  */
-EV_API int ev_udp_set_broadcast(ev_udp_t* udp, int on);
+EV_API int ev_udp_set_broadcast(ev_udp_t *udp, int on);
 
 /**
  * @brief Set the time to live.
@@ -4513,50 +4315,53 @@ EV_API int ev_udp_set_broadcast(ev_udp_t* udp, int on);
  * @param[in] ttl   1 through 255.
  * @return          #ev_errno_t
  */
-EV_API int ev_udp_set_ttl(ev_udp_t* udp, int ttl);
+EV_API int ev_udp_set_ttl(ev_udp_t *udp, int ttl);
 
 /**
  * @brief Send data over the UDP socket.
  *
- * If the socket has not previously been bound with #ev_udp_bind() it will be bound
- * to 0.0.0.0 (the "all interfaces" IPv4 address) and a random port number.
+ * If the socket has not previously been bound with #ev_udp_bind() it will be
+ * bound to 0.0.0.0 (the "all interfaces" IPv4 address) and a random port
+ * number.
  *
  * @param[in] udp   A UDP handle
- * @param[in] req   Write request token
  * @param[in] bufs  Buffer list
  * @param[in] nbuf  Buffer number
  * @param[in] addr  Peer address
  * @param[in] cb    Send result callback
+ * @param[in] arg   User defined argument.
  * @return          #ev_errno_t
  */
-EV_API int ev_udp_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs,
-    size_t nbuf, const struct sockaddr* addr, ev_udp_write_cb cb);
+EV_API int ev_udp_send(ev_udp_t *udp, ev_buf_t *bufs, size_t nbuf,
+                       const struct sockaddr *addr, ev_udp_write_cb cb,
+                       void *arg);
 
 /**
  * @brief Same as #ev_udp_send(), but won't queue a send request if it can't be
  *   completed immediately.
  * @param[in] udp   A UDP handle
- * @param[in] req   Write request token
  * @param[in] bufs  Buffer list
  * @param[in] nbuf  Buffer number
  * @param[in] addr  Peer address
  * @param[in] cb    Send result callback
+ * @param[in] arg   User defined argument.
  * @return          #ev_errno_t
  */
-EV_API int ev_udp_try_send(ev_udp_t* udp, ev_udp_write_t* req, ev_buf_t* bufs,
-    size_t nbuf, const struct sockaddr* addr, ev_udp_write_cb cb);
+EV_API int ev_udp_try_send(ev_udp_t *udp, ev_buf_t *bufs, size_t nbuf,
+                           const struct sockaddr *addr, ev_udp_write_cb cb,
+                           void *arg);
 
 /**
  * @brief Queue a read request.
  * @param[in] udp   A UDP handle
- * @param[in] req   Read request token
  * @param[in] bufs  Receive buffer
  * @param[in] nbuf  Buffer number
  * @param[in] cb    Receive callback
+ * @param[in] arg   User defined argument.
  * @return          #ev_errno_t
  */
-EV_API int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs,
-    size_t nbuf, ev_udp_recv_cb cb);
+EV_API int ev_udp_recv(ev_udp_t *udp, ev_buf_t *bufs, size_t nbuf,
+                       ev_udp_recv_cb cb, void *arg);
 
 /**
  * @} EV_UDP
@@ -4570,8 +4375,8 @@ EV_API int ev_udp_recv(ev_udp_t* udp, ev_udp_read_t* req, ev_buf_t* bufs,
 // #line 97 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/pipe.h
-// SIZE:    10169
-// SHA-256: 7a0bfd0c03228ccb85a3bf9bc014e60399e022f7be09b691ee381cdab21e081c
+// SIZE:    9184
+// SHA-256: d7f29f52292c03dae4de9e27eeb231e9e85eeca8db652a00dca3e7c30d971379
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/pipe.h"
 #ifndef __EV_PIPE_H__
@@ -4587,25 +4392,16 @@ extern "C" {
 
 typedef enum ev_pipe_flags_e
 {
-    EV_PIPE_READABLE    = 0x01, /**< Pipe is readable */
-    EV_PIPE_WRITABLE    = 0x02, /**< Pipe is writable */
-    EV_PIPE_NONBLOCK    = 0x04, /**< Pipe is nonblock */
-    EV_PIPE_IPC         = 0x08, /**< Enable IPC */
+    EV_PIPE_READABLE = 0x01, /**< Pipe is readable */
+    EV_PIPE_WRITABLE = 0x02, /**< Pipe is writable */
+    EV_PIPE_NONBLOCK = 0x04, /**< Pipe is nonblock */
+    EV_PIPE_IPC = 0x08,      /**< Enable IPC */
 } ev_pipe_flags_t;
 
-struct ev_pipe;
-
 /**
- * @brief Typedef of #ev_pipe.
+ * @brief PIPE
  */
 typedef struct ev_pipe ev_pipe_t;
-
-struct ev_pipe_write_req;
-
-/**
- * @brief Typedef of #ev_pipe_write_req.
- */
-typedef struct ev_pipe_write_req ev_pipe_write_req_t;
 
 struct ev_pipe_read_req;
 
@@ -4616,23 +4412,24 @@ typedef struct ev_pipe_read_req ev_pipe_read_req_t;
 
 /**
  * @brief Callback for #ev_pipe_t
- * @param[in] handle      A pipe
+ * @param[in] handle    A pipe
+ * @param[in] arg       User defined argument.
  */
-typedef void(*ev_pipe_cb)(ev_pipe_t* handle);
+typedef void (*ev_pipe_cb)(ev_pipe_t *handle, void *arg);
 
 /**
  * @brief Write callback
  * @param[in] req       Write request
  * @param[in] result    Write result
  */
-typedef void(*ev_pipe_write_cb)(ev_pipe_write_req_t* req, ssize_t result);
+typedef void (*ev_pipe_write_cb)(ev_pipe_t *pipe, ssize_t result, void *arg);
 
 /**
  * @brief Read callback
  * @param[in] req       Read callback
  * @param[in] result    Read result
  */
-typedef void(*ev_pipe_read_cb)(ev_pipe_read_req_t* req, ssize_t result);
+typedef void (*ev_pipe_read_cb)(ev_pipe_read_req_t *req, ssize_t result);
 
 /**
  * @brief IPC frame header.
@@ -4661,7 +4458,7 @@ typedef void(*ev_pipe_read_cb)(ev_pipe_read_req_t* req, ssize_t result);
  *  -------------------------------------------------------------------------
  *  | native endian                     | 0x00   | 0x00   | 0x00   | 0x00   |
  *  -------------------------------------------------------------------------
- * 
+ *
  * FLAG layout (8 bits) :
  * | bit  | 0                   | 1                 |
  * | ---- | ------------------- | ----------------- |
@@ -4669,67 +4466,26 @@ typedef void(*ev_pipe_read_cb)(ev_pipe_read_req_t* req, ssize_t result);
  */
 typedef struct ev_ipc_frame_hdr
 {
-    uint32_t    hdr_magic;      /**< Magic code */
-    uint8_t     hdr_flags;      /**< Bit OR flags */
-    uint8_t     hdr_version;    /**< Protocol version */
-    uint16_t    hdr_exsz;       /**< Extra data size */
-    uint32_t    hdr_dtsz;       /**< Data size */
-    uint32_t    reserved;       /**< Zeros */
+    uint32_t hdr_magic;   /**< Magic code */
+    uint8_t  hdr_flags;   /**< Bit OR flags */
+    uint8_t  hdr_version; /**< Protocol version */
+    uint16_t hdr_exsz;    /**< Extra data size */
+    uint32_t hdr_dtsz;    /**< Data size */
+    uint32_t reserved;    /**< Zeros */
 } ev_ipc_frame_hdr_t;
-
-/**
- * @brief PIPE
- */
-struct ev_pipe
-{
-    ev_handle_t             base;               /**< Base object */
-    ev_pipe_cb              close_cb;           /**< User close callback */
-
-    ev_os_pipe_t            pipfd;              /**< Pipe handle */
-    EV_PIPE_BACKEND         backend;            /**< Platform related implementation */
-};
-/**
- * @brief Initialize #ev_pipe_t to an invalid value.
- * @see ev_pipe_init()
- */
-#define EV_PIPE_INVALID     \
-    {\
-        EV_HANDLE_INVALID,\
-        NULL,\
-        EV_OS_PIPE_INVALID,\
-        EV_PIPE_BACKEND_INVALID,\
-    }
-
-/**
- * @brief Write request token for pipe.
- */
-struct ev_pipe_write_req
-{
-    ev_write_t              base;               /**< Base object */
-    ev_pipe_write_cb        ucb;                /**< User callback */
-    struct
-    {
-        ev_role_t           role;               /**< The type of handle to send */
-        union
-        {
-            ev_os_socket_t  os_socket;          /**< A EV handle instance */
-        }u;
-    }handle;
-    EV_PIPE_WRITE_BACKEND   backend;            /**< Backend */
-};
 
 /**
  * @brief Read request token for pipe.
  */
 struct ev_pipe_read_req
 {
-    ev_read_t               base;               /**< Base object */
-    ev_pipe_read_cb         ucb;                /**< User callback */
+    ev_read_t       base; /**< Base object */
+    ev_pipe_read_cb ucb;  /**< User callback */
     struct
     {
-        ev_os_socket_t      os_socket;          /**< Socket handler */
-    }handle;
-    EV_PIPE_READ_BACKEND    backend;            /**< Backend */
+        ev_os_socket_t os_socket; /**< Socket handler */
+    } handle;
+    EV_PIPE_READ_BACKEND backend; /**< Backend */
 };
 
 /**
@@ -4751,14 +4507,22 @@ struct ev_pipe_read_req
  * @param[in] ipc       Initialize as IPC mode.
  * @return              #ev_errno_t
  */
-EV_API int ev_pipe_init(ev_loop_t* loop, ev_pipe_t* pipe, int ipc);
+EV_API int ev_pipe_init(ev_loop_t *loop, ev_pipe_t **pipe, int ipc);
 
 /**
- * @brief Destroy pipe
+ * @brief Destroy pipe.
+ *
+ * The \p pipe will close in some time. Once it is closed, \p close_cb is
+ * called.
+ *
  * @param[in] pipe      Pipe handle.
- * @param[in] cb        Destroy callback
+ * @param[in] close_cb  [Optional] Destroy callback.
+ * @param[in] close_arg Destroy argument.
+ * @note Even if \p close_cb is set to NULL, it does not mean \p pipe is
+ *   release after this call. The only way to ensure \p pipe is check in \p
+ *   close_cb.
  */
-EV_API void ev_pipe_exit(ev_pipe_t* pipe, ev_pipe_cb cb);
+EV_API void ev_pipe_exit(ev_pipe_t *pipe, ev_pipe_cb close_cb, void *close_arg);
 
 /**
  * @brief Open an existing file descriptor or HANDLE as a pipe.
@@ -4767,7 +4531,7 @@ EV_API void ev_pipe_exit(ev_pipe_t* pipe, ev_pipe_cb cb);
  * @param[in] handle    File descriptor or HANDLE
  * @return              #ev_errno_t
  */
-EV_API int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle);
+EV_API int ev_pipe_open(ev_pipe_t *pipe, ev_os_pipe_t handle);
 
 /**
  * @brief Write data
@@ -4777,53 +4541,54 @@ EV_API int ev_pipe_open(ev_pipe_t* pipe, ev_os_pipe_t handle);
  *
  * It is a guarantee that every bounded callback of \p req will be called, with
  * following scene:
- *   + If write success or failure. The callback will be called with write status.
+ *   + If write success or failure. The callback will be called with write
+ * status.
  *   + If \p pipe is exiting but there are pending write request. The callback
  *     will be called with status #EV_ECANCELED.
  *
  * @param[in] pipe  Pipe handle
- * @param[in] req   Write request
  * @param[in] bufs  Buffer list
  * @param[in] nbuf  Buffer number
  * @param[in] cb    Write result callback
+ * @param[in] arg   User defined argument.
  * @return          #ev_errno_t
  */
-EV_API int ev_pipe_write(ev_pipe_t* pipe, ev_pipe_write_req_t* req, ev_buf_t* bufs,
-    size_t nbuf, ev_pipe_write_cb cb);
+EV_API int ev_pipe_write(ev_pipe_t *pipe, ev_buf_t *bufs, size_t nbuf,
+                         ev_pipe_write_cb cb, void *arg);
 
 /**
  * @brief Like #ev_pipe_write(), with following difference:
- * 
+ *
  * + It has the ability to send OS resource to peer side.
  * + It is able to handle large amount of \p nbuf event it is larger than
  *   #EV_IOV_MAX.
- * 
+ *
  * @param[in] pipe          Pipe handle
  * @param[in] req           Write request
  * @param[in] bufs          Buffer list
  * @param[in] nbuf          Buffer number
  * @param[in] handle_role   The type of handle to send
  * @param[in] handle_addr   The address of handle to send
- * @param[in] handle_size   The size of handle to send
  * @param[in] cb            Write result callback
+ * @param[in] arg           User defined argument.
  * @return                  #ev_errno_t
  */
-EV_API int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
-    ev_buf_t* bufs, size_t nbuf, ev_role_t handle_role, void* handle_addr,
-    size_t handle_size, ev_pipe_write_cb cb);
+EV_API int ev_pipe_write_ex(ev_pipe_t *pipe, ev_buf_t *bufs, size_t nbuf,
+                            ev_role_t handle_role, void *handle_addr,
+                            ev_pipe_write_cb cb, void *arg);
 
 /**
  * @brief Read data
- * 
+ *
  * Once #ev_pipe_read() return #EV_SUCCESS, it take the ownership of \p req, so
  * you should not modify the content of it until bounded callback is called.
- * 
+ *
  * It is a guarantee that every bounded callback of \p req will be called, with
  * following scene:
  *   + If read success or failure. The callback will be called with read status.
  *   + If \p pipe is exiting but there are pending read request. The callback
  *     will be called with status #EV_ECANCELED.
- * 
+ *
  * @param[in] pipe  Pipe handle
  * @param[in] req   Read request
  * @param[in] bufs  Buffer list
@@ -4831,8 +4596,8 @@ EV_API int ev_pipe_write_ex(ev_pipe_t* pipe, ev_pipe_write_req_t* req,
  * @param[in] cb    Receive callback
  * @return          #ev_errno_t
  */
-EV_API int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs,
-    size_t nbuf, ev_pipe_read_cb cb);
+EV_API int ev_pipe_read(ev_pipe_t *pipe, ev_pipe_read_req_t *req,
+                        ev_buf_t *bufs, size_t nbuf, ev_pipe_read_cb cb);
 
 /**
  * @brief Accept handle from peer.
@@ -4840,15 +4605,14 @@ EV_API int ev_pipe_read(ev_pipe_t* pipe, ev_pipe_read_req_t* req, ev_buf_t* bufs
  * @param[in] req           Read request.
  * @param[in] handle_role   Handle type.
  * @param[in] handle_addr   Handle address.
- * @param[in] handle_size   Handle size.
  * @return  #EV_SUCCESS: Operation success.
- * @return  #EV_EINVAL: \p pipe is not initialized with IPC, or \p handle_role is
- *              not support, or \p handle_addr is NULL.
+ * @return  #EV_EINVAL: \p pipe is not initialized with IPC, or \p handle_role
+ * is not support, or \p handle_addr is NULL.
  * @return  #EV_ENOENT: \p req does not receive a handle.
  * @return  #EV_ENOMEM: \p handle_size is too small.
  */
-EV_API int ev_pipe_accept(ev_pipe_t* pipe, ev_pipe_read_req_t* req,
-    ev_role_t handle_role, void* handle_addr, size_t handle_size);
+EV_API int ev_pipe_accept(ev_pipe_t *pipe, ev_pipe_read_req_t *req,
+                          ev_role_t handle_role, void *handle_addr);
 
 /**
  * @brief Make a pair of pipe.
@@ -4859,7 +4623,7 @@ EV_API int ev_pipe_accept(ev_pipe_t* pipe, ev_pipe_read_req_t* req,
  * @note If pipe is create for IPC usage, both \p rflags and \p wflags must
  *   have #EV_PIPE_IPC set. Only set one of \p rflags or \p wflags will return
  *   #EV_EINVAL.
- * 
+ *
  * @param[out] fds      fds[0] for read, fds[1] for write
  * @param[in] rflags    Bit-OR of #ev_pipe_flags_t for read pipe.
  * @param[in] wflags    Bit-OR of #ev_pipe_flags_t for write pipe.
@@ -5512,7 +5276,7 @@ EV_API ev_buf_t* ev_fs_get_filecontent(ev_fs_req_t* req);
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/process.h
 // SIZE:    6793
-// SHA-256: 5a1c7cb9aa08ee7654f9ae7772f19e9ec89660d87994d95a9dde1c2f1486fc0b
+// SHA-256: a54c168eb76953399a45755ff303790f7a0fca009a053fb76e6f1d6bf44e9341
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/process.h"
 #ifndef __EV_PROCESS_H__
@@ -5687,7 +5451,7 @@ struct ev_process_s
     ev_os_pid_t                     pid;            /**< Process ID */
     ev_process_exit_status_t        exit_status;    /**< Exit status */
     int                             exit_code;      /**< Exit code or termainl signal  */
-    ev_async_t                      sigchld;        /**< SIGCHLD notifier */
+    ev_async_t*                     sigchld;        /**< SIGCHLD notifier */
 
     EV_PROCESS_BACKEND              backend;
 };

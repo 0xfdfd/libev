@@ -64,12 +64,6 @@ void mmc_exit(void);
 void mmc_dump(mmc_info_t* info);
 
 /**
- * @brief Same as [strdup(3)](https://man7.org/linux/man-pages/man3/strdup.3.html).
- * Use #mmc_free() to free duplicated string.
- */
-char* mmc_strdup(const char* str);
-
-/**
  * @brief Take a snapshot of current managed memory.
  * @param[out] snapshot     A pointer to store snapshot
  */

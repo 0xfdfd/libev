@@ -12,7 +12,7 @@ extern "C" {
 /**
  * @brief Major version.
  */
-#define EV_VERSION_MAJOR            1
+#define EV_VERSION_MAJOR            2
 
 /**
  * @brief Minor version.
