@@ -85,7 +85,7 @@
 #include "ev/mutex.h"
 #include "ev/sem.h"
 #include "ev/once.h"
-#include "ev/shm.h"
+#include "ev/shmem.h"
 #include "ev/shdlib.h"
 #include "ev/time.h"
 #include "ev/handle.h"

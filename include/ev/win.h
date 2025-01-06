@@ -410,19 +410,6 @@ typedef struct ev_pipe_win_ipc_info
 #define EV_PIPE_BACKEND_INVALID         { 0 }
 
 /**
- * @brief Windows backend for #ev_shm_t.
- */
-#define EV_SHM_BACKEND  \
-    struct ev_shm_backend {\
-        HANDLE                              map_file;           /**< Shared memory file */\
-    }
-
-/**
- * @brief Initialize #EV_SHM_BACKEND to Windows specific invalid value.
- */
-#define EV_SHM_BACKEND_INVALID          { NULL }
-
-/**
  * @brief Windows backend for #ev_process_t.
  */
 #define EV_PROCESS_BACKEND  \

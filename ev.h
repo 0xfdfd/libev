@@ -1370,8 +1370,8 @@ EV_API ev_queue_node_t* ev_queue_next(ev_queue_node_t* head, ev_queue_node_t* no
 #if defined(_WIN32)
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win.h
-// SIZE:    13111
-// SHA-256: 536392d8d70a58542a7dcb9575611261be42b87984929de444fb19893ad09ea8
+// SIZE:    12778
+// SHA-256: 8edeb81f8edb1015c0b5b3a5e59ef5ef14c6cd94b69a56503c9d35d7b13c43ce
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win.h"
 /**
@@ -1786,19 +1786,6 @@ typedef struct ev_pipe_win_ipc_info
 #define EV_PIPE_BACKEND_INVALID         { 0 }
 
 /**
- * @brief Windows backend for #ev_shm_t.
- */
-#define EV_SHM_BACKEND  \
-    struct ev_shm_backend {\
-        HANDLE                              map_file;           /**< Shared memory file */\
-    }
-
-/**
- * @brief Initialize #EV_SHM_BACKEND to Windows specific invalid value.
- */
-#define EV_SHM_BACKEND_INVALID          { NULL }
-
-/**
  * @brief Windows backend for #ev_process_t.
  */
 #define EV_PROCESS_BACKEND  \
@@ -1822,8 +1809,8 @@ typedef struct ev_file_map_backend
 #else
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix.h
-// SIZE:    11722
-// SHA-256: 96ab076458d7e4fb1c296a4c13bac59ae2212fb06355d0d2ba0cef805048cea4
+// SIZE:    11287
+// SHA-256: 1056acdf3ff770b9d6c5f6c1c182af2df13ee2b881f5b38e17e2586c31d28a4a
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/unix.h"
 /**
@@ -2215,23 +2202,6 @@ struct ev_nonblock_stream
  * @brief Initialize #EV_PIPE_BACKEND to Unix specific invalid value.
  */
 #define EV_PIPE_BACKEND_INVALID         { 0 }
-
-/**
- * @brief Unix backend for #ev_shm_t.
- */
-#define EV_SHM_BACKEND  \
-    struct ev_shm_backend {\
-        char                                name[256];\
-        int                                 map_file;\
-        struct {\
-            unsigned                        is_open : 1;\
-        }mask;\
-    }
-
-/**
- * @brief Initialize #EV_SHM_BACKEND to Unix specific invalid value.
- */
-#define EV_SHM_BACKEND_INVALID          { 0 }
 
 /**
  * @brief Unix backend for #ev_process_t.
@@ -3082,11 +3052,11 @@ EV_API void ev_once_execute(ev_once_t* guard, ev_once_cb cb);
 
 // #line 88 "ev.h"
 ////////////////////////////////////////////////////////////////////////////////
-// FILE:    ev/shm.h
-// SIZE:    1487
-// SHA-256: 05ee79576229bd508f77925351f441e9258257235501bf38571784df54f22659
+// FILE:    ev/shmem.h
+// SIZE:    1252
+// SHA-256: 8af4ad69977271692db5c5c1a93933d2cf66db5b76dbcf5b6fdcca07e12dac3f
 ////////////////////////////////////////////////////////////////////////////////
-// #line 1 "ev/shm.h"
+// #line 1 "ev/shmem.h"
 #ifndef __EV_SHARD_MEMORY_H__
 #define __EV_SHARD_MEMORY_H__
 #ifdef __cplusplus
@@ -3101,13 +3071,7 @@ extern "C" {
 /**
  * @brief Shared memory type.
  */
-typedef struct ev_shm
-{
-    void*                   addr;       /**< Shared memory address */
-    size_t                  size;       /**< Shared memory size */
-    EV_SHM_BACKEND          backend;    /**< Backend */
-} ev_shm_t;
-#define EV_SHM_INIT         { NULL, 0, EV_SHM_BACKEND_INVALID }
+typedef struct ev_shmem ev_shmem_t;
 
 /**
  * @brief Create a new shared memory
@@ -3116,7 +3080,7 @@ typedef struct ev_shm
  * @param[in] size  Shared memory size
  * @return          #ev_errno_t
  */
-EV_API int ev_shm_init(ev_shm_t* shm, const char* key, size_t size);
+EV_API int ev_shmem_init(ev_shmem_t **shm, const char *key, size_t size);
 
 /**
  * @brief Open a existing shared memory
@@ -3124,27 +3088,27 @@ EV_API int ev_shm_init(ev_shm_t* shm, const char* key, size_t size);
  * @param[in] key   Shared memory key
  * @return          #ev_errno_t
  */
-EV_API int ev_shm_open(ev_shm_t* shm, const char* key);
+EV_API int ev_shmem_open(ev_shmem_t **shm, const char *key);
 
 /**
  * @brief Close shared memory
  * @param[in] shm   Shared memory token
  */
-EV_API void ev_shm_exit(ev_shm_t* shm);
+EV_API void ev_shmem_exit(ev_shmem_t *shm);
 
 /**
  * @brief Get shared memory address
  * @param[in] shm   Shared memory token
  * @return          Shared memory address
  */
-EV_API void* ev_shm_addr(ev_shm_t* shm);
+EV_API void *ev_shmem_addr(ev_shmem_t *shm);
 
 /**
  * @brief Get shared memory size
  * @param[in] shm   Shared memory token
  * @return          Shared memory size
  */
-EV_API size_t ev_shm_size(ev_shm_t* shm);
+EV_API size_t ev_shmem_size(ev_shmem_t *shm);
 
 /**
  * @} EV_SHARED_MEMORY

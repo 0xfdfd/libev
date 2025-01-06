@@ -389,23 +389,6 @@ struct ev_nonblock_stream
 #define EV_PIPE_BACKEND_INVALID         { 0 }
 
 /**
- * @brief Unix backend for #ev_shm_t.
- */
-#define EV_SHM_BACKEND  \
-    struct ev_shm_backend {\
-        char                                name[256];\
-        int                                 map_file;\
-        struct {\
-            unsigned                        is_open : 1;\
-        }mask;\
-    }
-
-/**
- * @brief Initialize #EV_SHM_BACKEND to Unix specific invalid value.
- */
-#define EV_SHM_BACKEND_INVALID          { 0 }
-
-/**
  * @brief Unix backend for #ev_process_t.
  */
 #define EV_PROCESS_BACKEND  \

@@ -21,7 +21,7 @@ add_library(ev_test_lib SHARED
     "test/cases/process.redirect_file.c"
     "test/cases/queue.c"
     "test/cases/shdlib.c"
-    "test/cases/shm.c"
+    "test/cases/shmem.c"
     "test/cases/tcp_close_in_middle.c"
     "test/cases/tcp_connect_non_exist.c"
     "test/cases/tcp_idle_client.c"

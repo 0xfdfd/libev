@@ -29,6 +29,7 @@
 #   include "ev/win/loop_win.h"
 #   include "ev/win/process_win.h"
 #   include "ev/win/pipe_win.h"
+#   include "ev/win/shmem_win.h"
 #   include "ev/win/misc_win.h"
 #   include "ev/win/threadpool_win.h"
 #   include "ev/win/tcp_win.h"
@@ -59,6 +60,7 @@
 #   include "ev/unix/process_unix.h"
 #   include "ev/unix/tcp_unix.h"
 #   include "ev/unix/loop_unix.h"
+#   include "ev/unix/shmem_unix.h"
 #   include "ev/unix/stream_unix.h"
 #   include "ev/unix/work.h"
 

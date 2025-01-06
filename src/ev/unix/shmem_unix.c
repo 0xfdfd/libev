@@ -1,12 +1,12 @@
 #include <assert.h>
 #include <sys/mman.h>
-#include <sys/stat.h>        /* For mode constants */
-#include <fcntl.h>           /* For O_* constants */
+#include <sys/stat.h> /* For mode constants */
+#include <fcntl.h>    /* For O_* constants */
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
-int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
+static int s_ev_shm_init(ev_shmem_t *shm, const char *key, size_t size)
 {
     int err;
     shm->size = size;
@@ -18,7 +18,8 @@ int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
     }
     memset(&shm->backend.mask, 0, sizeof(shm->backend.mask));
 
-    shm->backend.map_file = shm_open(key, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
+    shm->backend.map_file =
+        shm_open(key, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
     if (shm->backend.map_file == -1)
     {
         err = errno;
@@ -31,7 +32,8 @@ int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
         goto err_ftruncate;
     }
 
-    shm->addr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, shm->backend.map_file, 0);
+    shm->addr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED,
+                     shm->backend.map_file, 0);
     if (shm->addr == NULL)
     {
         err = errno;
@@ -46,7 +48,7 @@ err_shm_open:
     return ev__translate_sys_error(err);
 }
 
-int ev_shm_open(ev_shm_t* shm, const char* key)
+static int s_ev_shm_open(ev_shmem_t *shm, const char *key)
 {
     int err;
     int ret = snprintf(shm->backend.name, sizeof(shm->backend.name), "%s", key);
@@ -72,7 +74,8 @@ int ev_shm_open(ev_shm_t* shm, const char* key)
     }
     shm->size = statbuf.st_size;
 
-    shm->addr = mmap(NULL, shm->size, PROT_READ | PROT_WRITE, MAP_SHARED, shm->backend.map_file, 0);
+    shm->addr = mmap(NULL, shm->size, PROT_READ | PROT_WRITE, MAP_SHARED,
+                     shm->backend.map_file, 0);
     if (shm->addr == NULL)
     {
         err = errno;
@@ -87,7 +90,45 @@ err_shm_open:
     return ev__translate_sys_error(err);
 }
 
-void ev_shm_exit(ev_shm_t* shm)
+int ev_shmem_init(ev_shmem_t **shm, const char *key, size_t size)
+{
+    ev_shmem_t *handle = ev_malloc(sizeof(ev_shmem_t));
+    if (handle == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    int ret = s_ev_shm_init(handle, key, size);
+    if (ret != 0)
+    {
+        ev_free(handle);
+        return ret;
+    }
+
+    *shm = handle;
+    return 0;
+}
+
+int ev_shmem_open(ev_shmem_t **shm, const char *key)
+{
+    ev_shmem_t *handle = ev_malloc(sizeof(ev_shmem_t));
+    if (handle == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    int ret = s_ev_shm_open(handle, key);
+    if (ret != 0)
+    {
+        ev_free(handle);
+        return ret;
+    }
+
+    *shm = handle;
+    return 0;
+}
+
+void ev_shmem_exit(ev_shmem_t *shm)
 {
     if (!shm->backend.mask.is_open)
     {
@@ -95,7 +136,9 @@ void ev_shm_exit(ev_shm_t* shm)
     }
 
     int ret = munmap(shm->addr, shm->size);
-    assert(ret == 0); (void)ret;
+    assert(ret == 0);
+    (void)ret;
 
     close(shm->backend.map_file);
+    ev_free(shm);
 }

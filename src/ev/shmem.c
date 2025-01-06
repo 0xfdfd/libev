@@ -1,10 +1,10 @@
 
-void* ev_shm_addr(ev_shm_t* shm)
+void* ev_shmem_addr(ev_shmem_t* shm)
 {
     return shm->addr;
 }
 
-size_t ev_shm_size(ev_shm_t* shm)
+size_t ev_shmem_size(ev_shmem_t* shm)
 {
     return shm->size;
 }

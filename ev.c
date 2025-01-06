@@ -2268,6 +2268,39 @@ extern "C" {
 
 // #line 32 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/win/shmem_win.h
+// SIZE:    486
+// SHA-256: ccb430f1bdbfd54ae8170c05d9a07f6cd96d11034198325871c2aeee5f9570df
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/win/shmem_win.h"
+#ifndef __EV_SHARED_MEMORY_WIN32_H__
+#define __EV_SHARED_MEMORY_WIN32_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Windows backend for #ev_shm_t.
+ */
+typedef struct ev_shm_backend
+{
+    HANDLE                              map_file;
+} ev_shm_backend_t;
+
+struct ev_shmem
+{
+    void            *addr;    /**< Shared memory address */
+    size_t           size;    /**< Shared memory size */
+    ev_shm_backend_t backend; /**< Backend */
+};
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 33 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/misc_win.h
 // SIZE:    1419
 // SHA-256: ade18c2c9e8c05f2cee92967830bb3b89b57052cd1924d1353ab1de62f6bfe7f
@@ -2318,7 +2351,7 @@ EV_LOCAL void ev__fatal_syscall(const char *file, int line, DWORD errcode,
 
 #endif
 
-// #line 33 "ev.c"
+// #line 34 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/threadpool_win.h
 // SIZE:    270
@@ -2339,7 +2372,7 @@ EV_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop);
 #endif
 #endif
 
-// #line 34 "ev.c"
+// #line 35 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/tcp_win.h
 // SIZE:    3451
@@ -2454,7 +2487,7 @@ EV_LOCAL int ev__tcp_open_win(ev_tcp_t *tcp, SOCKET fd);
 #endif
 #endif
 
-// #line 35 "ev.c"
+// #line 36 "ev.c"
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/async_win.c
@@ -2545,7 +2578,7 @@ void ev_async_wakeup(ev_async_t* handle)
     }
 }
 
-// #line 37 "ev.c"
+// #line 38 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/fs_win.c
 // SIZE:    25863
@@ -3466,7 +3499,7 @@ void ev_file_munmap(ev_file_map_t* view)
     view->size = 0;
 }
 
-// #line 38 "ev.c"
+// #line 39 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/loop_win.c
 // SIZE:    3740
@@ -3634,7 +3667,7 @@ EV_LOCAL int ev__ipv6only_win(SOCKET sock, int opt)
     return 0;
 }
 
-// #line 39 "ev.c"
+// #line 40 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/misc_win.c
 // SIZE:    8944
@@ -3862,7 +3895,7 @@ EV_LOCAL void ev__backend_shutdown(void)
 {
 }
 
-// #line 40 "ev.c"
+// #line 41 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/mutex_win.c
 // SIZE:    749
@@ -3915,7 +3948,7 @@ int ev_mutex_try_enter(ev_mutex_t *handle)
     return EV_EBUSY;
 }
 
-// #line 41 "ev.c"
+// #line 42 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/once_win.c
 // SIZE:    445
@@ -3941,7 +3974,7 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
     }
 }
 
-// #line 42 "ev.c"
+// #line 43 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/pipe_win.c
 // SIZE:    42909
@@ -5523,7 +5556,7 @@ void ev_pipe_close(ev_os_pipe_t fd)
     CloseHandle(fd);
 }
 
-// #line 43 "ev.c"
+// #line 44 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/process_win.c
 // SIZE:    16212
@@ -6172,7 +6205,7 @@ error:
     return ev__translate_sys_error(err);
 }
 
-// #line 44 "ev.c"
+// #line 45 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/sem_win.c
 // SIZE:    1358
@@ -6253,7 +6286,7 @@ int ev_sem_try_wait(ev_sem_t *sem)
     EV_ABORT("ret:%lu, GetLastError:%lu", ret, errcode);
 }
 
-// #line 45 "ev.c"
+// #line 46 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/shdlib_win.c
 // SIZE:    1764
@@ -6331,15 +6364,15 @@ int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr)
     return 0;
 }
 
-// #line 46 "ev.c"
+// #line 47 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/shmem_win.c
-// SIZE:    1854
-// SHA-256: 5664c4b4e6dfb9e3298c3f9acd07585c961d8a4c017d26dd3f13a2c30908d811
+// SIZE:    2574
+// SHA-256: 87d045916886353aba7e00c73d70460e987d0c0d0261a333afa2530011666f66
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/win/shmem_win.c"
 
-int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
+static int s_ev_shm_init(ev_shmem_t* shm, const char* key, size_t size)
 {
     int err;
 
@@ -6372,7 +6405,26 @@ int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
     return 0;
 }
 
-int ev_shm_open(ev_shm_t* shm, const char* key)
+int ev_shmem_init(ev_shmem_t **shm, const char *key, size_t size)
+{
+    ev_shmem_t* handle = ev_malloc(sizeof(ev_shmem_t));
+    if (handle == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    int ret = s_ev_shm_init(handle, key, size);
+    if (ret != 0)
+    {
+        ev_free(handle);
+        return ret;
+    }
+
+    *shm = handle;
+    return 0;
+}
+
+static int s_ev_shm_open(ev_shmem_t* shm, const char* key)
 {
     int err;
 
@@ -6404,7 +6456,26 @@ int ev_shm_open(ev_shm_t* shm, const char* key)
     return 0;
 }
 
-void ev_shm_exit(ev_shm_t* shm)
+int ev_shmem_open(ev_shmem_t **shm, const char *key)
+{
+    ev_shmem_t* handle = ev_malloc(sizeof(ev_shmem_t));
+    if (handle == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    int ret = s_ev_shm_open(handle, key);
+    if (ret != 0)
+    {
+        ev_free(handle);
+        return ret;
+    }
+
+    *shm = handle;
+    return 0;
+}
+
+void ev_shmem_exit(ev_shmem_t* shm)
 {
     if (!UnmapViewOfFile(shm->addr))
     {
@@ -6415,9 +6486,11 @@ void ev_shm_exit(ev_shm_t* shm)
     {
         EV_ABORT("GetLastError:%lu", (unsigned long)GetLastError());
     }
+
+    ev_free(shm);
 }
 
-// #line 47 "ev.c"
+// #line 48 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/tcp_win.c
 // SIZE:    23772
@@ -7316,7 +7389,7 @@ EV_LOCAL int ev__tcp_open_win(ev_tcp_t *tcp, SOCKET fd)
     return 0;
 }
 
-// #line 48 "ev.c"
+// #line 49 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/thread_win.c
 // SIZE:    4563
@@ -7524,7 +7597,7 @@ void *ev_thread_key_get(ev_thread_key_t *key)
     return val;
 }
 
-// #line 49 "ev.c"
+// #line 50 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/threadpool_win.c
 // SIZE:    545
@@ -7556,7 +7629,7 @@ EV_LOCAL void ev__threadpool_exit_win(ev_loop_t* loop)
     (void)loop;
 }
 
-// #line 50 "ev.c"
+// #line 51 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/time_win.c
 // SIZE:    1385
@@ -7621,7 +7694,7 @@ uint64_t ev_hrtime(void)
     return _ev_hrtime_win(EV__NANOSEC);
 #undef EV__NANOSEC
 }
-// #line 51 "ev.c"
+// #line 52 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/udp_win.c
 // SIZE:    24654
@@ -8585,7 +8658,7 @@ int ev_udp_set_ttl(ev_udp_t* udp, int ttl)
     return 0;
 }
 
-// #line 52 "ev.c"
+// #line 53 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/winapi.c
 // SIZE:    594
@@ -8619,7 +8692,7 @@ EV_LOCAL void ev__winapi_init(void)
 #undef GET_NTDLL_FUNC
 }
 
-// #line 53 "ev.c"
+// #line 54 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/win/winsock.c
 // SIZE:    9169
@@ -9005,7 +9078,7 @@ EV_LOCAL int ev__ntstatus_to_winsock_error(NTSTATUS status)
     }
 }
 
-// #line 54 "ev.c"
+// #line 55 "ev.c"
 
 #else
 
@@ -9044,7 +9117,7 @@ EV_LOCAL void ev__async_pend(int rfd);
 #endif
 #endif
 
-// #line 58 "ev.c"
+// #line 59 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/io_unix.h
 // SIZE:    2857
@@ -9159,7 +9232,7 @@ EV_LOCAL int ev__send_unix(int fd, ev_write_t* req,
 #endif
 #endif
 
-// #line 59 "ev.c"
+// #line 60 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/process_unix.h
 // SIZE:    269
@@ -9184,7 +9257,7 @@ EV_LOCAL void ev__exit_process_unix(void);
 #endif
 #endif
 
-// #line 60 "ev.c"
+// #line 61 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/tcp_unix.h
 // SIZE:    2129
@@ -9266,7 +9339,7 @@ EV_LOCAL int ev__tcp_open(ev_tcp_t *tcp, int fd);
 #endif
 #endif
 
-// #line 61 "ev.c"
+// #line 62 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/loop_unix.h
 // SIZE:    500
@@ -9300,7 +9373,45 @@ EV_LOCAL void ev__init_once_unix(void);
 #endif
 #endif
 
-// #line 62 "ev.c"
+// #line 63 "ev.c"
+////////////////////////////////////////////////////////////////////////////////
+// FILE:    ev/unix/shmem_unix.h
+// SIZE:    529
+// SHA-256: e24041beaa663c95af84e928b22a3bf2465fdaac380962ed7a2623a6f6bd3300
+////////////////////////////////////////////////////////////////////////////////
+// #line 1 "ev/unix/shmem_unix.h"
+#ifndef __EV_SHARED_MEMORY_UNIX_H__
+#define __EV_SHARED_MEMORY_UNIX_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Unix backend for #ev_shm_t.
+ */
+typedef struct ev_shm_backend
+{
+    char name[256];
+    int  map_file;
+    struct
+    {
+        unsigned is_open : 1;
+    } mask;
+} ev_shm_backend_t;
+
+struct ev_shmem
+{
+    void            *addr;    /**< Shared memory address */
+    size_t           size;    /**< Shared memory size */
+    ev_shm_backend_t backend; /**< Backend */
+};
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+// #line 64 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/stream_unix.h
 // SIZE:    1796
@@ -9373,7 +9484,7 @@ EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned
 #endif
 #endif
 
-// #line 63 "ev.c"
+// #line 65 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/work.h
 // SIZE:    231
@@ -9395,7 +9506,7 @@ EV_LOCAL void ev__exit_work(ev_loop_t* loop);
 #endif
 #endif
 
-// #line 64 "ev.c"
+// #line 66 "ev.c"
 
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/async_unix.c
@@ -9587,7 +9698,7 @@ void ev_async_wakeup(ev_async_t *handle)
     ev__async_post(handle->backend.pipfd[1]);
 }
 
-// #line 66 "ev.c"
+// #line 68 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/fs_unix.c
 // SIZE:    11029
@@ -10004,7 +10115,7 @@ void ev_file_munmap(ev_file_map_t* view)
     view->size = 0;
 }
 
-// #line 67 "ev.c"
+// #line 69 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/io_unix.c
 // SIZE:    8754
@@ -10439,7 +10550,7 @@ EV_LOCAL int ev__send_unix(int fd, ev_write_t* req,
     return _ev_io_finalize_send_req_unix(req, (size_t)write_size);
 }
 
-// #line 68 "ev.c"
+// #line 70 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/loop_unix.c
 // SIZE:    4177
@@ -10619,7 +10730,7 @@ EV_LOCAL void ev__poll(ev_loop_t* loop, uint32_t timeout)
     }
 }
 
-// #line 69 "ev.c"
+// #line 71 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/misc_unix.c
 // SIZE:    356
@@ -10649,7 +10760,7 @@ void ev__backend_shutdown(void)
     ev__exit_process_unix();
 }
 
-// #line 70 "ev.c"
+// #line 72 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/misc_random_unix.c
 // SIZE:    7547
@@ -11011,7 +11122,7 @@ EV_LOCAL int ev__random(void* buf, size_t len)
 
 #endif
 
-// #line 71 "ev.c"
+// #line 73 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/mutex_unix.c
 // SIZE:    2029
@@ -11143,7 +11254,7 @@ int ev_mutex_try_enter(ev_mutex_t *handle)
     return EV_EBUSY;
 }
 
-// #line 72 "ev.c"
+// #line 74 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/once_unix.c
 // SIZE:    157
@@ -11160,7 +11271,7 @@ void ev_once_execute(ev_once_t* guard, ev_once_cb cb)
     }
 }
 
-// #line 73 "ev.c"
+// #line 75 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/pipe_unix.c
 // SIZE:    27171
@@ -12163,7 +12274,7 @@ void ev_pipe_close(ev_os_pipe_t fd)
     }
 }
 
-// #line 74 "ev.c"
+// #line 76 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/process_unix.c
 // SIZE:    16851
@@ -12901,7 +13012,7 @@ error:
     return errcode;
 }
 
-// #line 75 "ev.c"
+// #line 77 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/sem_unix.c
 // SIZE:    963
@@ -12983,7 +13094,7 @@ int ev_sem_try_wait(ev_sem_t *sem)
     return 0;
 }
 
-// #line 76 "ev.c"
+// #line 78 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/shdlib_unix.c
 // SIZE:    963
@@ -13046,22 +13157,22 @@ int ev_dlsym(ev_shdlib_t* lib, const char* name, void** ptr)
     return EV_ENOENT;
 }
 
-// #line 77 "ev.c"
+// #line 79 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/shmem_unix.c
-// SIZE:    2334
-// SHA-256: 560380ad3b2ea591fe64178ae8936a7a49a38a947852229cd1d616f6ec7e72e1
+// SIZE:    3093
+// SHA-256: f13db8acf9960186196074e8a3c2158625f391024e76b40bbc991cd012a11d4e
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/unix/shmem_unix.c"
 #include <assert.h>
 #include <sys/mman.h>
-#include <sys/stat.h>        /* For mode constants */
-#include <fcntl.h>           /* For O_* constants */
+#include <sys/stat.h> /* For mode constants */
+#include <fcntl.h>    /* For O_* constants */
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
-int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
+static int s_ev_shm_init(ev_shmem_t *shm, const char *key, size_t size)
 {
     int err;
     shm->size = size;
@@ -13073,7 +13184,8 @@ int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
     }
     memset(&shm->backend.mask, 0, sizeof(shm->backend.mask));
 
-    shm->backend.map_file = shm_open(key, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
+    shm->backend.map_file =
+        shm_open(key, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
     if (shm->backend.map_file == -1)
     {
         err = errno;
@@ -13086,7 +13198,8 @@ int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
         goto err_ftruncate;
     }
 
-    shm->addr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, shm->backend.map_file, 0);
+    shm->addr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED,
+                     shm->backend.map_file, 0);
     if (shm->addr == NULL)
     {
         err = errno;
@@ -13101,7 +13214,7 @@ err_shm_open:
     return ev__translate_sys_error(err);
 }
 
-int ev_shm_open(ev_shm_t* shm, const char* key)
+static int s_ev_shm_open(ev_shmem_t *shm, const char *key)
 {
     int err;
     int ret = snprintf(shm->backend.name, sizeof(shm->backend.name), "%s", key);
@@ -13127,7 +13240,8 @@ int ev_shm_open(ev_shm_t* shm, const char* key)
     }
     shm->size = statbuf.st_size;
 
-    shm->addr = mmap(NULL, shm->size, PROT_READ | PROT_WRITE, MAP_SHARED, shm->backend.map_file, 0);
+    shm->addr = mmap(NULL, shm->size, PROT_READ | PROT_WRITE, MAP_SHARED,
+                     shm->backend.map_file, 0);
     if (shm->addr == NULL)
     {
         err = errno;
@@ -13142,7 +13256,45 @@ err_shm_open:
     return ev__translate_sys_error(err);
 }
 
-void ev_shm_exit(ev_shm_t* shm)
+int ev_shmem_init(ev_shmem_t **shm, const char *key, size_t size)
+{
+    ev_shmem_t *handle = ev_malloc(sizeof(ev_shmem_t));
+    if (handle == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    int ret = s_ev_shm_init(handle, key, size);
+    if (ret != 0)
+    {
+        ev_free(handle);
+        return ret;
+    }
+
+    *shm = handle;
+    return 0;
+}
+
+int ev_shmem_open(ev_shmem_t **shm, const char *key)
+{
+    ev_shmem_t *handle = ev_malloc(sizeof(ev_shmem_t));
+    if (handle == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    int ret = s_ev_shm_open(handle, key);
+    if (ret != 0)
+    {
+        ev_free(handle);
+        return ret;
+    }
+
+    *shm = handle;
+    return 0;
+}
+
+void ev_shmem_exit(ev_shmem_t *shm)
 {
     if (!shm->backend.mask.is_open)
     {
@@ -13150,12 +13302,14 @@ void ev_shm_exit(ev_shm_t* shm)
     }
 
     int ret = munmap(shm->addr, shm->size);
-    assert(ret == 0); (void)ret;
+    assert(ret == 0);
+    (void)ret;
 
     close(shm->backend.map_file);
+    ev_free(shm);
 }
 
-// #line 78 "ev.c"
+// #line 80 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/stream_unix.c
 // SIZE:    6160
@@ -13403,7 +13557,7 @@ EV_LOCAL void ev__nonblock_stream_cleanup(ev_nonblock_stream_t* stream, unsigned
     }
 }
 
-// #line 79 "ev.c"
+// #line 81 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/tcp_unix.c
 // SIZE:    14926
@@ -14000,7 +14154,7 @@ EV_LOCAL int ev__tcp_open(ev_tcp_t *tcp, int fd)
     return 0;
 }
 
-// #line 80 "ev.c"
+// #line 82 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/thread_unix.c
 // SIZE:    4496
@@ -14230,7 +14384,7 @@ void *ev_thread_key_get(ev_thread_key_t *key)
     return pthread_getspecific(key->tls);
 }
 
-// #line 81 "ev.c"
+// #line 83 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/threadpool_unix.c
 // SIZE:    942
@@ -14270,7 +14424,7 @@ EV_LOCAL void ev__exit_work(ev_loop_t* loop)
     loop->backend.threadpool.evtfd[1] = -1;
 }
 
-// #line 82 "ev.c"
+// #line 84 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/time_unix.c
 // SIZE:    284
@@ -14293,7 +14447,7 @@ uint64_t ev_hrtime(void)
     return t.tv_sec * (uint64_t) 1e9 + t.tv_nsec;
 }
 
-// #line 83 "ev.c"
+// #line 85 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/unix/udp_unix.c
 // SIZE:    25305
@@ -15316,7 +15470,7 @@ int ev_udp_set_ttl(ev_udp_t *udp, int ttl)
     return _ev_udp_set_ttl_unix(udp, ttl, IP_TTL, IPV6_UNICAST_HOPS);
 }
 
-// #line 84 "ev.c"
+// #line 86 "ev.c"
 
 #endif
 
@@ -15343,7 +15497,7 @@ EV_LOCAL void ev__assertion_failure(const char* exp, const char* file, int line,
     abort();
 }
 
-// #line 88 "ev.c"
+// #line 90 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/allocator.c
 // SIZE:    1108
@@ -15414,7 +15568,7 @@ char *ev__strdup(const char *s)
     return memcpy(m, s, len);
 }
 
-// #line 89 "ev.c"
+// #line 91 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/atomic.c
 // SIZE:    5881
@@ -15735,7 +15889,7 @@ EV_LOCAL void ev__atomic_exit(void)
 
 #endif
 
-// #line 90 "ev.c"
+// #line 92 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/errno.c
 // SIZE:    438
@@ -15761,7 +15915,7 @@ const char* ev_strerror(int err)
 #undef EV_EXPAND_ERRMAP
 }
 
-// #line 91 "ev.c"
+// #line 93 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/fs.c
 // SIZE:    25615
@@ -16821,7 +16975,7 @@ finish:
     return _ev_fs_remove(path);
 }
 
-// #line 92 "ev.c"
+// #line 94 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/handle.c
 // SIZE:    3642
@@ -16972,7 +17126,7 @@ EV_LOCAL size_t ev__process_endgame(ev_loop_t* loop)
     return active_count;
 }
 
-// #line 93 "ev.c"
+// #line 95 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/list.c
 // SIZE:    3572
@@ -17162,7 +17316,7 @@ void ev_list_migrate(ev_list_t* dst, ev_list_t* src)
     src->size = 0;
 }
 
-// #line 94 "ev.c"
+// #line 96 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/log.c
 // SIZE:    1941
@@ -17258,7 +17412,7 @@ EV_LOCAL void ev__dump_hex(const void* data, size_t size, size_t width)
 
 }
 
-// #line 95 "ev.c"
+// #line 97 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/loop.c
 // SIZE:    8737
@@ -17655,7 +17809,7 @@ void ev_loop_walk(ev_loop_t* loop, ev_walk_cb cb, void* arg)
     }
 }
 
-// #line 96 "ev.c"
+// #line 98 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/map.c
 // SIZE:    23122
@@ -18435,7 +18589,7 @@ ev_map_node_t* ev_map_prev(const ev_map_node_t* node)
     return _ev_map_low_prev(node);
 }
 
-// #line 97 "ev.c"
+// #line 99 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/misc.c
 // SIZE:    4675
@@ -18650,7 +18804,7 @@ EV_API int ev_random(ev_loop_t* loop, ev_random_req_t* req, void* buf,
     return ev_loop_queue_work(loop, &req->work, _ev_random_on_work, _ev_random_on_done);
 }
 
-// #line 98 "ev.c"
+// #line 100 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/pipe.c
 // SIZE:    1714
@@ -18721,7 +18875,7 @@ EV_LOCAL int ev__pipe_write_init_ext(ev_pipe_write_req_t *req,
     return 0;
 }
 
-// #line 99 "ev.c"
+// #line 101 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/queue.c
 // SIZE:    1816
@@ -18804,7 +18958,7 @@ int ev_queue_empty(const ev_queue_node_t* node)
     return EV_QUEUE_NEXT(node) == node;
 }
 
-// #line 100 "ev.c"
+// #line 102 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/ringbuffer.c
 // SIZE:    17440
@@ -19359,25 +19513,25 @@ EV_LOCAL ring_buffer_token_t* ring_buffer_next(const ring_buffer_t* handler, con
     return &(node->token);
 }
 
-// #line 101 "ev.c"
+// #line 103 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/shmem.c
-// SIZE:    121
-// SHA-256: 9a619451978c80fa1da62cf9598d67b99e8e244bcdfdb33cefa709eaed8d1c28
+// SIZE:    129
+// SHA-256: f2d8bee7408dc4d79ec2b33c0f7fd2d1dc9d5d82f0e8df99fbe61a2b07f370ff
 ////////////////////////////////////////////////////////////////////////////////
 // #line 1 "ev/shmem.c"
 
-void* ev_shm_addr(ev_shm_t* shm)
+void* ev_shmem_addr(ev_shmem_t* shm)
 {
     return shm->addr;
 }
 
-size_t ev_shm_size(ev_shm_t* shm)
+size_t ev_shmem_size(ev_shmem_t* shm)
 {
     return shm->size;
 }
 
-// #line 102 "ev.c"
+// #line 104 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/threadpool.c
 // SIZE:    9221
@@ -19771,7 +19925,7 @@ EV_LOCAL void ev__threadpool_process(ev_loop_t *loop)
     }
 }
 
-// #line 103 "ev.c"
+// #line 105 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/timer.c
 // SIZE:    2849
@@ -19898,7 +20052,7 @@ void ev_timer_stop(ev_timer_t *handle)
     ev_map_erase(&handle->base.loop->timer.heap, &handle->node);
 }
 
-// #line 104 "ev.c"
+// #line 106 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/udp.c
 // SIZE:    3071
@@ -20032,7 +20186,7 @@ err:
     return ret;
 }
 
-// #line 105 "ev.c"
+// #line 107 "ev.c"
 ////////////////////////////////////////////////////////////////////////////////
 // FILE:    ev/version.c
 // SIZE:    303
@@ -20056,5 +20210,5 @@ unsigned ev_version_code(void)
     return EV_VERSION_CODE;
 }
 
-// #line 106 "ev.c"
+// #line 108 "ev.c"
 

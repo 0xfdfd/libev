@@ -1,5 +1,5 @@
 
-int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
+static int s_ev_shm_init(ev_shmem_t* shm, const char* key, size_t size)
 {
     int err;
 
@@ -32,7 +32,26 @@ int ev_shm_init(ev_shm_t* shm, const char* key, size_t size)
     return 0;
 }
 
-int ev_shm_open(ev_shm_t* shm, const char* key)
+int ev_shmem_init(ev_shmem_t **shm, const char *key, size_t size)
+{
+    ev_shmem_t* handle = ev_malloc(sizeof(ev_shmem_t));
+    if (handle == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    int ret = s_ev_shm_init(handle, key, size);
+    if (ret != 0)
+    {
+        ev_free(handle);
+        return ret;
+    }
+
+    *shm = handle;
+    return 0;
+}
+
+static int s_ev_shm_open(ev_shmem_t* shm, const char* key)
 {
     int err;
 
@@ -64,7 +83,26 @@ int ev_shm_open(ev_shm_t* shm, const char* key)
     return 0;
 }
 
-void ev_shm_exit(ev_shm_t* shm)
+int ev_shmem_open(ev_shmem_t **shm, const char *key)
+{
+    ev_shmem_t* handle = ev_malloc(sizeof(ev_shmem_t));
+    if (handle == NULL)
+    {
+        return EV_ENOMEM;
+    }
+
+    int ret = s_ev_shm_open(handle, key);
+    if (ret != 0)
+    {
+        ev_free(handle);
+        return ret;
+    }
+
+    *shm = handle;
+    return 0;
+}
+
+void ev_shmem_exit(ev_shmem_t* shm)
 {
     if (!UnmapViewOfFile(shm->addr))
     {
@@ -75,4 +113,6 @@ void ev_shm_exit(ev_shm_t* shm)
     {
         EV_ABORT("GetLastError:%lu", (unsigned long)GetLastError());
     }
+
+    ev_free(shm);
 }
