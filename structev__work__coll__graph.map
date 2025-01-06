@@ -1,0 +1,11 @@
+<map id="ev_work" name="ev_work">
+<area shape="rect" id="Node000001" title="Thread pool work token." alt="" coords="77,191,148,217"/>
+<area shape="rect" id="Node000002" href="$group__EV__HANDLE.html#structev__handle" title="Base class for all major object." alt="" coords="12,100,93,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="71,137,107,190,102,193,67,140"/>
+<area shape="rect" id="Node000003" href="$group__EV__UTILS__LIST.html#structev__list__node" title="The list node. This node must put in your struct." alt="" coords="5,8,100,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="55,49,55,100,50,100,50,49"/>
+<area shape="poly" id="edge3_Node000003_Node000003" title=" " alt="" coords="117,12,126,20,118,29,100,32,100,26,116,24,121,20,114,16"/>
+<area shape="rect" id="Node000004" href="$group__EV__UTILS__QUEUE.html#structev__queue__node" title="Static initializer for ev_queue_node_t." alt="" coords="116,100,229,126"/>
+<area shape="poly" id="edge4_Node000001_Node000004" title=" " alt="" coords="158,140,123,193,118,190,154,137"/>
+<area shape="poly" id="edge5_Node000004_Node000004" title=" " alt="" coords="245,105,255,113,247,122,229,125,229,119,245,117,250,113,242,109"/>
+</map>
